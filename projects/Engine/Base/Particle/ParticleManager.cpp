@@ -89,11 +89,6 @@ void ParticleManager::Update() {
 
 	for (auto& [name, group] : particleGroups) {
 
-		//// パーティクル生成（最大 kInstanceNum を超えないように制限）
-		// while (group.particles.size() < group.kInstanceNum) {
-		//	group.particles.push_back(MakeRandomParticle(randomEngine, {0.0f, 0.0f, 0.0f}));
-		// }
-
 		size_t numInstance = 0;
 
 		for (auto it = group.particles.begin(); it != group.particles.end();) {
@@ -209,6 +204,7 @@ void ParticleManager::CreateParticleGeoup(const std::string name, const std::str
 
 // ランダムなパーティクル生成関数
 Particle ParticleManager::MakeRandomParticle(std::mt19937& randomEngine, const Vector3& translate) {
+
 	std::uniform_real_distribution<float> distribution(-0.5f, 0.5f);
 	std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
 	std::uniform_real_distribution<float> distTime(2.0f, 4.0f);

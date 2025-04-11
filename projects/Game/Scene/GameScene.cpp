@@ -7,8 +7,11 @@ void GameScene::Init() {
 
 	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
-	TextureManager::GetInstance()->LoadTexture(uvTexture);
+	const std::string& circle = "./Resources/images/circle.png";
 	const std::string& monsterBallTexture = "./Resources/images/monsterBall.png";
+
+	TextureManager::GetInstance()->LoadTexture(uvTexture);
+	TextureManager::GetInstance()->LoadTexture(circle);
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
 
 	// Sprite
@@ -22,6 +25,7 @@ void GameScene::Init() {
 	glassObject_->Init();
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
+	ModelManager::GetInstance()->LoadModel("circle.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("terrain.obj");
 
@@ -29,8 +33,10 @@ void GameScene::Init() {
 	glassObject_->SetModel("terrain.obj");
 
 	camera_ = std::make_unique<Camera>();
-	camera_->SetRotate({0.5f, 0.0f, 0.0f});
-	camera_->SetTranslate({0.0f, 7.0f, -12.0f});
+	camera_->SetRotate({0.0f, 0.0f, 0.0f});
+	camera_->SetTranslate({0.0f, 0.0f, -10.0f});
+	// camera_->SetRotate({0.5f, 0.0f, 0.0f});
+	// camera_->SetTranslate({0.0f, 7.0f, -12.0f});
 
 	object3d_->SetDefaultCamera(camera_.get());
 	glassObject_->SetDefaultCamera(camera_.get());
@@ -43,10 +49,10 @@ void GameScene::Init() {
 
 	//
 	ParticleManager::GetInstance()->Init(camera_.get());
-	ParticleManager::GetInstance()->CreateParticleGeoup("normal", uvTexture);
+	ParticleManager::GetInstance()->CreateParticleGeoup("circle", circle);
 	ParticleManager::GetInstance()->CreateParticleGeoup("monsterBall", monsterBallTexture);
 	emitter_ = std::make_unique<ParticleEmitter>();
-	emitter_->Init("normal", {0.0f, 0.0f, 10.0f}, 50);
+	emitter_->Init("circle", {0.0f, 0.0f, 10.0f}, 50);
 
 	emitter2_ = std::make_unique<ParticleEmitter>();
 	emitter2_->Init("monsterBall", {0.0f, 0.0f, 10.0f}, 50);
@@ -76,7 +82,7 @@ void GameScene::Update() {
 		emitter2_->Update();
 	}
 
-	// 
+	//
 	camera_->ImGuiDebug();
 	// object3d_->ImGuiDebug();
 	glassObject_->ImGuiDebug();
@@ -86,8 +92,11 @@ void GameScene::Draw() {
 
 	// sprite_->Draw();
 
+	//
 	object3d_->Draw();
-	glassObject_->Draw();
+
+	// 地面
+	// glassObject_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 }
