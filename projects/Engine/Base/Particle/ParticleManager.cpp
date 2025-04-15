@@ -101,6 +101,11 @@ void ParticleManager::Update() {
 				continue;
 			}
 
+			// アルファ値を寿命に応じて減衰
+			float lifeRatio = 1.0f - (particle.currentTime / particle.lifeTime);
+			lifeRatio = std::clamp(lifeRatio, 0.0f, 1.0f);
+			particle.color.w = lifeRatio;
+
 			// 速度による移動
 			particle.transform.translate.x += particle.velocity.x;
 			particle.transform.translate.y += particle.velocity.y;
@@ -112,7 +117,7 @@ void ParticleManager::Update() {
 				Matrix4x4 worldMatrix = MyMath::MakeAffineMatrix(particle.transform.scale, particle.transform.rotate, particle.transform.translate);
 				group.instancingData[numInstance].World = worldMatrix;
 				group.instancingData[numInstance].WVP = MyMath::Multiply(MyMath::Multiply(worldMatrix, viewMatrix), projectionMatrix);
-				group.instancingData[numInstance].color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+				group.instancingData[numInstance].color = Vector4(particle.color);
 				++numInstance;
 			}
 
@@ -171,7 +176,8 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 
 	// 指定した数だけパーティクルを発生
 	for (uint32_t i = 0; i < count; ++i) {
-		group.particles.push_back(MakeRandomParticle(randomEngine, position));
+		// group.particles.push_back(MakeRandomParticle(randomEngine, position));
+		group.particles.push_back(MakeNewParticle(randomEngine, position));
 	}
 }
 
@@ -219,5 +225,22 @@ Particle ParticleManager::MakeRandomParticle(std::mt19937& randomEngine, const V
 	particle.lifeTime = distTime(randomEngine);
 	particle.currentTime = 0.0f;
 
+	return particle;
+}
+
+Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate) {
+
+	std::uniform_real_distribution<float> distScale(0.4, 1.5f);
+	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+
+	// 
+	Particle particle;
+	particle.transform.scale = {0.05f, distScale(randomEngine), 1.0f};
+	particle.transform.rotate = {0.0f, 0.0f, distRotate(randomEngine)};
+	particle.transform.translate = translate;
+	particle.velocity = {0.0f, 0.0f, 0.0f};
+	particle.color = {1.0f, 1.0f, 1.0f, 1.0f};
+	particle.lifeTime = 1.0f;
+	particle.currentTime = 0.0f;
 	return particle;
 }

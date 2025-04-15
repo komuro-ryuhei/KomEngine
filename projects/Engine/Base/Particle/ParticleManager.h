@@ -54,7 +54,10 @@ public:
 
 	void CreateParticleGeoup(const std::string name, const std::string textureFilePath);
 
+	// ランダムで拡散するパーティクル
 	Particle MakeRandomParticle(std::mt19937& randomEngine, const Vector3& translate);
+	// ヒットエフェクトっぽいパーティクル
+	Particle MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate);
 
 private:
 	ParticleManager() = default;

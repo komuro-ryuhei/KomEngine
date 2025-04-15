@@ -72,7 +72,7 @@ void PipelineManager::PSOSetting(const std::string& objectType) {
 
 	rasterizer_->Setting();
 
-	blendState_->Setting();
+	blendState_->Setting(objectType);
 
 	CreatePSO();
 }

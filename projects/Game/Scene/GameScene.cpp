@@ -8,10 +8,12 @@ void GameScene::Init() {
 	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
 	const std::string& circle = "./Resources/images/circle.png";
+	const std::string& circle2 = "./Resources/images/circle2.png";
 	const std::string& monsterBallTexture = "./Resources/images/monsterBall.png";
 
 	TextureManager::GetInstance()->LoadTexture(uvTexture);
 	TextureManager::GetInstance()->LoadTexture(circle);
+	TextureManager::GetInstance()->LoadTexture(circle2);
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
 
 	// Sprite
@@ -49,10 +51,10 @@ void GameScene::Init() {
 
 	//
 	ParticleManager::GetInstance()->Init(camera_.get());
-	ParticleManager::GetInstance()->CreateParticleGeoup("circle", circle);
+	ParticleManager::GetInstance()->CreateParticleGeoup("circle", circle2);
 	ParticleManager::GetInstance()->CreateParticleGeoup("monsterBall", monsterBallTexture);
 	emitter_ = std::make_unique<ParticleEmitter>();
-	emitter_->Init("circle", {0.0f, 0.0f, 10.0f}, 50);
+	emitter_->Init("circle", {0.0f, 0.0f, 10.0f}, 8);
 
 	emitter2_ = std::make_unique<ParticleEmitter>();
 	emitter2_->Init("monsterBall", {0.0f, 0.0f, 10.0f}, 50);
@@ -84,8 +86,8 @@ void GameScene::Update() {
 
 	//
 	camera_->ImGuiDebug();
-	// object3d_->ImGuiDebug();
-	glassObject_->ImGuiDebug();
+	object3d_->ImGuiDebug();
+	// glassObject_->ImGuiDebug();
 }
 
 void GameScene::Draw() {
