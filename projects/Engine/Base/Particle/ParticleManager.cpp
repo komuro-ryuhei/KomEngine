@@ -230,7 +230,7 @@ Particle ParticleManager::MakeRandomParticle(std::mt19937& randomEngine, const V
 
 Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate) {
 
-	std::uniform_real_distribution<float> distScale(0.4, 1.5f);
+	std::uniform_real_distribution<float> distScale(0.4f, 1.5f);
 	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
 
 	// 
