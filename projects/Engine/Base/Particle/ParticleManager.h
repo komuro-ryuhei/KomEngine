@@ -58,6 +58,8 @@ public:
 	Particle MakeRandomParticle(std::mt19937& randomEngine, const Vector3& translate);
 	// ヒットエフェクトっぽいパーティクル
 	Particle MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate);
+	// 白いリングのエフェクト
+	Particle MakeRingParticle(std::mt19937& randomEngine, const Vector3& translate);
 
 private:
 	ParticleManager() = default;

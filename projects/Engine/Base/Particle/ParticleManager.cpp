@@ -31,36 +31,53 @@ void ParticleManager::Init(Camera* camera) {
 	// 頂点データの初期化
 
 	// 座標
-	modelData.vertices.push_back({
-	    .position = {1.0f, 1.0f, 0.0f, 1.0f},
-          .texcoord = {0.0f, 0.0f},
-          .normal = {0.0f, 0.0f, 1.0f}
-    });
-	modelData.vertices.push_back({
-	    .position = {-1.0f, 1.0f, 0.0f, 1.0f},
-          .texcoord = {1.0f, 0.0f},
-          .normal = {0.0f, 0.0f, 1.0f}
-    });
-	modelData.vertices.push_back({
-	    .position = {1.0f, -1.0f, 0.0f, 1.0f},
-          .texcoord = {0.0f, 1.0f},
-          .normal = {0.0f, 0.0f, 1.0f}
-    });
-	modelData.vertices.push_back({
-	    .position = {1.0f, -1.0f, 0.0f, 1.0f},
-          .texcoord = {0.0f, 1.0f},
-          .normal = {0.0f, 0.0f, 1.0f}
-    });
-	modelData.vertices.push_back({
-	    .position = {-1.0f, 1.0f, 0.0f, 1.0f},
-          .texcoord = {1.0f, 0.0f},
-          .normal = {0.0f, 0.0f, 1.0f}
-    });
-	modelData.vertices.push_back({
-	    .position = {-1.0f, -1.0f, 0.0f, 1.0f},
-          .texcoord = {1.0f, 1.0f},
-          .normal = {0.0f, 0.0f, 1.0f}
-    });
+	// Ringの頂点データを生成する
+	const uint32_t kRingDivide = 32;
+	const float kOuterRadius = 2.0f;
+	const float kInnerRadius = 1.0f;
+	const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kRingDivide);
+
+	for (uint32_t index = 0; index < kRingDivide; ++index) {
+		float sin = std::sin(index * radianPerDivide);
+		float cos = std::cos(index * radianPerDivide);
+		float sinNext = std::sin((index + 1) * radianPerDivide);
+		float cosNext = std::cos((index + 1) * radianPerDivide);
+		float u = float(index) / float(kRingDivide);
+		float uNext = float(index + 1) / float(kRingDivide);
+
+		// 外側リング -> 内側リングの順に三角形を作成
+		modelData.vertices.push_back({
+		    {-sin * kOuterRadius, cos * kOuterRadius, 0.0f, 1.0f},
+		    {u, 0.0f},
+		    {0.0f, 0.0f, 1.0f}
+        });
+		modelData.vertices.push_back({
+		    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
+		    {uNext, 0.0f},
+		    {0.0f, 0.0f, 1.0f}
+        });
+		modelData.vertices.push_back({
+		    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
+		    {u, 1.0f},
+		    {0.0f, 0.0f, 1.0f}
+        });
+
+		modelData.vertices.push_back({
+		    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
+		    {uNext, 0.0f},
+		    {0.0f, 0.0f, 1.0f}
+        });
+		modelData.vertices.push_back({
+		    {-sinNext * kInnerRadius, cosNext * kInnerRadius, 0.0f, 1.0f},
+		    {uNext, 1.0f},
+		    {0.0f, 0.0f, 1.0f}
+        });
+		modelData.vertices.push_back({
+		    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
+		    {u, 1.0f},
+		    {0.0f, 0.0f, 1.0f}
+        });
+	}
 
 	// 頂点リソースの作成
 	vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * modelData.vertices.size());
@@ -161,6 +178,7 @@ void ParticleManager::Finalize() {
 }
 
 void ParticleManager::Emit(const std::string name, const Vector3& position, uint32_t count) {
+
 	// 指定したパーティクルグループが存在するか確認
 	auto it = particleGroups.find(name);
 	if (it == particleGroups.end()) {
@@ -176,8 +194,13 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 
 	// 指定した数だけパーティクルを発生
 	for (uint32_t i = 0; i < count; ++i) {
-		// group.particles.push_back(MakeRandomParticle(randomEngine, position));
-		group.particles.push_back(MakeNewParticle(randomEngine, position));
+		if (name == "explosion") {
+			group.particles.push_back(MakeRandomParticle(randomEngine, position));
+		} else if (name == "hit") {
+			group.particles.push_back(MakeNewParticle(randomEngine, position));
+		} else if (name == "ring") {
+			group.particles.push_back(MakeRingParticle(randomEngine, position));
+		}
 	}
 }
 
@@ -230,12 +253,28 @@ Particle ParticleManager::MakeRandomParticle(std::mt19937& randomEngine, const V
 
 Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate) {
 
-	std::uniform_real_distribution<float> distScale(0.4, 1.5f);
+	std::uniform_real_distribution<float> distScale(0.4f, 1.5f);
 	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
 
-	// 
+	//
 	Particle particle;
 	particle.transform.scale = {0.05f, distScale(randomEngine), 1.0f};
+	particle.transform.rotate = {0.0f, 0.0f, distRotate(randomEngine)};
+	particle.transform.translate = translate;
+	particle.velocity = {0.0f, 0.0f, 0.0f};
+	particle.color = {1.0f, 1.0f, 1.0f, 1.0f};
+	particle.lifeTime = 1.0f;
+	particle.currentTime = 0.0f;
+	return particle;
+}
+
+Particle ParticleManager::MakeRingParticle(std::mt19937& randomEngine, const Vector3& translate) {
+
+	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+
+	//
+	Particle particle;
+	particle.transform.scale = {1.0f, 1.0f, 1.0f};
 	particle.transform.rotate = {0.0f, 0.0f, distRotate(randomEngine)};
 	particle.transform.translate = translate;
 	particle.velocity = {0.0f, 0.0f, 0.0f};
