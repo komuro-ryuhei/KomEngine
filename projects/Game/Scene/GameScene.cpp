@@ -28,7 +28,6 @@ void GameScene::Init() {
 	glassObject_->Init();
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
-	ModelManager::GetInstance()->LoadModel("circle.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("terrain.obj");
 
