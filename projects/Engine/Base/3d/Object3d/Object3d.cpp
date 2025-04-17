@@ -11,9 +11,6 @@ void Object3d::Init() {
 	pipelineManager_ = std::make_unique<PipelineManager>();
 	pipelineManager_->PSOSetting("object3d");
 
-	/*model_ = std::make_unique<Model>();
-	model_->Init(dxCommon_);*/
-
 	// 座標変換用
 	transformationMatrixResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(TransformationMatrix));
 	transformationMatrixResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
@@ -38,7 +35,7 @@ void Object3d::Update() {
 
 	Matrix4x4 worldMatrix = MyMath::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 	Matrix4x4 projectionMatrix = MyMath::MakePerspectiveFovMatrix(0.45f, float(winApp_->GetWindowWidth()) / float(winApp_->GetWindowHeight()), 0.1f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrix /* = MyMath::Multiply(worldMatrix, MyMath::Multiply(viewMatrix, projectionMatrix))*/;
+	Matrix4x4 worldViewProjectionMatrix;
 	if (defaultCamera_) {
 		const Matrix4x4& viewProjectionMatrix = defaultCamera_->GetViewProjectionMatrix();
 		worldViewProjectionMatrix = MyMath::Multiply(worldMatrix, viewProjectionMatrix);

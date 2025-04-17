@@ -60,6 +60,8 @@ private:
 private:
 	// ウィンドウズアプリケーション
 	WinApp* winApp_ = nullptr;
+	// PSO
+	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
 
 	// バッファーリソース
 	ComPtr<ID3D12Resource> vertexResource;

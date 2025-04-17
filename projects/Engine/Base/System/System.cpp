@@ -37,8 +37,6 @@
 std::unique_ptr<WinApp> winApp_ = nullptr;
 // DirectXCommon
 std::unique_ptr<DirectXCommon> dxCommon_ = nullptr;
-// Pipeline
-std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
 // Input
 std::unique_ptr<Input> input_ = nullptr;
 // Mesh
@@ -49,7 +47,6 @@ std::unique_ptr<SrvManager> srvManager_ = nullptr;
 std::unique_ptr<ImGuiManager> imguiManager_ = nullptr;
 
 DirectXCommon* System::GetDxCommon() { return dxCommon_.get(); }
-PipelineManager* System::GetPipelineManager() { return pipelineManager_.get(); }
 
 Input* System::GetInput() { return input_.get(); }
 
@@ -69,10 +66,6 @@ void System::Initialize(const char* title, int width, int height) {
 	// DirectXの初期化処理
 	dxCommon_ = std::make_unique<DirectXCommon>();
 	dxCommon_->Initialize(winApp_.get());
-
-	// pipelineの初期化
-	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("object3d");
 
 	// SrvManager
 	srvManager_ = std::make_unique<SrvManager>();
@@ -128,7 +121,6 @@ void System::Finalize() {
 
 	winApp_.reset();
 	dxCommon_.reset();
-	pipelineManager_.reset();
 	input_.reset();
 	mesh_.reset();
 

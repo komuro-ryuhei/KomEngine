@@ -16,15 +16,19 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 		// Shaderをコンパイルする
 		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Object3D.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(vsBlob != nullptr);
-
 		psBlob = compiler_->CompileShader(L"./Resources/shaders/Object3D.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
 	} else if (objectType == "particle") {
 		// Shaderをコンパイルする
 		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Particle.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(vsBlob != nullptr);
-
 		psBlob = compiler_->CompileShader(L"./Resources/shaders/Particle.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(psBlob != nullptr);
+	} else if (objectType == "sprite") {
+		// Shaderをコンパイルする
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Sprite.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(vsBlob != nullptr);
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/Sprite.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
 	}
 }

@@ -34,7 +34,9 @@ void Sprite::Init(const std::string& textureFilePath) {
 
 	textureFilePath_ = textureFilePath;
 
-	System::GetPipelineManager()->CreatePSO();
+	// パイプラインマネージャーの初期化
+	pipelineManager_ = std::make_unique<PipelineManager>();
+	pipelineManager_->PSOSetting("sprite");
 
 	// リソース作成
 	vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * 4);
@@ -169,6 +171,14 @@ void Sprite::Draw() {
 
 	ComPtr<ID3D12GraphicsCommandList> commandList = System::GetDxCommon()->GetCommandList();
 
+	// ルートシグネチャをセット
+	commandList->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
+	// グラフィックスパイプラインステートをセット
+	commandList->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
+
+	// プリミティブトポロジーをセット
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	// マテリアルCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 	// VBVを設定
@@ -188,9 +198,9 @@ void Sprite::PreDraw() {
 	ComPtr<ID3D12GraphicsCommandList> commandList = System::GetDxCommon()->GetCommandList();
 
 	// ルートシグネチャをセット
-	commandList->SetGraphicsRootSignature(System::GetPipelineManager()->GetRootSignature());
+	commandList->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
 	// グラフィックスパイプラインステートをセット
-	commandList->SetPipelineState(System::GetPipelineManager()->GetGraphicsPipelineState());
+	commandList->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
 
 	// プリミティブトポロジーをセット
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -212,7 +222,10 @@ void Sprite::ImGuiDebug() {
 	//
 	ImGui::Begin("Sprite");
 
-	ImGui::DragFloat3("transfoem", &position_.x, 1.0f);
+	ImGui::DragFloat2("transfoem", &position_.x, 1.0f);
+	ImGui::DragFloat2("uvTranslate", &uvTransform.translate.x, 0.01f);
+	ImGui::DragFloat2("uvScale", &uvTransform.scale.x, 0.01f);
+	ImGui::DragFloat("uvRotate", &uvTransform.rotate.z, 0.01f);
 
 	ImGui::End();
 }

@@ -80,7 +80,6 @@ public:
 	/// getter・setter
 	/// </summary>
 	static DirectXCommon* GetDxCommon();
-	static PipelineManager* GetPipelineManager();
 	static Input* GetInput();
 	static SrvManager* GetSrvManager();
 	static Mesh* GetMesh();
