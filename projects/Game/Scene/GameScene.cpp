@@ -10,6 +10,7 @@ void GameScene::Init() {
 	const std::string& circle = "./Resources/images/circle.png";
 	const std::string& circle2 = "./Resources/images/circle2.png";
 	const std::string& monsterBallTexture = "./Resources/images/monsterBall.png";
+	const std::string& ring = "./Resources/images/gradationLine.png";
 
 	TextureManager::GetInstance()->LoadTexture(uvTexture);
 	TextureManager::GetInstance()->LoadTexture(circle);
@@ -51,13 +52,18 @@ void GameScene::Init() {
 
 	//
 	ParticleManager::GetInstance()->Init(camera_.get());
-	ParticleManager::GetInstance()->CreateParticleGeoup("circle", circle2);
-	ParticleManager::GetInstance()->CreateParticleGeoup("monsterBall", monsterBallTexture);
+	ParticleManager::GetInstance()->CreateParticleGeoup("hit", circle2, "a");
+	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
+	ParticleManager::GetInstance()->CreateParticleGeoup("ring", ring, "ring");
+
 	emitter_ = std::make_unique<ParticleEmitter>();
-	emitter_->Init("circle", {0.0f, 0.0f, 10.0f}, 8);
+	emitter_->Init("hit", {0.0f, 0.0f, 10.0f}, 8);
 
 	emitter2_ = std::make_unique<ParticleEmitter>();
-	emitter2_->Init("monsterBall", {0.0f, 0.0f, 10.0f}, 50);
+	emitter2_->Init("explosion", {0.0f, 0.0f, 10.0f}, 50);
+
+	ringEmitter_ = std::make_unique<ParticleEmitter>();
+	ringEmitter_->Init("ring", {0.0f, 0.0f, 10.0f}, 1);
 }
 
 void GameScene::Update() {
@@ -80,9 +86,15 @@ void GameScene::Update() {
 	if (ImGui::Button("Emit Particles")) {
 		emitter_->Update();
 	}
+
 	if (ImGui::Button("Emit2 Particles")) {
 		emitter2_->Update();
 	}
+
+	if (ImGui::Button("Emit3 Particles")) {
+		ringEmitter_->Update();
+	}
+	ringEmitter_->Update();
 
 	//
 	camera_->ImGuiDebug();
