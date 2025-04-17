@@ -35,6 +35,9 @@ struct ParticleGroup {
 	ComPtr<ID3D12Resource> instancingResource;
 	uint32_t kInstanceNum;
 	ParticleForGPU* instancingData;
+	std::vector<VertexData> vertices;
+	ComPtr<ID3D12Resource> vertexResource;
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 };
 
 class ParticleManager {
@@ -52,7 +55,7 @@ public:
 
 	void Emit(const std::string name, const Vector3& position, uint32_t count);
 
-	void CreateParticleGeoup(const std::string name, const std::string textureFilePath);
+	void CreateParticleGeoup(const std::string name, const std::string textureFilePath, const std::string& particleType);
 
 	// ランダムで拡散するパーティクル
 	Particle MakeRandomParticle(std::mt19937& randomEngine, const Vector3& translate);
@@ -84,4 +87,8 @@ private:
 
 	// 
 	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
+
+private:
+
+	void MakeVertexData(ParticleGroup& group, const std::string& particleType);
 };

@@ -30,70 +30,70 @@ void ParticleManager::Init(Camera* camera) {
 
 	// 頂点データの初期化
 
-	// 座標
-	// Ringの頂点データを生成する
-	const uint32_t kRingDivide = 32;
-	const float kOuterRadius = 2.0f;
-	const float kInnerRadius = 1.0f;
-	const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kRingDivide);
+	//// 座標
+	//// Ringの頂点データを生成する
+	// const uint32_t kRingDivide = 32;
+	// const float kOuterRadius = 2.0f;
+	// const float kInnerRadius = 1.0f;
+	// const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kRingDivide);
 
-	for (uint32_t index = 0; index < kRingDivide; ++index) {
-		float sin = std::sin(index * radianPerDivide);
-		float cos = std::cos(index * radianPerDivide);
-		float sinNext = std::sin((index + 1) * radianPerDivide);
-		float cosNext = std::cos((index + 1) * radianPerDivide);
-		float u = float(index) / float(kRingDivide);
-		float uNext = float(index + 1) / float(kRingDivide);
+	// for (uint32_t index = 0; index < kRingDivide; ++index) {
+	//	float sin = std::sin(index * radianPerDivide);
+	//	float cos = std::cos(index * radianPerDivide);
+	//	float sinNext = std::sin((index + 1) * radianPerDivide);
+	//	float cosNext = std::cos((index + 1) * radianPerDivide);
+	//	float u = float(index) / float(kRingDivide);
+	//	float uNext = float(index + 1) / float(kRingDivide);
 
-		// 外側リング -> 内側リングの順に三角形を作成
-		modelData.vertices.push_back({
-		    {-sin * kOuterRadius, cos * kOuterRadius, 0.0f, 1.0f},
-		    {u, 0.0f},
-		    {0.0f, 0.0f, 1.0f}
-        });
-		modelData.vertices.push_back({
-		    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
-		    {uNext, 0.0f},
-		    {0.0f, 0.0f, 1.0f}
-        });
-		modelData.vertices.push_back({
-		    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
-		    {u, 1.0f},
-		    {0.0f, 0.0f, 1.0f}
-        });
+	//	// 外側リング -> 内側リングの順に三角形を作成
+	//	modelData.vertices.push_back({
+	//	    {-sin * kOuterRadius, cos * kOuterRadius, 0.0f, 1.0f},
+	//	    {u, 0.0f},
+	//	    {0.0f, 0.0f, 1.0f}
+	//       });
+	//	modelData.vertices.push_back({
+	//	    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
+	//	    {uNext, 0.0f},
+	//	    {0.0f, 0.0f, 1.0f}
+	//       });
+	//	modelData.vertices.push_back({
+	//	    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
+	//	    {u, 1.0f},
+	//	    {0.0f, 0.0f, 1.0f}
+	//       });
 
-		modelData.vertices.push_back({
-		    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
-		    {uNext, 0.0f},
-		    {0.0f, 0.0f, 1.0f}
-        });
-		modelData.vertices.push_back({
-		    {-sinNext * kInnerRadius, cosNext * kInnerRadius, 0.0f, 1.0f},
-		    {uNext, 1.0f},
-		    {0.0f, 0.0f, 1.0f}
-        });
-		modelData.vertices.push_back({
-		    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
-		    {u, 1.0f},
-		    {0.0f, 0.0f, 1.0f}
-        });
-	}
+	//	modelData.vertices.push_back({
+	//	    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
+	//	    {uNext, 0.0f},
+	//	    {0.0f, 0.0f, 1.0f}
+	//       });
+	//	modelData.vertices.push_back({
+	//	    {-sinNext * kInnerRadius, cosNext * kInnerRadius, 0.0f, 1.0f},
+	//	    {uNext, 1.0f},
+	//	    {0.0f, 0.0f, 1.0f}
+	//       });
+	//	modelData.vertices.push_back({
+	//	    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
+	//	    {u, 1.0f},
+	//	    {0.0f, 0.0f, 1.0f}
+	//       });
+	//}
 
-	// 頂点リソースの作成
-	vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * modelData.vertices.size());
+	//// 頂点リソースの作成
+	// vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * modelData.vertices.size());
 
-	// VBVの作成
-	// リソースの先頭のアドレスから使う
-	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-	// 使用するリソースのサイズは頂点3つ分のサイズ
-	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
-	// 1頂点当あたりのサイズ
-	vertexBufferView.StrideInBytes = sizeof(VertexData);
+	//// VBVの作成
+	//// リソースの先頭のアドレスから使う
+	// vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	//// 使用するリソースのサイズは頂点3つ分のサイズ
+	// vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
+	//// 1頂点当あたりのサイズ
+	// vertexBufferView.StrideInBytes = sizeof(VertexData);
 
-	// 頂点リソースに頂点データを書き込む
-	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	// 頂点データにリソースをコピー
-	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
+	//// 頂点リソースに頂点データを書き込む
+	// vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	//// 頂点データにリソースをコピー
+	// std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
 }
 
 void ParticleManager::Update() {
@@ -157,17 +157,13 @@ void ParticleManager::Draw() {
 	// コマンド: VBV(Vertex Buffer View)を設定
 	System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
 
-	// 全てのパーティクルグループについて処理する
 	for (auto& [name, group] : particleGroups) {
+		System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &group.vertexBufferView);
 
-		// コマンド: インスタンシングデータのSRVをDescriptorTableに設定
 		System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(0, System::GetSrvManager()->GetGPUDescriptorHandle(group.instancingSrvIndex));
-
-		// コマンド: テクスチャのSRVをDescriptorTableに設定
 		System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(1, System::GetSrvManager()->GetGPUDescriptorHandle(group.srvIndex));
 
-		// コマンド: DrawCall (インスタンシング描画)
-		System::GetDxCommon()->GetCommandList()->DrawInstanced(6, static_cast<UINT>(group.particles.size()), 0, 0);
+		System::GetDxCommon()->GetCommandList()->DrawInstanced(static_cast<UINT>(group.vertices.size()), static_cast<UINT>(group.particles.size()), 0, 0);
 	}
 }
 
@@ -204,13 +200,16 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 	}
 }
 
-void ParticleManager::CreateParticleGeoup(const std::string name, const std::string textureFilePath) {
+void ParticleManager::CreateParticleGeoup(const std::string name, const std::string textureFilePath, const std::string& particleType) {
 
 	// 登録済みかチェック
 	assert(particleGroups.find(name) == particleGroups.end());
 
 	ParticleGroup newParticle;
 	newParticle.materialData.textureFilePath = textureFilePath;
+
+	// 頂点データを生成して代入
+	MakeVertexData(newParticle, particleType);
 
 	TextureManager::GetInstance()->LoadTexture(textureFilePath);
 
@@ -279,7 +278,80 @@ Particle ParticleManager::MakeRingParticle(std::mt19937& randomEngine, const Vec
 	particle.transform.translate = translate;
 	particle.velocity = {0.0f, 0.0f, 0.0f};
 	particle.color = {1.0f, 1.0f, 1.0f, 1.0f};
-	particle.lifeTime = 1.0f;
+	particle.lifeTime = 0.1f;
 	particle.currentTime = 0.0f;
 	return particle;
+}
+
+void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& particleType) {
+	std::vector<VertexData> vertices;
+
+	if (particleType == "ring") {
+		const uint32_t kRingDivide = 32;
+		const float kOuterRadius = 2.0f;
+		const float kInnerRadius = 1.0f;
+		const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kRingDivide);
+
+		for (uint32_t index = 0; index < kRingDivide; ++index) {
+			float sin = std::sin(index * radianPerDivide);
+			float cos = std::cos(index * radianPerDivide);
+			float sinNext = std::sin((index + 1) * radianPerDivide);
+			float cosNext = std::cos((index + 1) * radianPerDivide);
+			float u = float(index) / float(kRingDivide);
+			float uNext = float(index + 1) / float(kRingDivide);
+
+			vertices.push_back({
+			    {-sin * kOuterRadius, cos * kOuterRadius, 0.0f, 1.0f},
+                {u, 0.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
+                {uNext, 0.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
+                {u, 1.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+
+			vertices.push_back({
+			    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
+                {uNext, 0.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sinNext * kInnerRadius, cosNext * kInnerRadius, 0.0f, 1.0f},
+                {uNext, 1.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
+                {u, 1.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+		}
+	} else {
+		vertices = {
+		    {{1.0f, 1.0f, 0.0f, 1.0f},   {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+            {{-1.0f, 1.0f, 0.0f, 1.0f},  {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+		    {{1.0f, -1.0f, 0.0f, 1.0f},  {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+            {{1.0f, -1.0f, 0.0f, 1.0f},  {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+		    {{-1.0f, 1.0f, 0.0f, 1.0f},  {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+            {{-1.0f, -1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}
+        };
+	}
+
+	// 頂点リソース作成
+	group.vertices = vertices;
+	group.vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * group.vertices.size());
+
+	void* mappedData = nullptr;
+	group.vertexResource->Map(0, nullptr, &mappedData);
+	std::memcpy(mappedData, group.vertices.data(), sizeof(VertexData) * group.vertices.size());
+
+	group.vertexBufferView.BufferLocation = group.vertexResource->GetGPUVirtualAddress();
+	group.vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * group.vertices.size());
+	group.vertexBufferView.StrideInBytes = sizeof(VertexData);
 }

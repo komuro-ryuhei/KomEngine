@@ -52,18 +52,18 @@ void GameScene::Init() {
 
 	//
 	ParticleManager::GetInstance()->Init(camera_.get());
-	ParticleManager::GetInstance()->CreateParticleGeoup("hit", circle2);
-	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture);
-	ParticleManager::GetInstance()->CreateParticleGeoup("ring", ring);
+	ParticleManager::GetInstance()->CreateParticleGeoup("hit", circle2, "a");
+	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
+	ParticleManager::GetInstance()->CreateParticleGeoup("ring", ring, "ring");
 
 	emitter_ = std::make_unique<ParticleEmitter>();
-	emitter_->Init("hit", {0.0f, 0.0f, 10.0f}, 3);
+	emitter_->Init("hit", {0.0f, 0.0f, 10.0f}, 8);
 
 	emitter2_ = std::make_unique<ParticleEmitter>();
 	emitter2_->Init("explosion", {0.0f, 0.0f, 10.0f}, 50);
 
 	ringEmitter_ = std::make_unique<ParticleEmitter>();
-	ringEmitter_->Init("ring", {0.0f, 0.0f, 10.0f}, 3);
+	ringEmitter_->Init("ring", {0.0f, 0.0f, 10.0f}, 1);
 }
 
 void GameScene::Update() {
@@ -86,12 +86,14 @@ void GameScene::Update() {
 	if (ImGui::Button("Emit Particles")) {
 		emitter_->Update();
 	}
-	emitter_->Update();
 
 	if (ImGui::Button("Emit2 Particles")) {
 		emitter2_->Update();
 	}
 
+	if (ImGui::Button("Emit3 Particles")) {
+		ringEmitter_->Update();
+	}
 	ringEmitter_->Update();
 
 	//
