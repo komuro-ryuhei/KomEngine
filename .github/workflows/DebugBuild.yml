@@ -5,7 +5,7 @@ on:
       - master
 env:
   # リポジトリのルートディレクトリを基点としたソリューションファイルのパス
-  SOLUTION_FILE_PATH: projects/DirectX_GE3.sln
+  SOLUTION_FILE_PATH: projects/KomEngine.sln
   # VisualStudioの構成 ( Debug / Release )
   CONFIGURATION: Debug
 
