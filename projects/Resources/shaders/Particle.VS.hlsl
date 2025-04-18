@@ -21,11 +21,12 @@ VertexShaderOutput main(VertexShaderInput input, uint instancesId : SV_InstanceI
 {
     VertexShaderOutput output;
     output.position = mul(input.position, gParticle[instancesId].WVP);
+
     output.texcoord = input.texcoord;
-    
+    output.texcoord.y = 1.0f - output.texcoord.y;
+
     output.normal = normalize(mul(input.normal, (float3x3) gParticle[instancesId].World));
-    
     output.color = gParticle[instancesId].color;
-    
+
     return output;
 }

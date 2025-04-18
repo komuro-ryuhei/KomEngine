@@ -54,6 +54,7 @@ void GameScene::Init() {
 	ParticleManager::GetInstance()->CreateParticleGeoup("hit", circle2, "a");
 	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
 	ParticleManager::GetInstance()->CreateParticleGeoup("ring", ring, "ring");
+	ParticleManager::GetInstance()->CreateParticleGeoup("cylinder", ring, "cylinder");
 
 	emitter_ = std::make_unique<ParticleEmitter>();
 	emitter_->Init("hit", {0.0f, 0.0f, 10.0f}, 8);
@@ -63,6 +64,9 @@ void GameScene::Init() {
 
 	ringEmitter_ = std::make_unique<ParticleEmitter>();
 	ringEmitter_->Init("ring", {0.0f, 0.0f, 10.0f}, 1);
+
+	cylinderEmitter_ = std::make_unique<ParticleEmitter>();
+	cylinderEmitter_->Init("cylinder", {0.0f, 0.0f, 10.0f}, 1);
 }
 
 void GameScene::Update() {
@@ -90,10 +94,15 @@ void GameScene::Update() {
 		emitter2_->Update();
 	}
 
-	if (ImGui::Button("Emit3 Particles")) {
+	if (ImGui::Button("Ring Particles")) {
 		ringEmitter_->Update();
 	}
-	ringEmitter_->Update();
+
+	if (ImGui::Button("Cylinder Particles")) {
+		cylinderEmitter_->Update();
+	}
+	// ringEmitter_->Update();
+	cylinderEmitter_->Update();
 
 	//
 	camera_->ImGuiDebug();
@@ -103,10 +112,10 @@ void GameScene::Update() {
 
 void GameScene::Draw() {
 
-	sprite_->Draw();
+	// sprite_->Draw();
 
 	//
-	object3d_->Draw();
+	// object3d_->Draw();
 
 	// 地面
 	// glassObject_->Draw();

@@ -129,6 +129,8 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 			group.particles.push_back(MakeNewParticle(randomEngine, position));
 		} else if (name == "ring") {
 			group.particles.push_back(MakeRingParticle(randomEngine, position));
+		} else if (name == "cylinder") {
+			group.particles.push_back(MakeCylinderParticle(randomEngine, position));
 		}
 	}
 }
@@ -216,7 +218,24 @@ Particle ParticleManager::MakeRingParticle(std::mt19937& randomEngine, const Vec
 	return particle;
 }
 
+Particle ParticleManager::MakeCylinderParticle(std::mt19937& randomEngine, const Vector3& translate) {
+
+	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+
+	//
+	Particle particle;
+	particle.transform.scale = {1.0f, 1.0f, 1.0f};
+	particle.transform.rotate = {0.0f, distRotate(randomEngine), 0.0f};
+	particle.transform.translate = translate;
+	particle.velocity = {0.0f, 0.0f, 0.0f};
+	particle.color = {1.0f, 0.0f, 0.0f, 1.0f};
+	particle.lifeTime = 0.1f;
+	particle.currentTime = 0.0f;
+	return particle;
+}
+
 void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& particleType) {
+
 	std::vector<VertexData> vertices;
 
 	if (particleType == "ring") {
@@ -248,7 +267,6 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
                 {u, 1.0f},
                 {0.0f, 0.0f, 1.0f}
             });
-
 			vertices.push_back({
 			    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
                 {uNext, 0.0f},
@@ -264,6 +282,49 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
                 {u, 1.0f},
                 {0.0f, 0.0f, 1.0f}
             });
+		}
+	} else if (particleType == "cylinder") {
+		const uint32_t kLineCount = 32;
+		const float radius = 2.0f;
+
+		// ★ ランダム生成器
+		std::random_device seed;
+		std::mt19937 randEngine(seed());
+		std::uniform_real_distribution<float> heightDist(1.5f, 2.5f); // 高さの範囲
+
+		for (uint32_t i = 0; i < kLineCount; ++i) {
+			float angle = float(i) / float(kLineCount) * 2.0f * std::numbers::pi_v<float>;
+			float nextAngle = float(i + 1) / float(kLineCount) * 2.0f * std::numbers::pi_v<float>;
+
+			float x0 = std::cos(angle) * radius;
+			float z0 = std::sin(angle) * radius;
+
+			float x1 = std::cos(nextAngle) * radius;
+			float z1 = std::sin(nextAngle) * radius;
+
+			// ★ ランダムな高さ
+			float height0 = heightDist(randEngine);
+			float height1 = heightDist(randEngine);
+
+			// 頂点位置
+			Vector4 p0 = {x0, 0.0f, z0, 1.0f};
+			Vector4 p1 = {x1, 0.0f, z1, 1.0f};
+			Vector4 p2 = {x0, height0, z0, 1.0f};
+			Vector4 p3 = {x1, height1, z1, 1.0f};
+
+			Vector2 uvBottom = {0.0f, 1.0f};
+			Vector2 uvTop = {0.0f, 0.0f};
+			Vector3 normal = {0.0f, 1.0f, 0.0f};
+
+			// 三角形1
+			vertices.push_back({p0, uvBottom, normal});
+			vertices.push_back({p1, uvBottom, normal});
+			vertices.push_back({p2, uvTop, normal});
+
+			// 三角形2
+			vertices.push_back({p2, uvTop, normal});
+			vertices.push_back({p1, uvBottom, normal});
+			vertices.push_back({p3, uvTop, normal});
 		}
 	} else {
 		vertices = {

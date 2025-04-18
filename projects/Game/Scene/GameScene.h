@@ -43,4 +43,5 @@ private:
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;
 	std::unique_ptr<ParticleEmitter> emitter2_ = nullptr;
 	std::unique_ptr<ParticleEmitter> ringEmitter_ = nullptr;
+	std::unique_ptr<ParticleEmitter> cylinderEmitter_ = nullptr;
 };
