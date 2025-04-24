@@ -16,6 +16,8 @@
 #include "Engine/Base/PSO/Compiler/Compiler.h"
 #include "Engine/Base/WinApp/WinApp.h"
 #include "Engine/lib/StringUtility/StringUtility.h"
+#include "Engine/lib/ComPtr/ComPtr.h"
+#include "Engine/lib/Math/MyMath.h"
 
 /// <summary>
 /// DirectXCommon
@@ -142,6 +144,9 @@ private: // メンバ変数
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
 
+	// 
+	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetHandle_;
+
 public:
 
 	static const uint32_t kMaxSRVCount;
@@ -201,14 +206,21 @@ private: // メンバ関数
 	void UpdateFixFPS();
 
 	/// <summary>
-	/// ImGuiの初期化
+	/// DSVの初期化
 	/// </summary>
-	void InitializeImGui();
-
-
 	void InitializeDepthStencilView();
 
-	void ShowImGui();
+	// 
+	ComPtr<ID3D12Resource> CreateRenderTextureResource(ID3D12Device* device, UINT width, UINT height, DXGI_FORMAT format, const Vector4& clearColor);
+	// 
+	void OffScreeenRenderTargetView();
+	// 
+	void OffScreenShaderResourceView();
+
+public:
+
+	void RenderToTexture();
+
 
 public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);

@@ -48,16 +48,17 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 	CreateFence();
 	// シザリング矩形の初期化
 	InitializeScissoringRect();
-	// ImGuiの初期化
-	InitializeImGui();
 
 	InitializeDepthStencilView();
+
+	// 
+	OffScreeenRenderTargetView();
 }
 
 void DirectXCommon::PreDraw() {
 
 	// 指定した深度で画面全体をクリアする
-	commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	// commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	TransitionBarrier();
 
@@ -83,23 +84,11 @@ void DirectXCommon::PreDraw() {
 
 	commandList_->RSSetViewports(1, &viewPort);       // Viewportを設定
 	commandList_->RSSetScissorRects(1, &scissorRect); // Scissorを設定
-
-	// ImGui_ImplDX12_NewFrame();
-	// ImGui_ImplWin32_NewFrame();
-	// ImGui::NewFrame();
-
-	// ShowImGui();
-
-	//// ImGuiの内部コマンドを生成する
-	// ImGui::Render();
 }
 
 void DirectXCommon::PostDraw() {
 
 	HRESULT hr;
-
-	// 実際のCommandListのImGuiの描画コマンドを積む
-	// ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList_.Get());
 
 	// 画面に描く処理はすべて終わり、画面に移すので状態を遷移
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -139,20 +128,12 @@ void DirectXCommon::PostDraw() {
 	assert(SUCCEEDED(hr));
 	hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
 	assert(SUCCEEDED(hr));
-
-	// ImGuiの終了処理。初期化と逆順
-	/*ImGui_ImplDX12_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();*/
 }
 
 void DirectXCommon::CrearRenderTargets() {
 
 	// 書き込むバックバッファのインデックスを取得
 	UINT bbIndex = swapChain_->GetCurrentBackBufferIndex();
-
-	// 描画先のRTVを設定する
-	// commandList_->OMSetRenderTargets(1, &rtvHandles[bbIndex], false, nullptr);
 
 	// 描画先のRTVとDSVを設定する
 	commandList_->OMSetRenderTargets(1, &rtvHandles[bbIndex], false, &dsvHandle);
@@ -451,11 +432,6 @@ ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(ID3D12Device* device,
 	return vertexResource;
 }
 
-void DirectXCommon::InitializeImGui() {
-
-	// ImGuiの初期化
-}
-
 void DirectXCommon::InitializeDepthStencilView() {
 
 	depthStencilResource = CreateDepthStencilTextureResource(device_.Get(), winApp_->GetWindowWidth(), winApp_->GetWindowHeight());
@@ -471,10 +447,6 @@ void DirectXCommon::InitializeDepthStencilView() {
 	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	// 比較関数はLessEqual
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-}
-
-void DirectXCommon::ShowImGui() {
-	// 開発用UIの処理
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetCPUDescriptorHandle(ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index) {
@@ -588,4 +560,80 @@ ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureResource(ID3D12De
 	HRESULT hr = device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &depthClearValue, IID_PPV_ARGS(&resource));
 	assert(SUCCEEDED(hr));
 	return resource;
+}
+
+///////////////////////////////
+
+ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(ID3D12Device* device, UINT width, UINT height, DXGI_FORMAT format, const Vector4& clearColor) {
+
+	// 生成するResourceの設定
+	D3D12_RESOURCE_DESC resourceDesc{};
+	resourceDesc.Width = width;                                   // Textureの幅
+	resourceDesc.Height = height;                                 // Textureの高さ
+	resourceDesc.MipLevels = 1;                                   // mipmapの数
+	resourceDesc.DepthOrArraySize = 1;                            //
+	resourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;        // DepthStencilとして利用可能なフォーマット
+	resourceDesc.SampleDesc.Count = 1;                            // サンプリングカウント
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;  // 2次元
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET; // DepthStencilとして使う通知
+
+	//
+	D3D12_HEAP_PROPERTIES heapProperties{};
+	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	//
+	D3D12_CLEAR_VALUE clearValue;
+	clearValue.Format = format;
+	clearValue.Color[0] = clearColor.x;
+	clearValue.Color[1] = clearColor.y;
+	clearValue.Color[2] = clearColor.z;
+	clearValue.Color[3] = clearColor.w;
+
+	ComPtr<ID3D12Resource> resource = nullptr;
+
+	device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&resource));
+
+	return resource;
+}
+
+void DirectXCommon::OffScreeenRenderTargetView() {
+
+	//
+	const Vector4 kRenderTargetClearValue = {1.0f, 0.0f, 0.0f, 1.0f};
+	auto renderTextureResource = CreateRenderTextureResource(device_.Get(), winApp_->GetWindowWidth(), winApp_->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
+
+	// ディスクリプタヒープの先頭ハンドルを取得
+	renderTargetHandle_ = srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+
+	// SRVの設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC renderTextureSrvDesc{};
+	renderTextureSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	renderTextureSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	renderTextureSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	renderTextureSrvDesc.Texture2D.MipLevels = 1;
+
+	// SRVの生成
+	device_->CreateShaderResourceView(renderTextureResource.Get(), &renderTextureSrvDesc, srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+}
+
+void DirectXCommon::OffScreenShaderResourceView() {}
+
+void DirectXCommon::RenderToTexture() {
+
+	// レンダーテクスチャをターゲットとして設定
+	commandList_->OMSetRenderTargets(1, &renderTargetHandle_, false, &dsvHandle);
+
+	// レンダーテクスチャをクリア
+	float clearColor[] = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色でクリア
+	commandList_->ClearRenderTargetView(renderTargetHandle_, clearColor, 0, nullptr);
+
+	// 深度ステンシルをクリア
+	commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+	// ビューポートとシザー矩形を設定
+	commandList_->RSSetViewports(1, &viewPort);
+	commandList_->RSSetScissorRects(1, &scissorRect);
+
+	// オブジェクトの描画処理
+	// DrawInstanced や DrawIndexedInstanced を呼び出す
 }
