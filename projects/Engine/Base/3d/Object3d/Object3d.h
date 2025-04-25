@@ -7,14 +7,14 @@
 #include <vector>
 
 // MyClass
-#include "Engine/Base/DirectXCommon/DirectXCommon.h"
-#include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
-#include "Engine/Base/TextureManager/TextureManager.h"
-#include "Engine/Base/ModelManager/ModelManager.h"
-#include "Engine/Base/WinApp/WinApp.h"
-#include "Engine/lib/Math/MyMath.h"
 #include "Engine/Base/3d/Model/Model.h"
 #include "Engine/Base/Camera/Camera.h"
+#include "Engine/Base/DirectXCommon/DirectXCommon.h"
+#include "Engine/Base/ModelManager/ModelManager.h"
+#include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
+#include "Engine/Base/TextureManager/TextureManager.h"
+#include "Engine/Base/WinApp/WinApp.h"
+#include "Engine/lib/Math/MyMath.h"
 #include "struct.h"
 
 // 3Dオブジェクト
@@ -38,6 +38,15 @@ public: // メンバ関数
 	void SetModel(const std::string& filePath);
 	void SetCamera(Camera* camera);
 	void SetDefaultCamera(Camera* camera);
+	void SetScale(const Vector3& scale);
+	void SetTranslate(const Vector3& translate);
+	void SetRotate(const Vector3& rotate);
+	void SetTransform(const Transform& transform);
+
+	// getter
+	Vector3 GetScale() const;
+	Vector3 GetRotate() const;
+	Vector3 GetTranslate() const;
 
 	// getter
 	Camera* GetDefaultCamera() const;
@@ -58,8 +67,7 @@ private:
 	ComPtr<ID3D12Resource> transformationMatrixResource;
 	TransformationMatrix* transformationMatrixData = nullptr;
 
-
-	Transform transform;
+	Transform transform_;
 	Transform cameraTransform;
 
 	//

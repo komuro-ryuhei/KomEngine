@@ -15,6 +15,8 @@
 
 #include "Game/Scene/IScene.h"
 
+#include "Game/Entity/Player/Player.h"
+
 class GameScene : public IScene {
 public:
 	void Init() override;
@@ -39,9 +41,12 @@ private:
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 	std::unique_ptr<Object3d> glassObject_ = nullptr;
 
-	// 
+	// effect
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;
 	std::unique_ptr<ParticleEmitter> emitter2_ = nullptr;
 	std::unique_ptr<ParticleEmitter> ringEmitter_ = nullptr;
 	std::unique_ptr<ParticleEmitter> cylinderEmitter_ = nullptr;
+
+	// Player
+	std::unique_ptr<Player> player_ = nullptr;
 };

@@ -30,6 +30,7 @@ void GameScene::Init() {
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("terrain.obj");
+	ModelManager::GetInstance()->LoadModel("axis.obj");
 
 	object3d_->SetModel("sphere.obj");
 	glassObject_->SetModel("terrain.obj");
@@ -67,6 +68,10 @@ void GameScene::Init() {
 
 	cylinderEmitter_ = std::make_unique<ParticleEmitter>();
 	cylinderEmitter_->Init("cylinder", {0.0f, 0.0f, 10.0f}, 1);
+
+	// Player
+	player_ = std::make_unique<Player>();
+	player_->Init(camera_.get(), sprite_.get());
 }
 
 void GameScene::Update() {
@@ -104,10 +109,15 @@ void GameScene::Update() {
 	// ringEmitter_->Update();
 	cylinderEmitter_->Update();
 
+	// Player
+	player_->Update();
+
 	//
 	camera_->ImGuiDebug();
 	object3d_->ImGuiDebug();
 	// glassObject_->ImGuiDebug();
+
+	player_->ImGuiDebug();
 }
 
 void GameScene::Draw() {
@@ -119,6 +129,9 @@ void GameScene::Draw() {
 
 	// 地面
 	// glassObject_->Draw();
+
+	// Player
+	player_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 }

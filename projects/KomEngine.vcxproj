@@ -104,6 +104,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game\Entity\Enemy\Enemy.cpp" />
     <ClCompile Include="Game\Scene\AbstractSceneFactory.cpp" />
     <ClCompile Include="Engine\Base\Audio\Audio.cpp" />
     <ClCompile Include="Engine\Base\Camera\Camera.cpp" />
@@ -145,8 +146,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Game\Scene\SceneFactory.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleManager.cpp" />
+    <ClCompile Include="Game\Entity\Player\Player.cpp" />
+    <ClCompile Include="Game\Entity\Player\PlayerBullet.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\Entity\Enemy\Enemy.h" />
     <ClInclude Include="Game\Scene\AbstractSceneFactory.h" />
     <ClInclude Include="Engine\Base\Audio\Audio.h" />
     <ClInclude Include="Engine\Base\Camera\Camera.h" />
@@ -190,6 +194,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Game\Scene\SceneFactory.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleManager.h" />
+    <ClInclude Include="Game\Entity\Player\Player.h" />
+    <ClInclude Include="Game\Entity\Player\PlayerBullet.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="Game\Scene\TitleScene.h" />
   </ItemGroup>
