@@ -49,7 +49,7 @@ void GameScene::Init() {
 	SoundData soundData = audio_->SoundLoadWave("Resources/fanfare.wav");
 	// audio_->SoundPlayWave(audio_->GetXAudio2(), soundData);
 
-	//
+	// 
 	ParticleManager::GetInstance()->Init(camera_.get());
 	ParticleManager::GetInstance()->CreateParticleGeoup("hit", circle2, "a");
 	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
@@ -115,7 +115,7 @@ void GameScene::Draw() {
 	// sprite_->Draw();
 
 	//
-	// object3d_->Draw();
+	object3d_->Draw();
 
 	// 地面
 	// glassObject_->Draw();

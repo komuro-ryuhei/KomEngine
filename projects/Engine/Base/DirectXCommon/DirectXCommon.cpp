@@ -293,7 +293,7 @@ void DirectXCommon::CreateRenderTargets() {
 
 	HRESULT hr;
 
-	rtvDescriptorHeap_ = CreateDescriptorHeap(device_.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+	rtvDescriptorHeap_ = CreateDescriptorHeap(device_.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 3, false);
 
 	hr = swapChain_->GetBuffer(0, IID_PPV_ARGS(&swapChainResources[0]));
 	// うまく取得できなければ起動できない
@@ -317,6 +317,7 @@ void DirectXCommon::CreateRenderTargets() {
 	device_->CreateRenderTargetView(swapChainResources[1].Get(), &rtvDesc, rtvHandles[1]);
 
 	// 3つ目
+	renderTargetHandle_ = rtvStartHandle;
 	renderTargetHandle_.ptr += device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * 2;
 }
 
@@ -603,12 +604,12 @@ void DirectXCommon::OffScreeenRenderTargetView() {
 
 	//
 	const Vector4 kRenderTargetClearValue = {1.0f, 0.0f, 0.0f, 1.0f};
-	auto renderTextureResource = CreateRenderTextureResource(device_.Get(), winApp_->GetWindowWidth(), winApp_->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
+	renderTextureResource_ = CreateRenderTextureResource(device_.Get(), winApp_->GetWindowWidth(), winApp_->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
 
 	// ディスクリプタヒープの先頭ハンドルを取得
 	// renderTargetHandle_ = srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 
-	device_->CreateRenderTargetView(renderTextureResource.Get(), &rtvDesc, renderTargetHandle_);
+	device_->CreateRenderTargetView(renderTextureResource_.Get(), &rtvDesc, renderTargetHandle_);
 
 	// SRVの設定
 	D3D12_SHADER_RESOURCE_VIEW_DESC renderTextureSrvDesc{};
@@ -618,7 +619,7 @@ void DirectXCommon::OffScreeenRenderTargetView() {
 	renderTextureSrvDesc.Texture2D.MipLevels = 1;
 
 	// SRVの生成
-	device_->CreateShaderResourceView(renderTextureResource.Get(), &renderTextureSrvDesc, srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+	device_->CreateShaderResourceView(renderTextureResource_.Get(), &renderTextureSrvDesc, srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
 }
 
 void DirectXCommon::OffScreenShaderResourceView() {}

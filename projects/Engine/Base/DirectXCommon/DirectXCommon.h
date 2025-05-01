@@ -147,6 +147,9 @@ private: // メンバ変数
 	// 
 	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetHandle_;
 
+	// 
+	ComPtr<ID3D12Resource> renderTextureResource_;
+
 public:
 
 	static const uint32_t kMaxSRVCount;
