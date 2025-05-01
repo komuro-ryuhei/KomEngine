@@ -315,6 +315,9 @@ void DirectXCommon::CreateRenderTargets() {
 	rtvHandles[1].ptr = rtvHandles[0].ptr + device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	// 2つ目を作る
 	device_->CreateRenderTargetView(swapChainResources[1].Get(), &rtvDesc, rtvHandles[1]);
+
+	// 3つ目
+	renderTargetHandle_.ptr += device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * 2;
 }
 
 void DirectXCommon::TransitionBarrier() {
@@ -603,7 +606,9 @@ void DirectXCommon::OffScreeenRenderTargetView() {
 	auto renderTextureResource = CreateRenderTextureResource(device_.Get(), winApp_->GetWindowWidth(), winApp_->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
 
 	// ディスクリプタヒープの先頭ハンドルを取得
-	renderTargetHandle_ = srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+	// renderTargetHandle_ = srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+
+	device_->CreateRenderTargetView(renderTextureResource.Get(), &rtvDesc, renderTargetHandle_);
 
 	// SRVの設定
 	D3D12_SHADER_RESOURCE_VIEW_DESC renderTextureSrvDesc{};
