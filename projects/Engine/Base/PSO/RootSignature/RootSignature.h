@@ -18,6 +18,9 @@ public:
 	// getter
 	ID3D12RootSignature* GetRootSignature() const;
 
+	RootSignature() = default;
+	~RootSignature() = default;
+
 private:
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
 	ComPtr<ID3DBlob> signatureBlob = nullptr;

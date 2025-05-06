@@ -18,6 +18,11 @@
 #include "Engine/lib/StringUtility/StringUtility.h"
 #include "Engine/lib/ComPtr/ComPtr.h"
 #include "Engine/lib/Math/MyMath.h"
+#include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
+
+#include <memory>
+
+class PipelineManager;
 
 /// <summary>
 /// DirectXCommon
@@ -93,6 +98,9 @@ private: // メンバ変数
 
 	// ウィンドウズアプリケーション
 	WinApp* winApp_;
+
+	// PSO
+	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
 
 	// DiretcX
 	ComPtr<IDXGIFactory7> dxgiFactory_;

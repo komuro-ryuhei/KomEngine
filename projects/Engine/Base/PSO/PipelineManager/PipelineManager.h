@@ -10,7 +10,11 @@
 
 #include "Engine/lib/ComPtr/ComPtr.h"
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
+
 #include <string>
+#include <memory>
+
+class RootSignature;
 
 /// <summary>
 /// パイプライン管理
@@ -34,7 +38,7 @@ public:
 	/// <summary>
 	/// PSOを生成
 	/// </summary>
-	void CreatePSO();
+	void CreatePSO(const std::string& objectType);
 
 	void PSOSetting(const std::string& objectType);
 

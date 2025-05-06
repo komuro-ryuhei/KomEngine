@@ -3,6 +3,7 @@
 #include <format>
 
 #include "Engine/lib/Logger/Logger.h"
+#include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 
 const uint32_t DirectXCommon::kMaxSRVCount = 512;
 
@@ -51,6 +52,10 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 
 	InitializeDepthStencilView();
 
+	// PSOの初期化
+	pipelineManager_ = std::make_unique<PipelineManager>();
+	pipelineManager_->PSOSetting("offscreen");
+
 	// 
 	OffScreeenRenderTargetView();
 }
@@ -90,7 +95,12 @@ void DirectXCommon::PostDraw() {
 
 	HRESULT hr;
 
-	// 画面に描く処理はすべて終わり、画面に移すので状態を遷移
+	UINT bbIndex = swapChain_->GetCurrentBackBufferIndex();
+
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = swapChainResources[bbIndex].Get();
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
@@ -626,12 +636,23 @@ void DirectXCommon::OffScreenShaderResourceView() {}
 
 void DirectXCommon::RenderToTexture() {
 
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = renderTextureResource_.Get();
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	commandList_->ResourceBarrier(1, &barrier);
+
+	// 書き込むバックバッファのインデックスを取得
+	UINT bbIndex = swapChain_->GetCurrentBackBufferIndex();
+
 	// レンダーテクスチャをターゲットとして設定
-	commandList_->OMSetRenderTargets(1, &renderTargetHandle_, false, &dsvHandle);
+	commandList_->OMSetRenderTargets(1, &rtvHandles[bbIndex], false, &dsvHandle);
 
 	// レンダーテクスチャをクリア
 	float clearColor[] = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色でクリア
-	commandList_->ClearRenderTargetView(renderTargetHandle_, clearColor, 0, nullptr);
+	commandList_->ClearRenderTargetView(rtvHandles[bbIndex], clearColor, 0, nullptr);
 
 	// 深度ステンシルをクリア
 	commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
@@ -641,5 +662,20 @@ void DirectXCommon::RenderToTexture() {
 	commandList_->RSSetScissorRects(1, &scissorRect);
 
 	// オブジェクトの描画処理
-	// DrawInstanced や DrawIndexedInstanced を呼び出す
+	commandList_->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
+	commandList_->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
+	commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	commandList_->SetGraphicsRootDescriptorTable(1, GetGPUDescriptorHandle(srvDescriptorHeap_, descriptorSizeSRV, 0)); // SRVの設定
+	
+	// 描画
+	commandList_->DrawInstanced(3, 1, 0, 0);
+
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = renderTextureResource_.Get();
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	commandList_->ResourceBarrier(1, &barrier);
 }
