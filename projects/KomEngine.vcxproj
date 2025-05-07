@@ -146,6 +146,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Game\Scene\SceneFactory.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleManager.cpp" />
+    <ClCompile Include="OffscreenRendering.cpp" />
     <ClCompile Include="Game\Entity\Player\Player.cpp" />
     <ClCompile Include="Game\Entity\Player\PlayerBullet.cpp" />
   </ItemGroup>
@@ -194,6 +195,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Game\Scene\SceneFactory.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleManager.h" />
+    <ClInclude Include="OffscreenRendering.h" />
     <ClInclude Include="Game\Entity\Player\Player.h" />
     <ClInclude Include="Game\Entity\Player\PlayerBullet.h" />
     <ClInclude Include="struct.h" />
