@@ -62,9 +62,6 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 
 void DirectXCommon::PreDraw() {
 
-	// 指定した深度で画面全体をクリアする
-	// commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
 	TransitionBarrier();
 
 	CrearRenderTargets();
@@ -72,40 +69,21 @@ void DirectXCommon::PreDraw() {
 	// 描画用のDescriptorHeapの設定
 	ID3D12DescriptorHeap* descriptorHeaps[] = {srvDescriptorHeap_.Get()};
 	commandList_->SetDescriptorHeaps(1, descriptorHeaps);
-
-	// クライアント領域のサイズと一緒にして画面全体に表示
-	viewPort.Width = winApp_->kWindowWidth_;
-	viewPort.Height = winApp_->kWindowHeight_;
-	viewPort.TopLeftX = 0;
-	viewPort.TopLeftY = 0;
-	viewPort.MinDepth = 0.0f;
-	viewPort.MaxDepth = 1.0f;
-
-	// 基本的にビューポートと同じ矩形が構成されるようにする
-	scissorRect.left = 0;
-	scissorRect.right = winApp_->kWindowWidth_;
-	scissorRect.top = 0;
-	scissorRect.bottom = winApp_->kWindowHeight_;
-
-	commandList_->RSSetViewports(1, &viewPort);       // Viewportを設定
-	commandList_->RSSetScissorRects(1, &scissorRect); // Scissorを設定
 }
 
 void DirectXCommon::PostDraw() {
 
 	HRESULT hr;
 
-	UINT bbIndex = swapChain_->GetCurrentBackBufferIndex();
+	renderTextureBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	renderTextureBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = swapChainResources[bbIndex].Get();
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+	swapChainBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	swapChainBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
 	// TransitionBarrierを張る
-	commandList_->ResourceBarrier(1, &barrier);
+	commandList_->ResourceBarrier(1, &renderTextureBarrier);
+	commandList_->ResourceBarrier(1, &swapChainBarrier);
 
 	hr = commandList_->Close();
 	assert(SUCCEEDED(hr));
@@ -337,22 +315,22 @@ void DirectXCommon::TransitionBarrier() {
 	UINT bbIndex = swapChain_->GetCurrentBackBufferIndex();
 
 	// TransitionBarrierの設定
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	swapChainBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 
 	// Noneにしておく
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	swapChainBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 
 	// バリアを張る対象のリソース
-	barrier.Transition.pResource = swapChainResources[bbIndex].Get();
+	swapChainBarrier.Transition.pResource = swapChainResources[bbIndex].Get();
 
 	// 遷移前のResourceState
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	swapChainBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 
 	// 遷移後のResourceState
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	swapChainBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 	// TransitionBarrierを張る
-	commandList_->ResourceBarrier(1, &barrier);
+	commandList_->ResourceBarrier(1, &swapChainBarrier);
 }
 
 void DirectXCommon::CreateFence() {
@@ -636,46 +614,55 @@ void DirectXCommon::OffScreenShaderResourceView() {}
 
 void DirectXCommon::RenderToTexture() {
 
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = renderTextureResource_.Get();
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	commandList_->ResourceBarrier(1, &barrier);
-
-	// 書き込むバックバッファのインデックスを取得
-	UINT bbIndex = swapChain_->GetCurrentBackBufferIndex();
+	renderTextureBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	renderTextureBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	renderTextureBarrier.Transition.pResource = renderTextureResource_.Get();
 
 	// レンダーテクスチャをターゲットとして設定
-	commandList_->OMSetRenderTargets(1, &rtvHandles[bbIndex], false, &dsvHandle);
+	commandList_->OMSetRenderTargets(1, &renderTargetHandle_, false, &dsvHandle);
 
 	// レンダーテクスチャをクリア
 	float clearColor[] = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色でクリア
-	commandList_->ClearRenderTargetView(rtvHandles[bbIndex], clearColor, 0, nullptr);
+	commandList_->ClearRenderTargetView(renderTargetHandle_, clearColor, 0, nullptr);
 
 	// 深度ステンシルをクリア
 	commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+	// クライアント領域のサイズと一緒にして画面全体に表示
+	viewPort.Width = winApp_->kWindowWidth_;
+	viewPort.Height = winApp_->kWindowHeight_;
+	viewPort.TopLeftX = 0;
+	viewPort.TopLeftY = 0;
+	viewPort.MinDepth = 0.0f;
+	viewPort.MaxDepth = 1.0f;
+
+	// 基本的にビューポートと同じ矩形が構成されるようにする
+	scissorRect.left = 0;
+	scissorRect.right = winApp_->kWindowWidth_;
+	scissorRect.top = 0;
+	scissorRect.bottom = winApp_->kWindowHeight_;
 
 	// ビューポートとシザー矩形を設定
 	commandList_->RSSetViewports(1, &viewPort);
 	commandList_->RSSetScissorRects(1, &scissorRect);
 
+	commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+void DirectXCommon::Draw() {
+
 	// オブジェクトの描画処理
 	commandList_->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
 	commandList_->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
-	commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	commandList_->SetGraphicsRootDescriptorTable(1, GetGPUDescriptorHandle(srvDescriptorHeap_, descriptorSizeSRV, 0)); // SRVの設定
-	
+
 	// 描画
 	commandList_->DrawInstanced(3, 1, 0, 0);
+}
 
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = renderTextureResource_.Get();
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	commandList_->ResourceBarrier(1, &barrier);
+void DirectXCommon::OffscreenBarrier() {
+
+	renderTextureBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	renderTextureBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	commandList_->ResourceBarrier(1, &renderTextureBarrier);
 }

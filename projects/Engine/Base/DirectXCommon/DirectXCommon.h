@@ -54,6 +54,14 @@ public: // 静的メンバ変数
 	void PostDraw();
 
 	/// <summary>
+	/// 
+	/// </summary>
+	void Draw();
+
+
+	void OffscreenBarrier();
+
+	/// <summary>
 	/// レンダーターゲットのクリア
 	/// </summary>
 	void CrearRenderTargets();
@@ -132,7 +140,8 @@ private: // メンバ変数
 	uint64_t fenceValue = 0;
 	HANDLE fenceEvent;
 
-	D3D12_RESOURCE_BARRIER barrier{};
+	D3D12_RESOURCE_BARRIER renderTextureBarrier{};
+	D3D12_RESOURCE_BARRIER swapChainBarrier{};
 
 	// ビューポート
 	D3D12_VIEWPORT viewPort{};

@@ -102,12 +102,12 @@ void GameScene::Update() {
 		cylinderEmitter_->Update();
 	}
 	// ringEmitter_->Update();
-	cylinderEmitter_->Update();
+	// cylinderEmitter_->Update();
 
 	//
 	camera_->ImGuiDebug();
 	object3d_->ImGuiDebug();
-	// glassObject_->ImGuiDebug();
+	glassObject_->ImGuiDebug();
 }
 
 void GameScene::Draw() {
@@ -118,7 +118,7 @@ void GameScene::Draw() {
 	object3d_->Draw();
 
 	// 地面
-	// glassObject_->Draw();
+	glassObject_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 }
