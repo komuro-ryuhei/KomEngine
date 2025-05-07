@@ -36,8 +36,8 @@ void GameScene::Init() {
 	glassObject_->SetModel("terrain.obj");
 
 	camera_ = std::make_unique<Camera>();
-	camera_->SetRotate({0.2f, 0.0f, 0.0f});
-	camera_->SetTranslate({0.0f, 7.0f, -30.0f});
+	camera_->SetRotate({0.0f, 0.0f, 0.0f});
+	camera_->SetTranslate({0.0f, 0.0f, -10.0f});
 	// camera_->SetRotate({0.5f, 0.0f, 0.0f});
 	// camera_->SetTranslate({0.0f, 7.0f, -12.0f});
 
@@ -115,7 +115,6 @@ void GameScene::Update() {
 	//
 	camera_->ImGuiDebug();
 	object3d_->ImGuiDebug();
-	glassObject_->ImGuiDebug();
 	// glassObject_->ImGuiDebug();
 
 	player_->ImGuiDebug();
@@ -126,10 +125,10 @@ void GameScene::Draw() {
 	// sprite_->Draw();
 
 	//
-	object3d_->Draw();
+	// object3d_->Draw();
 
 	// 地面
-	glassObject_->Draw();
+	// glassObject_->Draw();
 
 	// Player
 	player_->Draw();
