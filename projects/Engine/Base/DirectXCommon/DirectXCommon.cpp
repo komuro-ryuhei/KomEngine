@@ -628,20 +628,6 @@ void DirectXCommon::RenderToTexture() {
 	// 深度ステンシルをクリア
 	commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-	// クライアント領域のサイズと一緒にして画面全体に表示
-	viewPort.Width = winApp_->kWindowWidth_;
-	viewPort.Height = winApp_->kWindowHeight_;
-	viewPort.TopLeftX = 0;
-	viewPort.TopLeftY = 0;
-	viewPort.MinDepth = 0.0f;
-	viewPort.MaxDepth = 1.0f;
-
-	// 基本的にビューポートと同じ矩形が構成されるようにする
-	scissorRect.left = 0;
-	scissorRect.right = winApp_->kWindowWidth_;
-	scissorRect.top = 0;
-	scissorRect.bottom = winApp_->kWindowHeight_;
-
 	// ビューポートとシザー矩形を設定
 	commandList_->RSSetViewports(1, &viewPort);
 	commandList_->RSSetScissorRects(1, &scissorRect);
