@@ -32,9 +32,9 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 		assert(psBlob != nullptr);
 	} else if (objectType == "offscreen") {
 		// Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Grayscale.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/Grayscale.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/Vignette.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
 	}
 }
