@@ -91,4 +91,7 @@ public:
 
 	// 転置行列
 	static Matrix4x4 Transpose4x4(const Matrix4x4& matrix);
+
+	// 距離計算
+	static float CalculateDistance(const Vector3& a, const Vector3& b);
 };

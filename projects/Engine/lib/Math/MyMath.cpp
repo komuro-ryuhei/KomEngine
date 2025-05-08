@@ -457,6 +457,13 @@ Matrix4x4 MyMath::Transpose4x4(const Matrix4x4& matrix) {
 	return result;
 }
 
+float MyMath::CalculateDistance(const Vector3& a, const Vector3& b) {
+	float dx = a.x - b.x;
+	float dy = a.y - b.y;
+	float dz = a.z - b.z;
+	return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
 // 線形補間(float)
 float MyMath::Lerp(float p1, float p2, float t) { return p1 + (p2 - p1) * t; }
 

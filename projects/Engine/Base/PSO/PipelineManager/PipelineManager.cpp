@@ -34,7 +34,7 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 		// Shaderをコンパイルする
 		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/GaussianFilter.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
 	}
 }

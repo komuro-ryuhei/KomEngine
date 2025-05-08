@@ -28,6 +28,10 @@ public:
 	void Finalize() override;
 
 private:
+
+	void CheckCollisions();
+
+private:
 	DirectXCommon* dxCommon_ = nullptr;
 	PipelineManager* pipelineManager_ = nullptr;
 
@@ -49,4 +53,8 @@ private:
 
 	// Player
 	std::unique_ptr<Player> player_ = nullptr;
+
+	// Enemy
+	std::vector<std::unique_ptr<Enemy>> enemies_;
+	std::vector<std::unique_ptr<Object3d>> enemyObjects3d_;
 };

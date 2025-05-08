@@ -31,14 +31,14 @@ void Player::Init(Camera* camera, Sprite* sprite) {
 
 	object3d_->SetScale({0.5f, 0.5f, 0.5f});
 
-	//// 弾オブジェクトの生成
-	//for (int i = 0; i < 999; ++i) {
-	//	auto bulletObject = new Object3d();
-	//	bulletObject->Init();
-	//	bulletObject->SetModel("sphere.obj");
-	//	bulletObject->SetDefaultCamera(camera_);
-	//	bulletObjects_.push_back(bulletObject);
-	//}
+	// 弾オブジェクトの生成
+	for (int i = 0; i < 10; ++i) {
+		auto bulletObject = new Object3d();
+		bulletObject->Init();
+		bulletObject->SetModel("sphere.obj");
+		bulletObject->SetDefaultCamera(camera_);
+		bulletObjects_.push_back(bulletObject);
+	}
 }
 
 void Player::Update() {
@@ -57,7 +57,7 @@ void Player::Update() {
 	//	lockOnSprite_->SetPosition(screenPosition);
 	//}
 
-	// Attack();
+	 Attack();
 
 	// 弾の更新と削除
 	for (auto it = bullets_.begin(); it != bullets_.end();) {
@@ -113,19 +113,19 @@ void Player::Attack() {
 		newBullet->Init(camera_, bulletObject);
 		newBullet->SetTranlate(transform_.translate);
 
-		//// ロックオン対象が有効か確認
-		// if (lockedTarget_ && lockedTarget_->GetIsAlive()) {
-		//	// ロックオン対象に向けて弾を発射
-		//	Vector3 direction = lockedTarget_->GetTranslate() - transform_.translate;
-		//	MyMath::Normalize(direction);
-		//	newBullet->SetDirection(direction);
-		// } else {
-		//	// ロックオン対象が無効ならデフォルトの前方向に発射
-		//	lockedTarget_ = nullptr;
-		//	Vector3 straightDirection = {0.0f, 0.0f, 1.0f};
-		//	MyMath::Normalize(straightDirection);
-		//	newBullet->SetDirection(straightDirection);
-		// }
+		// ロックオン対象が有効か確認
+		 if (lockedTarget_ && lockedTarget_->GetIsAlive()) {
+			// ロックオン対象に向けて弾を発射
+			Vector3 direction = lockedTarget_->GetTranslate() - transform_.translate;
+			MyMath::Normalize(direction);
+			newBullet->SetDirection(direction);
+		 } else {
+			// ロックオン対象が無効ならデフォルトの前方向に発射
+			lockedTarget_ = nullptr;
+			Vector3 straightDirection = {0.0f, 0.0f, 1.0f};
+			MyMath::Normalize(straightDirection);
+			newBullet->SetDirection(straightDirection);
+		 }
 
 		Vector3 straightDirection = {0.0f, 0.0f, 1.0f};
 		MyMath::Normalize(straightDirection);
@@ -154,21 +154,21 @@ void Player::Move() {
 	}
 }
 
-// void Player::LockOnTarget(std::vector<std::unique_ptr<Enemy>>& enemies) {
-//
-//	float closestDistance = (std::numeric_limits<float>::max)();
-//	Enemy* closestEnemy = nullptr;
-//
-//	for (auto& enemy : enemies) {
-//		if (!enemy->GetIsAlive())
-//			continue;
-//
-//		float distance = MyMath::CalculateDistance(transform_.translate, enemy->GetTranslate());
-//		if (distance < closestDistance) {
-//			closestDistance = distance;
-//			closestEnemy = enemy.get();
-//		}
-//	}
-//	// 最も近い敵をロックオン
-//	lockedTarget_ = closestEnemy;
-// }
+ void Player::LockOnTarget(std::vector<std::unique_ptr<Enemy>>& enemies) {
+
+	float closestDistance = (std::numeric_limits<float>::max)();
+	Enemy* closestEnemy = nullptr;
+
+	for (auto& enemy : enemies) {
+		if (!enemy->GetIsAlive())
+			continue;
+
+		float distance = MyMath::CalculateDistance(transform_.translate, enemy->GetTranslate());
+		if (distance < closestDistance) {
+			closestDistance = distance;
+			closestEnemy = enemy.get();
+		}
+	}
+	// 最も近い敵をロックオン
+	lockedTarget_ = closestEnemy;
+ }
