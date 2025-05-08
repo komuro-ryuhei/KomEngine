@@ -92,6 +92,7 @@ bool System::ProcessMessage() { return winApp_->ProcessMessage(); }
 
 void System::BeginFrame() {
 
+	// 
 	dxCommon_->RenderToTexture();
 
 	srvManager_->PreDraw();
@@ -109,12 +110,12 @@ void System::EndFrame() {
 
 	// DirectX描画前処理
 	dxCommon_->PreDraw();
-
+	// Offscreen描画処理
 	dxCommon_->OffscreenBarrier();
 	dxCommon_->Draw();
 
+	// ImGui描画処理
 	imguiManager_->End();
-
 	imguiManager_->Draw();
 
 	// DirectX描画終了

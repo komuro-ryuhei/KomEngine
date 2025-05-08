@@ -436,7 +436,7 @@ void DirectXCommon::InitializeDepthStencilView() {
 	// Depthの機能を有効化する
 	depthStencilDesc.DepthEnable = true;
 	// 書き込みします
-	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	// 比較関数はLessEqual
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 }
@@ -591,7 +591,7 @@ ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(ID3D12Device* 
 void DirectXCommon::OffScreeenRenderTargetView() {
 
 	//
-	const Vector4 kRenderTargetClearValue = {0.1f, 0.25f, 0.5f, 1.0f};
+	const Vector4 kRenderTargetClearValue = {1.0f, 0.0f, 0.0f, 1.0f};
 	renderTextureResource_ = CreateRenderTextureResource(device_.Get(), winApp_->GetWindowWidth(), winApp_->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
 
 	// ディスクリプタヒープの先頭ハンドルを取得
@@ -622,7 +622,7 @@ void DirectXCommon::RenderToTexture() {
 	commandList_->OMSetRenderTargets(1, &renderTargetHandle_, false, &dsvHandle);
 
 	// レンダーテクスチャをクリア
-	float clearColor[] = {0.1f, 0.25f, 0.5f, 1.0f}; // 赤色でクリア
+	float clearColor[] = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色でクリア
 	commandList_->ClearRenderTargetView(renderTargetHandle_, clearColor, 0, nullptr);
 
 	// 深度ステンシルをクリア

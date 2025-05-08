@@ -137,7 +137,7 @@ void GameScene::Update() {
 		cylinderEmitter_->Update();
 	}
 	// ringEmitter_->Update();
-	// cylinderEmitter_->Update();
+	cylinderEmitter_->Update();
 
 	// Player
 	player_->Update();
