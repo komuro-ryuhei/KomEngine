@@ -45,7 +45,7 @@ class ParticleManager {
 public:
 	static ParticleManager* GetInstance();
 
-	void Init(Camera* camera);
+	void Init(Camera* camera, BlendType type);
 
 	void Update();
 

@@ -30,13 +30,13 @@ void Sprite::SetTextureLeftTop(const Vector2& textureLeftTop) { textureLeftTop_ 
 
 void Sprite::SetTextureSize(const Vector2& textureSize) { textureSize_ = textureSize; }
 
-void Sprite::Init(const std::string& textureFilePath) {
+void Sprite::Init(const std::string& textureFilePath, BlendType type) {
 
 	textureFilePath_ = textureFilePath;
 
 	// パイプラインマネージャーの初期化
 	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("sprite");
+	pipelineManager_->PSOSetting("sprite", type);
 
 	// リソース作成
 	vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * 4);

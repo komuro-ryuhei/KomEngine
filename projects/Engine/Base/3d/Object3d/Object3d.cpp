@@ -3,13 +3,13 @@
 #include "Engine/lib/Logger/Logger.h"
 #include "externals/imgui/imgui.h"
 
-void Object3d::Init() {
+void Object3d::Init(BlendType type) {
 
 	camera_ = defaultCamera_;
 
 	//
 	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("object3d");
+	pipelineManager_->PSOSetting("object3d", type);
 
 	// 座標変換用
 	transformationMatrixResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(TransformationMatrix));
@@ -62,9 +62,9 @@ void Object3d::Draw() {
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 	// DirectionalLight の CBV を設定（RootParameter 3）
 	commandList->SetGraphicsRootConstantBufferView(3, System::GetMesh()->GetLightResource()->GetGPUVirtualAddress());
-	// 
+	//
 	commandList->SetGraphicsRootConstantBufferView(4, System::GetMesh()->GetPhongLightResource()->GetGPUVirtualAddress());
-	// 
+	//
 	commandList->SetGraphicsRootConstantBufferView(5, System::GetMesh()->GetPointLightResource()->GetGPUVirtualAddress());
 
 	commandList->SetGraphicsRootConstantBufferView(6, System::GetMesh()->GetSpotLightResource()->GetGPUVirtualAddress());

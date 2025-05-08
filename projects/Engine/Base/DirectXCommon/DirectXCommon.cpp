@@ -2,8 +2,8 @@
 
 #include <format>
 
-#include "Engine/lib/Logger/Logger.h"
 #include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
+#include "Engine/lib/Logger/Logger.h"
 
 const uint32_t DirectXCommon::kMaxSRVCount = 512;
 
@@ -54,9 +54,9 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 
 	// PSOの初期化
 	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("offscreen");
+	pipelineManager_->PSOSetting("offscreen", BlendType::BLEND_NONE);
 
-	// 
+	//
 	OffScreeenRenderTargetView();
 }
 

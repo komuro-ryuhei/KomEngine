@@ -24,7 +24,7 @@ public: // メンバ関数
 	Object3d() = default;
 	~Object3d() = default;
 
-	void Init();
+	void Init(BlendType type);
 
 	void Update();
 

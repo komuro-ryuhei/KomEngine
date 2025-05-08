@@ -40,7 +40,7 @@ public:
 	/// </summary>
 	void CreatePSO(const std::string& objectType);
 
-	void PSOSetting(const std::string& objectType);
+	void PSOSetting(const std::string& objectType, BlendType type);
 
 	ID3D12RootSignature* GetRootSignature() const;
 	ID3D12PipelineState* GetGraphicsPipelineState() const;
