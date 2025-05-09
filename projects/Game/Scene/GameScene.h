@@ -31,6 +31,8 @@ private:
 
 	void CheckCollisions();
 
+	void ImGuiDebug();
+
 private:
 	DirectXCommon* dxCommon_ = nullptr;
 	PipelineManager* pipelineManager_ = nullptr;

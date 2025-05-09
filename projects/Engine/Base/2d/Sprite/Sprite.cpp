@@ -1,7 +1,10 @@
 #include "Sprite.h"
 
 #include "Engine/Base/System/System.h"
+
+#ifdef _DEBUG
 #include "externals/imgui/imgui.h"
+#endif // _DEBUG
 
 // getter
 const Vector2& Sprite::GetPosition() const { return position_; }
@@ -219,6 +222,8 @@ void Sprite::AdjustTextureSize() {
 
 void Sprite::ImGuiDebug() {
 
+#ifdef _DEBUG
+
 	//
 	ImGui::Begin("Sprite");
 
@@ -228,4 +233,6 @@ void Sprite::ImGuiDebug() {
 	ImGui::DragFloat("uvRotate", &uvTransform.rotate.z, 0.01f);
 
 	ImGui::End();
+
+#endif // _DEBUG
 }

@@ -14,8 +14,6 @@
 #include "Engine/Base/SrvManager/SrvManager.h"
 #include "Engine/Base/TextureManager/TextureManager.h"
 
-#include "externals/imgui/imgui.h"
-
 #include <cassert>
 #include <cstdint>
 #include <format>
@@ -29,6 +27,10 @@
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
+
+#ifdef _DEBUG
+#include "externals/imgui/imgui.h"
+#endif // _DEBUG
 
 /*==================================================================================*/
 // システム全体の初期化

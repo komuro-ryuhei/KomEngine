@@ -1,8 +1,8 @@
 #pragma once
 
 // MyClass
-#include "ParticleManager.h"
 #include "Engine/lib/Math/MyMath.h"
+#include "ParticleManager.h"
 
 #include <string>
 
@@ -14,6 +14,9 @@ public:
 	void Update();
 
 	void Emit();
+
+public:
+	void SetTranslate(const Vector3& translate) { translate_ = translate; }
 
 private:
 	std::string name_;

@@ -1,10 +1,13 @@
 #include "GameScene.h"
 
 #include "Engine/Base/System/System.h"
-#include "externals/imgui/imgui.h"
 #include "Game/Scene/SceneManager.h"
 
 #include <random>
+
+#ifdef _DEBUG
+#include "externals/imgui/imgui.h"
+#endif // DEBUG
 
 void GameScene::Init() {
 
@@ -53,7 +56,7 @@ void GameScene::Init() {
 	SoundData soundData = audio_->SoundLoadWave("Resources/fanfare.wav");
 	// audio_->SoundPlayWave(audio_->GetXAudio2(), soundData);
 
-	// 
+	//
 	ParticleManager::GetInstance()->Init(camera_.get());
 	ParticleManager::GetInstance()->CreateParticleGeoup("hit", circle2, "a");
 	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
@@ -106,38 +109,13 @@ void GameScene::Init() {
 
 void GameScene::Update() {
 
-	// Sprite描画前処理
-	// sprite_->PreDraw();
-
 	camera_->Update();
-
-	sprite_->Update();
-
-	object3d_->Update();
-	glassObject_->Update();
-
-	sprite_->ImGuiDebug();
 
 	//
 	ParticleManager::GetInstance()->Update();
 
-	if (ImGui::Button("Emit Particles")) {
-		emitter_->Update();
-	}
-
-	if (ImGui::Button("Emit2 Particles")) {
-		emitter2_->Update();
-	}
-
-	if (ImGui::Button("Ring Particles")) {
-		ringEmitter_->Update();
-	}
-
-	if (ImGui::Button("Cylinder Particles")) {
-		cylinderEmitter_->Update();
-	}
 	// ringEmitter_->Update();
-	cylinderEmitter_->Update();
+	// cylinderEmitter_->Update();
 
 	// Player
 	player_->Update();
@@ -150,33 +128,15 @@ void GameScene::Update() {
 	// 当たり判定処理
 	CheckCollisions();
 
-	// ロックオン処理
-	if (System::TriggerKey(DIK_L)) {
-		// Lキーでロックオン対象を更新
-		player_->LockOnTarget(enemies_);
-	}
-
+	// シーン遷移のDebug処理
 	if (System::GetInput()->TriggerKey(DIK_RETURN)) {
 		sceneManager_->ChangeScene("TITLE");
 	}
 
-	//
-	camera_->ImGuiDebug();
-	object3d_->ImGuiDebug();
-	// glassObject_->ImGuiDebug();
-
-	player_->ImGuiDebug();
+	ImGuiDebug();
 }
 
 void GameScene::Draw() {
-
-	// sprite_->Draw();
-
-	//
-	// object3d_->Draw();
-
-	// 地面
-	// glassObject_->Draw();
 
 	// Player
 	player_->Draw();
@@ -207,6 +167,15 @@ void GameScene::CheckCollisions() {
 				// 衝突処理
 				bulletHit = true;
 
+				// 衝突地点（弾と敵の中間地点）を計算
+				Vector3 bulletPos = (*itBullet)->GetTranslate();
+				Vector3 enemyPos = (*itEnemy)->GetTranslate();
+				Vector3 hitPos = {(bulletPos.x + enemyPos.x) * 0.5f, (bulletPos.y + enemyPos.y) * 0.5f, (bulletPos.z + enemyPos.z) * 0.5f};
+
+				// 衝突位置からパーティクルを生成
+				emitter_->SetTranslate(hitPos);
+				emitter_->Update();
+
 				// 敵を削除
 				itEnemy = enemies_.erase(itEnemy);
 			} else {
@@ -226,4 +195,30 @@ void GameScene::CheckCollisions() {
 	if (enemies_.empty()) {
 		sceneManager_->ChangeScene("CLEAR");
 	}
+}
+
+void GameScene::ImGuiDebug() {
+
+#ifdef _DEBUG
+
+	camera_->ImGuiDebug();
+	player_->ImGuiDebug();
+
+	if (ImGui::Button("Hit Particles")) {
+		emitter_->Update();
+	}
+
+	if (ImGui::Button("Explosion Particles")) {
+		emitter2_->Update();
+	}
+
+	if (ImGui::Button("Ring Particles")) {
+		ringEmitter_->Update();
+	}
+
+	if (ImGui::Button("Cylinder Particles")) {
+		cylinderEmitter_->Update();
+	}
+
+#endif // _DEBUG
 }

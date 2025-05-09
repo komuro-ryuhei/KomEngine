@@ -1,8 +1,10 @@
-
 #include "Enemy.h"
-#include "externals/imgui/imgui.h"
 #include <chrono>
 #include <random>
+
+#ifdef _DEBUG
+#include "externals/imgui/imgui.h"
+#endif // _DEBUG
 
 float Enemy::GetRadius() const { return radius_; }
 bool Enemy::GetIsAlive() const { return isAlive_; }
@@ -57,9 +59,13 @@ void Enemy::Draw() {
 
 void Enemy::ImGuiDebug() {
 
+#ifdef _DEBUG
+
 	ImGui::Begin("Enemy");
 	ImGui::DragFloat3("translate", &transform_.translate.x, 0.01f);
 	ImGui::End();
+
+#endif // _DEBUG
 }
 
 void Enemy::OnHit() {
