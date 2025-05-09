@@ -39,11 +39,24 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	std::wstring filePathW = StringUtility::ConvertString(textureData.filePath);
 
 	DirectX::ScratchImage image{};
-	HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	HRESULT hr;
+
+	if (filePathW.ends_with(L".dds")) {
+		hr = DirectX::LoadFromDDSFile(filePathW.c_str(), DirectX::DDS_FLAGS_NONE, nullptr, image);
+	} else {
+		hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	}
+
 	assert(SUCCEEDED(hr));
 
 	DirectX::ScratchImage mipImage{};
-	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImage);
+
+	if (DirectX::IsCompressed(image.GetMetadata().format)) {
+		mipImage = std::move(image);
+	} else {
+		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 4, mipImage);
+	}
+
 	assert(SUCCEEDED(hr));
 
 	textureData.metaData = mipImage.GetMetadata();
