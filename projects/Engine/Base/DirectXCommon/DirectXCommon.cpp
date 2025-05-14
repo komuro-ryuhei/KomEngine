@@ -52,6 +52,12 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 
 	InitializeDepthStencilView();
 
+	// PointLight用のマテリアルリソースを作る
+	materialBufferResource_ = CreateBufferResource(GetDevice(), sizeof(MaterialBuffer));
+	materialBufferResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialBufferData_));
+
+	materialBufferData_->time = 0.0f;
+
 	// PSOの初期化
 	pipelineManager_ = std::make_unique<PipelineManager>();
 	pipelineManager_->PSOSetting("offscreen", BlendType::BLEND_NONE);
@@ -637,10 +643,13 @@ void DirectXCommon::RenderToTexture() {
 
 void DirectXCommon::Draw() {
 
+	materialBufferData_->time += 0.01f;
+
 	// オブジェクトの描画処理
 	commandList_->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
 	commandList_->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
 	commandList_->SetGraphicsRootDescriptorTable(1, GetGPUDescriptorHandle(srvDescriptorHeap_, descriptorSizeSRV, 0)); // SRVの設定
+	commandList_->SetGraphicsRootConstantBufferView(2, materialBufferResource_->GetGPUVirtualAddress());
 
 	// 描画
 	commandList_->DrawInstanced(3, 1, 0, 0);

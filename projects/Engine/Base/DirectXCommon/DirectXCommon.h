@@ -19,6 +19,7 @@
 #include "Engine/lib/ComPtr/ComPtr.h"
 #include "Engine/lib/Math/MyMath.h"
 #include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
+#include "struct.h"
 
 #include <memory>
 
@@ -166,6 +167,11 @@ private: // メンバ変数
 
 	// 
 	ComPtr<ID3D12Resource> renderTextureResource_;
+
+	//　
+	//  SpotLight用のマテリアルリソースを作る
+	ComPtr<ID3D12Resource> materialBufferResource_;
+	MaterialBuffer* materialBufferData_ = nullptr;
 
 public:
 
