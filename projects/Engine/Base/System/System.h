@@ -83,4 +83,5 @@ public:
 	static Input* GetInput();
 	static SrvManager* GetSrvManager();
 	static Mesh* GetMesh();
+	static WinApp* GetWinApp();
 };

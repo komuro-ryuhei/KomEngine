@@ -54,6 +54,8 @@ SrvManager* System::GetSrvManager() { return srvManager_.get(); }
 
 Mesh* System::GetMesh() { return mesh_.get(); }
 
+WinApp* System::GetWinApp() { return winApp_.get(); }
+
 void System::Initialize(const char* title, int width, int height) {
 
 	winApp_ = std::make_unique<WinApp>();

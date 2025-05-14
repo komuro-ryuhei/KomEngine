@@ -23,6 +23,10 @@ D3D12_DEPTH_STENCIL_DESC DirectXCommon::GetDepthStencilDesc() const { return dep
 
 size_t DirectXCommon::GetBackBufferCount() const { return 2; }
 
+D3D12_RENDER_TARGET_VIEW_DESC DirectXCommon::GetRtvDesc() const { return rtvDesc; }
+
+D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetDsvHandle() const { return dsvHandle; }
+
 DirectXCommon* DirectXCommon::GetInstance() {
 	static DirectXCommon instance;
 	return &instance;
@@ -52,15 +56,8 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 
 	InitializeDepthStencilView();
 
-	// PointLight用のマテリアルリソースを作る
-	materialBufferResource_ = CreateBufferResource(GetDevice(), sizeof(MaterialBuffer));
-	materialBufferResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialBufferData_));
-
-	materialBufferData_->time = 0.0f;
-
-	// PSOの初期化
-	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("offscreen", BlendType::BLEND_NONE);
+	offscreenRendering_ = std::make_unique<OffscreenRendering>();
+	offscreenRendering_->Init();
 
 	//
 	OffScreeenRenderTargetView();
@@ -597,67 +594,25 @@ ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(ID3D12Device* 
 void DirectXCommon::OffScreeenRenderTargetView() {
 
 	//
-	const Vector4 kRenderTargetClearValue = {1.0f, 0.0f, 0.0f, 1.0f};
-	renderTextureResource_ = CreateRenderTextureResource(device_.Get(), winApp_->GetWindowWidth(), winApp_->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
-
-	// ディスクリプタヒープの先頭ハンドルを取得
-	// renderTargetHandle_ = srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
-
-	device_->CreateRenderTargetView(renderTextureResource_.Get(), &rtvDesc, renderTargetHandle_);
-
-	// SRVの設定
-	D3D12_SHADER_RESOURCE_VIEW_DESC renderTextureSrvDesc{};
-	renderTextureSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	renderTextureSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	renderTextureSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	renderTextureSrvDesc.Texture2D.MipLevels = 1;
-
-	// SRVの生成
-	device_->CreateShaderResourceView(renderTextureResource_.Get(), &renderTextureSrvDesc, srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+	offscreenRendering_->OffScreeenRenderTargetView();
 }
 
 void DirectXCommon::OffScreenShaderResourceView() {}
 
 void DirectXCommon::RenderToTexture() {
 
-	renderTextureBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	renderTextureBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	renderTextureBarrier.Transition.pResource = renderTextureResource_.Get();
-
-	// レンダーテクスチャをターゲットとして設定
-	commandList_->OMSetRenderTargets(1, &renderTargetHandle_, false, &dsvHandle);
-
-	// レンダーテクスチャをクリア
-	float clearColor[] = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色でクリア
-	commandList_->ClearRenderTargetView(renderTargetHandle_, clearColor, 0, nullptr);
-
-	// 深度ステンシルをクリア
-	commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-	// ビューポートとシザー矩形を設定
-	commandList_->RSSetViewports(1, &viewPort);
-	commandList_->RSSetScissorRects(1, &scissorRect);
-
-	commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// 
+	offscreenRendering_->RenderToTexture();
 }
 
 void DirectXCommon::Draw() {
 
-	materialBufferData_->time += 0.01f;
-
-	// オブジェクトの描画処理
-	commandList_->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
-	commandList_->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
-	commandList_->SetGraphicsRootDescriptorTable(1, GetGPUDescriptorHandle(srvDescriptorHeap_, descriptorSizeSRV, 0)); // SRVの設定
-	commandList_->SetGraphicsRootConstantBufferView(2, materialBufferResource_->GetGPUVirtualAddress());
-
-	// 描画
-	commandList_->DrawInstanced(3, 1, 0, 0);
+	// 
+	offscreenRendering_->Draw();
 }
 
 void DirectXCommon::OffscreenBarrier() {
 
-	renderTextureBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	renderTextureBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	commandList_->ResourceBarrier(1, &renderTextureBarrier);
+	// 
+	offscreenRendering_->OffscreenBarrier();
 }
