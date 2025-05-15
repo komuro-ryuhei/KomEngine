@@ -66,6 +66,7 @@
     <ClCompile Include="Engine\Base\Particle\ParticleManager.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="OffscreenRendering.cpp" />
+    <ClCompile Include="Skybox.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\lib\ComPtr\ComPtr.h" />
@@ -114,6 +115,7 @@
     <ClInclude Include="Engine\Base\Particle\ParticleManager.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
     <ClInclude Include="OffscreenRendering.h" />
+    <ClInclude Include="Skybox.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

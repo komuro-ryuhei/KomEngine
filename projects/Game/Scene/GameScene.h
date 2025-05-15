@@ -4,14 +4,13 @@
 
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
-
 #include "Engine/Base/2d/Sprite/Sprite.h"
 #include "Engine/Base/3d/Object3d/Object3d.h"
 #include "Engine/Base/Audio/Audio.h"
 #include "Engine/Base/Camera/Camera.h"
-
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "Engine/Base/Particle/ParticleManager.h"
+#include "Skybox.h"
 
 #include "Game/Scene/IScene.h"
 
@@ -38,6 +37,9 @@ private:
 	// Model
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 	std::unique_ptr<Object3d> glassObject_ = nullptr;
+
+	// Skybox
+	std::unique_ptr<Skybox> skybox_ = nullptr;
 
 	// 
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;
