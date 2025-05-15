@@ -2,17 +2,11 @@
 #include "System.h"
 
 // MyClass
-#include "Engine/Base/DirectXCommon/DirectXCommon.h"
-#include "Engine/Base/Mesh/Mesh.h"
-#include "Engine/Base/WinApp/WinApp.h"
-#include "Engine/lib/Input/Input.h"
-#include "Engine/lib/Logger/Logger.h"
-
 #include "Engine/Base/ImGuiManager/ImGuiManager.h"
 #include "Engine/Base/ModelManager/ModelManager.h"
-#include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 #include "Engine/Base/SrvManager/SrvManager.h"
 #include "Engine/Base/TextureManager/TextureManager.h"
+#include "OffscreenRendering.h"
 
 #include "externals/imgui/imgui.h"
 
@@ -45,6 +39,8 @@ std::unique_ptr<Mesh> mesh_ = nullptr;
 std::unique_ptr<SrvManager> srvManager_ = nullptr;
 // ImGuiManager
 std::unique_ptr<ImGuiManager> imguiManager_ = nullptr;
+// OffscreenRendering
+std::unique_ptr<OffscreenRendering> offscreenRendering_ = nullptr;
 
 DirectXCommon* System::GetDxCommon() { return dxCommon_.get(); }
 
@@ -69,9 +65,13 @@ void System::Initialize(const char* title, int width, int height) {
 	dxCommon_ = std::make_unique<DirectXCommon>();
 	dxCommon_->Initialize(winApp_.get());
 
+	//
+	offscreenRendering_ = std::make_unique<OffscreenRendering>();
+	offscreenRendering_->Init();
+
 	// SrvManager
 	srvManager_ = std::make_unique<SrvManager>();
-	srvManager_->Init(dxCommon_.get());
+	srvManager_->Init();
 
 	// Inputの初期化
 	input_ = std::make_unique<Input>();
@@ -84,7 +84,7 @@ void System::Initialize(const char* title, int width, int height) {
 
 	// Mesh
 	mesh_ = std::make_unique<Mesh>();
-	mesh_->LightSetting(dxCommon_.get());
+	mesh_->LightSetting();
 
 	imguiManager_ = std::make_unique<ImGuiManager>();
 	imguiManager_->Init(winApp_.get(), dxCommon_.get());
@@ -94,7 +94,7 @@ bool System::ProcessMessage() { return winApp_->ProcessMessage(); }
 
 void System::BeginFrame() {
 
-	dxCommon_->RenderToTexture();
+	offscreenRendering_->RenderToTexture();
 
 	srvManager_->PreDraw();
 
@@ -113,14 +113,16 @@ void System::EndFrame() {
 	dxCommon_->PreDraw();
 
 	// Offscreen描画処理
-	dxCommon_->OffscreenBarrier();
-	dxCommon_->Draw();
+	offscreenRendering_->OffscreenBarrier();
+	offscreenRendering_->Draw();
 
 	// ImGui描画処理
 	imguiManager_->End();
 	imguiManager_->Draw();
 
-	// DirectX描画終了
+
+	// 描画終了
+	offscreenRendering_->PostDraw();
 	dxCommon_->PostDraw();
 }
 

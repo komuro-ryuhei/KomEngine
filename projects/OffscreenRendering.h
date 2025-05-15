@@ -3,11 +3,11 @@
 #include "Engine/lib/ComPtr/ComPtr.h"
 #include "Engine/lib/Math/MyMath.h"
 #include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
-#include "Engine/Base/System/System.h"
-#include "Engine/Base/DirectXCommon/DirectXCommon.h"
 
 #include <d3d12.h>
 #include <memory>
+
+class PipelineManager;
 
 class OffscreenRendering {
 
@@ -18,6 +18,8 @@ public:
 	void Update();
 
 	void Draw();
+
+	void PostDraw();
 
 	//
 	ComPtr<ID3D12Resource> CreateRenderTextureResource(ID3D12Device* device, UINT width, UINT height, DXGI_FORMAT format, const Vector4& clearColor);
@@ -34,7 +36,7 @@ public:
 private:
 
 	// DxCommon
-	DirectXCommon* dxCommon_ = nullptr;
+	// DirectXCommon* dxCommon_ = nullptr;
 
 	// PSO
 	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;

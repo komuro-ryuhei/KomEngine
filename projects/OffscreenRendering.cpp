@@ -1,12 +1,13 @@
 #include "OffscreenRendering.h"
+#include "Engine/Base/System/System.h"
 
 void OffscreenRendering::Init() {
 
 	// DxCommon
-	dxCommon_ = System::GetDxCommon();
+	// dxCommon_ = System::GetDxCommon();
 
 	// PointLight用のマテリアルリソースを作る
-	materialBufferResource_ = dxCommon_->CreateBufferResource(dxCommon_->GetDevice(), sizeof(MaterialBuffer));
+	materialBufferResource_ = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(MaterialBuffer));
 	materialBufferResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialBufferData_));
 
 	materialBufferData_->time = 0.0f;
@@ -25,13 +26,22 @@ void OffscreenRendering::Draw() {
 	materialBufferData_->time += 0.01f;
 
 	// オブジェクトの描画処理
-	dxCommon_->GetCommandList()->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
-	dxCommon_->GetCommandList()->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
-	dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(1, dxCommon_->GetGPUDescriptorHandle(dxCommon_->GetSrvDescriptorHeap(), dxCommon_->GetDescriptorSizeSRV(), 0)); // SRVの設定
-	dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(2, materialBufferResource_->GetGPUVirtualAddress());
+	System::GetDxCommon()->GetCommandList()->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
+	System::GetDxCommon()->GetCommandList()->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
+	System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(1, System::GetDxCommon()->GetGPUDescriptorHandle(System::GetDxCommon()->GetSrvDescriptorHeap(), System::GetDxCommon()->GetDescriptorSizeSRV(), 0)); // SRVの設定
+	System::GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(2, materialBufferResource_->GetGPUVirtualAddress());
 
 	// 描画
-	dxCommon_->GetCommandList()->DrawInstanced(3, 1, 0, 0);
+	System::GetDxCommon()->GetCommandList()->DrawInstanced(3, 1, 0, 0);
+}
+
+void OffscreenRendering::PostDraw() {
+
+	// バリアの設定
+	renderTextureBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	renderTextureBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &renderTextureBarrier);
 }
 
 ComPtr<ID3D12Resource> OffscreenRendering::CreateRenderTextureResource(ID3D12Device* device, UINT width, UINT height, DXGI_FORMAT format, const Vector4& clearColor) {
@@ -68,13 +78,16 @@ ComPtr<ID3D12Resource> OffscreenRendering::CreateRenderTextureResource(ID3D12Dev
 
 void OffscreenRendering::OffScreeenRenderTargetView() {
 
+	renderTargetHandle_ = System::GetDxCommon()->GetRtvStartHandle();
+	renderTargetHandle_.ptr += System::GetDxCommon()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * 2;
+
 	//
 	const Vector4 kRenderTargetClearValue = {1.0f, 0.0f, 0.0f, 1.0f};
 	renderTextureResource_ =
-	    CreateRenderTextureResource(dxCommon_->GetDevice(), System::GetWinApp()->GetWindowWidth(), System::GetWinApp()->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
+	    CreateRenderTextureResource(System::GetDxCommon()->GetDevice(), System::GetWinApp()->GetWindowWidth(), System::GetWinApp()->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
 
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = dxCommon_->GetRtvDesc();
-	dxCommon_->GetDevice()->CreateRenderTargetView(renderTextureResource_.Get(), &rtvDesc, renderTargetHandle_);
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = System::GetDxCommon()->GetRtvDesc();
+	System::GetDxCommon()->GetDevice()->CreateRenderTargetView(renderTextureResource_.Get(), &rtvDesc, renderTargetHandle_);
 
 	// SRVの設定
 	D3D12_SHADER_RESOURCE_VIEW_DESC renderTextureSrvDesc{};
@@ -84,7 +97,7 @@ void OffscreenRendering::OffScreeenRenderTargetView() {
 	renderTextureSrvDesc.Texture2D.MipLevels = 1;
 
 	// SRVの生成
-	dxCommon_->GetDevice()->CreateShaderResourceView(renderTextureResource_.Get(), &renderTextureSrvDesc, dxCommon_->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
+	System::GetDxCommon()->GetDevice()->CreateShaderResourceView(renderTextureResource_.Get(), &renderTextureSrvDesc, System::GetDxCommon()->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 }
 
 void OffscreenRendering::OffScreenShaderResourceView() {}
@@ -95,31 +108,30 @@ void OffscreenRendering::RenderToTexture() {
 	renderTextureBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	renderTextureBarrier.Transition.pResource = renderTextureResource_.Get();
 
-
 	// レンダーテクスチャをターゲットとして設定
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDsvHandle();
-	dxCommon_->GetCommandList()->OMSetRenderTargets(1, &renderTargetHandle_, false, &dsvHandle);
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = System::GetDxCommon()->GetDsvHandle();
+	System::GetDxCommon()->GetCommandList()->OMSetRenderTargets(1, &renderTargetHandle_, false, &dsvHandle);
 
 	// レンダーテクスチャをクリア
 	float clearColor[] = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色でクリア
-	dxCommon_->GetCommandList()->ClearRenderTargetView(renderTargetHandle_, clearColor, 0, nullptr);
+	System::GetDxCommon()->GetCommandList()->ClearRenderTargetView(renderTargetHandle_, clearColor, 0, nullptr);
 
 	// 深度ステンシルをクリア
-	dxCommon_->GetCommandList()->ClearDepthStencilView(dxCommon_->GetDsvHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	System::GetDxCommon()->GetCommandList()->ClearDepthStencilView(System::GetDxCommon()->GetDsvHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	// ビューポートとシザー矩形を設定
 
-	D3D12_VIEWPORT viewport = dxCommon_->GetViewPort();
-	D3D12_RECT scissorRect = dxCommon_->GetScissor();
-	dxCommon_->GetCommandList()->RSSetViewports(1, &viewport);
-	dxCommon_->GetCommandList()->RSSetScissorRects(1, &scissorRect);
+	D3D12_VIEWPORT viewport = System::GetDxCommon()->GetViewPort();
+	D3D12_RECT scissorRect = System::GetDxCommon()->GetScissor();
+	System::GetDxCommon()->GetCommandList()->RSSetViewports(1, &viewport);
+	System::GetDxCommon()->GetCommandList()->RSSetScissorRects(1, &scissorRect);
 
-	dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	System::GetDxCommon()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void OffscreenRendering::OffscreenBarrier() {
 
 	renderTextureBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	renderTextureBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	dxCommon_->GetCommandList()->ResourceBarrier(1, &renderTextureBarrier);
+	System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &renderTextureBarrier);
 }

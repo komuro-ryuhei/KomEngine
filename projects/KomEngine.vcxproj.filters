@@ -38,7 +38,6 @@
     <ClCompile Include="Engine\Base\Mesh\Mesh.cpp" />
     <ClCompile Include="Engine\lib\Input\Input.cpp" />
     <ClCompile Include="Engine\lib\StringUtility\StringUtility.cpp" />
-    <ClCompile Include="Engine\Base\3d\Triangle\Triangle.cpp" />
     <ClCompile Include="Engine\lib\Math\MyMath.cpp" />
     <ClCompile Include="Engine\Base\2d\Sprite\Sprite.cpp" />
     <ClCompile Include="externals\imgui\imgui.cpp" />
@@ -83,7 +82,6 @@
     <ClInclude Include="Engine\lib\Vector\Vector.h" />
     <ClInclude Include="Engine\lib\Input\Input.h" />
     <ClInclude Include="Engine\lib\StringUtility\StringUtility.h" />
-    <ClInclude Include="Engine\Base\3d\Triangle\Triangle.h" />
     <ClInclude Include="Engine\lib\Math\MyMath.h" />
     <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
     <ClInclude Include="Engine\Base\2d\Sprite\Sprite.h" />

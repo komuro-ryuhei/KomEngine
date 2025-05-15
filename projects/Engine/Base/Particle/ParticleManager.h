@@ -6,7 +6,6 @@
 
 // MyClass
 #include "Engine/Base/Camera/Camera.h"
-#include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 #include "Engine/Base/SrvManager/SrvManager.h"
 #include "Engine/Base/TextureManager/TextureManager.h"

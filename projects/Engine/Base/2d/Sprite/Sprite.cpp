@@ -1,6 +1,7 @@
 #include "Sprite.h"
 
 #include "Engine/Base/System/System.h"
+#include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "externals/imgui/imgui.h"
 
 // getter

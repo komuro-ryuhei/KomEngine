@@ -2,8 +2,8 @@
 
 #include <format>
 
-#include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 #include "Engine/lib/Logger/Logger.h"
+#include "OffscreenRendering.h"
 
 const uint32_t DirectXCommon::kMaxSRVCount = 512;
 
@@ -26,6 +26,8 @@ size_t DirectXCommon::GetBackBufferCount() const { return 2; }
 D3D12_RENDER_TARGET_VIEW_DESC DirectXCommon::GetRtvDesc() const { return rtvDesc; }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetDsvHandle() const { return dsvHandle; }
+
+D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetRtvStartHandle() const { return rtvStartHandle; }
 
 DirectXCommon* DirectXCommon::GetInstance() {
 	static DirectXCommon instance;
@@ -55,12 +57,6 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 	InitializeScissoringRect();
 
 	InitializeDepthStencilView();
-
-	offscreenRendering_ = std::make_unique<OffscreenRendering>();
-	offscreenRendering_->Init();
-
-	//
-	OffScreeenRenderTargetView();
 }
 
 void DirectXCommon::PreDraw() {
@@ -78,14 +74,9 @@ void DirectXCommon::PostDraw() {
 
 	HRESULT hr;
 
-	renderTextureBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	renderTextureBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
 	swapChainBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	swapChainBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
-	// TransitionBarrierを張る
-	commandList_->ResourceBarrier(1, &renderTextureBarrier);
 	commandList_->ResourceBarrier(1, &swapChainBarrier);
 
 	hr = commandList_->Close();
@@ -296,7 +287,7 @@ void DirectXCommon::CreateRenderTargets() {
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D; // 2Dテクスチャとして書き込む
 
 	// ディスクリプタの先端を取得する
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle = rtvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+	rtvStartHandle = rtvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
 
 	// まず1つ目を作る。1つ目は最初のところに作る。作る場所をこちらで指定する必要がある。
 	rtvHandles[0] = rtvStartHandle;
@@ -306,10 +297,6 @@ void DirectXCommon::CreateRenderTargets() {
 	rtvHandles[1].ptr = rtvHandles[0].ptr + device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	// 2つ目を作る
 	device_->CreateRenderTargetView(swapChainResources[1].Get(), &rtvDesc, rtvHandles[1]);
-
-	// 3つ目
-	renderTargetHandle_ = rtvStartHandle;
-	renderTargetHandle_.ptr += device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * 2;
 }
 
 void DirectXCommon::TransitionBarrier() {
@@ -589,30 +576,4 @@ ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(ID3D12Device* 
 	device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&resource));
 
 	return resource;
-}
-
-void DirectXCommon::OffScreeenRenderTargetView() {
-
-	//
-	offscreenRendering_->OffScreeenRenderTargetView();
-}
-
-void DirectXCommon::OffScreenShaderResourceView() {}
-
-void DirectXCommon::RenderToTexture() {
-
-	// 
-	offscreenRendering_->RenderToTexture();
-}
-
-void DirectXCommon::Draw() {
-
-	// 
-	offscreenRendering_->Draw();
-}
-
-void DirectXCommon::OffscreenBarrier() {
-
-	// 
-	offscreenRendering_->OffscreenBarrier();
 }
