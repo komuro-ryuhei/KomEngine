@@ -33,6 +33,7 @@ public:
 public:
 	// getter
 	const Vector2& GetPosition() const;
+	const Vector2 GetCenterPosition() const;
 	float GetRotation() const;
 	const Vector4& GetColor() const;
 	const Vector2& GetSize() const;

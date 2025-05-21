@@ -31,7 +31,7 @@ private:
 
 	Transform transform_;
 
-	float speed_ = 0.1f;
+	float speed_ = 0.01f;
 	Vector3 direction_;
 
 	float radius_ = 0.8f;

@@ -29,8 +29,8 @@ public:
 
 private:
 
+	void CameraShake();
 	void CheckCollisions();
-
 	void ImGuiDebug();
 
 private:
@@ -41,8 +41,6 @@ private:
 	std::unique_ptr<Camera> camera_ = nullptr;
 	// Audio
 	std::unique_ptr<Audio> audio_ = nullptr;
-	// Sprite
-	std::unique_ptr<Sprite> sprite_ = nullptr;
 	// Model
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 	std::unique_ptr<Object3d> glassObject_ = nullptr;
@@ -59,4 +57,10 @@ private:
 	// Enemy
 	std::vector<std::unique_ptr<Enemy>> enemies_;
 	std::vector<std::unique_ptr<Object3d>> enemyObjects3d_;
+
+	// カメラシェイク
+	float shakeTimer_ = 0.0f;
+	float shakeDuration_ = 0.5f; // 秒数
+	bool isShaking_ = false;
+	Vector3 cameraDefaultPos_;
 };

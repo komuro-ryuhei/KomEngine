@@ -8,6 +8,7 @@
 
 // getter
 const Vector2& Sprite::GetPosition() const { return position_; }
+const Vector2 Sprite::GetCenterPosition() const { return {position_.x + size_.x * 0.5f, position_.y + size_.y * 0.5f}; }
 float Sprite::GetRotation() const { return rotation_; }
 const Vector4& Sprite::GetColor() const { return materialData->color; }
 const Vector2& Sprite::GetSize() const { return size_; }

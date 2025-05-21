@@ -8,28 +8,25 @@
 #include "struct.h"
 
 #include "Game/Entity/Player/PlayerBullet.h"
-
 #include "Game/Entity/Enemy/Enemy.h"
-
 #include "Engine/Base/2d/Sprite/Sprite.h"
 
 // C++
 #include <vector>
+#include <algorithm>
 
 class Player {
 
 public:
 	~Player();
 
-	void Init(Camera* camera, Sprite* sprite);
+	void Init(Camera* camera);
 
 	void Update();
 
 	void Draw();
 
 	void ImGuiDebug();
-
-	void LockOnTarget(std::vector<std::unique_ptr<Enemy>>& enemies);
 
 public:
 	float GetRadius() const;
@@ -39,14 +36,15 @@ private:
 	void Attack();
 	void Move();
 
+	void UpdateReticleSprite();
+
 private:
 	// カメラ
 	Camera* camera_ = nullptr;
 	// モデル
 	std::unique_ptr<Object3d> object3d_ = nullptr;
-	std::vector<Object3d*> bulletObjects_;
 	// 弾のリスト
-	std::vector<std::unique_ptr<PlayerBullet>> bullets_;
+	std::vector<std::unique_ptr<PlayerBullet>> bulletObjects_;
 	
 	// レティクルのスプライト
 	std::unique_ptr<Sprite> reticleSprite_ = nullptr;
@@ -60,7 +58,4 @@ private:
 	float radius_ = 1.0f;
 	// 弾有効フラグ
 	bool isBulletActive_ = false;
-
-	Enemy* lockedTarget_ = nullptr;
-	Sprite* lockOnSprite_ = nullptr;
 };

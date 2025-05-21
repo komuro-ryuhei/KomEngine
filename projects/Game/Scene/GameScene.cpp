@@ -23,10 +23,6 @@ void GameScene::Init() {
 	TextureManager::GetInstance()->LoadTexture(circle2);
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
 
-	// Sprite
-	sprite_ = std::make_unique<Sprite>();
-	sprite_->Init(uvTexture, BlendType::BLEND_NONE);
-
 	object3d_ = std::make_unique<Object3d>();
 	object3d_->Init(BlendType::BLEND_NONE);
 
@@ -77,7 +73,7 @@ void GameScene::Init() {
 
 	// Player
 	player_ = std::make_unique<Player>();
-	player_->Init(camera_.get(), sprite_.get());
+	player_->Init(camera_.get());
 
 	// ランダムな値を生成するための設定
 	std::random_device rd;
@@ -105,6 +101,9 @@ void GameScene::Init() {
 		enemies_.emplace_back(std::move(enemy));
 		enemyObjects3d_.emplace_back(std::move(enemyObject));
 	}
+
+	// カメラのデフォルト位置を保存
+	cameraDefaultPos_ = camera_->GetTranaslate();
 }
 
 void GameScene::Update() {
@@ -127,6 +126,7 @@ void GameScene::Update() {
 
 	// 当たり判定処理
 	CheckCollisions();
+	CameraShake();
 
 	// シーン遷移のDebug処理
 	if (System::GetInput()->TriggerKey(DIK_RETURN)) {
@@ -151,6 +151,24 @@ void GameScene::Draw() {
 
 void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }
 
+void GameScene::CameraShake() {
+
+	// カメラシェイク処理
+	if (isShaking_) {
+		shakeTimer_ += 1.0f / 60.0f; // 60FPS前提
+
+		float shakeStrength = 0.2f; // 揺れの大きさ
+		Vector3 shakeOffset = {(rand() % 100 / 100.0f - 0.5f) * 2.0f * shakeStrength, (rand() % 100 / 100.0f - 0.5f) * 2.0f * shakeStrength, 0.0f};
+
+		camera_->SetTranslate(cameraDefaultPos_ + shakeOffset);
+
+		if (shakeTimer_ >= shakeDuration_) {
+			isShaking_ = false;
+			camera_->SetTranslate(cameraDefaultPos_);
+		}
+	}
+}
+
 void GameScene::CheckCollisions() {
 
 	auto& bullets = player_->GetBullets();
@@ -166,6 +184,9 @@ void GameScene::CheckCollisions() {
 			if (distance < collisionDistance) {
 				// 衝突処理
 				bulletHit = true;
+				// カメラシェイクのフラグを建てる
+				isShaking_ = true;
+				shakeTimer_ = 0.0f;
 
 				// 衝突地点（弾と敵の中間地点）を計算
 				Vector3 bulletPos = (*itBullet)->GetTranslate();

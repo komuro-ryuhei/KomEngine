@@ -7,20 +7,18 @@
 #include <iostream>
 
 float Player::GetRadius() const { return radius_; }
-std::vector<std::unique_ptr<PlayerBullet>>& Player::GetBullets() { return bullets_; }
+
+std::vector<std::unique_ptr<PlayerBullet>>& Player::GetBullets() { return bulletObjects_; }
 
 Player::~Player() {
 
-	for (auto bulletObject : bulletObjects_) {
-		delete bulletObject;
-	}
+	// 
 	bulletObjects_.clear();
 }
 
-void Player::Init(Camera* camera, Sprite* sprite) {
+void Player::Init(Camera* camera) {
 
 	camera_ = camera;
-	lockOnSprite_ = sprite;
 
 	// 自機、弾の生成
 	object3d_ = std::make_unique<Object3d>();
@@ -31,36 +29,18 @@ void Player::Init(Camera* camera, Sprite* sprite) {
 
 	object3d_->SetScale({0.5f, 0.5f, 0.5f});
 
-	// 弾オブジェクトの生成
-	for (int i = 0; i < 10; ++i) {
-		auto bulletObject = new Object3d();
-		bulletObject->Init(BlendType::BLEND_NONE);
-		bulletObject->SetModel("sphere.obj");
-		bulletObject->SetDefaultCamera(camera_);
-		bulletObjects_.push_back(bulletObject);
-	}
+	// レティクルのスプライトを生成
+	reticleSprite_ = std::make_unique<Sprite>();
+	reticleSprite_->Init("./Resources/images/uvChecker.png", BlendType::BLEND_NONE);
+	reticleSprite_->SetSize({50.0f, 50.0f});
 }
 
 void Player::Update() {
 
-	// if (lockedTarget_ && lockedTarget_->GetIsAlive()) {
-	//	// 必要な行列を取得
-	//	Matrix4x4 viewMatrix = camera_->GetViewMatrix();
-	//	Matrix4x4 projMatrix = camera_->GetProjectionMatrix();
-	//	Matrix4x4 viewportMatrix = MyMath::MakeViewportMatrix(0.0f, 0.0f, 1280, 720, 0.0f, 1.0f);
-
-	//	// ロックオン対象の座標をスクリーン座標に変換
-	//	Vector3 targetPosition = lockedTarget_->GetTranslate();
-	//	Vector2 screenPosition = MyMath::WorldToScreen(targetPosition, viewMatrix, projMatrix, viewportMatrix);
-
-	//	// スプライトの位置を更新
-	//	lockOnSprite_->SetPosition(screenPosition);
-	//}
-
-	 Attack();
+	Attack();
 
 	// 弾の更新と削除
-	for (auto it = bullets_.begin(); it != bullets_.end();) {
+	for (auto it = bulletObjects_.begin(); it != bulletObjects_.end();) {
 		(*it)->Update();
 		(*it)->ImGuiDebug();
 
@@ -74,6 +54,7 @@ void Player::Update() {
 	object3d_->SetRotate(transform_.rotate);
 
 	Move();
+	UpdateReticleSprite();
 }
 
 void Player::Draw() {
@@ -81,9 +62,11 @@ void Player::Draw() {
 	//
 	object3d_->Draw();
 
-	for (auto& bullet : bullets_) {
+	for (auto& bullet : bulletObjects_) {
 		bullet->Draw();
 	}
+
+	reticleSprite_->Draw();
 
 	//// ロックオンスプライトの描画
 	// if (lockedTarget_ && lockedTarget_->GetIsAlive()) {
@@ -105,33 +88,47 @@ void Player::ImGuiDebug() {
 
 void Player::Attack() {
 
-	if (System::TriggerKey(DIK_SPACE) && !bulletObjects_.empty()) {
-		Object3d* bulletObject = bulletObjects_.back();
-		bulletObjects_.pop_back();
+	if (System::TriggerKey(DIK_SPACE)) {
+
+		// 弾の見た目（Object3d）を新規作成
+		Object3d* bulletObject = new Object3d();
+		bulletObject->Init(BlendType::BLEND_NONE);
+		bulletObject->SetModel("sphere.obj");
+		bulletObject->SetDefaultCamera(camera_);
 
 		auto newBullet = std::make_unique<PlayerBullet>();
 		newBullet->Init(camera_, bulletObject);
 		newBullet->SetTranlate(transform_.translate);
 
-		// ロックオン対象が有効か確認
-		 if (lockedTarget_ && lockedTarget_->GetIsAlive()) {
-			// ロックオン対象に向けて弾を発射
-			Vector3 direction = lockedTarget_->GetTranslate() - transform_.translate;
-			MyMath::Normalize(direction);
-			newBullet->SetDirection(direction);
-		 } else {
-			// ロックオン対象が無効ならデフォルトの前方向に発射
-			lockedTarget_ = nullptr;
-			Vector3 straightDirection = {0.0f, 0.0f, 1.0f};
-			MyMath::Normalize(straightDirection);
-			newBullet->SetDirection(straightDirection);
-		 }
+		Vector3 direction;
 
-		Vector3 straightDirection = {0.0f, 0.0f, 1.0f};
-		MyMath::Normalize(straightDirection);
-		newBullet->SetDirection(straightDirection);
+		if (reticleSprite_) {
+			Matrix4x4 viewMatrix = camera_->GetViewMatrix();
+			Matrix4x4 projMatrix = camera_->GetProjectionMatrix();
+			Matrix4x4 vpMatrix = MyMath::Multiply(viewMatrix, projMatrix);
+			Matrix4x4 invVPMatrix = MyMath::Inverse4x4(vpMatrix);
 
-		bullets_.emplace_back(std::move(newBullet));
+			Matrix4x4 viewportMatrix = MyMath::MakeViewportMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f);
+			Matrix4x4 invViewportMatrix = MyMath::Inverse4x4(viewportMatrix);
+
+			Vector2 spritePos = reticleSprite_->GetCenterPosition();
+			Vector3 screenNear = {spritePos.x, spritePos.y, 0.0f};
+			Vector3 screenFar = {spritePos.x, spritePos.y, 1.0f};
+
+			Vector3 ndcNear = MyMath::Transform(screenNear, invViewportMatrix);
+			Vector3 ndcFar = MyMath::Transform(screenFar, invViewportMatrix);
+
+			Vector3 worldNear = MyMath::Transform(ndcNear, invVPMatrix);
+			Vector3 worldFar = MyMath::Transform(ndcFar, invVPMatrix);
+
+			direction = worldFar - worldNear;
+		} else {
+			direction = {0.0f, 0.0f, 1.0f};
+		}
+
+		MyMath::Normalize(direction);
+		newBullet->SetDirection(direction);
+		bulletObjects_.emplace_back(std::move(newBullet));
 	}
 }
 
@@ -154,21 +151,29 @@ void Player::Move() {
 	}
 }
 
- void Player::LockOnTarget(std::vector<std::unique_ptr<Enemy>>& enemies) {
+void Player::UpdateReticleSprite() {
 
-	float closestDistance = (std::numeric_limits<float>::max)();
-	Enemy* closestEnemy = nullptr;
+	// レティクル操作（十字キー）
+	Vector2 reticlePos = reticleSprite_->GetPosition();
+	float moveSpeed = 10.0f;
 
-	for (auto& enemy : enemies) {
-		if (!enemy->GetIsAlive())
-			continue;
-
-		float distance = MyMath::CalculateDistance(transform_.translate, enemy->GetTranslate());
-		if (distance < closestDistance) {
-			closestDistance = distance;
-			closestEnemy = enemy.get();
-		}
+	if (System::PushKey(DIK_LEFT)) {
+		reticlePos.x -= moveSpeed;
 	}
-	// 最も近い敵をロックオン
-	lockedTarget_ = closestEnemy;
- }
+	if (System::PushKey(DIK_RIGHT)) {
+		reticlePos.x += moveSpeed;
+	}
+	if (System::PushKey(DIK_UP)) {
+		reticlePos.y -= moveSpeed;
+	}
+	if (System::PushKey(DIK_DOWN)) {
+		reticlePos.y += moveSpeed;
+	}
+
+	// 画面外に出ないよう制限（1280x720前提）
+	reticlePos.x = std::clamp(reticlePos.x, 0.0f, 1280.0f);
+	reticlePos.y = std::clamp(reticlePos.y, 0.0f, 720.0f);
+	reticleSprite_->SetPosition(reticlePos);
+
+	reticleSprite_->Update();
+}
