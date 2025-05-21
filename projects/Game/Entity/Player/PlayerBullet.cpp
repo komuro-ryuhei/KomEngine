@@ -10,7 +10,7 @@ void PlayerBullet::Init(Camera* camera, Object3d* object3d) {
 	camera_ = camera;
 	object3d_ = object3d;
 
-	object3d_->Init();
+	object3d_->Init(BlendType::BLEND_NONE);
 	object3d_->SetDefaultCamera(camera_);
 
 	object3d_->SetScale({0.1f, 0.1f, 0.1f});

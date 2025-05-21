@@ -24,7 +24,7 @@ void Player::Init(Camera* camera, Sprite* sprite) {
 
 	// 自機、弾の生成
 	object3d_ = std::make_unique<Object3d>();
-	object3d_->Init();
+	object3d_->Init(BlendType::BLEND_NONE);
 
 	object3d_->SetModel("sphere.obj");
 	object3d_->SetDefaultCamera(camera_);
@@ -34,7 +34,7 @@ void Player::Init(Camera* camera, Sprite* sprite) {
 	// 弾オブジェクトの生成
 	for (int i = 0; i < 10; ++i) {
 		auto bulletObject = new Object3d();
-		bulletObject->Init();
+		bulletObject->Init(BlendType::BLEND_NONE);
 		bulletObject->SetModel("sphere.obj");
 		bulletObject->SetDefaultCamera(camera_);
 		bulletObjects_.push_back(bulletObject);

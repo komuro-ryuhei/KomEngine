@@ -40,15 +40,17 @@ private:
 	void Move();
 
 private:
+	// カメラ
 	Camera* camera_ = nullptr;
-	DirectXCommon* dxCommon_ = nullptr;
 	// モデル
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 	std::vector<Object3d*> bulletObjects_;
 	// 弾のリスト
 	std::vector<std::unique_ptr<PlayerBullet>> bullets_;
+	
+	// レティクルのスプライト
+	std::unique_ptr<Sprite> reticleSprite_ = nullptr;
 
-	Input* input_ = nullptr;
 	// SRT
 	Transform transform_;
 

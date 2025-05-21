@@ -16,7 +16,7 @@ void Enemy::Init(Camera* camera, Object3d* object3d) {
 	camera_ = camera;
 	object3d_ = object3d;
 
-	object3d_->Init();
+	object3d_->Init(BlendType::BLEND_NONE);
 
 	transform_.translate = {0.0f, 0.0f, 10.0f};
 	object3d_->SetTranslate(transform_.translate);

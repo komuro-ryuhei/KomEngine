@@ -56,7 +56,7 @@ void GameScene::Init() {
 	SoundData soundData = audio_->SoundLoadWave("Resources/fanfare.wav");
 	// audio_->SoundPlayWave(audio_->GetXAudio2(), soundData);
 
-	//
+	// particle
 	ParticleManager::GetInstance()->Init(camera_.get(), BlendType::BLEND_ADD);
 	ParticleManager::GetInstance()->CreateParticleGeoup("hit", circle2, "a");
 	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
@@ -89,7 +89,7 @@ void GameScene::Init() {
 	const int enemyCount = 5;
 	for (int i = 0; i < enemyCount; ++i) {
 		auto enemyObject = std::make_unique<Object3d>();
-		enemyObject->Init();
+		enemyObject->Init(BlendType::BLEND_NONE);
 		enemyObject->SetModel("sphere.obj");
 		enemyObject->SetDefaultCamera(camera_.get());
 
