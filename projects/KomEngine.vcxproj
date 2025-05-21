@@ -133,7 +133,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Base\Mesh\Mesh.cpp" />
     <ClCompile Include="Engine\lib\StringUtility\StringUtility.cpp" />
     <ClCompile Include="Engine\lib\Math\MyMath.cpp" />
-    <ClCompile Include="Engine\Base\3d\Triangle\Triangle.cpp" />
     <ClCompile Include="Engine\Base\2d\Sprite\Sprite.cpp" />
     <ClCompile Include="Engine\Base\TextureManager\TextureManager.cpp" />
     <ClCompile Include="Engine\Base\3d\Object3d\Object3d.cpp" />
@@ -180,7 +179,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Base\Mesh\Mesh.h" />
     <ClInclude Include="Engine\lib\StringUtility\StringUtility.h" />
     <ClInclude Include="Engine\lib\Math\MyMath.h" />
-    <ClInclude Include="Engine\Base\3d\Triangle\Triangle.h" />
     <ClInclude Include="Engine\Base\2d\Sprite\Sprite.h" />
     <ClInclude Include="Engine\Base\TextureManager\TextureManager.h" />
     <ClInclude Include="Engine\Base\3d\Object3d\Object3d.h" />

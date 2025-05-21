@@ -48,7 +48,7 @@ public:
 		Vector3 worldPosition;
 	};
 
-	ComPtr<ID3D12Resource> CreateVertexResource(DirectXCommon* dXCommon, size_t sizeInBytes);
+	ComPtr<ID3D12Resource> CreateVertexResource(size_t sizeInBytes);
 
 	void CreateVertexBufferView();
 
@@ -56,7 +56,7 @@ public:
 
 	void WriteDateForResource();
 
-	void LightSetting(DirectXCommon* dXCommon);
+	void LightSetting();
 
 	void ImGuiDebug();
 
@@ -68,7 +68,7 @@ public:
 	ID3D12Resource* GetSpotLightResource()const;
 
 private:
-	DirectXCommon* dxCommon_;
+	// DirectXCommon* dxCommon_;
 
 	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
 	D3D12_RESOURCE_DESC vertexResourceDesc{};

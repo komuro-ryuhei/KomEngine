@@ -1,5 +1,6 @@
 #include "Mesh.h"
 
+#include "Engine/Base/System/System.h"
 #include "externals/imgui/imgui.h"
 #include <numbers>
 
@@ -15,10 +16,9 @@ ID3D12Resource* Mesh::GetPointLightResource() const { return materialResourcePoi
 
 ID3D12Resource* Mesh::GetSpotLightResource() const { return materialResourceSpot.Get(); }
 
-ComPtr<ID3D12Resource> Mesh::CreateVertexResource(DirectXCommon* dxCommon, size_t sizeInBytes) {
-	HRESULT hr;
+ComPtr<ID3D12Resource> Mesh::CreateVertexResource(size_t sizeInBytes) {
 
-	dxCommon_ = dxCommon;
+	HRESULT hr;
 
 	// 頂点リソース用のヒープの設定
 	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -34,7 +34,8 @@ ComPtr<ID3D12Resource> Mesh::CreateVertexResource(DirectXCommon* dxCommon, size_
 	// バッファの場合はこれにする決まり
 	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	// 実際に頂点リソースを作る
-	hr = dxCommon_->GetDevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
+	hr = System::GetDxCommon()->GetDevice()->CreateCommittedResource(
+	    &uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
 	assert(SUCCEEDED(hr));
 
 	return vertexResource;
@@ -52,7 +53,7 @@ void Mesh::CreateVertexBufferView() {
 
 void Mesh::CreateMaterialResource() {
 
-	materialResource_ = dxCommon_->CreateBufferResource(dxCommon_->GetDevice(), sizeof(Vector4));
+	materialResource_ = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(Vector4));
 	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	materialData->color = Vector4(1.0, 1.0f, 1.0f, 1.0f);
 }
@@ -74,12 +75,10 @@ void Mesh::WriteDateForResource() {
 	CreateMaterialResource();
 }
 
-void Mesh::LightSetting(DirectXCommon* dXCommon) {
-
-	dxCommon_ = dXCommon;
+void Mesh::LightSetting() {
 
 	// Light用のマテリアルリソースを作る
-	materialResourceLight = dxCommon_->CreateBufferResource(dxCommon_->GetDevice(), sizeof(DirectionalLight));
+	materialResourceLight = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(DirectionalLight));
 	materialResourceLight->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 
 	directionalLightData->color = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -87,13 +86,13 @@ void Mesh::LightSetting(DirectXCommon* dXCommon) {
 	directionalLightData->intensity = 0.0f;
 
 	// Phong用のマテリアルリソースを作る
-	materialResourcePhong = dxCommon_->CreateBufferResource(dxCommon_->GetDevice(), sizeof(CameraForGPU));
+	materialResourcePhong = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(CameraForGPU));
 	materialResourcePhong->Map(0, nullptr, reinterpret_cast<void**>(&phongLightData));
 
 	phongLightData->worldPosition = {0.0f, 4.0f, -10.0f};
 
 	// PointLight用のマテリアルリソースを作る
-	materialResourcePoint = dxCommon_->CreateBufferResource(dxCommon_->GetDevice(), sizeof(PointLight));
+	materialResourcePoint = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(PointLight));
 	materialResourcePoint->Map(0, nullptr, reinterpret_cast<void**>(&pointLightData));
 
 	pointLightData->color = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -103,7 +102,7 @@ void Mesh::LightSetting(DirectXCommon* dXCommon) {
 	pointLightData->decay = 2.0f;
 
 	// PointLight用のマテリアルリソースを作る
-	materialResourceSpot = dxCommon_->CreateBufferResource(dxCommon_->GetDevice(), sizeof(SpotLight));
+	materialResourceSpot = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(SpotLight));
 	materialResourceSpot->Map(0, nullptr, reinterpret_cast<void**>(&spotLightData));
 
 	spotLightData->color = {1.0f, 1.0f, 1.0f, 1.0f};

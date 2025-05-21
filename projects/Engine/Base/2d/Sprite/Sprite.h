@@ -17,7 +17,7 @@ public:
 	Sprite() = default;
 	~Sprite() = default;
 
-	void Init(const std::string& textureFilePath);
+	void Init(const std::string& textureFilePath, BlendType type);
 
 	void Update();
 

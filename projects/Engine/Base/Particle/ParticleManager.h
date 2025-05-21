@@ -6,7 +6,6 @@
 
 // MyClass
 #include "Engine/Base/Camera/Camera.h"
-#include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 #include "Engine/Base/SrvManager/SrvManager.h"
 #include "Engine/Base/TextureManager/TextureManager.h"
@@ -45,7 +44,7 @@ class ParticleManager {
 public:
 	static ParticleManager* GetInstance();
 
-	void Init(Camera* camera);
+	void Init(Camera* camera, BlendType type);
 
 	void Update();
 

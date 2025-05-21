@@ -25,13 +25,13 @@ void GameScene::Init() {
 
 	// Sprite
 	sprite_ = std::make_unique<Sprite>();
-	sprite_->Init(uvTexture);
+	sprite_->Init(uvTexture, BlendType::BLEND_NONE);
 
 	object3d_ = std::make_unique<Object3d>();
-	object3d_->Init();
+	object3d_->Init(BlendType::BLEND_NONE);
 
 	glassObject_ = std::make_unique<Object3d>();
-	glassObject_->Init();
+	glassObject_->Init(BlendType::BLEND_NONE);
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -57,7 +57,7 @@ void GameScene::Init() {
 	// audio_->SoundPlayWave(audio_->GetXAudio2(), soundData);
 
 	//
-	ParticleManager::GetInstance()->Init(camera_.get());
+	ParticleManager::GetInstance()->Init(camera_.get(), BlendType::BLEND_ADD);
 	ParticleManager::GetInstance()->CreateParticleGeoup("hit", circle2, "a");
 	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
 	ParticleManager::GetInstance()->CreateParticleGeoup("ring", ring, "ring");

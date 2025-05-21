@@ -6,13 +6,13 @@
 #include "externals/imgui/imgui.h"
 #endif // _DEBUG
 
-void Object3d::Init() {
+void Object3d::Init(BlendType type) {
 
 	camera_ = defaultCamera_;
 
 	//
 	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("object3d");
+	pipelineManager_->PSOSetting("object3d", type);
 
 	// 座標変換用
 	transformationMatrixResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(TransformationMatrix));

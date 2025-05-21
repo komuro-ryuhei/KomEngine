@@ -13,7 +13,7 @@ void TitleScene::Init() {
 
 	// Sprite
 	sprite_ = std::make_unique<Sprite>();
-	sprite_->Init(uvTexture);
+	sprite_->Init(uvTexture, BlendType::BLEND_NONE);
 
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({0.0f, 0.0f, 0.0f});

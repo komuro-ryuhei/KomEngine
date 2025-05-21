@@ -15,14 +15,14 @@ ParticleManager* ParticleManager::GetInstance() {
 	return instance;
 }
 
-void ParticleManager::Init(Camera* camera) {
+void ParticleManager::Init(Camera* camera, BlendType type) {
 
 	//
 	camera_ = camera;
 
 	//
 	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("particle");
+	pipelineManager_->PSOSetting("particle", type);
 
 	std::random_device seedGenerator;
 	std::mt19937 randomEngine(seedGenerator());
