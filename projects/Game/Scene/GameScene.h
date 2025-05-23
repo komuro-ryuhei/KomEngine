@@ -41,9 +41,6 @@ private:
 	std::unique_ptr<Camera> camera_ = nullptr;
 	// Audio
 	std::unique_ptr<Audio> audio_ = nullptr;
-	// Model
-	std::unique_ptr<Object3d> object3d_ = nullptr;
-	std::unique_ptr<Object3d> glassObject_ = nullptr;
 
 	// effect
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;

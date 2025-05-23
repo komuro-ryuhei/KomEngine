@@ -7,13 +7,14 @@ void TitleScene::Init() {
 
 	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
-	TextureManager::GetInstance()->LoadTexture(uvTexture);
 	const std::string& monsterBallTexture = "./Resources/images/monsterBall.png";
+
+	TextureManager::GetInstance()->LoadTexture(uvTexture);
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
 
 	// Sprite
 	sprite_ = std::make_unique<Sprite>();
-	sprite_->Init(uvTexture, BlendType::BLEND_NONE);
+	sprite_->Init(monsterBallTexture, BlendType::BLEND_NONE);
 
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({0.0f, 0.0f, 0.0f});

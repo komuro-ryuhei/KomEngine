@@ -11,40 +11,28 @@
 
 void GameScene::Init() {
 
-	// テクスチャの読み込み
+	// テクスチャのファイルパス
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
 	const std::string& circle = "./Resources/images/circle.png";
 	const std::string& circle2 = "./Resources/images/circle2.png";
 	const std::string& monsterBallTexture = "./Resources/images/monsterBall.png";
 	const std::string& ring = "./Resources/images/gradationLine.png";
 
+	// テクスチャ、モデルの読み込み
 	TextureManager::GetInstance()->LoadTexture(uvTexture);
 	TextureManager::GetInstance()->LoadTexture(circle);
 	TextureManager::GetInstance()->LoadTexture(circle2);
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
-
-	object3d_ = std::make_unique<Object3d>();
-	object3d_->Init(BlendType::BLEND_NONE);
-
-	glassObject_ = std::make_unique<Object3d>();
-	glassObject_->Init(BlendType::BLEND_NONE);
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("terrain.obj");
 	ModelManager::GetInstance()->LoadModel("axis.obj");
 
-	object3d_->SetModel("sphere.obj");
-	glassObject_->SetModel("terrain.obj");
-
+	// 各種初期化
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({0.0f, 0.0f, 0.0f});
 	camera_->SetTranslate({0.0f, 0.0f, -10.0f});
-	// camera_->SetRotate({0.5f, 0.0f, 0.0f});
-	// camera_->SetTranslate({0.0f, 7.0f, -12.0f});
-
-	object3d_->SetDefaultCamera(camera_.get());
-	glassObject_->SetDefaultCamera(camera_.get());
 
 	audio_ = std::make_unique<Audio>();
 	audio_->Init();
@@ -155,9 +143,9 @@ void GameScene::CameraShake() {
 
 	// カメラシェイク処理
 	if (isShaking_) {
-		shakeTimer_ += 1.0f / 60.0f; // 60FPS前提
+		shakeTimer_ += 1.0f / 60.0f;
 
-		float shakeStrength = 0.2f; // 揺れの大きさ
+		float shakeStrength = 0.2f;
 		Vector3 shakeOffset = {(rand() % 100 / 100.0f - 0.5f) * 2.0f * shakeStrength, (rand() % 100 / 100.0f - 0.5f) * 2.0f * shakeStrength, 0.0f};
 
 		camera_->SetTranslate(cameraDefaultPos_ + shakeOffset);
