@@ -32,14 +32,13 @@ private:
 	std::unique_ptr<Camera> camera_ = nullptr;
 	// Audio
 	std::unique_ptr<Audio> audio_ = nullptr;
+	// Skybox
+	std::unique_ptr<Skybox> skybox_ = nullptr;
 	// Sprite
 	std::unique_ptr<Sprite> sprite_ = nullptr;
 	// Model
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 	std::unique_ptr<Object3d> glassObject_ = nullptr;
-
-	// Skybox
-	std::unique_ptr<Skybox> skybox_ = nullptr;
 
 	// 
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;

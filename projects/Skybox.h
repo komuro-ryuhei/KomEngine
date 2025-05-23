@@ -7,36 +7,31 @@
 #include <vector>
 
 // MyClass
+#include "Engine/Base/Camera/Camera.h"
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 #include "Engine/Base/TextureManager/TextureManager.h"
 #include "Engine/Base/WinApp/WinApp.h"
 #include "Engine/lib/Math/MyMath.h"
-#include "Engine/Base/Camera/Camera.h"
-#include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 #include "struct.h"
 
 class Skybox {
 
 public:
-	void Init(DirectXCommon* dxCommon, const std::string& directoryPath, const std::string& filename);
+	Skybox() = default;
+	~Skybox() = default;
+
+	void Init(const std::string& filename);
 
 	void Update();
 
 	void Draw();
 
-public: // メンバ関数
-	Skybox() = default;
-	~Skybox() = default;
-	Skybox(const Skybox&) = delete;
-	const Skybox& operator=(const Skybox&) = delete;
-
 private:
-	// 
+	//
 	void InitPosition();
 
 private: // メンバ変数
-	DirectXCommon* dxCommon_ = nullptr;
 	// ウィンドウズアプリケーション
 	WinApp* winApp_ = nullptr;
 
@@ -52,7 +47,7 @@ private: // メンバ変数
 	// マテリアルリソース内のデータを指すポインタ
 	Material* materialData = nullptr;
 
-	std::string& filename_;
+	std::string filename_;
 
 	// カメラ
 	Camera* camera_ = nullptr;

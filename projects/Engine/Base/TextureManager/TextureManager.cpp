@@ -66,7 +66,13 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
 	textureData.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(textureData.srvIndex);
 
-	srvManager_->CreateSRVforTexture2D(textureData.srvIndex, textureData.resource.Get(), textureData.metaData.format, static_cast<UINT>(textureData.metaData.mipLevels));
+	bool isCubeMap = textureData.metaData.dimension == DirectX::TEX_DIMENSION_TEXTURE2D && textureData.metaData.arraySize == 6 && (textureData.metaData.miscFlags & DirectX::TEX_MISC_TEXTURECUBE);
+
+	if (isCubeMap) {
+		srvManager_->CreateSRVforTextureCube(textureData.srvIndex, textureData.resource.Get(), textureData.metaData.format, static_cast<UINT>(textureData.metaData.mipLevels));
+	} else {
+		srvManager_->CreateSRVforTexture2D(textureData.srvIndex, textureData.resource.Get(), textureData.metaData.format, static_cast<UINT>(textureData.metaData.mipLevels));
+	}
 
 	UploadTextureData(textureData.resource.Get(), mipImage);
 

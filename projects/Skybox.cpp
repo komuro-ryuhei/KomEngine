@@ -3,23 +3,22 @@
 
 constexpr uint32_t kSkyboxVertexCount = 24;
 
-void Skybox::Init(DirectXCommon* dxCommon, const std::string& directoryPath, const std::string& filename) {
+void Skybox::Init(const std::string& filename) {
 
-	dxCommon_ = dxCommon;
 	filename_ = filename;
 
 	//
 	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("object3d", BlendType::BLEND_NONE);
+	pipelineManager_->PSOSetting("skybox", BlendType::BLEND_NONE);
 
-	vertexResource = dxCommon_->CreateBufferResource(dxCommon_->GetDevice(), sizeof(VertexData));
+	vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * kSkyboxVertexCount);
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData));
+	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * kSkyboxVertexCount);
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
 
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 
-	materialResource = dxCommon_->CreateBufferResource(dxCommon_->GetDevice(), sizeof(Material));
+	materialResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(Material));
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	materialData->enableLighting = false;
@@ -41,35 +40,38 @@ void Skybox::Init(DirectXCommon* dxCommon, const std::string& directoryPath, con
 	    {0.0f, 0.0f, 0.0f},
 	};
 
-	cameraTransform = {
-	    {1.0f, 1.0f, 1.0f  },
-	    {0.3f, 0.0f, 0.0f  },
-	    {0.0f, 4.0f, -10.0f},
-	};
-
 	InitPosition();
 }
 
 void Skybox::Update() {
 
-	Matrix4x4 worldMatrix = MyMath::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-	Matrix4x4 projectionMatrix = MyMath::MakePerspectiveFovMatrix(0.45f, float(winApp_->GetWindowWidth()) / float(winApp_->GetWindowHeight()), 0.1f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrix;
 	if (defaultCamera_) {
-		const Matrix4x4& viewProjectionMatrix = defaultCamera_->GetViewProjectionMatrix();
-		worldViewProjectionMatrix = MyMath::Multiply(worldMatrix, viewProjectionMatrix);
-	} else {
-		worldViewProjectionMatrix = worldMatrix;
+		// カメラの位置にスカイボックスを追従
+		transform.translate = defaultCamera_->GetTranaslate();
+
+		// ワールド行列（スケールと回転）
+		Matrix4x4 worldMatrix = MyMath::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+
+		// カメラのビュー＆プロジェクション行列を取得
+		Matrix4x4 viewMatrix = defaultCamera_->GetViewMatrix();
+		Matrix4x4 projectionMatrix = defaultCamera_->GetProjectionMatrix();
+
+		// ビュー行列の位置成分を無効化（回転のみ反映）
+		viewMatrix.m[3][0] = 0.0f;
+		viewMatrix.m[3][1] = 0.0f;
+		viewMatrix.m[3][2] = 0.0f;
+
+		Matrix4x4 viewProjMatrix = MyMath::Multiply(viewMatrix, projectionMatrix);
+		Matrix4x4 worldViewProjectionMatrix = MyMath::Multiply(worldMatrix, viewProjMatrix);
+
+		// バッファ転送
+		transformationMatrixData->WVP = worldViewProjectionMatrix;
+		transformationMatrixData->World = worldMatrix;
+		transformationMatrixData->WorldInverseTranspose = MyMath::Transpose4x4(MyMath::Inverse4x4(worldMatrix));
 	}
-	transformationMatrixData->WVP = worldViewProjectionMatrix;
-	transformationMatrixData->World = worldMatrix;
-	transformationMatrixData->WorldInverseTranspose = MyMath::Inverse4x4(worldMatrix);
-	transformationMatrixData->WorldInverseTranspose = MyMath::Transpose4x4(transformationMatrixData->WorldInverseTranspose);
 }
 
 void Skybox::Draw() {
-
-	ComPtr<ID3D12GraphicsCommandList> commandList = dxCommon_->GetCommandList();
 
 	ComPtr<ID3D12GraphicsCommandList> commandList = System::GetDxCommon()->GetCommandList();
 

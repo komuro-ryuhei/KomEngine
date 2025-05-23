@@ -16,6 +16,11 @@ void GameScene::Init() {
 	TextureManager::GetInstance()->LoadTexture(circle);
 	TextureManager::GetInstance()->LoadTexture(circle2);
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/rostock_laage_airport_4k.dds");
+
+	// Skybox
+	skybox_ = std::make_unique<Skybox>();
+	skybox_->Init("./Resources/images/rostock_laage_airport_4k.dds");
 
 	// Sprite
 	sprite_ = std::make_unique<Sprite>();
@@ -78,6 +83,8 @@ void GameScene::Update() {
 
 	sprite_->Update();
 
+	skybox_->Update();
+
 	object3d_->Update();
 	glassObject_->Update();
 
@@ -111,6 +118,8 @@ void GameScene::Update() {
 }
 
 void GameScene::Draw() {
+
+	skybox_->Draw();
 
 	// sprite_->Draw();
 
