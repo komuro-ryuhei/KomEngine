@@ -131,7 +131,12 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 			group.particles.push_back(MakeRingParticle(randomEngine, position));
 		} else if (name == "cylinder") {
 			group.particles.push_back(MakeCylinderParticle(randomEngine, position));
+		} else if (name == "moonLight") {
+			group.particles.push_back(MakeRingParticle(randomEngine, position));
+			group.particles.push_back(MakeMoonLightParticle(randomEngine, position, true));  // 縦線
+			group.particles.push_back(MakeMoonLightParticle(randomEngine, position, false)); // 横線
 		}
+
 	}
 }
 
@@ -213,7 +218,7 @@ Particle ParticleManager::MakeRingParticle(std::mt19937& randomEngine, const Vec
 	particle.transform.translate = translate;
 	particle.velocity = {0.0f, 0.0f, 0.0f};
 	particle.color = {1.0f, 1.0f, 1.0f, 1.0f};
-	particle.lifeTime = 0.1f;
+	particle.lifeTime = 1.0f;
 	particle.currentTime = 0.0f;
 	return particle;
 }
@@ -234,11 +239,37 @@ Particle ParticleManager::MakeCylinderParticle(std::mt19937& randomEngine, const
 	return particle;
 }
 
+Particle ParticleManager::MakeMoonLightParticle(std::mt19937& randomEngine, const Vector3& translate, bool isVertical) {
+
+	Particle particle;
+
+	// 回転と位置
+	particle.transform.rotate = isVertical ? Vector3{0.0f, 0.0f, 1.0f} : Vector3{0.0f, 0.0f, 2.0f};
+	particle.transform.translate = translate;
+
+	particle.velocity = {0.0f, 0.0f, 0.0f};
+
+	// 視認性の高い黄色
+	particle.color = {1.0f, 1.0f, 0.0f, 1.0f};
+
+	particle.lifeTime = 1.0f;
+	particle.currentTime = 0.0f;
+
+	float rotSpeed = std::sin(particle.currentTime * 2.0f) * 0.05f;
+	particle.transform.rotate.z += rotSpeed;
+	float scaleBase = 1.0f;
+	float scaleOffset = 0.2f * std::sin(particle.currentTime * 4.0f);
+	particle.transform.scale = Vector3{scaleBase + scaleOffset, scaleBase + scaleOffset, 1.0f};
+
+	return particle;
+}
+
 void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& particleType) {
 
 	std::vector<VertexData> vertices;
 
 	if (particleType == "ring") {
+
 		const uint32_t kRingDivide = 32;
 		const float kOuterRadius = 2.0f;
 		const float kInnerRadius = 1.0f;
@@ -284,10 +315,11 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
             });
 		}
 	} else if (particleType == "cylinder") {
+
 		const uint32_t kLineCount = 32;
 		const float radius = 2.0f;
 
-		// ★ ランダム生成器
+		// ランダム生成器
 		std::random_device seed;
 		std::mt19937 randEngine(seed());
 		std::uniform_real_distribution<float> heightDist(1.5f, 2.5f); // 高さの範囲
@@ -302,7 +334,7 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 			float x1 = std::cos(nextAngle) * radius;
 			float z1 = std::sin(nextAngle) * radius;
 
-			// ★ ランダムな高さ
+			// ランダムな高さ
 			float height0 = heightDist(randEngine);
 			float height1 = heightDist(randEngine);
 
@@ -325,6 +357,52 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 			vertices.push_back({p2, uvTop, normal});
 			vertices.push_back({p1, uvBottom, normal});
 			vertices.push_back({p3, uvTop, normal});
+		}
+	} else if (particleType == "moonLight") {
+
+		const uint32_t kRingDivide = 32;
+		const float kOuterRadius = 2.0f;
+		const float kInnerRadius = 1.0f;
+		const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kRingDivide);
+
+		for (uint32_t index = 0; index < kRingDivide; ++index) {
+			float sin = std::sin(index * radianPerDivide);
+			float cos = std::cos(index * radianPerDivide);
+			float sinNext = std::sin((index + 1) * radianPerDivide);
+			float cosNext = std::cos((index + 1) * radianPerDivide);
+			float u = float(index) / float(kRingDivide);
+			float uNext = float(index + 1) / float(kRingDivide);
+
+			vertices.push_back({
+			    {-sin * kOuterRadius, cos * kOuterRadius, 0.0f, 1.0f},
+                {u, 0.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
+                {uNext, 0.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
+                {u, 1.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
+                {uNext, 0.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sinNext * kInnerRadius, cosNext * kInnerRadius, 0.0f, 1.0f},
+                {uNext, 1.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
+                {u, 1.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
 		}
 	} else {
 		vertices = {

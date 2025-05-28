@@ -65,6 +65,10 @@ public:
 	// シリンダーのエフェクト
 	Particle MakeCylinderParticle(std::mt19937& randomEngine, const Vector3& translate);
 
+	// 
+	Particle MakeMoonLightParticle(std::mt19937& randomEngine, const Vector3& translate, bool isVertical);
+	// Particle MakeMoonLightParticle(std::mt19937& randomEngine, const Vector3& translate, bool isVertical);
+
 private:
 	ParticleManager() = default;
 	~ParticleManager() = default;
