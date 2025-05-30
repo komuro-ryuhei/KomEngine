@@ -3,7 +3,6 @@
 #include <format>
 
 #include "Engine/lib/Logger/Logger.h"
-#include "OffscreenRendering.h"
 
 const uint32_t DirectXCommon::kMaxSRVCount = 512;
 

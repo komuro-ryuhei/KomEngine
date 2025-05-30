@@ -1,7 +1,10 @@
 #include "Object3d.h"
 #include "Engine/Base/System/System.h"
 #include "Engine/lib/Logger/Logger.h"
+
+#ifdef _DEBUG
 #include "externals/imgui/imgui.h"
+#endif // _DEBUG
 
 void Object3d::Init(BlendType type) {
 
@@ -77,6 +80,8 @@ void Object3d::Draw() {
 
 void Object3d::ImGuiDebug() {
 
+#ifdef _DEBUG
+
 	ImGui::Begin("object3d");
 
 	ImGui::DragFloat3("scale", &transform.scale.x, 0.01f);
@@ -84,6 +89,8 @@ void Object3d::ImGuiDebug() {
 	ImGui::DragFloat3("translate", &transform.translate.x, 0.01f);
 
 	ImGui::End();
+
+#endif // _DEBUG
 }
 
 void Object3d::SetModel(const std::string& filePath) { model_ = ModelManager::GetInstance()->FindModel(std::move(filePath)); }

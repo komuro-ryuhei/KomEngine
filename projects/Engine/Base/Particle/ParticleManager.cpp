@@ -37,6 +37,8 @@ void ParticleManager::Update() {
 	Matrix4x4 viewMatrix = camera_->GetViewMatrix();
 	Matrix4x4 projectionMatrix = camera_->GetProjectionMatrix();
 
+	UpdateSpiralEmitter();
+
 	for (auto& [name, group] : particleGroups) {
 
 		size_t numInstance = 0;
@@ -133,10 +135,14 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 			group.particles.push_back(MakeCylinderParticle(randomEngine, position));
 		} else if (name == "moonLight") {
 			group.particles.push_back(MakeRingParticle(randomEngine, position));
-			group.particles.push_back(MakeMoonLightParticle(randomEngine, position, true));  // 縦線
-			group.particles.push_back(MakeMoonLightParticle(randomEngine, position, false)); // 横線
+			group.particles.push_back(MakeMoonLightParticle(randomEngine, position, true));
+			group.particles.push_back(MakeMoonLightParticle(randomEngine, position, false)); 
+		} else if (name == "ribbon") {
+			spiralEmitter.position = position;
+			spiralEmitter.count = 0;
+			spiralEmitter.timer = 0.0f;
+			spiralEmitter.active = true;
 		}
-
 	}
 }
 
@@ -260,6 +266,37 @@ Particle ParticleManager::MakeMoonLightParticle(std::mt19937& randomEngine, cons
 	float scaleBase = 1.0f;
 	float scaleOffset = 0.2f * std::sin(particle.currentTime * 4.0f);
 	particle.transform.scale = Vector3{scaleBase + scaleOffset, scaleBase + scaleOffset, 1.0f};
+
+	return particle;
+}
+
+Particle ParticleManager::MakeSpiralParticle(std::mt19937& randomEngine, const Vector3& translate, float angleOffset) {
+
+	Particle particle;
+
+	// 初期位置：円周上に配置
+	float radius = 2.0f;
+	float angle = angleOffset;
+
+	particle.transform.translate = {std::cos(angle) * radius + translate.x, translate.y, std::sin(angle) * radius + translate.z};
+
+	particle.transform.scale = {0.2f, 0.2f, 0.2f};
+	particle.transform.rotate = {0.0f, 0.0f, 0.0f};
+
+	// 回転しながら下降するような速度ベクトル
+	float angularSpeed = 0.1f;    // 回転速度
+	float downwardSpeed = -0.05f; // 下降速度（Y軸方向）
+
+	// 速度：角度の増加に従って円を描く＋下降
+	particle.velocity = {
+	    -std::sin(angle) * radius * angularSpeed, // x方向：円運動
+	    downwardSpeed,                            // y方向：下降
+	    std::cos(angle) * radius * angularSpeed   // z方向：円運動
+	};
+
+	particle.color = {1.0f, 0.3f, 1.0f, 1.0f};
+	particle.lifeTime = 2.0f;
+	particle.currentTime = 0.0f;
 
 	return particle;
 }
@@ -426,4 +463,27 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 	group.vertexBufferView.BufferLocation = group.vertexResource->GetGPUVirtualAddress();
 	group.vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * group.vertices.size());
 	group.vertexBufferView.StrideInBytes = sizeof(VertexData);
+}
+
+void ParticleManager::UpdateSpiralEmitter() {
+
+	if (!spiralEmitter.active)
+		return;
+
+	spiralEmitter.timer += 1.0f / 60.0f;
+	if (spiralEmitter.timer >= 0.05f) {
+		float angle = spiralEmitter.count * 0.3f;
+		auto& group = particleGroups["ribbon"];
+		std::random_device seedGenerator;
+		std::mt19937 randomEngine(seedGenerator());
+
+		group.particles.push_back(MakeSpiralParticle(randomEngine, spiralEmitter.position, angle));
+
+		spiralEmitter.count++;
+		spiralEmitter.timer = 0.0f;
+
+		if (spiralEmitter.count >= 24) {
+			spiralEmitter.active = false;
+		}
+	}
 }
