@@ -4,7 +4,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-const wchar_t WinApp::kWindowName[] = L"GE3";
+const wchar_t WinApp::kWindowName[] = L"コムロ_リュウヘイ";
 
 /*==================================================================================*/
 // getter
