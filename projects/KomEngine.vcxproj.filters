@@ -67,8 +67,8 @@
     <ClCompile Include="Game\Entity\Player\Player.cpp" />
     <ClCompile Include="Game\Entity\Player\PlayerBullet.cpp" />
     <ClCompile Include="Game\Entity\Enemy\Enemy.cpp" />
-    <ClCompile Include="OffscreenRendering.cpp" />
     <ClCompile Include="Game\Entity\Enemy\EnemyBullet.cpp" />
+    <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\lib\ComPtr\ComPtr.h" />
@@ -115,7 +115,7 @@
     <ClInclude Include="Game\Scene\SceneFactory.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleManager.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
-    <ClInclude Include="OffscreenRendering.h" />
+    <ClInclude Include="Engine\Base\OffscreenRendering\OffscreenRendering.h" />
     <ClInclude Include="Game\Entity\Player\Player.h" />
     <ClInclude Include="Game\Entity\Player\PlayerBullet.h" />
     <ClInclude Include="Game\Entity\Enemy\Enemy.h" />

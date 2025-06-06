@@ -1,12 +1,13 @@
-
 #include "System.h"
 
 // MyClass
 #include "Engine/Base/ImGuiManager/ImGuiManager.h"
 #include "Engine/Base/ModelManager/ModelManager.h"
+#include "Engine/Base/OffscreenRendering/OffscreenRendering.h"
 #include "Engine/Base/SrvManager/SrvManager.h"
 #include "Engine/Base/TextureManager/TextureManager.h"
-#include "OffscreenRendering.h"
+
+#include "externals/imgui/imgui.h"
 
 #include <cassert>
 #include <cstdint>
@@ -104,7 +105,11 @@ void System::BeginFrame() {
 
 	input_->Update();
 
+#ifdef _DEBUG
+
 	mesh_->ImGuiDebug();
+
+#endif // _DEBUG
 }
 
 void System::Update() {}
@@ -119,9 +124,10 @@ void System::EndFrame() {
 	offscreenRendering_->Draw();
 
 	// ImGui描画処理
+#ifdef _DEBUG
 	imguiManager_->End();
 	imguiManager_->Draw();
-
+#endif // DEBUG
 
 	// 描画終了
 	offscreenRendering_->PostDraw();

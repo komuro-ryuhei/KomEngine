@@ -83,7 +83,7 @@ void OffscreenRendering::OffScreeenRenderTargetView() {
 	renderTargetHandle_.ptr += System::GetDxCommon()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * 2;
 
 	//
-	const Vector4 kRenderTargetClearValue = {1.0f, 0.0f, 0.0f, 1.0f};
+	const Vector4 kRenderTargetClearValue = {kRenderTargetClearValue_};
 	renderTextureResource_ = CreateRenderTextureResource(
 	    System::GetDxCommon()->GetDevice(), System::GetWinApp()->GetWindowWidth(), System::GetWinApp()->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
 
@@ -115,7 +115,7 @@ void OffscreenRendering::RenderToTexture() {
 	System::GetDxCommon()->GetCommandList()->OMSetRenderTargets(1, &renderTargetHandle_, false, &dsvHandle);
 
 	// レンダーテクスチャをクリア
-	float clearColor[] = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色でクリア
+	float clearColor[] = {kRenderTargetClearValue_.x, kRenderTargetClearValue_.y, kRenderTargetClearValue_.z, kRenderTargetClearValue_.w};
 	System::GetDxCommon()->GetCommandList()->ClearRenderTargetView(renderTargetHandle_, clearColor, 0, nullptr);
 
 	// 深度ステンシルをクリア

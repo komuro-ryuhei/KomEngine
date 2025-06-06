@@ -1,5 +1,6 @@
 #include "Sprite.h"
 
+#include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/Base/System/System.h"
 
 #ifdef _DEBUG
@@ -225,7 +226,6 @@ void Sprite::ImGuiDebug() {
 
 #ifdef _DEBUG
 
-	//
 	ImGui::Begin("Sprite");
 
 	ImGui::DragFloat2("transfoem", &position_.x, 1.0f);

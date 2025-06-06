@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 #include "Engine/lib/ComPtr/ComPtr.h"
 #include "Engine/lib/Math/MyMath.h"
-#include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 
 #include <d3d12.h>
 #include <memory>
@@ -12,7 +12,6 @@ class PipelineManager;
 class OffscreenRendering {
 
 public:
-
 	void Init();
 
 	void Update();
@@ -34,7 +33,6 @@ public:
 	void OffscreenBarrier();
 
 private:
-
 	// DxCommon
 	// DirectXCommon* dxCommon_ = nullptr;
 
@@ -53,4 +51,7 @@ private:
 	// Random用のマテリアルリソースを作る
 	ComPtr<ID3D12Resource> materialBufferResource_;
 	MaterialBuffer* materialBufferData_ = nullptr;
+
+	// 画面をクリアする色
+	const Vector4 kRenderTargetClearValue_ = {0.1f, 0.25f, 0.5f, 1.0f};
 };

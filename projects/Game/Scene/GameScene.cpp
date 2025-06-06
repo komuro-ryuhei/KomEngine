@@ -17,6 +17,7 @@ void GameScene::Init() {
 	const std::string& circle2 = "./Resources/images/circle2.png";
 	const std::string& monsterBallTexture = "./Resources/images/monsterBall.png";
 	const std::string& ring = "./Resources/images/gradationLine.png";
+	const std::string& moonLight = "./Resources/images/moonLight.png";
 
 	// テクスチャ、モデルの読み込み
 	TextureManager::GetInstance()->LoadTexture(uvTexture);
@@ -46,6 +47,8 @@ void GameScene::Init() {
 	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
 	ParticleManager::GetInstance()->CreateParticleGeoup("ring", ring, "ring");
 	ParticleManager::GetInstance()->CreateParticleGeoup("cylinder", ring, "cylinder");
+	ParticleManager::GetInstance()->CreateParticleGeoup("moonLight", moonLight, "moonLight");
+	ParticleManager::GetInstance()->CreateParticleGeoup("ribbon", moonLight, "ribbon");
 
 	emitter_ = std::make_unique<ParticleEmitter>();
 	emitter_->Init("hit", {0.0f, 0.0f, 10.0f}, 8);

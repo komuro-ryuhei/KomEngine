@@ -39,6 +39,14 @@ struct ParticleGroup {
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 };
 
+struct SpiralEmitter {
+	Vector3 position;
+	int count = 0;
+	float timer = 0.0f;
+	bool active = false;
+};
+static SpiralEmitter spiralEmitter;
+
 class ParticleManager {
 
 public:
@@ -64,6 +72,10 @@ public:
 	Particle MakeRingParticle(std::mt19937& randomEngine, const Vector3& translate);
 	// シリンダーのエフェクト
 	Particle MakeCylinderParticle(std::mt19937& randomEngine, const Vector3& translate);
+
+	// 
+	Particle MakeMoonLightParticle(std::mt19937& randomEngine, const Vector3& translate, bool isVertical);
+	Particle MakeSpiralParticle(std::mt19937& randomEngine, const Vector3& translate, float angleOffset);
 
 private:
 	ParticleManager() = default;
@@ -92,4 +104,6 @@ private:
 private:
 
 	void MakeVertexData(ParticleGroup& group, const std::string& particleType);
+
+	void UpdateSpiralEmitter();
 };
