@@ -57,10 +57,10 @@ void GameScene::Init() {
 	emitter2_->Init("explosion", {0.0f, 0.0f, 10.0f}, 50);
 
 	ringEmitter_ = std::make_unique<ParticleEmitter>();
-	ringEmitter_->Init("ring", {0.0f, 0.0f, 10.0f}, 1);
+	ringEmitter_->Init("ring", {-3.0f, 0.0f, 10.0f}, 1);
 
 	cylinderEmitter_ = std::make_unique<ParticleEmitter>();
-	cylinderEmitter_->Init("cylinder", {0.0f, 0.0f, 10.0f}, 1);
+	cylinderEmitter_->Init("cylinder", {3.0f, 0.0f, 10.0f}, 1);
 
 	// Player
 	player_ = std::make_unique<Player>();
@@ -104,8 +104,8 @@ void GameScene::Update() {
 	//
 	ParticleManager::GetInstance()->Update();
 
-	// ringEmitter_->Update();
-	// cylinderEmitter_->Update();
+	ringEmitter_->Update();
+	cylinderEmitter_->Update();
 
 	// Player
 	player_->Update();
