@@ -74,8 +74,8 @@ public:
 	Particle MakeCylinderParticle(std::mt19937& randomEngine, const Vector3& translate);
 
 	// 
-	Particle MakeMoonLightParticle(std::mt19937& randomEngine, const Vector3& translate, bool isVertical);
-	Particle MakeSpiralParticle(std::mt19937& randomEngine, const Vector3& translate, float angleOffset);
+	Particle MakeMoonLightParticle(const Vector3& translate, bool isVertical);
+	Particle MakeSpiralParticle(const Vector3& translate, float angleOffset);
 
 private:
 	ParticleManager() = default;
