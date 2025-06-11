@@ -28,7 +28,6 @@ public:
 	void Finalize() override;
 
 private:
-
 	void CameraShake();
 	void CheckCollisions();
 	void ImGuiDebug();
@@ -60,4 +59,7 @@ private:
 	float shakeDuration_ = 0.5f; // 秒数
 	bool isShaking_ = false;
 	Vector3 cameraDefaultPos_;
+
+private:
+	void ParticleUpdate();
 };

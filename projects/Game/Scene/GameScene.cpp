@@ -57,10 +57,10 @@ void GameScene::Init() {
 	emitter2_->Init("explosion", {0.0f, 0.0f, 10.0f}, 50);
 
 	ringEmitter_ = std::make_unique<ParticleEmitter>();
-	ringEmitter_->Init("ring", {-3.0f, 0.0f, 10.0f}, 1);
+	ringEmitter_->Init("ring", {-4.0f, 0.0f, 10.0f}, 1);
 
 	cylinderEmitter_ = std::make_unique<ParticleEmitter>();
-	cylinderEmitter_->Init("cylinder", {3.0f, 0.0f, 10.0f}, 1);
+	cylinderEmitter_->Init("cylinder", {4.0f, 0.0f, 10.0f}, 1);
 
 	// Player
 	player_ = std::make_unique<Player>();
@@ -100,12 +100,6 @@ void GameScene::Init() {
 void GameScene::Update() {
 
 	camera_->Update();
-
-	//
-	ParticleManager::GetInstance()->Update();
-
-	ringEmitter_->Update();
-	cylinderEmitter_->Update();
 
 	// Player
 	player_->Update();
@@ -216,11 +210,21 @@ void GameScene::ImGuiDebug() {
 	camera_->ImGuiDebug();
 	player_->ImGuiDebug();
 
-	if (ImGui::Button("Hit Particles")) {
+#endif // _DEBUG
+}
+
+void GameScene::ParticleUpdate() {
+
+	// パーティクルの更新処理
+	ParticleManager::GetInstance()->Update();
+
+#ifdef _DEBUG
+
+	if (ImGui::Button("Emit Particles")) {
 		emitter_->Update();
 	}
 
-	if (ImGui::Button("Explosion Particles")) {
+	if (ImGui::Button("Emit2 Particles")) {
 		emitter2_->Update();
 	}
 
@@ -232,5 +236,25 @@ void GameScene::ImGuiDebug() {
 		cylinderEmitter_->Update();
 	}
 
+	if (ImGui::Button("MoonLight Effect")) {
+		moonLightEffect_->Update();
+	}
+
+	if (ImGui::Button("Ribbon Effect")) {
+		ribbonEffect_->Update();
+	}
+
 #endif // _DEBUG
+
+	if (System::TriggerKey(DIK_1)) {
+		emitter_->Update();
+	}
+	if (System::TriggerKey(DIK_2)) {
+		emitter2_->Update();
+	}
+
+	// ribbonEffect_->Update();
+
+	ringEmitter_->Update();
+	cylinderEmitter_->Update();
 }
