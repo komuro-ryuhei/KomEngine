@@ -12,7 +12,7 @@
 class MyGame {
 
 public:
-	void Run();
+	void Run(const std::string& sceneName);
 
 private:
 	// シーンファクトリー
