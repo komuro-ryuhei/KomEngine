@@ -1,6 +1,8 @@
 #include "GameScene.h"
 
 #include "Engine/Base/System/System.h"
+#include "externals/nlohmann/json.hpp"
+
 
 #ifdef _DEBUG
 #include "externals/imgui/imgui.h"
