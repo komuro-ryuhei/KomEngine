@@ -118,6 +118,7 @@ void GameScene::Update() {
 		sceneManager_->ChangeScene("TITLE");
 	}
 
+	ParticleUpdate();
 	ImGuiDebug();
 }
 
