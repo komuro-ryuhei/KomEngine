@@ -135,8 +135,8 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 			group.particles.push_back(MakeCylinderParticle(randomEngine, position));
 		} else if (name == "moonLight") {
 			group.particles.push_back(MakeRingParticle(randomEngine, position));
-			group.particles.push_back(MakeMoonLightParticle(randomEngine, position, true));
-			group.particles.push_back(MakeMoonLightParticle(randomEngine, position, false)); 
+			group.particles.push_back(MakeMoonLightParticle(position, true));
+			group.particles.push_back(MakeMoonLightParticle(position, false)); 
 		} else if (name == "ribbon") {
 			spiralEmitter.position = position;
 			spiralEmitter.count = 0;
@@ -245,7 +245,7 @@ Particle ParticleManager::MakeCylinderParticle(std::mt19937& randomEngine, const
 	return particle;
 }
 
-Particle ParticleManager::MakeMoonLightParticle(std::mt19937& randomEngine, const Vector3& translate, bool isVertical) {
+Particle ParticleManager::MakeMoonLightParticle(const Vector3& translate, bool isVertical) {
 
 	Particle particle;
 
@@ -270,7 +270,7 @@ Particle ParticleManager::MakeMoonLightParticle(std::mt19937& randomEngine, cons
 	return particle;
 }
 
-Particle ParticleManager::MakeSpiralParticle(std::mt19937& randomEngine, const Vector3& translate, float angleOffset) {
+Particle ParticleManager::MakeSpiralParticle(const Vector3& translate, float angleOffset) {
 
 	Particle particle;
 
@@ -477,7 +477,7 @@ void ParticleManager::UpdateSpiralEmitter() {
 		std::random_device seedGenerator;
 		std::mt19937 randomEngine(seedGenerator());
 
-		group.particles.push_back(MakeSpiralParticle(randomEngine, spiralEmitter.position, angle));
+		group.particles.push_back(MakeSpiralParticle(spiralEmitter.position, angle));
 
 		spiralEmitter.count++;
 		spiralEmitter.timer = 0.0f;
