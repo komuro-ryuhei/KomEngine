@@ -1,6 +1,8 @@
 #include "TextureManager.h"
 
 #include "Engine/Base/System/System.h"
+#include "externals/DirectXTex/d3dx12.h"
+#include <vector>
 
 TextureManager* TextureManager::instance = nullptr;
 uint32_t TextureManager::kSRVIndexTop_ = 1;
@@ -75,9 +77,9 @@ ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(ID3D12Device* devic
 
 	// 利用するHeapの設定
 	D3D12_HEAP_PROPERTIES heapProperties{};
-	heapProperties.Type = D3D12_HEAP_TYPE_CUSTOM;                        // 細かい設定を行う
-	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK; // WriteBackポリシーでCPUアクセス可能
-	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;          // プロセッサの近くに配置
+	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;                         // 細かい設定を行う
+	//heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK; // WriteBackポリシーでCPUアクセス可能
+	//heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;          // プロセッサの近くに配置
 
 	// Resourceの生成
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
@@ -85,31 +87,18 @@ ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(ID3D12Device* devic
 	    &heapProperties,                   // Heapの設定
 	    D3D12_HEAP_FLAG_NONE,              // Heapの特殊な設定
 	    &resourceDesc,                     // Resourceの設定
-	    D3D12_RESOURCE_STATE_GENERIC_READ, // 初回のResourceState
+	    D3D12_RESOURCE_STATE_COPY_DEST   , // 初回のResourceState
 	    nullptr,                           // Clear最速値
 	    IID_PPV_ARGS(&resource));          // 作成するResourceポインタへのポインタ
 	assert(SUCCEEDED(hr));
 	return resource;
 }
 
+[[nodiscard]]
 void TextureManager::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages) {
 
-	// Meta情報を取得
-	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
-	// 全MipMapについて
-	for (size_t mipLevel = 0; mipLevel < metadata.mipLevels; ++mipLevel) {
-		// MipMapLevelを指定して各Imageを取得
-		const DirectX::Image* img = mipImages.GetImage(mipLevel, 0, 0);
-		// Textureに転送
-		HRESULT hr = texture->WriteToSubresource(
-		    UINT(mipLevel),
-		    nullptr,              // 全領域へコピー
-		    img->pixels,          // 元データへアクセス
-		    UINT(img->rowPitch),  // 1ラインサイズ
-		    UINT(img->slicePitch) // 1枚サイズ
-		);
-		assert(SUCCEEDED(hr));
-	}
+	// 
+	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
 }
 
 uint32_t TextureManager::GetTextureIndexByFilePath(const std::string& filePath) {
