@@ -57,7 +57,7 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 
 	srvManager_->CreateSRVforTexture2D(textureData.srvIndex, textureData.resource.Get(), textureData.metaData.format, static_cast<UINT>(textureData.metaData.mipLevels));
 
-	UploadTextureData(textureData.resource.Get(), mipImage);
+	textureData.intermediateResource = UploadTextureData(textureData.resource.Get(), mipImage);
 
 	// ここでムーブ代入を使用
 	textureDatas[textureData.filePath] = std::move(textureData);
@@ -95,10 +95,25 @@ ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(ID3D12Device* devic
 }
 
 [[nodiscard]]
-void TextureManager::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages) {
+ID3D12Resource* TextureManager::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages) {
 
 	// 
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+	DirectX::PrepareUpload(System::GetDxCommon()->GetDevice(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
+	uint64_t intermediateSize = GetRequiredIntermediateSize(texture, 0, UINT(subresources.size()));
+	ComPtr<ID3D12Resource> intermediateResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), intermediateSize);
+	UpdateSubresources(System::GetDxCommon()->GetCommandList(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
+	// Textureへの転送は後は利用できるよう、D3D12_RESOURCE_STATE_COPY_DESTからD3D12_RESOURCE_STATE_GENERIC_READへResourceStateを変更する
+	D3D12_RESOURCE_BARRIER barrier{};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = texture;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
+	System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &barrier);
+
+	return intermediateResource.Get();
 }
 
 uint32_t TextureManager::GetTextureIndexByFilePath(const std::string& filePath) {

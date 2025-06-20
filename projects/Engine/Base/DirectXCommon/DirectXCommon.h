@@ -77,6 +77,7 @@ public: // 静的メンバ変数
 	/// </summary>
 	ID3D12Device* GetDevice() const;
 	ID3D12GraphicsCommandList* GetCommandList() const;
+	ID3D12CommandQueue* GetCommsndQueue() const;
 	D3D12_VIEWPORT GetViewPort() const;
 	D3D12_RECT GetScissor() const;
 	ID3D12DescriptorHeap* GetSrvDescriptorHeap();
