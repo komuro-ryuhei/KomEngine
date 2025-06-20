@@ -1,7 +1,7 @@
 #include "Loader.h"
 
-#include <fstream>
 #include <cassert>
+#include <fstream>
 
 void Loader::Init() {
 
@@ -26,15 +26,15 @@ void Loader::Init() {
 	// 正しいレベルデータファイルかチェック
 	assert(deserialized.is_object());
 	assert(deserialized.contains("name"));
-	assert(deserialized["name"].is_string);
+	assert(deserialized["name"].is_string());
 
 	// "name"を文字列として取得
-    std::string name = deserialized["name"].get<std::string>();
+	std::string name = deserialized["name"].get<std::string>();
 	// 正しいレベルデータファイルかチェック
 	assert(name.compare("scene") == 0);
 
 	// レベルデータ格納用インスタンスを生成
-	LevelData* levelData = new LevelData();
+	levelData = new LevelData();
 
 	// "objects"の全オブジェクトを走査
 	for (nlohmann::json& object : deserialized["objects"]) {
@@ -83,5 +83,26 @@ void Loader::Init() {
 		// ファイル名から登録済みモデルを検索
 		Model* model = nullptr;
 		decltype(models)::iterator it = models.find(objectData.fileName);
+		if (it != models.end()) {
+			// 登録済みモデルがあればそれを使用
+			model = it->second;
+		}
+		//
+		Object3d* newObject = new Object3d();
+		// 座標
+		newObject->SetTranslate(objectData.translate);
+		// 回転角
+		newObject->SetRotate(objectData.rotate);
+		// スケール
+		newObject->SetScale(objectData.scale);
+
+		newObject->Init(BlendType::BLEND_NONE);
+
+		objects.push_back(newObject);
 	}
+}
+
+void Loader::Update() {
+
+	//
 }

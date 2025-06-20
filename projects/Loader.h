@@ -4,6 +4,7 @@
 #include "Engine/Base/3d/Object3d/Object3d.h"
 #include "Engine/lib/Math/MyMath.h"
 #include "externals/nlohmann/json.hpp"
+#include <map>
 
 class Loader {
 
@@ -16,7 +17,6 @@ class Loader {
 
 			std::string fileName;
 		};
-
 		std::vector<JsonObjectData> objects;
 	};
 
@@ -28,5 +28,10 @@ public:
 	void Draw();
 
 private:
-	std::vector<Model*> models;
+
+	// レベルデータ格納用インスタンスを生成
+	LevelData* levelData = nullptr;
+
+	std::vector<Object3d*> objects;
+	std::map<std::string, Model*> models;
 };
