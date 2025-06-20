@@ -28,7 +28,7 @@ void EnemyBullet::Draw() { object3d_->Draw(); }
 void EnemyBullet::ImGuiDebug() {
 
 	//
-	ImGui::Begin("PlayerBullet");
+	ImGui::Begin("EnemyBullet");
 
 	ImGui::DragFloat3("bulletTranlate", &transform_.translate.x, 0.01f);
 	ImGui::DragFloat3("bulletRotate", &transform_.rotate.x, 0.01f);

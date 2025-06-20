@@ -28,14 +28,14 @@ public:
 	void Finalize() override;
 
 private:
+	// カメラシェイク
 	void CameraShake();
+	// 当たり判定処理
 	void CheckCollisions();
+	// ImGuiによるデバッグ表示
 	void ImGuiDebug();
 
 private:
-	DirectXCommon* dxCommon_ = nullptr;
-	PipelineManager* pipelineManager_ = nullptr;
-
 	// Camera
 	std::unique_ptr<Camera> camera_ = nullptr;
 	// Audio
@@ -60,6 +60,18 @@ private:
 	bool isShaking_ = false;
 	Vector3 cameraDefaultPos_;
 
+
+	struct EnemyTrigger {
+		float triggerZ; // プレイヤーのZ座標がここを超えたら出現
+		bool triggered = false;
+	};
+
+	std::vector<EnemyTrigger> enemyTriggers_;
+	int currentTriggerIndex_ = 0;
+	bool isFighting_ = false;
+
 private:
 	void ParticleUpdate();
+	void SpawnEnemies();
+	void EnemySpawnTrigger();
 };

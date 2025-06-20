@@ -16,6 +16,10 @@ public:
 	void ImGuiDebug();
 
 public:
+	void SetEye(const Vector3& eye);
+	void SetTarget(const Vector3& target);
+
+public:
 	// setter
 	void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
 	void SetTranslate(const Vector3& tranlate) { transform_.translate = tranlate; }

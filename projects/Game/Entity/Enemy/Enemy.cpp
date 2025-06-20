@@ -10,6 +10,9 @@ float Enemy::GetRadius() const { return radius_; }
 bool Enemy::GetIsAlive() const { return isAlive_; }
 Vector3 Enemy::GetTranslate() { return transform_.translate; }
 void Enemy::SetTranslate(Vector3 translate) { transform_.translate = translate; }
+std::vector<std::unique_ptr<EnemyBullet>>& Enemy::GetBullets() { return bulletObjects_; }
+
+void Enemy::SetPlayer(Player* player) { player_ = player; }
 
 void Enemy::Init(Camera* camera, Object3d* object3d) {
 
@@ -17,18 +20,10 @@ void Enemy::Init(Camera* camera, Object3d* object3d) {
 	object3d_ = object3d;
 
 	object3d_->Init(BlendType::BLEND_NONE);
-
-	transform_.translate = {0.0f, 0.0f, 10.0f};
-	object3d_->SetTranslate(transform_.translate);
-
-	// 初期移動方向をランダムに設定
-	SetRandomDirection();
-	moveTimer_ = 0;
 }
 
 void Enemy::Update() {
 
-	// 点滅処理
 	if (isBlinking_) {
 		blinkCounter_++;
 		if (blinkCounter_ >= blinkDuration_) {
@@ -37,12 +32,13 @@ void Enemy::Update() {
 		}
 	}
 
-	if (transform_.translate.z >= 10.0f) {
-		transform_.translate.z -= velocity_;
-	}
+	// 攻撃処理
+	Attack();
 
-	// 移動
-	Move();
+	// 弾更新
+	for (auto& bullet : bulletObjects_) {
+		bullet->Update();
+	}
 
 	object3d_->SetTranslate(transform_.translate);
 	object3d_->Update();
@@ -50,11 +46,16 @@ void Enemy::Update() {
 
 void Enemy::Draw() {
 
-	if (isBlinking_ && (blinkCounter_ / 5) % 2 == 0) {
+	// 点滅時は描画スキップ
+	if (isBlinking_ && (blinkCounter_ / 5) % 2 == 0)
 		return;
-	}
 
 	object3d_->Draw();
+
+	// 弾描画
+	for (auto& bullet : bulletObjects_) {
+		bullet->Draw();
+	}
 }
 
 void Enemy::ImGuiDebug() {
@@ -64,6 +65,10 @@ void Enemy::ImGuiDebug() {
 	ImGui::Begin("Enemy");
 	ImGui::DragFloat3("translate", &transform_.translate.x, 0.01f);
 	ImGui::End();
+
+	for (auto& bullet : bulletObjects_) {
+		bullet->ImGuiDebug();
+	}
 
 #endif // _DEBUG
 }
@@ -75,61 +80,36 @@ void Enemy::OnHit() {
 	isAlive_ = false;
 }
 
-void Enemy::Move() {
+void Enemy::Attack() {
 
-	// 一定時間（今は5秒）経過したら新しい方向を決定
-	if (moveTimer_ >= moveDuration_) {
-		SetRandomDirection();
-		moveTimer_ = 0;
-	}
+	if (!player_)
+		return; // プレイヤーが未設定なら撃たない
 
-	// 移動処理
-	transform_.translate += moveDirection_ * velocity_;
+	attackTimer_++;
+	if (attackTimer_ < attackInterval_)
+		return;
+	attackTimer_ = 0;
 
-	// 範囲外チェック
-	CheckBounds();
+	auto bulletObject = std::make_unique<Object3d>();
+	bulletObject->Init(BlendType::BLEND_NONE);
+	bulletObject->SetModel("sphere.obj");
+	bulletObject->SetDefaultCamera(camera_);
 
-	moveTimer_++;
-}
+	auto bullet = std::make_unique<EnemyBullet>();
+	bullet->Init(camera_, bulletObject.get());
+	bullet->SetTranlate(transform_.translate);
 
-void Enemy::SetRandomDirection() {
+	// プレイヤー座標を使って弾の方向を決定
+	Vector3 direction = player_->GetTransform().translate - transform_.translate;
+	MyMath::Normalize(direction);
+	bullet->SetDirection(direction);
 
-	// 乱数生成
+	bulletObjects_.emplace_back(std::move(bullet));
+	bulletObject3ds_.emplace_back(std::move(bulletObject));
+
+	// ランダムに次の攻撃間隔を決定（240～300）
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
-
-	// ランダムな方向を決定
-	moveDirection_ = {dist(gen), dist(gen), dist(gen)};
-
-	// 正規化
-	float length = std::sqrt(moveDirection_.x * moveDirection_.x + moveDirection_.y * moveDirection_.y + moveDirection_.z * moveDirection_.z);
-
-	if (length > 0.0f) {
-		moveDirection_.x /= length;
-		moveDirection_.y /= length;
-		moveDirection_.z /= length;
-	}
-}
-
-void Enemy::CheckBounds() {
-
-	// 範囲外に出たら方向を変える
-	if (transform_.translate.x < minX || transform_.translate.x > maxX || transform_.translate.y < minY || transform_.translate.y > maxY || transform_.translate.z < minZ ||
-	    transform_.translate.z > maxZ) {
-
-		// 範囲の中心方向に向かうように補正
-		Vector3 center = {(minX + maxX) / 2.0f, (minY + maxY) / 2.0f, (minZ + maxZ) / 2.0f};
-		moveDirection_ = center - transform_.translate;
-
-		// 正規化
-		float length = std::sqrt(moveDirection_.x * moveDirection_.x + moveDirection_.y * moveDirection_.y + moveDirection_.z * moveDirection_.z);
-		if (length > 0.0f) {
-			moveDirection_.x /= length;
-			moveDirection_.y /= length;
-			moveDirection_.z /= length;
-		}
-		// 方向変更時にタイマーリセット
-		moveTimer_ = 0;
-	}
+	std::uniform_int_distribution<int> dist(240, 300);
+	attackInterval_ = dist(gen);
 }

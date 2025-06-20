@@ -66,60 +66,56 @@ void GameScene::Init() {
 	player_ = std::make_unique<Player>();
 	player_->Init(camera_.get());
 
-	// ランダムな値を生成するための設定
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<float> distX(-5.0f, 5.0f);  // X座標の範囲
-	std::uniform_real_distribution<float> distY(-5.0f, 5.0f);  // Y座標の範囲
-	std::uniform_real_distribution<float> distZ(20.0f, 50.0f); // Z座標の範囲
-	// 敵の生成
-	const int enemyCount = 5;
-	for (int i = 0; i < enemyCount; ++i) {
-		auto enemyObject = std::make_unique<Object3d>();
-		enemyObject->Init(BlendType::BLEND_NONE);
-		enemyObject->SetModel("sphere.obj");
-		enemyObject->SetDefaultCamera(camera_.get());
-
-		auto enemy = std::make_unique<Enemy>();
-		enemy->Init(camera_.get(), enemyObject.get());
-
-		// 敵の初期位置をランダムに設定
-		float randomX = distX(gen);
-		float randomY = distY(gen);
-		float randomZ = distZ(gen);
-		enemy->SetTranslate({randomX, randomY, randomZ});
-
-		enemies_.emplace_back(std::move(enemy));
-		enemyObjects3d_.emplace_back(std::move(enemyObject));
-	}
-
 	// カメラのデフォルト位置を保存
 	cameraDefaultPos_ = camera_->GetTranaslate();
+
+	// 敵の出現トリガー（例：Z=5.0f）
+	enemyTriggers_.push_back({5.0f, false});
 }
 
 void GameScene::Update() {
+
+	Vector3 playerPos = player_->GetTransform().translate;
+	Vector3 playerRot = player_->GetTransform().rotate;
+
+	camera_->SetTranslate(playerPos);
+	camera_->SetRotate(playerRot); // プレイヤーと同じ視線方向
 
 	camera_->Update();
 
 	// Player
 	player_->Update();
+	if (!isFighting_) {
+		player_->RailMove();
+	}
 
 	// Enemy
 	for (auto& enemy : enemies_) {
 		enemy->Update();
+		enemy->ImGuiDebug();
 	}
 
 	// 当たり判定処理
 	CheckCollisions();
-	CameraShake();
+	// カメラシェイク処理
+	// CameraShake();
+
+	//
+	EnemySpawnTrigger();
+
+	// パーティクル全体の更新
+	ParticleUpdate();
+
+#ifdef _DEBUG
 
 	// シーン遷移のDebug処理
 	if (System::GetInput()->TriggerKey(DIK_RETURN)) {
 		sceneManager_->ChangeScene("TITLE");
 	}
 
-	ParticleUpdate();
 	ImGuiDebug();
+
+#endif // _DEBUG
 }
 
 void GameScene::Draw() {
@@ -198,9 +194,53 @@ void GameScene::CheckCollisions() {
 		}
 	}
 
-	// 敵が全ていなくなった場合
-	if (enemies_.empty()) {
-		sceneManager_->ChangeScene("CLEAR");
+	// 敵の弾とプレイヤーの当たり判定
+	for (auto& enemy : enemies_) {
+		for (auto it = enemy->GetBullets().begin(); it != enemy->GetBullets().end();) {
+			float distance = MyMath::CalculateDistance((*it)->GetTranslate(), player_->GetTransform().translate);
+			float collisionDistance = (*it)->GetRadius() + player_->GetRadius();
+
+			if (distance < collisionDistance) {
+				// 衝突処理（今は削除だけ）
+				it = enemy->GetBullets().erase(it);
+				// シェイクの処理初期化
+				isShaking_ = true;
+				shakeTimer_ = 0.0f;
+			} else {
+				++it;
+			}
+		}
+	}
+
+	// プレイヤー弾 vs 敵弾
+	for (auto& enemy : enemies_) {
+		auto& enemyBullets = enemy->GetBullets();
+
+		for (auto pbIt = player_->GetBullets().begin(); pbIt != player_->GetBullets().end();) {
+			bool isHit = false;
+
+			for (auto ebIt = enemyBullets.begin(); ebIt != enemyBullets.end();) {
+				float distance = MyMath::CalculateDistance((*pbIt)->GetTranslate(), (*ebIt)->GetTranslate());
+
+				float collisionDistance = (*pbIt)->GetRadius() + (*ebIt)->GetRadius();
+
+				if (distance < collisionDistance) {
+					// 衝突：両方削除
+					ebIt = enemyBullets.erase(ebIt);
+					pbIt = player_->GetBullets().erase(pbIt);
+					isHit = true;
+					break;
+				} else {
+					++ebIt;
+				}
+			}
+
+			if (!isHit) {
+				++pbIt;
+			} else {
+				break;
+			}
+		}
 	}
 }
 
@@ -237,14 +277,6 @@ void GameScene::ParticleUpdate() {
 		cylinderEmitter_->Update();
 	}
 
-	if (ImGui::Button("MoonLight Effect")) {
-		moonLightEffect_->Update();
-	}
-
-	if (ImGui::Button("Ribbon Effect")) {
-		ribbonEffect_->Update();
-	}
-
 #endif // _DEBUG
 
 	if (System::TriggerKey(DIK_1)) {
@@ -256,6 +288,63 @@ void GameScene::ParticleUpdate() {
 
 	// ribbonEffect_->Update();
 
-	ringEmitter_->Update();
-	cylinderEmitter_->Update();
+	/*ringEmitter_->Update();
+	cylinderEmitter_->Update();*/
+}
+
+void GameScene::SpawnEnemies() {
+
+	// 敵の数
+	const int enemyCount = 5;
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<float> distX(-5.0f, 5.0f);
+	std::uniform_real_distribution<float> distY(-2.0f, 2.0f);
+	std::uniform_real_distribution<float> distZ(25.0f, 50.0f);
+
+	// プレイヤーの現在位置
+	Vector3 playerPos = player_->GetTransform().translate;
+
+	// 敵の生成
+	for (int i = 0; i < enemyCount; ++i) {
+		auto enemyObject = std::make_unique<Object3d>();
+		enemyObject->Init(BlendType::BLEND_NONE);
+		enemyObject->SetModel("sphere.obj");
+		enemyObject->SetDefaultCamera(camera_.get());
+
+		auto enemy = std::make_unique<Enemy>();
+		enemy->Init(camera_.get(), enemyObject.get());
+		enemy->SetPlayer(player_.get());
+		enemy->Update();
+
+		Vector3 pos = {distX(gen), distY(gen), playerPos.z + distZ(gen)};
+		enemy->SetTranslate(pos);
+
+		enemies_.emplace_back(std::move(enemy));
+		enemyObjects3d_.emplace_back(std::move(enemyObject));
+	}
+}
+
+void GameScene::EnemySpawnTrigger() {
+
+	// プレイヤーの奥行きをチェック
+	float playerZ = player_->GetTransform().translate.z;
+
+	// 敵出現チェック
+	if (!isFighting_ && currentTriggerIndex_ < enemyTriggers_.size()) {
+		auto& trigger = enemyTriggers_[currentTriggerIndex_];
+
+		if (!trigger.triggered && playerZ >= trigger.triggerZ) {
+			SpawnEnemies(); // 敵を出現させる
+			trigger.triggered = true;
+			isFighting_ = true;
+		}
+	}
+
+	// 戦闘中かつ敵がいなくなったら進行再開
+	if (isFighting_ && enemies_.empty()) {
+		isFighting_ = false;
+		currentTriggerIndex_++;
+	}
 }

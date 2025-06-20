@@ -25,13 +25,12 @@ class EnemyBullet {
 
 private:
 	Camera* camera_ = nullptr;
-	DirectXCommon* dxCommon_ = nullptr;
 
 	Object3d* object3d_ = nullptr;
 
 	Transform transform_;
 
-	float speed_ = 0.01f;
+	float speed_ = 0.003f;
 	Vector3 direction_;
 
 	float radius_ = 0.8f;

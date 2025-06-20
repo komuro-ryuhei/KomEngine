@@ -40,3 +40,18 @@ void Camera::ImGuiDebug() {
 
 #endif // DEBUG
 }
+
+void Camera::SetEye(const Vector3& eye) { transform_.translate = eye; }
+
+void Camera::SetTarget(const Vector3& target) {
+	Vector3 dir = {target.x - transform_.translate.x, target.y - transform_.translate.y, target.z - transform_.translate.z};
+
+	// ベクトルを正規化
+	dir = MyMath::Normalize(dir);
+
+	// ピッチ（上下）とヨー（左右）を算出
+	float pitch = std::asin(-dir.y);      // 上下角
+	float yaw = std::atan2(dir.x, dir.z); // 左右角
+
+	transform_.rotate = {0.0f, yaw, 0.0f};
+}

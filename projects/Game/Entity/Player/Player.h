@@ -7,13 +7,13 @@
 #include "Engine/lib/Input/Input.h"
 #include "struct.h"
 
-#include "Game/Entity/Player/PlayerBullet.h"
-#include "Game/Entity/Enemy/Enemy.h"
 #include "Engine/Base/2d/Sprite/Sprite.h"
+#include "Game/Entity/Enemy/Enemy.h"
+#include "Game/Entity/Player/PlayerBullet.h"
 
 // C++
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 class Player {
 
@@ -30,6 +30,7 @@ public:
 
 public:
 	float GetRadius() const;
+	Transform GetTransform() const;
 	std::vector<std::unique_ptr<PlayerBullet>>& GetBullets();
 
 private:
@@ -38,6 +39,9 @@ private:
 
 	void UpdateReticleSprite();
 
+public:
+	void RailMove();
+
 private:
 	// カメラ
 	Camera* camera_ = nullptr;
@@ -45,7 +49,7 @@ private:
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 	// 弾のリスト
 	std::vector<std::unique_ptr<PlayerBullet>> bulletObjects_;
-	
+
 	// レティクルのスプライト
 	std::unique_ptr<Sprite> reticleSprite_ = nullptr;
 

@@ -8,6 +8,8 @@
 
 float Player::GetRadius() const { return radius_; }
 
+Transform Player::GetTransform() const { return transform_; }
+
 std::vector<std::unique_ptr<PlayerBullet>>& Player::GetBullets() { return bulletObjects_; }
 
 Player::~Player() {
@@ -53,14 +55,15 @@ void Player::Update() {
 	object3d_->SetTranslate(transform_.translate);
 	object3d_->SetRotate(transform_.rotate);
 
-	Move();
+	// Move();
+	// RailMove();
 	UpdateReticleSprite();
 }
 
 void Player::Draw() {
 
 	//
-	object3d_->Draw();
+	// object3d_->Draw();
 
 	for (auto& bullet : bulletObjects_) {
 		bullet->Draw();
@@ -150,6 +153,8 @@ void Player::Move() {
 		transform_.translate.y -= velocity_;
 	}
 }
+
+void Player::RailMove() { transform_.translate.z += velocity_; }
 
 void Player::UpdateReticleSprite() {
 

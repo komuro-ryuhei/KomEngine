@@ -7,6 +7,11 @@
 #include "struct.h"
 #include <vector>
 
+#include "Game/Entity/Enemy/EnemyBullet.h"
+#include "Game/Entity/Player/Player.h"
+
+class Player;
+
 class Enemy {
 public:
 	void Init(Camera* camera, Object3d* object3d);
@@ -14,21 +19,25 @@ public:
 	void Draw();
 	void ImGuiDebug();
 
+public:
 	Vector3 GetTranslate();
 	void SetTranslate(Vector3 translate);
 	float GetRadius() const;
 	bool GetIsAlive() const;
 	void OnHit();
+	std::vector<std::unique_ptr<EnemyBullet>>& GetBullets();
+
+	void SetPlayer(Player* player);
 
 private:
 	void Move();
-	void SetRandomDirection(); // ランダムな方向を決定
-	void CheckBounds();        // 範囲外チェック
+	void Attack();
 
 private:
 	Camera* camera_ = nullptr;
 	Object3d* object3d_ = nullptr;
 	Transform transform_;
+	Player* player_ = nullptr; // プレイヤー参照用
 
 	float velocity_ = 0.05f;
 	float radius_ = 1.0f;
@@ -39,13 +48,10 @@ private:
 	int blinkCounter_ = 0;
 	const int blinkDuration_ = 60;
 
-	// ランダム移動用
-	Vector3 moveDirection_;        // 移動方向
-	int moveTimer_ = 0;            // 移動タイマー
-	const int moveDuration_ = 300; // 5秒（60FPS * 5）
+	// 
+	std::vector<std::unique_ptr<EnemyBullet>> bulletObjects_;
+	std::vector<std::unique_ptr<Object3d>> bulletObject3ds_;
+	int attackTimer_ = 0;
 
-	// 移動可能範囲
-	const float minX = -5.0f, maxX = 5.0f;
-	const float minY = -5.0f, maxY = 5.0f;
-	const float minZ = 20.0f, maxZ = 50.0f;
+	int attackInterval_ = 0; // 2秒に1回くらい
 };
