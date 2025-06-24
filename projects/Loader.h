@@ -21,7 +21,7 @@ class Loader {
 	};
 
 public:
-	void Init();
+	void Init(Camera* camera);
 
 	void Update();
 

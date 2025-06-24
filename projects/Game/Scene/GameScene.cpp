@@ -81,6 +81,9 @@ void GameScene::Init() {
 
 	ribbonEffect_ = std::make_unique<ParticleEmitter>();
 	ribbonEffect_->Init("ribbon", {0.0f, 0.0f, 10.0f}, 1);
+
+	loader_ = std::make_unique<Loader>();
+	loader_->Init(camera_.get());
 }
 
 void GameScene::Update() {
@@ -94,6 +97,8 @@ void GameScene::Update() {
 
 	object3d_->Update();
 	glassObject_->Update();
+
+	loader_->Update();
 
 	//
 	ParticleManager::GetInstance()->Update();
@@ -119,6 +124,8 @@ void GameScene::Draw() {
 
 	//// 地面
 	// glassObject_->Draw();
+
+	loader_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 }

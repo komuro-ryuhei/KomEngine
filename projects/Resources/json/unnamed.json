@@ -2,27 +2,6 @@
     "name": "scene",
     "objects": [
         {
-            "type": "MESH",
-            "name": "Cube",
-            "transform": {
-                "translation": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "rotation": [
-                    0.0,
-                    -0.0,
-                    0.0
-                ],
-                "scaling": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            }
-        },
-        {
             "type": "LIGHT",
             "name": "Light",
             "transform": {
@@ -66,11 +45,53 @@
         },
         {
             "type": "MESH",
-            "name": "Cube.001",
+            "name": "球",
             "transform": {
                 "translation": [
-                    2.778465986251831,
-                    4.646223068237305,
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    -0.0,
+                    0.0
+                ],
+                "scaling": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "type": "MESH",
+            "name": "球.001",
+            "transform": {
+                "translation": [
+                    0.0,
+                    3.4143800735473633,
+                    2.4966983795166016
+                ],
+                "rotation": [
+                    0.0,
+                    -0.0,
+                    0.0
+                ],
+                "scaling": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "type": "MESH",
+            "name": "球.002",
+            "transform": {
+                "translation": [
+                    3.8463239669799805,
+                    -2.710322618484497,
                     0.0
                 ],
                 "rotation": [

@@ -3,7 +3,7 @@
 #include <cassert>
 #include <fstream>
 
-void Loader::Init() {
+void Loader::Init(Camera* camera) {
 
 	// ファイルパスを得る
 	const std::string fullPath = "Resources/json/unnamed.json";
@@ -89,6 +89,8 @@ void Loader::Init() {
 		}
 		//
 		Object3d* newObject = new Object3d();
+		// 初期化
+		newObject->Init(BlendType::BLEND_NONE);
 		// 座標
 		newObject->SetTranslate(objectData.translate);
 		// 回転角
@@ -96,7 +98,13 @@ void Loader::Init() {
 		// スケール
 		newObject->SetScale(objectData.scale);
 
-		newObject->Init(BlendType::BLEND_NONE);
+		// モデル、カメラの設定
+		if (objectData.fileName.empty() == false) {
+			newObject->SetModel(objectData.fileName);
+		} else {
+			newObject->SetModel("sphere.obj");
+		}
+		newObject->SetDefaultCamera(camera);
 
 		objects.push_back(newObject);
 	}
@@ -104,5 +112,16 @@ void Loader::Init() {
 
 void Loader::Update() {
 
-	//
+	// 全オブジェクトを更新
+	for (auto& object : objects) {
+		object->Update();
+	}
+}
+
+void Loader::Draw() {
+
+	// 全オブジェクトを描画
+	for (auto& object : objects) {
+		object->Draw();
+	}
 }
