@@ -2,7 +2,7 @@
 
 #include "Engine/Base/System/System.h"
 
-const char kWindowTitle[] = "LE2B_12_コムロ_リュウヘイ";
+const char kWindowTitle[] = "KomEngine";
 
 void MyGame::Run() {
 

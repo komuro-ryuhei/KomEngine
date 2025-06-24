@@ -64,7 +64,8 @@
     <ClCompile Include="Game\Scene\SceneFactory.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleManager.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleEmitter.cpp" />
-    <ClCompile Include="OffscreenRendering.cpp" />
+    <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
+    <ClCompile Include="Loader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\lib\ComPtr\ComPtr.h" />
@@ -111,7 +112,8 @@
     <ClInclude Include="Game\Scene\SceneFactory.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleManager.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
-    <ClInclude Include="OffscreenRendering.h" />
+    <ClInclude Include="Engine\Base\OffscreenRendering\OffscreenRendering.h" />
+    <ClInclude Include="Loader.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

@@ -12,6 +12,7 @@
 
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "Engine/Base/Particle/ParticleManager.h"
+#include "Loader.h"
 
 #include "Game/Scene/IScene.h"
 
@@ -44,4 +45,13 @@ private:
 	std::unique_ptr<ParticleEmitter> emitter2_ = nullptr;
 	std::unique_ptr<ParticleEmitter> ringEmitter_ = nullptr;
 	std::unique_ptr<ParticleEmitter> cylinderEmitter_ = nullptr;
+	std::unique_ptr<ParticleEmitter> moonLightEffect_ = nullptr;
+	std::unique_ptr<ParticleEmitter> ribbonEffect_ = nullptr;
+
+	// 
+	std::unique_ptr<Loader> loader_ = nullptr;
+
+private:
+
+	void ParticleUpdate();
 };

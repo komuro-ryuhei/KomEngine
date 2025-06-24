@@ -37,6 +37,8 @@ void ParticleManager::Update() {
 	Matrix4x4 viewMatrix = camera_->GetViewMatrix();
 	Matrix4x4 projectionMatrix = camera_->GetProjectionMatrix();
 
+	UpdateSpiralEmitter();
+
 	for (auto& [name, group] : particleGroups) {
 
 		size_t numInstance = 0;
@@ -131,6 +133,15 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 			group.particles.push_back(MakeRingParticle(randomEngine, position));
 		} else if (name == "cylinder") {
 			group.particles.push_back(MakeCylinderParticle(randomEngine, position));
+		} else if (name == "moonLight") {
+			group.particles.push_back(MakeRingParticle(randomEngine, position));
+			group.particles.push_back(MakeMoonLightParticle(position, true));
+			group.particles.push_back(MakeMoonLightParticle(position, false)); 
+		} else if (name == "ribbon") {
+			spiralEmitter.position = position;
+			spiralEmitter.count = 0;
+			spiralEmitter.timer = 0.0f;
+			spiralEmitter.active = true;
 		}
 	}
 }
@@ -213,7 +224,7 @@ Particle ParticleManager::MakeRingParticle(std::mt19937& randomEngine, const Vec
 	particle.transform.translate = translate;
 	particle.velocity = {0.0f, 0.0f, 0.0f};
 	particle.color = {1.0f, 1.0f, 1.0f, 1.0f};
-	particle.lifeTime = 0.1f;
+	particle.lifeTime = 1.0f;
 	particle.currentTime = 0.0f;
 	return particle;
 }
@@ -234,11 +245,68 @@ Particle ParticleManager::MakeCylinderParticle(std::mt19937& randomEngine, const
 	return particle;
 }
 
+Particle ParticleManager::MakeMoonLightParticle(const Vector3& translate, bool isVertical) {
+
+	Particle particle;
+
+	// 回転と位置
+	particle.transform.rotate = isVertical ? Vector3{0.0f, 0.0f, 1.0f} : Vector3{0.0f, 0.0f, 2.0f};
+	particle.transform.translate = translate;
+
+	particle.velocity = {0.0f, 0.0f, 0.0f};
+
+	// 視認性の高い黄色
+	particle.color = {1.0f, 1.0f, 0.0f, 1.0f};
+
+	particle.lifeTime = 1.0f;
+	particle.currentTime = 0.0f;
+
+	float rotSpeed = std::sin(particle.currentTime * 2.0f) * 0.05f;
+	particle.transform.rotate.z += rotSpeed;
+	float scaleBase = 1.0f;
+	float scaleOffset = 0.2f * std::sin(particle.currentTime * 4.0f);
+	particle.transform.scale = Vector3{scaleBase + scaleOffset, scaleBase + scaleOffset, 1.0f};
+
+	return particle;
+}
+
+Particle ParticleManager::MakeSpiralParticle(const Vector3& translate, float angleOffset) {
+
+	Particle particle;
+
+	// 初期位置：円周上に配置
+	float radius = 2.0f;
+	float angle = angleOffset;
+
+	particle.transform.translate = {std::cos(angle) * radius + translate.x, translate.y, std::sin(angle) * radius + translate.z};
+
+	particle.transform.scale = {0.2f, 0.2f, 0.2f};
+	particle.transform.rotate = {0.0f, 0.0f, 0.0f};
+
+	// 回転しながら下降するような速度ベクトル
+	float angularSpeed = 0.1f;    // 回転速度
+	float downwardSpeed = -0.05f; // 下降速度（Y軸方向）
+
+	// 速度：角度の増加に従って円を描く＋下降
+	particle.velocity = {
+	    -std::sin(angle) * radius * angularSpeed, // x方向：円運動
+	    downwardSpeed,                            // y方向：下降
+	    std::cos(angle) * radius * angularSpeed   // z方向：円運動
+	};
+
+	particle.color = {1.0f, 0.3f, 1.0f, 1.0f};
+	particle.lifeTime = 2.0f;
+	particle.currentTime = 0.0f;
+
+	return particle;
+}
+
 void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& particleType) {
 
 	std::vector<VertexData> vertices;
 
 	if (particleType == "ring") {
+
 		const uint32_t kRingDivide = 32;
 		const float kOuterRadius = 2.0f;
 		const float kInnerRadius = 1.0f;
@@ -284,10 +352,11 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
             });
 		}
 	} else if (particleType == "cylinder") {
+
 		const uint32_t kLineCount = 32;
 		const float radius = 2.0f;
 
-		// ★ ランダム生成器
+		// ランダム生成器
 		std::random_device seed;
 		std::mt19937 randEngine(seed());
 		std::uniform_real_distribution<float> heightDist(1.5f, 2.5f); // 高さの範囲
@@ -302,7 +371,7 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 			float x1 = std::cos(nextAngle) * radius;
 			float z1 = std::sin(nextAngle) * radius;
 
-			// ★ ランダムな高さ
+			// ランダムな高さ
 			float height0 = heightDist(randEngine);
 			float height1 = heightDist(randEngine);
 
@@ -326,6 +395,52 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 			vertices.push_back({p1, uvBottom, normal});
 			vertices.push_back({p3, uvTop, normal});
 		}
+	} else if (particleType == "moonLight") {
+
+		const uint32_t kRingDivide = 32;
+		const float kOuterRadius = 2.0f;
+		const float kInnerRadius = 1.0f;
+		const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kRingDivide);
+
+		for (uint32_t index = 0; index < kRingDivide; ++index) {
+			float sin = std::sin(index * radianPerDivide);
+			float cos = std::cos(index * radianPerDivide);
+			float sinNext = std::sin((index + 1) * radianPerDivide);
+			float cosNext = std::cos((index + 1) * radianPerDivide);
+			float u = float(index) / float(kRingDivide);
+			float uNext = float(index + 1) / float(kRingDivide);
+
+			vertices.push_back({
+			    {-sin * kOuterRadius, cos * kOuterRadius, 0.0f, 1.0f},
+                {u, 0.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
+                {uNext, 0.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
+                {u, 1.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sinNext * kOuterRadius, cosNext * kOuterRadius, 0.0f, 1.0f},
+                {uNext, 0.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sinNext * kInnerRadius, cosNext * kInnerRadius, 0.0f, 1.0f},
+                {uNext, 1.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+			vertices.push_back({
+			    {-sin * kInnerRadius, cos * kInnerRadius, 0.0f, 1.0f},
+                {u, 1.0f},
+                {0.0f, 0.0f, 1.0f}
+            });
+		}
 	} else {
 		vertices = {
 		    {{1.0f, 1.0f, 0.0f, 1.0f},   {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
@@ -348,4 +463,27 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 	group.vertexBufferView.BufferLocation = group.vertexResource->GetGPUVirtualAddress();
 	group.vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * group.vertices.size());
 	group.vertexBufferView.StrideInBytes = sizeof(VertexData);
+}
+
+void ParticleManager::UpdateSpiralEmitter() {
+
+	if (!spiralEmitter.active)
+		return;
+
+	spiralEmitter.timer += 1.0f / 60.0f;
+	if (spiralEmitter.timer >= 0.05f) {
+		float angle = spiralEmitter.count * 0.3f;
+		auto& group = particleGroups["ribbon"];
+		std::random_device seedGenerator;
+		std::mt19937 randomEngine(seedGenerator());
+
+		group.particles.push_back(MakeSpiralParticle(spiralEmitter.position, angle));
+
+		spiralEmitter.count++;
+		spiralEmitter.timer = 0.0f;
+
+		if (spiralEmitter.count >= 24) {
+			spiralEmitter.active = false;
+		}
+	}
 }
