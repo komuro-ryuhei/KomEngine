@@ -72,8 +72,6 @@ void GameScene::Init() {
 
 	// 敵の出現トリガー（例：Z=5.0f）
 	enemyTriggers_.push_back({5.0f, false});
-	ribbonEffect_ = std::make_unique<ParticleEmitter>();
-	ribbonEffect_->Init("ribbon", {0.0f, 0.0f, 10.0f}, 1);
 
 	loader_ = std::make_unique<Loader>();
 	loader_->Init(camera_.get());
