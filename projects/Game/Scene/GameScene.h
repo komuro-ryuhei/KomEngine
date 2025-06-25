@@ -30,7 +30,7 @@ public:
 
 private:
 	// カメラシェイク
-	void CameraShake();
+	// void CameraShake();
 	// 当たり判定処理
 	void CheckCollisions();
 	// ImGuiによるデバッグ表示
@@ -55,15 +55,8 @@ private:
 	std::vector<std::unique_ptr<Enemy>> enemies_;
 	std::vector<std::unique_ptr<Object3d>> enemyObjects3d_;
 
-	// カメラシェイク
-	float shakeTimer_ = 0.0f;
-	float shakeDuration_ = 0.5f; // 秒数
-	bool isShaking_ = false;
-	Vector3 cameraDefaultPos_;
-
-
 	struct EnemyTrigger {
-		float triggerZ; // プレイヤーのZ座標がここを超えたら出現
+		float triggerZ;
 		bool triggered = false;
 	};
 

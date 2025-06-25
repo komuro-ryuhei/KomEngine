@@ -67,9 +67,6 @@ void GameScene::Init() {
 	player_ = std::make_unique<Player>();
 	player_->Init(camera_.get());
 
-	// カメラのデフォルト位置を保存
-	cameraDefaultPos_ = camera_->GetTranaslate();
-
 	// 敵の出現トリガー（例：Z=5.0f）
 	enemyTriggers_.push_back({5.0f, false});
 
@@ -82,8 +79,8 @@ void GameScene::Update() {
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 playerRot = player_->GetTransform().rotate;
 
-	camera_->SetTranslate(playerPos);
-	camera_->SetRotate(playerRot); // プレイヤーと同じ視線方向
+	camera_->SetBasePos(player_->GetTransform().translate);
+	camera_->SetBaseRot(player_->GetTransform().rotate);
 
 	camera_->Update();
 
@@ -141,24 +138,6 @@ void GameScene::Draw() {
 
 void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }
 
-void GameScene::CameraShake() {
-
-	// カメラシェイク処理
-	if (isShaking_) {
-		shakeTimer_ += 1.0f / 60.0f;
-
-		float shakeStrength = 0.2f;
-		Vector3 shakeOffset = {(rand() % 100 / 100.0f - 0.5f) * 2.0f * shakeStrength, (rand() % 100 / 100.0f - 0.5f) * 2.0f * shakeStrength, 0.0f};
-
-		camera_->SetTranslate(cameraDefaultPos_ + shakeOffset);
-
-		if (shakeTimer_ >= shakeDuration_) {
-			isShaking_ = false;
-			camera_->SetTranslate(cameraDefaultPos_);
-		}
-	}
-}
-
 void GameScene::CheckCollisions() {
 
 	auto& bullets = player_->GetBullets();
@@ -174,9 +153,7 @@ void GameScene::CheckCollisions() {
 			if (distance < collisionDistance) {
 				// 衝突処理
 				bulletHit = true;
-				// カメラシェイクのフラグを建てる
-				isShaking_ = true;
-				shakeTimer_ = 0.0f;
+				
 
 				// 衝突地点（弾と敵の中間地点）を計算
 				Vector3 bulletPos = (*itBullet)->GetTranslate();
@@ -212,8 +189,7 @@ void GameScene::CheckCollisions() {
 				// 衝突処理（今は削除だけ）
 				it = enemy->GetBullets().erase(it);
 				// シェイクの処理初期化
-				isShaking_ = true;
-				shakeTimer_ = 0.0f;
+				camera_->StartShake(CameraShakeType::Medium);
 			} else {
 				++it;
 			}

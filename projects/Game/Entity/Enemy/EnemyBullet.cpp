@@ -11,7 +11,7 @@ void EnemyBullet::Init(Camera* camera, Object3d* object3d) {
 	object3d_->Init(BlendType::BLEND_NONE);
 	object3d_->SetDefaultCamera(camera_);
 
-	object3d_->SetScale({0.1f, 0.1f, 0.1f});
+	object3d_->SetScale({ 0.1f, 0.1f, 0.1f });
 }
 
 void EnemyBullet::Update() {
@@ -38,6 +38,11 @@ void EnemyBullet::ImGuiDebug() {
 
 Vector3 EnemyBullet::GetTranslate() const { return transform_.translate; }
 
-void EnemyBullet::SetTranlate(Vector3 translate) { transform_.translate = translate; }
+void EnemyBullet::SetTranlate(Vector3 translate) {
+	transform_.translate = translate;
+	if (object3d_) {
+		object3d_->SetTranslate(translate);
+	}
+}
 
 void EnemyBullet::SetDirection(const Vector3& direction) { direction_ = direction; }

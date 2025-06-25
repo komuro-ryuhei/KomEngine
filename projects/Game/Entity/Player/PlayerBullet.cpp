@@ -38,6 +38,11 @@ void PlayerBullet::ImGuiDebug() {
 
 Vector3 PlayerBullet::GetTranslate() const { return transform_.translate; }
 
-void PlayerBullet::SetTranlate(Vector3 translate) { transform_.translate = translate; }
+void PlayerBullet::SetTranlate(Vector3 translate) {
+	transform_.translate = translate;
+	if (object3d_) {
+		object3d_->SetTranslate(translate);
+	}
+}
 
 void PlayerBullet::SetDirection(const Vector3& direction) { direction_ = direction; }

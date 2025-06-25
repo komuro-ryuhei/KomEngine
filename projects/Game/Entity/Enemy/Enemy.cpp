@@ -24,6 +24,12 @@ void Enemy::Init(Camera* camera, Object3d* object3d) {
 
 void Enemy::Update() {
 
+	// 出現してからのタイマー進行
+	if (spawnWaitTimer_ < spawnWaitDuration_) {
+		spawnWaitTimer_++;
+	}
+
+	// 被弾中処理
 	if (isBlinking_) {
 		blinkCounter_++;
 		if (blinkCounter_ >= blinkDuration_) {
@@ -32,8 +38,10 @@ void Enemy::Update() {
 		}
 	}
 
-	// 攻撃処理
-	Attack();
+	// 攻撃処理(出現待機中は攻撃しない)
+	if (spawnWaitTimer_ >= spawnWaitDuration_) {
+		Attack();
+	}
 
 	// 弾更新
 	for (auto& bullet : bulletObjects_) {
@@ -82,7 +90,7 @@ void Enemy::OnHit() {
 
 void Enemy::Attack() {
 
-	if (!player_)
+	if (!player_)	
 		return; // プレイヤーが未設定なら撃たない
 
 	attackTimer_++;

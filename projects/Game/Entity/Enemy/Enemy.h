@@ -54,4 +54,8 @@ private:
 	int attackTimer_ = 0;
 
 	int attackInterval_ = 0; // 2秒に1回くらい
+
+	// 出現してからの待機時間
+	int spawnWaitTimer_ = 0;
+	const int spawnWaitDuration_ = 180; // 180フレーム = 3秒（60FPS基準）
 };

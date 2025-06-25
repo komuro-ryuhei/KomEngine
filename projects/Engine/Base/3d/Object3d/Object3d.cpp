@@ -95,13 +95,7 @@ void Object3d::ImGuiDebug() {
 
 void Object3d::SetModel(const std::string& filePath) { model_ = ModelManager::GetInstance()->FindModel(std::move(filePath)); }
 
-void Object3d::SetScale(const Vector3& scale) { transform.scale = scale; }
-
-void Object3d::SetRotate(const Vector3& rotate) { transform.rotate = rotate; }
-
 void Object3d::SetCamera(Camera* camera) { camera_ = camera; }
-
-void Object3d::SetTranslate(const Vector3& translate) { transform.translate = translate; }
 
 void Object3d::SetDefaultCamera(Camera* camera) { defaultCamera_ = camera; }
 
