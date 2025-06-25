@@ -69,6 +69,7 @@
     <ClCompile Include="Game\Entity\Enemy\Enemy.cpp" />
     <ClCompile Include="Game\Entity\Enemy\EnemyBullet.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
+    <ClCompile Include="Loader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\lib\ComPtr\ComPtr.h" />
@@ -120,6 +121,7 @@
     <ClInclude Include="Game\Entity\Player\PlayerBullet.h" />
     <ClInclude Include="Game\Entity\Enemy\Enemy.h" />
     <ClInclude Include="Game\Entity\Enemy\EnemyBullet.h" />
+    <ClInclude Include="Loader.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

@@ -36,6 +36,9 @@ public: // メンバ関数
 
 	// setter
 	void SetModel(const std::string& filePath);
+	void SetScale(const Vector3& scale);
+	void SetRotate(const Vector3& rotate);
+	void SetTranslate(const Vector3& translate);
 	void SetCamera(Camera* camera);
 	void SetDefaultCamera(Camera* camera);
 	void SetScale(const Vector3& scale);

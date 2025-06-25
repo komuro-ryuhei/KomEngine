@@ -12,6 +12,7 @@
 
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "Engine/Base/Particle/ParticleManager.h"
+#include "Loader.h"
 
 #include "Game/Scene/IScene.h"
 
@@ -69,6 +70,9 @@ private:
 	std::vector<EnemyTrigger> enemyTriggers_;
 	int currentTriggerIndex_ = 0;
 	bool isFighting_ = false;
+
+	// 
+	std::unique_ptr<Loader> loader_ = nullptr;
 
 private:
 	void ParticleUpdate();
