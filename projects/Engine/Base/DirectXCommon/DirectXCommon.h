@@ -12,13 +12,11 @@
 
 #include "externals/DirectXTex/DirectXTex.h"
 
-#include "Engine/Base/DirectXCommon/DirectXCommon.h"
-#include "Engine/Base/PSO/Compiler/Compiler.h"
 #include "Engine/Base/WinApp/WinApp.h"
-#include "Engine/lib/StringUtility/StringUtility.h"
 #include "Engine/lib/ComPtr/ComPtr.h"
 #include "Engine/lib/Math/MyMath.h"
-#include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
+#include "Engine/lib/StringUtility/StringUtility.h"
+#include "struct.h"
 
 #include <memory>
 
@@ -54,12 +52,8 @@ public: // 静的メンバ変数
 	void PostDraw();
 
 	/// <summary>
-	/// 
+	///
 	/// </summary>
-	void Draw();
-
-
-	void OffscreenBarrier();
 
 	/// <summary>
 	/// レンダーターゲットのクリア
@@ -82,22 +76,18 @@ public: // 静的メンバ変数
 	/// getter
 	/// </summary>
 	ID3D12Device* GetDevice() const;
-
 	ID3D12GraphicsCommandList* GetCommandList() const;
-
 	D3D12_VIEWPORT GetViewPort() const;
-
 	D3D12_RECT GetScissor() const;
-
 	ID3D12DescriptorHeap* GetSrvDescriptorHeap();
-
 	uint32_t GetDescriptorSizeSRV() const;
 	uint32_t GetDescriptorSizeRTV() const;
 	uint32_t GetDescriptorSizeDSV() const;
-
 	D3D12_DEPTH_STENCIL_DESC GetDepthStencilDesc() const;
-
-size_t GetBackBufferCount() const;
+	size_t GetBackBufferCount() const;
+	D3D12_RENDER_TARGET_VIEW_DESC GetRtvDesc() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE GetDsvHandle() const;
+	D3D12_CPU_DESCRIPTOR_HANDLE GetRtvStartHandle() const;
 
 private: // メンバ変数
 	// ウィンドウサイズ
@@ -108,7 +98,7 @@ private: // メンバ変数
 	WinApp* winApp_;
 
 	// PSO
-	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
+	// std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
 
 	// DiretcX
 	ComPtr<IDXGIFactory7> dxgiFactory_;
@@ -160,15 +150,13 @@ private: // メンバ変数
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle;
 
-	// 
-	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetHandle_;
-
-	// 
-	ComPtr<ID3D12Resource> renderTextureResource_;
+	// Random用のマテリアルリソースを作る
+	/*ComPtr<ID3D12Resource> materialBufferResource_;
+	MaterialBuffer* materialBufferData_ = nullptr;*/
 
 public:
-
 	static const uint32_t kMaxSRVCount;
 
 private: // メンバ関数
@@ -230,17 +218,9 @@ private: // メンバ関数
 	/// </summary>
 	void InitializeDepthStencilView();
 
-	// 
+	//
 	ComPtr<ID3D12Resource> CreateRenderTextureResource(ID3D12Device* device, UINT width, UINT height, DXGI_FORMAT format, const Vector4& clearColor);
-	// 
-	void OffScreeenRenderTargetView();
-	// 
-	void OffScreenShaderResourceView();
-
-public:
-
-	void RenderToTexture();
-
+	//
 
 public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);

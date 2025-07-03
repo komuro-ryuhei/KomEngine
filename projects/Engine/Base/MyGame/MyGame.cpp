@@ -2,9 +2,9 @@
 
 #include "Engine/Base/System/System.h"
 
-const char kWindowTitle[] = "LE2B_12_コムロ_リュウヘイ";
+const char kWindowTitle[] = "KomEngine";
 
-void MyGame::Run() {
+void MyGame::Run(const std::string& sceneName) {
 
 	System::Initialize(kWindowTitle, 1280, 720);
 
@@ -16,7 +16,7 @@ void MyGame::Run() {
 	sceneManager_->SetSceneFactory(sceneFactory_.get());
 
 	// 初期シーンを設定
-	sceneManager_->ChangeScene("GAME");
+	sceneManager_->ChangeScene(sceneName);
 
 	// ×が押されるまでループ
 	while (System::ProcessMessage() == 0) {

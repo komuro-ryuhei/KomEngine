@@ -45,4 +45,10 @@ private:
 	std::unique_ptr<ParticleEmitter> emitter2_ = nullptr;
 	std::unique_ptr<ParticleEmitter> ringEmitter_ = nullptr;
 	std::unique_ptr<ParticleEmitter> cylinderEmitter_ = nullptr;
+	std::unique_ptr<ParticleEmitter> moonLightEffect_ = nullptr;
+	std::unique_ptr<ParticleEmitter> ribbonEffect_ = nullptr;
+
+private:
+
+	void ParticleUpdate();
 };

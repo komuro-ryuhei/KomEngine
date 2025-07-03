@@ -39,3 +39,7 @@ struct ModelData {
 	std::vector<VertexData> vertices;
 	MaterialData material;
 };
+
+struct MaterialBuffer {
+	float time;
+};

@@ -29,8 +29,6 @@ void TitleScene::Update() {
 
 	sprite_->Update();
 
-	sprite_->ImGuiDebug();
-
 	if (System::TriggerKey(DIK_SPACE)) {
 		// ゲームシーンを生成
 		sceneManager_->ChangeScene("GAME");

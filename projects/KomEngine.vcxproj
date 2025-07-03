@@ -132,7 +132,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Base\Mesh\Mesh.cpp" />
     <ClCompile Include="Engine\lib\StringUtility\StringUtility.cpp" />
     <ClCompile Include="Engine\lib\Math\MyMath.cpp" />
-    <ClCompile Include="Engine\Base\3d\Triangle\Triangle.cpp" />
     <ClCompile Include="Engine\Base\2d\Sprite\Sprite.cpp" />
     <ClCompile Include="Engine\Base\TextureManager\TextureManager.cpp" />
     <ClCompile Include="Engine\Base\3d\Object3d\Object3d.cpp" />
@@ -145,8 +144,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Game\Scene\SceneFactory.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleManager.cpp" />
-    <ClCompile Include="OffscreenRendering.cpp" />
+
     <ClCompile Include="Skybox.cpp" />
+    <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Scene\AbstractSceneFactory.h" />
@@ -177,7 +177,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Base\Mesh\Mesh.h" />
     <ClInclude Include="Engine\lib\StringUtility\StringUtility.h" />
     <ClInclude Include="Engine\lib\Math\MyMath.h" />
-    <ClInclude Include="Engine\Base\3d\Triangle\Triangle.h" />
     <ClInclude Include="Engine\Base\2d\Sprite\Sprite.h" />
     <ClInclude Include="Engine\Base\TextureManager\TextureManager.h" />
     <ClInclude Include="Engine\Base\3d\Object3d\Object3d.h" />
@@ -192,8 +191,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Game\Scene\SceneFactory.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleManager.h" />
-    <ClInclude Include="OffscreenRendering.h" />
+
     <ClInclude Include="Skybox.h" />
+    <ClInclude Include="Engine\Base\OffscreenRendering\OffscreenRendering.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="Game\Scene\TitleScene.h" />
   </ItemGroup>

@@ -1,12 +1,12 @@
 #pragma once
 
 // MyClass
-#include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/lib/ComPtr/ComPtr.h"
+#include <stdint.h>
 
 // C++
 #include <cassert>
-
+#include <d3d12.h>
 
 // SRV管理
 class SrvManager {
@@ -15,7 +15,7 @@ public:
 	SrvManager() = default;
 	~SrvManager() = default;
 
-	void Init(DirectXCommon* dxCommon);
+	void Init();
 
 	void PreDraw();
 
@@ -39,8 +39,6 @@ public:
 	bool CanAllocate() const;
 
 private:
-
-	DirectXCommon* dxCommon_ = nullptr;
 
 	// 最大SRV数(最大テクスチャ枚数)
 	static const uint32_t kMaxSRVCount_;

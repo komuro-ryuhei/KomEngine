@@ -1,7 +1,10 @@
 #include "GameScene.h"
 
 #include "Engine/Base/System/System.h"
+
+#ifdef _DEBUG
 #include "externals/imgui/imgui.h"
+#endif // DEBUG
 
 void GameScene::Init() {
 
@@ -11,6 +14,7 @@ void GameScene::Init() {
 	const std::string& circle2 = "./Resources/images/circle2.png";
 	const std::string& monsterBallTexture = "./Resources/images/monsterBall.png";
 	const std::string& ring = "./Resources/images/gradationLine.png";
+	const std::string& moonLight = "./Resources/images/moonLight.png";
 
 	TextureManager::GetInstance()->LoadTexture(uvTexture);
 	TextureManager::GetInstance()->LoadTexture(circle);
@@ -40,10 +44,10 @@ void GameScene::Init() {
 	glassObject_->SetModel("terrain.obj");
 
 	camera_ = std::make_unique<Camera>();
-	camera_->SetRotate({0.2f, 0.0f, 0.0f});
-	camera_->SetTranslate({0.0f, 7.0f, -30.0f});
-	// camera_->SetRotate({0.5f, 0.0f, 0.0f});
-	// camera_->SetTranslate({0.0f, 7.0f, -12.0f});
+	// camera_->SetRotate({0.2f, 0.0f, 0.0f});
+	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
+	camera_->SetRotate({0.0f, 0.0f, 0.0f});
+	camera_->SetTranslate({0.0f, 0.0f, -12.0f});
 
 	object3d_->SetDefaultCamera(camera_.get());
 	glassObject_->SetDefaultCamera(camera_.get());
@@ -60,6 +64,8 @@ void GameScene::Init() {
 	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
 	ParticleManager::GetInstance()->CreateParticleGeoup("ring", ring, "ring");
 	ParticleManager::GetInstance()->CreateParticleGeoup("cylinder", ring, "cylinder");
+	ParticleManager::GetInstance()->CreateParticleGeoup("moonLight", moonLight, "moonLight");
+	ParticleManager::GetInstance()->CreateParticleGeoup("ribbon", moonLight, "ribbon");
 
 	emitter_ = std::make_unique<ParticleEmitter>();
 	emitter_->Init("hit", {0.0f, 0.0f, 10.0f}, 8);
@@ -72,6 +78,12 @@ void GameScene::Init() {
 
 	cylinderEmitter_ = std::make_unique<ParticleEmitter>();
 	cylinderEmitter_->Init("cylinder", {0.0f, 0.0f, 10.0f}, 1);
+
+	moonLightEffect_ = std::make_unique<ParticleEmitter>();
+	moonLightEffect_->Init("moonLight", {0.0f, 0.0f, 10.0f}, 1);
+
+	ribbonEffect_ = std::make_unique<ParticleEmitter>();
+	ribbonEffect_->Init("ribbon", {0.0f, 0.0f, 10.0f}, 1);
 }
 
 void GameScene::Update() {
@@ -88,10 +100,39 @@ void GameScene::Update() {
 	object3d_->Update();
 	glassObject_->Update();
 
-	sprite_->ImGuiDebug();
-
 	//
 	ParticleManager::GetInstance()->Update();
+	ParticleUpdate();
+
+#ifdef _DEBUG
+
+	//
+	camera_->ImGuiDebug();
+	object3d_->ImGuiDebug();
+	glassObject_->ImGuiDebug();
+	sprite_->ImGuiDebug();
+
+#endif // _DEBUG
+}
+
+void GameScene::Draw() {
+
+	// sprite_->Draw();
+
+	//
+	// object3d_->Draw();
+
+	//// 地面
+	// glassObject_->Draw();
+
+	ParticleManager::GetInstance()->Draw();
+}
+
+void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }
+
+void GameScene::ParticleUpdate() {
+
+#ifdef _DEBUG
 
 	if (ImGui::Button("Emit Particles")) {
 		emitter_->Update();
@@ -108,28 +149,31 @@ void GameScene::Update() {
 	if (ImGui::Button("Cylinder Particles")) {
 		cylinderEmitter_->Update();
 	}
-	// ringEmitter_->Update();
-	// cylinderEmitter_->Update();
 
-	//
-	camera_->ImGuiDebug();
-	object3d_->ImGuiDebug();
-	glassObject_->ImGuiDebug();
-}
+	if (ImGui::Button("MoonLight Effect")) {
+		moonLightEffect_->Update();
+	}
 
-void GameScene::Draw() {
+	if (ImGui::Button("Ribbon Effect")) {
+		ribbonEffect_->Update();
+	}
 
 	skybox_->Draw();
 
 	// sprite_->Draw();
 
-	//
-	object3d_->Draw();
+	if (System::TriggerKey(DIK_1)) {
+		emitter_->Update();
+	}
+	if (System::TriggerKey(DIK_2)) {
+		moonLightEffect_->Update();
+	}
+	if (System::TriggerKey(DIK_3)) {
+		ribbonEffect_->Update();
+	}
 
-	// 地面
-	glassObject_->Draw();
+	// ribbonEffect_->Update();
 
-	ParticleManager::GetInstance()->Draw();
+	// ringEmitter_->Update();
+	// cylinderEmitter_->Update();
 }
-
-void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }

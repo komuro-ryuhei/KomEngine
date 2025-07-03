@@ -2,8 +2,6 @@
 #include "Engine/Base/System/System.h"
 #include <Windows.h>
 
-const char kWindowTitle[] = "LE2B_12_コムロ_リュウヘイ";
-
 struct LeakChecker {
 	~LeakChecker() {
 		// リソースリークチェック
@@ -21,7 +19,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	MyGame game;
 
-	game.Run();
+	game.Run("GAME");
 
 	return 0;
 }
