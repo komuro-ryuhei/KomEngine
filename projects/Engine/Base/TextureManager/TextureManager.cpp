@@ -95,7 +95,7 @@ ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(ID3D12Device* devic
 }
 
 [[nodiscard]]
-ID3D12Resource* TextureManager::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages) {
+ComPtr<ID3D12Resource> TextureManager::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages) {
 
 	// 
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
@@ -113,7 +113,7 @@ ID3D12Resource* TextureManager::UploadTextureData(ID3D12Resource* texture, const
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
 	System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &barrier);
 
-	return intermediateResource.Get();
+	return intermediateResource;
 }
 
 uint32_t TextureManager::GetTextureIndexByFilePath(const std::string& filePath) {

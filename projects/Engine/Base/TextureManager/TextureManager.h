@@ -35,7 +35,7 @@ public:
 	/// <summary>
 	///
 	/// </summary>
-	ID3D12Resource* UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
+	ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
 
 	// SRVインデックスの開始番号
 	uint32_t GetTextureIndexByFilePath(const std::string& filePath);
