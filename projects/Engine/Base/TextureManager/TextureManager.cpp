@@ -1,6 +1,8 @@
 #include "TextureManager.h"
 
 #include "Engine/Base/System/System.h"
+#include "externals/DirectXTex/d3dx12.h"
+#include <vector>
 
 TextureManager* TextureManager::instance = nullptr;
 uint32_t TextureManager::kSRVIndexTop_ = 1;
@@ -74,7 +76,7 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 		srvManager_->CreateSRVforTexture2D(textureData.srvIndex, textureData.resource.Get(), textureData.metaData.format, static_cast<UINT>(textureData.metaData.mipLevels));
 	}
 
-	UploadTextureData(textureData.resource.Get(), mipImage);
+	textureData.intermediateResource = UploadTextureData(textureData.resource.Get(), mipImage);
 
 	// ここでムーブ代入を使用
 	textureDatas[textureData.filePath] = std::move(textureData);
@@ -94,9 +96,9 @@ ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(ID3D12Device* devic
 
 	// 利用するHeapの設定
 	D3D12_HEAP_PROPERTIES heapProperties{};
-	heapProperties.Type = D3D12_HEAP_TYPE_CUSTOM;                        // 細かい設定を行う
-	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK; // WriteBackポリシーでCPUアクセス可能
-	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;          // プロセッサの近くに配置
+	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;                         // 細かい設定を行う
+	//heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK; // WriteBackポリシーでCPUアクセス可能
+	//heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;          // プロセッサの近くに配置
 
 	// Resourceの生成
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
@@ -104,31 +106,33 @@ ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(ID3D12Device* devic
 	    &heapProperties,                   // Heapの設定
 	    D3D12_HEAP_FLAG_NONE,              // Heapの特殊な設定
 	    &resourceDesc,                     // Resourceの設定
-	    D3D12_RESOURCE_STATE_GENERIC_READ, // 初回のResourceState
+	    D3D12_RESOURCE_STATE_COPY_DEST   , // 初回のResourceState
 	    nullptr,                           // Clear最速値
 	    IID_PPV_ARGS(&resource));          // 作成するResourceポインタへのポインタ
 	assert(SUCCEEDED(hr));
 	return resource;
 }
 
-void TextureManager::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages) {
+[[nodiscard]]
+ComPtr<ID3D12Resource> TextureManager::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages) {
 
-	// Meta情報を取得
-	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
-	// 全MipMapについて
-	for (size_t mipLevel = 0; mipLevel < metadata.mipLevels; ++mipLevel) {
-		// MipMapLevelを指定して各Imageを取得
-		const DirectX::Image* img = mipImages.GetImage(mipLevel, 0, 0);
-		// Textureに転送
-		HRESULT hr = texture->WriteToSubresource(
-		    UINT(mipLevel),
-		    nullptr,              // 全領域へコピー
-		    img->pixels,          // 元データへアクセス
-		    UINT(img->rowPitch),  // 1ラインサイズ
-		    UINT(img->slicePitch) // 1枚サイズ
-		);
-		assert(SUCCEEDED(hr));
-	}
+	// 
+	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+	DirectX::PrepareUpload(System::GetDxCommon()->GetDevice(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
+	uint64_t intermediateSize = GetRequiredIntermediateSize(texture, 0, UINT(subresources.size()));
+	ComPtr<ID3D12Resource> intermediateResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), intermediateSize);
+	UpdateSubresources(System::GetDxCommon()->GetCommandList(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
+	// Textureへの転送は後は利用できるよう、D3D12_RESOURCE_STATE_COPY_DESTからD3D12_RESOURCE_STATE_GENERIC_READへResourceStateを変更する
+	D3D12_RESOURCE_BARRIER barrier{};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = texture;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
+	System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &barrier);
+
+	return intermediateResource;
 }
 
 uint32_t TextureManager::GetTextureIndexByFilePath(const std::string& filePath) {

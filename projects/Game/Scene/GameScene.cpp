@@ -118,10 +118,10 @@ void GameScene::Draw() {
 	// 
 	skybox_->Draw();
 
-	// sprite_->Draw();
+	sprite_->Draw();
 
 	//
-	// object3d_->Draw();
+	object3d_->Draw();
 
 	//// 地面
 	// glassObject_->Draw();
