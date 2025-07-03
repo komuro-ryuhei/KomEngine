@@ -70,7 +70,7 @@ void SrvManager::CreateSRVforTextureCube(uint32_t srvIndex, ID3D12Resource* pRes
 	srvDesc.TextureCube.MostDetailedMip = 0;
 	srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 
-	dxCommon_->GetDevice()->CreateShaderResourceView(pResource, &srvDesc, GetCPUDescriptorHandle(srvIndex));
+	System::GetDxCommon()->GetDevice()->CreateShaderResourceView(pResource, &srvDesc, GetCPUDescriptorHandle(srvIndex));
 }
 
 void SrvManager::CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride) {

@@ -46,8 +46,8 @@ void GameScene::Init() {
 	camera_ = std::make_unique<Camera>();
 	// camera_->SetRotate({0.2f, 0.0f, 0.0f});
 	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
-	camera_->SetRotate({0.0f, 0.0f, 0.0f});
-	camera_->SetTranslate({0.0f, 0.0f, -12.0f});
+	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
+	camera_->SetTranslate({ 0.0f, 0.0f, -12.0f });
 
 	object3d_->SetDefaultCamera(camera_.get());
 	glassObject_->SetDefaultCamera(camera_.get());
@@ -68,22 +68,22 @@ void GameScene::Init() {
 	ParticleManager::GetInstance()->CreateParticleGeoup("ribbon", moonLight, "ribbon");
 
 	emitter_ = std::make_unique<ParticleEmitter>();
-	emitter_->Init("hit", {0.0f, 0.0f, 10.0f}, 8);
+	emitter_->Init("hit", { 0.0f, 0.0f, 10.0f }, 8);
 
 	emitter2_ = std::make_unique<ParticleEmitter>();
-	emitter2_->Init("explosion", {0.0f, 0.0f, 10.0f}, 50);
+	emitter2_->Init("explosion", { 0.0f, 0.0f, 10.0f }, 50);
 
 	ringEmitter_ = std::make_unique<ParticleEmitter>();
-	ringEmitter_->Init("ring", {0.0f, 0.0f, 10.0f}, 1);
+	ringEmitter_->Init("ring", { 0.0f, 0.0f, 10.0f }, 1);
 
 	cylinderEmitter_ = std::make_unique<ParticleEmitter>();
-	cylinderEmitter_->Init("cylinder", {0.0f, 0.0f, 10.0f}, 1);
+	cylinderEmitter_->Init("cylinder", { 0.0f, 0.0f, 10.0f }, 1);
 
 	moonLightEffect_ = std::make_unique<ParticleEmitter>();
-	moonLightEffect_->Init("moonLight", {0.0f, 0.0f, 10.0f}, 1);
+	moonLightEffect_->Init("moonLight", { 0.0f, 0.0f, 10.0f }, 1);
 
 	ribbonEffect_ = std::make_unique<ParticleEmitter>();
-	ribbonEffect_->Init("ribbon", {0.0f, 0.0f, 10.0f}, 1);
+	ribbonEffect_->Init("ribbon", { 0.0f, 0.0f, 10.0f }, 1);
 }
 
 void GameScene::Update() {
@@ -104,18 +104,19 @@ void GameScene::Update() {
 	ParticleManager::GetInstance()->Update();
 	ParticleUpdate();
 
-#ifdef _DEBUG
 
-	//
+#ifdef _DEBUG
 	camera_->ImGuiDebug();
 	object3d_->ImGuiDebug();
 	glassObject_->ImGuiDebug();
 	sprite_->ImGuiDebug();
-
 #endif // _DEBUG
 }
 
 void GameScene::Draw() {
+
+	// 
+	skybox_->Draw();
 
 	// sprite_->Draw();
 
@@ -158,10 +159,6 @@ void GameScene::ParticleUpdate() {
 		ribbonEffect_->Update();
 	}
 
-	skybox_->Draw();
-
-	// sprite_->Draw();
-
 	if (System::TriggerKey(DIK_1)) {
 		emitter_->Update();
 	}
@@ -171,6 +168,8 @@ void GameScene::ParticleUpdate() {
 	if (System::TriggerKey(DIK_3)) {
 		ribbonEffect_->Update();
 	}
+
+#endif // _DEBUG
 
 	// ribbonEffect_->Update();
 
