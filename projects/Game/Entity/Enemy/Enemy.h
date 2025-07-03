@@ -28,6 +28,7 @@ public:
 	std::vector<std::unique_ptr<EnemyBullet>>& GetBullets();
 
 	void SetPlayer(Player* player);
+	void SetRadius(float radius);
 
 private:
 	void Move();

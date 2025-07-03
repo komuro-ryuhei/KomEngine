@@ -33,6 +33,8 @@ public:
 	Transform GetTransform() const;
 	std::vector<std::unique_ptr<PlayerBullet>>& GetBullets();
 
+	void SetRotate(Vector3& rotate);
+
 private:
 	void Attack();
 	void Move();
@@ -41,6 +43,7 @@ private:
 
 public:
 	void RailMove();
+	void RotateY90();
 
 private:
 	// カメラ

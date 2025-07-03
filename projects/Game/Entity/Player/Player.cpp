@@ -12,6 +12,8 @@ Transform Player::GetTransform() const { return transform_; }
 
 std::vector<std::unique_ptr<PlayerBullet>>& Player::GetBullets() { return bulletObjects_; }
 
+void Player::SetRotate(Vector3& rotate) { transform_.rotate = rotate; }
+
 Player::~Player() {
 
 	// 
@@ -29,12 +31,12 @@ void Player::Init(Camera* camera) {
 	object3d_->SetModel("sphere.obj");
 	object3d_->SetDefaultCamera(camera_);
 
-	object3d_->SetScale({0.5f, 0.5f, 0.5f});
+	object3d_->SetScale({ 0.5f, 0.5f, 0.5f });
 
 	// レティクルのスプライトを生成
 	reticleSprite_ = std::make_unique<Sprite>();
 	reticleSprite_->Init("./Resources/images/uvChecker.png", BlendType::BLEND_NONE);
-	reticleSprite_->SetSize({50.0f, 50.0f});
+	reticleSprite_->SetSize({ 50.0f, 50.0f });
 }
 
 void Player::Update() {
@@ -115,8 +117,8 @@ void Player::Attack() {
 			Matrix4x4 invViewportMatrix = MyMath::Inverse4x4(viewportMatrix);
 
 			Vector2 spritePos = reticleSprite_->GetCenterPosition();
-			Vector3 screenNear = {spritePos.x, spritePos.y, 0.0f};
-			Vector3 screenFar = {spritePos.x, spritePos.y, 1.0f};
+			Vector3 screenNear = { spritePos.x, spritePos.y, 0.0f };
+			Vector3 screenFar = { spritePos.x, spritePos.y, 1.0f };
 
 			Vector3 ndcNear = MyMath::Transform(screenNear, invViewportMatrix);
 			Vector3 ndcFar = MyMath::Transform(screenFar, invViewportMatrix);
@@ -126,7 +128,7 @@ void Player::Attack() {
 
 			direction = worldFar - worldNear;
 		} else {
-			direction = {0.0f, 0.0f, 1.0f};
+			direction = { 0.0f, 0.0f, 1.0f };
 		}
 
 		MyMath::Normalize(direction);
@@ -155,6 +157,20 @@ void Player::Move() {
 }
 
 void Player::RailMove() { transform_.translate.z += velocity_; }
+
+void Player::RotateY90() {
+	transform_.rotate.y += 90.0f;
+
+	// 360度を超えないように正規化
+	if (transform_.rotate.y >= 360.0f) {
+		transform_.rotate.y -= 360.0f;
+	}
+
+	// Object3Dにも反映
+	if (object3d_) {
+		object3d_->SetRotate(transform_.rotate);
+	}
+}
 
 void Player::UpdateReticleSprite() {
 

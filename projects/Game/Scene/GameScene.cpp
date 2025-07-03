@@ -30,11 +30,12 @@ void GameScene::Init() {
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("terrain.obj");
 	ModelManager::GetInstance()->LoadModel("axis.obj");
+	ModelManager::GetInstance()->LoadModel("skydome.obj");
 
 	// 各種初期化
 	camera_ = std::make_unique<Camera>();
-	camera_->SetRotate({0.0f, 0.0f, 0.0f});
-	camera_->SetTranslate({0.0f, 0.0f, -10.0f});
+	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
+	camera_->SetTranslate({ 0.0f, 0.0f, -10.0f });
 
 	audio_ = std::make_unique<Audio>();
 	audio_->Init();
@@ -51,24 +52,34 @@ void GameScene::Init() {
 	ParticleManager::GetInstance()->CreateParticleGeoup("moonLight", moonLight, "moonLight");
 	ParticleManager::GetInstance()->CreateParticleGeoup("ribbon", moonLight, "ribbon");
 
+	// Skydome
+	skydome_ = std::make_unique<Object3d>();
+	skydome_->Init(BlendType::BLEND_NONE);
+	skydome_->SetModel("skydome.obj");
+	skydome_->SetDefaultCamera(camera_.get());
+
+	// 
 	emitter_ = std::make_unique<ParticleEmitter>();
-	emitter_->Init("hit", {0.0f, 0.0f, 10.0f}, 8);
+	emitter_->Init("hit", { 0.0f, 0.0f, 10.0f }, 8);
 
 	emitter2_ = std::make_unique<ParticleEmitter>();
-	emitter2_->Init("explosion", {0.0f, 0.0f, 10.0f}, 50);
+	emitter2_->Init("explosion", { 0.0f, 0.0f, 10.0f }, 50);
 
 	ringEmitter_ = std::make_unique<ParticleEmitter>();
-	ringEmitter_->Init("ring", {-4.0f, 0.0f, 10.0f}, 1);
+	ringEmitter_->Init("ring", { -4.0f, 0.0f, 10.0f }, 1);
 
 	cylinderEmitter_ = std::make_unique<ParticleEmitter>();
-	cylinderEmitter_->Init("cylinder", {4.0f, 0.0f, 10.0f}, 1);
+	cylinderEmitter_->Init("cylinder", { 4.0f, 0.0f, 10.0f }, 1);
 
 	// Player
 	player_ = std::make_unique<Player>();
 	player_->Init(camera_.get());
 
 	// 敵の出現トリガー（例：Z=5.0f）
-	enemyTriggers_.push_back({5.0f, false});
+	enemyTriggers_.push_back({ {0.0f, 0.0f, 5.0f}, false });  // Z方向
+	enemyTriggers_.push_back({ {10.0f, 0.0f, 5.0f}, false }); // X方向に回転したあとの位置
+
+
 
 	loader_ = std::make_unique<Loader>();
 	loader_->Init(camera_.get());
@@ -79,34 +90,52 @@ void GameScene::Update() {
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 playerRot = player_->GetTransform().rotate;
 
-	camera_->SetBasePos(player_->GetTransform().translate);
-	camera_->SetBaseRot(player_->GetTransform().rotate);
+	camera_->SetBasePos(playerPos);
+	camera_->SetBaseRot(playerRot);
 
 	camera_->Update();
 
+	skydome_->Update();
+
 	// Player
 	player_->Update();
-	if (!isFighting_) {
+
+	if (isRotating_) {
+		Vector3 playerRot = player_->GetTransform().rotate;
+
+		playerRot.y += rotateStep_;
+		rotateFrameCount_++;
+
+		if (rotateFrameCount_ >= rotateFrameMax_) {
+			playerRot.y = targetRotationY_;
+			isRotating_ = false;
+		}
+
+		player_->SetRotate(playerRot);
+		camera_->SetBaseRot(playerRot);
+
+		if (!isRotating_ && !hasSpawnedAfterRotate_) {
+			SpawnEnemies();
+			hasSpawnedAfterRotate_ = true;
+		}
+	}
+
+	if (!isFighting_ && !isRotating_) {
 		player_->RailMove();
 	}
 
 	// Enemy
 	for (auto& enemy : enemies_) {
 		enemy->Update();
-		enemy->ImGuiDebug();
 	}
 
-	// 当たり判定処理
+	// 当たり判定
 	CheckCollisions();
-	// カメラシェイク処理
-	// CameraShake();
 
-	loader_->Update();
-
-	//
+	// トリガーチェック
 	EnemySpawnTrigger();
 
-	// パーティクル全体の更新
+	// パーティクル
 	ParticleUpdate();
 
 #ifdef _DEBUG
@@ -123,6 +152,8 @@ void GameScene::Update() {
 
 void GameScene::Draw() {
 
+	skydome_->Draw();
+
 	// Player
 	player_->Draw();
 
@@ -131,7 +162,7 @@ void GameScene::Draw() {
 		enemy->Draw();
 	}
 
-	loader_->Draw();
+	// loader_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 }
@@ -153,12 +184,12 @@ void GameScene::CheckCollisions() {
 			if (distance < collisionDistance) {
 				// 衝突処理
 				bulletHit = true;
-				
+
 
 				// 衝突地点（弾と敵の中間地点）を計算
 				Vector3 bulletPos = (*itBullet)->GetTranslate();
 				Vector3 enemyPos = (*itEnemy)->GetTranslate();
-				Vector3 hitPos = {(bulletPos.x + enemyPos.x) * 0.5f, (bulletPos.y + enemyPos.y) * 0.5f, (bulletPos.z + enemyPos.z) * 0.5f};
+				Vector3 hitPos = { (bulletPos.x + enemyPos.x) * 0.5f, (bulletPos.y + enemyPos.y) * 0.5f, (bulletPos.z + enemyPos.z) * 0.5f };
 
 				// 衝突位置からパーティクルを生成
 				emitter_->SetTranslate(hitPos);
@@ -278,19 +309,40 @@ void GameScene::ParticleUpdate() {
 
 void GameScene::SpawnEnemies() {
 
-	// 敵の数
 	const int enemyCount = 5;
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_real_distribution<float> distX(-5.0f, 5.0f);
-	std::uniform_real_distribution<float> distY(-2.0f, 2.0f);
-	std::uniform_real_distribution<float> distZ(25.0f, 50.0f);
 
-	// プレイヤーの現在位置
+	// --- 横方向（side）の範囲 ---
+	float sideMin = -5.0f;
+	float sideMax = 5.0f;
+
+	if (currentTriggerIndex_ == 1) {
+		// 回転後は横方向（Z）をもっと奥に
+		sideMin = -20.0f;
+		sideMax = 20.0f;
+	}
+
+	std::uniform_real_distribution<float> distX(sideMin, sideMax);
+	std::uniform_real_distribution<float> distY(-2.0f, 2.0f); // 高さ
+	std::uniform_real_distribution<float> distZ(20.0f, 30.0f); // 前方向の奥行き
+
 	Vector3 playerPos = player_->GetTransform().translate;
 
-	// 敵の生成
+	Vector3 forward;
+	Vector3 side;
+
+	if (currentTriggerIndex_ == 0) {
+		// 回転前 → Zが前
+		forward = { 0.0f, 0.0f, 1.0f };
+		side = { 1.0f, 0.0f, 0.0f };
+	} else if (currentTriggerIndex_ == 1) {
+		// 回転後 → Xが前
+		forward = { 1.0f, 0.0f, 0.0f };
+		side = { 0.0f, 0.0f, -1.0f };
+	}
+
 	for (int i = 0; i < enemyCount; ++i) {
 		auto enemyObject = std::make_unique<Object3d>();
 		enemyObject->Init(BlendType::BLEND_NONE);
@@ -302,7 +354,11 @@ void GameScene::SpawnEnemies() {
 		enemy->SetPlayer(player_.get());
 		enemy->Update();
 
-		Vector3 pos = {distX(gen), distY(gen), playerPos.z + distZ(gen)};
+		Vector3 pos = playerPos
+			+ forward * distZ(gen)
+			+ side * distX(gen)
+			+ Vector3{ 0.0f, distY(gen), 0.0f };
+
 		enemy->SetTranslate(pos);
 
 		enemies_.emplace_back(std::move(enemy));
@@ -312,23 +368,35 @@ void GameScene::SpawnEnemies() {
 
 void GameScene::EnemySpawnTrigger() {
 
-	// プレイヤーの奥行きをチェック
-	float playerZ = player_->GetTransform().translate.z;
+	Vector3 playerPos = player_->GetTransform().translate;
 
-	// 敵出現チェック
 	if (!isFighting_ && currentTriggerIndex_ < enemyTriggers_.size()) {
 		auto& trigger = enemyTriggers_[currentTriggerIndex_];
 
-		if (!trigger.triggered && playerZ >= trigger.triggerZ) {
-			SpawnEnemies(); // 敵を出現させる
+		Vector3 diff = playerPos - trigger.triggerPos;
+		float distance = sqrt(diff.x * diff.x + diff.z * diff.z);
+
+		if (!trigger.triggered && distance < 1.0f) {
+			SpawnEnemies();
 			trigger.triggered = true;
 			isFighting_ = true;
 		}
 	}
 
-	// 戦闘中かつ敵がいなくなったら進行再開
 	if (isFighting_ && enemies_.empty()) {
 		isFighting_ = false;
 		currentTriggerIndex_++;
+
+		if (currentTriggerIndex_ == 1) {
+			isRotating_ = true;
+			hasSpawnedAfterRotate_ = false;
+
+			startRotationY_ = player_->GetTransform().rotate.y;
+			targetRotationY_ = startRotationY_ + MyMath::DegreeToRadian(90.0f); // 90度
+
+			rotateFrameCount_ = 0;
+			rotateFrameMax_ = 30;  // 30フレームで回転
+			rotateStep_ = (targetRotationY_ - startRotationY_) / (float)rotateFrameMax_;
+		}
 	}
 }

@@ -94,4 +94,10 @@ public:
 
 	// 距離計算
 	static float CalculateDistance(const Vector3& a, const Vector3& b);
+
+	// 度数からラジアンへ
+	static float DegreeToRadian(float degree);
+
+	// ラジアンから度数へ
+	static float RadianToDegree(float radian);
 };

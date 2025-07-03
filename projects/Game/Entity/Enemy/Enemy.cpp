@@ -14,6 +14,8 @@ std::vector<std::unique_ptr<EnemyBullet>>& Enemy::GetBullets() { return bulletOb
 
 void Enemy::SetPlayer(Player* player) { player_ = player; }
 
+void Enemy::SetRadius(float radius) { radius_ = radius; }
+
 void Enemy::Init(Camera* camera, Object3d* object3d) {
 
 	camera_ = camera;
@@ -90,7 +92,7 @@ void Enemy::OnHit() {
 
 void Enemy::Attack() {
 
-	if (!player_)	
+	if (!player_)
 		return; // プレイヤーが未設定なら撃たない
 
 	attackTimer_++;
