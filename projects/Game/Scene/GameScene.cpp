@@ -8,6 +8,12 @@
 
 void GameScene::Init() {
 
+	camera_ = std::make_unique<Camera>();
+	// camera_->SetRotate({0.2f, 0.0f, 0.0f});
+	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
+	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
+	camera_->SetTranslate({ 0.0f, 0.0f, 0.0f });
+
 	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
 	const std::string& circle = "./Resources/images/circle.png";
@@ -25,6 +31,7 @@ void GameScene::Init() {
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
 	skybox_->Init("./Resources/images/rostock_laage_airport_4k.dds");
+	skybox_->SetDefaultCamera(camera_.get());
 
 	// Sprite
 	sprite_ = std::make_unique<Sprite>();
@@ -42,12 +49,6 @@ void GameScene::Init() {
 
 	object3d_->SetModel("sphere.obj");
 	glassObject_->SetModel("terrain.obj");
-
-	camera_ = std::make_unique<Camera>();
-	// camera_->SetRotate({0.2f, 0.0f, 0.0f});
-	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
-	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
-	camera_->SetTranslate({ 0.0f, 0.0f, -12.0f });
 
 	object3d_->SetDefaultCamera(camera_.get());
 	glassObject_->SetDefaultCamera(camera_.get());
@@ -121,7 +122,7 @@ void GameScene::Draw() {
 	sprite_->Draw();
 
 	//
-	object3d_->Draw();
+	// object3d_->Draw();
 
 	//// 地面
 	// glassObject_->Draw();

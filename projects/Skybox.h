@@ -27,6 +27,10 @@ public:
 
 	void Draw();
 
+public:
+
+	void SetDefaultCamera(Camera* camera);
+
 private:
 	//
 	void InitPosition();

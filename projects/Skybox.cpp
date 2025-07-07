@@ -1,7 +1,9 @@
 #include "Skybox.h"
 #include "Engine/Base/System/System.h"
 
-constexpr uint32_t kSkyboxVertexCount = 24;
+void Skybox::SetDefaultCamera(Camera* camera) { defaultCamera_ = camera; }
+
+constexpr uint32_t kSkyboxVertexCount = 36;
 
 void Skybox::Init(const std::string& filename) {
 
@@ -35,9 +37,9 @@ void Skybox::Init(const std::string& filename) {
 	transformationMatrixData->World = MyMath::MakeIdentity4x4();
 
 	transform = {
-	    {1.0f, 1.0f, 1.0f},
-	    {0.0f, 0.0f, 0.0f},
-	    {0.0f, 0.0f, 0.0f},
+		{1.0f, 1.0f, 1.0f},
+		{0.0f, 0.0f, 0.0f},
+		{0.0f, 0.0f, 0.0f},
 	};
 
 	InitPosition();
@@ -95,35 +97,51 @@ void Skybox::Draw() {
 }
 
 void Skybox::InitPosition() {
+	// +X（右）
+	vertexData[0].position = { 1.0f, 1.0f, -1.0f, 1.0f };
+	vertexData[1].position = { 1.0f, -1.0f, -1.0f, 1.0f };
+	vertexData[2].position = { 1.0f, -1.0f, 1.0f, 1.0f };
+	vertexData[3].position = { 1.0f, 1.0f, -1.0f, 1.0f };
+	vertexData[4].position = { 1.0f, -1.0f, 1.0f, 1.0f };
+	vertexData[5].position = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	// 右面
-	vertexData[0].position = {1.0f, 1.0f, 1.0f, 1.0f};
-	vertexData[1].position = {1.0f, 1.0f, -1.0f, 1.0f};
-	vertexData[2].position = {1.0f, -1.0f, 1.0f, 1.0f};
-	vertexData[3].position = {1.0f, -1.0f, -1.0f, 1.0f};
-	// 左面
-	vertexData[4].position = {-1.0f, 1.0f, -1.0f, 1.0f};
-	vertexData[5].position = {-1.0f, 1.0f, 1.0f, 1.0f};
-	vertexData[6].position = {-1.0f, -1.0f, -1.0f, 1.0f};
-	vertexData[7].position = {-1.0f, -1.0f, 1.0f, 1.0f};
-	// 前面
-	vertexData[8].position = {-1.0f, 1.0f, 1.0f, 1.0f};
-	vertexData[9].position = {1.0f, 1.0f, 1.0f, 1.0f};
-	vertexData[10].position = {-1.0f, -1.0f, 1.0f, 1.0f};
-	vertexData[11].position = {1.0f, -1.0f, 1.0f, 1.0f};
-	// 後面
-	vertexData[12].position = {1.0f, 1.0f, -1.0f, 1.0f};
-	vertexData[13].position = {-1.0f, 1.0f, -1.0f, 1.0f};
-	vertexData[14].position = {1.0f, -1.0f, -1.0f, 1.0f};
-	vertexData[15].position = {-1.0f, -1.0f, -1.0f, 1.0f};
-	// 上面
-	vertexData[16].position = {1.0f, 1.0f, -1.0f, 1.0f};
-	vertexData[17].position = {-1.0f, 1.0f, -1.0f, 1.0f};
-	vertexData[18].position = {1.0f, 1.0f, 1.0f, 1.0f};
-	vertexData[19].position = {-1.0f, 1.0f, 1.0f, 1.0f};
-	// 下面
-	vertexData[20].position = {1.0f, -1.0f, 1.0f, 1.0f};
-	vertexData[21].position = {-1.0f, -1.0f, 1.0f, 1.0f};
-	vertexData[22].position = {1.0f, -1.0f, -1.0f, 1.0f};
-	vertexData[23].position = {-1.0f, -1.0f, -1.0f, 1.0f};
+	// -X（左）
+	vertexData[6].position = { -1.0f, 1.0f, 1.0f, 1.0f };
+	vertexData[7].position = { -1.0f, -1.0f, 1.0f, 1.0f };
+	vertexData[8].position = { -1.0f, -1.0f, -1.0f, 1.0f };
+	vertexData[9].position = { -1.0f, 1.0f, 1.0f, 1.0f };
+	vertexData[10].position = { -1.0f, -1.0f, -1.0f, 1.0f };
+	vertexData[11].position = { -1.0f, 1.0f, -1.0f, 1.0f };
+
+	// +Y（上）
+	vertexData[12].position = { -1.0f, 1.0f, -1.0f, 1.0f };
+	vertexData[13].position = { -1.0f, 1.0f, 1.0f, 1.0f };
+	vertexData[14].position = { 1.0f, 1.0f, 1.0f, 1.0f };
+	vertexData[15].position = { -1.0f, 1.0f, -1.0f, 1.0f };
+	vertexData[16].position = { 1.0f, 1.0f, 1.0f, 1.0f };
+	vertexData[17].position = { 1.0f, 1.0f, -1.0f, 1.0f };
+
+	// -Y（下）
+	vertexData[18].position = { -1.0f, -1.0f, 1.0f, 1.0f };
+	vertexData[19].position = { -1.0f, -1.0f, -1.0f, 1.0f };
+	vertexData[20].position = { 1.0f, -1.0f, -1.0f, 1.0f };
+	vertexData[21].position = { -1.0f, -1.0f, 1.0f, 1.0f };
+	vertexData[22].position = { 1.0f, -1.0f, -1.0f, 1.0f };
+	vertexData[23].position = { 1.0f, -1.0f, 1.0f, 1.0f };
+
+	// +Z（前）
+	vertexData[24].position = { 1.0f, 1.0f, 1.0f, 1.0f };
+	vertexData[25].position = { 1.0f, -1.0f, 1.0f, 1.0f };
+	vertexData[26].position = { -1.0f, -1.0f, 1.0f, 1.0f };
+	vertexData[27].position = { 1.0f, 1.0f, 1.0f, 1.0f };
+	vertexData[28].position = { -1.0f, -1.0f, 1.0f, 1.0f };
+	vertexData[29].position = { -1.0f, 1.0f, 1.0f, 1.0f };
+
+	// -Z（後）
+	vertexData[30].position = { -1.0f, 1.0f, -1.0f, 1.0f };
+	vertexData[31].position = { -1.0f, -1.0f, -1.0f, 1.0f };
+	vertexData[32].position = { 1.0f, -1.0f, -1.0f, 1.0f };
+	vertexData[33].position = { -1.0f, 1.0f, -1.0f, 1.0f };
+	vertexData[34].position = { 1.0f, -1.0f, -1.0f, 1.0f };
+	vertexData[35].position = { 1.0f, 1.0f, -1.0f, 1.0f };
 }
