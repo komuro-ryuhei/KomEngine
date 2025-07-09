@@ -6,6 +6,8 @@
 #include "externals/imgui/imgui.h"
 #endif // DEBUG
 
+GameScene::GameScene() : rankingManager(L"http://localhost:3000") {}
+
 void GameScene::Init() {
 
 	camera_ = std::make_unique<Camera>();
@@ -85,6 +87,9 @@ void GameScene::Init() {
 
 	ribbonEffect_ = std::make_unique<ParticleEmitter>();
 	ribbonEffect_->Init("ribbon", { 0.0f, 0.0f, 10.0f }, 1);
+
+	// **ユーザー認証**
+	rankingManager.Login(L"komuro", L"password");
 }
 
 void GameScene::Update() {
@@ -107,10 +112,16 @@ void GameScene::Update() {
 
 
 #ifdef _DEBUG
+
+	// **ImGuiのデバッグ描画**
 	camera_->ImGuiDebug();
 	object3d_->ImGuiDebug();
 	glassObject_->ImGuiDebug();
 	sprite_->ImGuiDebug();
+
+	// **ランキングの描画**
+	rankingManager.Render();
+
 #endif // _DEBUG
 }
 

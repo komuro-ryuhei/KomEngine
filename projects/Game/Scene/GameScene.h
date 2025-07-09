@@ -14,8 +14,13 @@
 
 #include "Game/Scene/IScene.h"
 
+#include "RankingManager.h"
+
 class GameScene : public IScene {
 public:
+
+	GameScene();
+
 	void Init() override;
 
 	void Update() override;
@@ -47,6 +52,9 @@ private:
 	std::unique_ptr<ParticleEmitter> cylinderEmitter_ = nullptr;
 	std::unique_ptr<ParticleEmitter> moonLightEffect_ = nullptr;
 	std::unique_ptr<ParticleEmitter> ribbonEffect_ = nullptr;
+
+	// 
+	RankingManager rankingManager;
 
 private:
 
