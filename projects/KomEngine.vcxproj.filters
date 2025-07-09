@@ -66,6 +66,8 @@
     <ClCompile Include="Engine\Base\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
+    <ClCompile Include="Network.cpp" />
+    <ClCompile Include="RankingManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\lib\ComPtr\ComPtr.h" />
@@ -114,6 +116,8 @@
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
     <ClInclude Include="Skybox.h" />
     <ClInclude Include="Engine\Base\OffscreenRendering\OffscreenRendering.h" />
+    <ClInclude Include="Network.h" />
+    <ClInclude Include="RankingManager.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />
