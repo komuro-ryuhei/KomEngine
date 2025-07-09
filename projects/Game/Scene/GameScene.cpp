@@ -146,7 +146,7 @@ void GameScene::Draw() {
 	//// 地面
 	// glassObject_->Draw();
 
-	loader_->Draw();
+	// loader_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 }
