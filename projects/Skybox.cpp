@@ -37,7 +37,7 @@ void Skybox::Init(const std::string& filename) {
 	transformationMatrixData->World = MyMath::MakeIdentity4x4();
 
 	transform = {
-		{1.0f, 1.0f, 1.0f},
+		{100.0f, 100.0f, 100.0f},
 		{0.0f, 0.0f, 0.0f},
 		{0.0f, 0.0f, 0.0f},
 	};
