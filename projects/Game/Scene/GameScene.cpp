@@ -89,7 +89,7 @@ void GameScene::Init() {
 	ribbonEffect_->Init("ribbon", { 0.0f, 0.0f, 10.0f }, 1);
 
 	// **ユーザー認証**
-	rankingManager.Login(L"komuro", L"password");
+	// rankingManager.Login(L"komuro", L"password");
 }
 
 void GameScene::Update() {
