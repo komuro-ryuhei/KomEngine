@@ -58,7 +58,7 @@ private:
 	std::unique_ptr<Loader> loader_ = nullptr;
 
 	// 
-	RankingManager rankingManager;
+	// RankingManager rankingManager;
 
 private:
 

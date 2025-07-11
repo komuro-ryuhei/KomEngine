@@ -42,6 +42,12 @@ struct Camera
     float3 worldPosition;
 };
 
+struct ObjectParams
+{
+    bool useEnvironmentMap;
+    float3 _padding;
+};
+
 ConstantBuffer<Material> gMaterial : register(b0);
 
 ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
@@ -51,6 +57,8 @@ ConstantBuffer<Camera> gCamera : register(b2);
 ConstantBuffer<PointLight> gPointLight : register(b3);
 
 ConstantBuffer<SpotLight> gSpotLight : register(b4);
+
+ConstantBuffer<ObjectParams> objectParam : register(b5);
 
 struct PixelShaderOutput
 {
@@ -133,12 +141,15 @@ PixelShaderOutput main(VertexShaderOutput input)
         output.color = gMaterial.color * textureColor;
     }
     
-     // 環境マップのサンプリング
-    float3 cameraToPosition = normalize(input.worldPosition - gCamera.worldPosition);
-    float3 reflectVector = reflect(-cameraToPosition, normalize(input.normal));
-    float4 environmentColor = gEnvironmentTexture.Sample(gSampler, reflectVector);
+    if (objectParam.useEnvironmentMap)
+    {
+        // 環境マップのサンプリング
+        float3 cameraToPosition = normalize(input.worldPosition - gCamera.worldPosition);
+        float3 reflectVector = reflect(-cameraToPosition, normalize(input.normal));
+        float4 environmentColor = gEnvironmentTexture.Sample(gSampler, reflectVector);
     
-    output.color.rgb += environmentColor.rgb;
+        output.color.rgb += environmentColor.rgb;
+    }
     
     // textureのα値が0の時にPisxelを棄却
     if (textureColor.a == 0.0)

@@ -8,7 +8,7 @@
 #include "externals/imgui/imgui.h"
 #endif // DEBUG
 
-GameScene::GameScene() : rankingManager(L"http://localhost:3000") {}
+GameScene::GameScene() {}
 
 void GameScene::Init() {
 
@@ -48,7 +48,7 @@ void GameScene::Init() {
 	object3d_ = std::make_unique<Object3d>();
 	object3d_->Init(BlendType::BLEND_NONE);
 	object3d_->SetModel("sphere.obj");
-	// object3d_->SetEnvironmentTexture("./Resources/images/rostock_laage_airport_4k.dds");
+	object3d_->SetEnvironmentTexture("./Resources/images/rostock_laage_airport_4k.dds");
 
 	glassObject_ = std::make_unique<Object3d>();
 	glassObject_->Init(BlendType::BLEND_NONE);
@@ -128,7 +128,7 @@ void GameScene::Update() {
 	sprite_->ImGuiDebug();
 
 	// **ランキングの描画**
-	rankingManager.Render();
+	// rankingManager.Render();
 
 #endif // _DEBUG
 }

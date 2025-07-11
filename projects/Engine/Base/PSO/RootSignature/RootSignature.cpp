@@ -24,7 +24,7 @@ void RootSignature::Create(const std::string& objectName) {
 		descriptorRanges1[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 		// RootParameter作成
-		D3D12_ROOT_PARAMETER rootParameters[8] = {};
+		D3D12_ROOT_PARAMETER rootParameters[9] = {};
 		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;    // CBVを使う
 		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
 		rootParameters[0].Descriptor.ShaderRegister = 0;                    // レジスタ番号0とバインド
@@ -58,6 +58,11 @@ void RootSignature::Create(const std::string& objectName) {
 		rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 		rootParameters[7].DescriptorTable.pDescriptorRanges = descriptorRanges1;
 		rootParameters[7].DescriptorTable.NumDescriptorRanges = 1;
+
+		rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParameters[8].Descriptor.ShaderRegister = 5;
+		rootParameters[8].Descriptor.RegisterSpace = 0;
+		rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 
 		descriptionRootSignature.pParameters = rootParameters;             // ルートパラメータ配列へポインタ

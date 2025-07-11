@@ -21,6 +21,11 @@ void Object3d::Init(BlendType type) {
 	transformationMatrixData->WVP = MyMath::MakeIdentity4x4();
 	transformationMatrixData->World = MyMath::MakeIdentity4x4();
 
+	// 
+	objectParamResource_ = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(ObjectParams));
+	objectParamResource_->Map(0, nullptr, reinterpret_cast<void**>(&objectParamData_));
+	objectParamData_->useEnvironmentMap = false;
+
 	transform = {
 		{1.0f, 1.0f, 1.0f},
 		{0.0f, 0.0f, 0.0f},
@@ -76,6 +81,8 @@ void Object3d::Draw() {
 		commandList->SetGraphicsRootDescriptorTable(7, environmentGpuHandle_);
 	}
 
+	commandList->SetGraphicsRootConstantBufferView(8, objectParamResource_->GetGPUVirtualAddress());
+
 	if (model_) {
 		//
 		model_->Draw();
@@ -112,6 +119,9 @@ void Object3d::SetDefaultCamera(Camera* camera) { defaultCamera_ = camera; }
 // Object3d.cpp
 void Object3d::SetEnvironmentTexture(const std::string& filePath) {
 	environmentGpuHandle_ = TextureManager::GetInstance()->GetSrvHandleGPU(filePath);
+	if (objectParamData_) {
+		objectParamData_->useEnvironmentMap = true;
+	}
 }
 
 
