@@ -42,6 +42,8 @@ public: // メンバ関数
 	void SetCamera(Camera* camera);
 	void SetDefaultCamera(Camera* camera);
 
+	void SetEnvironmentTexture(const std::string& filePath);
+
 	// getter
 	Camera* GetDefaultCamera() const;
 
@@ -60,6 +62,10 @@ private:
 	// Sprite用のTransformationMatrix用のリソースを作る
 	ComPtr<ID3D12Resource> transformationMatrixResource;
 	TransformationMatrix* transformationMatrixData = nullptr;
+
+	// 環境マップ
+	ComPtr<ID3D12Resource> environmentTexture_ = nullptr;
+	D3D12_GPU_DESCRIPTOR_HANDLE  environmentGpuHandle_{};
 
 
 	Transform transform;

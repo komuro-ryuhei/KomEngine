@@ -22,15 +22,15 @@ void Object3d::Init(BlendType type) {
 	transformationMatrixData->World = MyMath::MakeIdentity4x4();
 
 	transform = {
-	    {1.0f, 1.0f, 1.0f},
-	    {0.0f, 0.0f, 0.0f},
-	    {0.0f, 0.0f, 0.0f},
+		{1.0f, 1.0f, 1.0f},
+		{0.0f, 0.0f, 0.0f},
+		{0.0f, 0.0f, 0.0f},
 	};
 
 	cameraTransform = {
-	    {1.0f, 1.0f, 1.0f  },
-	    {0.3f, 0.0f, 0.0f  },
-	    {0.0f, 4.0f, -10.0f},
+		{1.0f, 1.0f, 1.0f  },
+		{0.3f, 0.0f, 0.0f  },
+		{0.0f, 4.0f, -10.0f},
 	};
 }
 
@@ -72,6 +72,10 @@ void Object3d::Draw() {
 
 	commandList->SetGraphicsRootConstantBufferView(6, System::GetMesh()->GetSpotLightResource()->GetGPUVirtualAddress());
 
+	if (environmentGpuHandle_.ptr != 0) {
+		commandList->SetGraphicsRootDescriptorTable(7, environmentGpuHandle_);
+	}
+
 	if (model_) {
 		//
 		model_->Draw();
@@ -104,5 +108,11 @@ void Object3d::SetCamera(Camera* camera) { camera_ = camera; }
 void Object3d::SetTranslate(const Vector3& translate) { transform.translate = translate; }
 
 void Object3d::SetDefaultCamera(Camera* camera) { defaultCamera_ = camera; }
+
+// Object3d.cpp
+void Object3d::SetEnvironmentTexture(const std::string& filePath) {
+	environmentGpuHandle_ = TextureManager::GetInstance()->GetSrvHandleGPU(filePath);
+}
+
 
 Camera* Object3d::GetDefaultCamera() const { return defaultCamera_; }

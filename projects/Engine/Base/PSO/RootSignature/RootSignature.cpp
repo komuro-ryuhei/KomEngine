@@ -9,14 +9,22 @@ void RootSignature::Create(const std::string& objectName) {
 
 	if (objectName == "object3d") {
 
-		D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-		descriptorRange[0].BaseShaderRegister = 0;                                                   // 0から始まる
-		descriptorRange[0].NumDescriptors = 1;                                                       // 数は1つ
-		descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;                              // SRVを使う
-		descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // Offsetを自動計算
+		// t0
+		D3D12_DESCRIPTOR_RANGE descriptorRanges0[1] = {};
+		descriptorRanges0[0].BaseShaderRegister = 0;                                                   // 0から始まる
+		descriptorRanges0[0].NumDescriptors = 1;                                                       // 数は1つ
+		descriptorRanges0[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;                              // SRVを使う
+		descriptorRanges0[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // Offsetを自動計算
+
+		// t1(環境マップ）
+		D3D12_DESCRIPTOR_RANGE descriptorRanges1[1] = {}; // t1（環境マップ）
+		descriptorRanges1[0].BaseShaderRegister = 1;
+		descriptorRanges1[0].NumDescriptors = 1;
+		descriptorRanges1[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		descriptorRanges1[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 		// RootParameter作成
-		D3D12_ROOT_PARAMETER rootParameters[7] = {};
+		D3D12_ROOT_PARAMETER rootParameters[8] = {};
 		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;    // CBVを使う
 		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
 		rootParameters[0].Descriptor.ShaderRegister = 0;                    // レジスタ番号0とバインド
@@ -27,8 +35,8 @@ void RootSignature::Create(const std::string& objectName) {
 
 		rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;      // DescriptorTableを使う
 		rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;                // PixelShaderで使う
-		rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;             // Tableの中身の配列を指定
-		rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange); // Tableで利用する数
+		rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRanges0;             // Tableの中身の配列を指定
+		rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRanges0); // Tableで利用する数
 
 		rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;    // CBVを使う
 		rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
@@ -45,6 +53,12 @@ void RootSignature::Create(const std::string& objectName) {
 		rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;    // CBVを使う
 		rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PixelShaderで使う
 		rootParameters[6].Descriptor.ShaderRegister = 4;                    // レジスタ番号4を使う
+
+		rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		rootParameters[7].DescriptorTable.pDescriptorRanges = descriptorRanges1;
+		rootParameters[7].DescriptorTable.NumDescriptorRanges = 1;
+
 
 		descriptionRootSignature.pParameters = rootParameters;             // ルートパラメータ配列へポインタ
 		descriptionRootSignature.NumParameters = _countof(rootParameters); // 配列の長さ

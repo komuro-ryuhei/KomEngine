@@ -58,6 +58,8 @@ struct PixelShaderOutput
 };
 
 Texture2D<float4> gTexture : register(t0);
+TextureCube<float4> gEnvironmentTexture : register(t1);
+
 SamplerState gSampler : register(s0);
 
 PixelShaderOutput main(VertexShaderOutput input)
@@ -73,6 +75,8 @@ PixelShaderOutput main(VertexShaderOutput input)
     float3 toEye = normalize(gCamera.worldPosition - input.worldPosition);
     
     float3 pointLightDirection = normalize(input.worldPosition - gPointLight.position);
+    
+    //output.color.rgb += environmentColor.rgb;
     
     if (gMaterial.enableLighting != 0)
     {
@@ -128,6 +132,13 @@ PixelShaderOutput main(VertexShaderOutput input)
     {
         output.color = gMaterial.color * textureColor;
     }
+    
+     // 環境マップのサンプリング
+    float3 cameraToPosition = normalize(input.worldPosition - gCamera.worldPosition);
+    float3 reflectVector = reflect(-cameraToPosition, normalize(input.normal));
+    float4 environmentColor = gEnvironmentTexture.Sample(gSampler, reflectVector);
+    
+    output.color.rgb += environmentColor.rgb;
     
     // textureのα値が0の時にPisxelを棄却
     if (textureColor.a == 0.0)

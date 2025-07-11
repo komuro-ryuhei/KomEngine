@@ -16,7 +16,7 @@ void GameScene::Init() {
 	// camera_->SetRotate({0.2f, 0.0f, 0.0f});
 	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
-	camera_->SetTranslate({ 0.0f, 0.0f, 0.0f });
+	camera_->SetTranslate({ 0.0f, 0.0f, -10.0f });
 
 	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
@@ -32,6 +32,10 @@ void GameScene::Init() {
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/rostock_laage_airport_4k.dds");
 
+	ModelManager::GetInstance()->LoadModel("plane.obj");
+	ModelManager::GetInstance()->LoadModel("sphere.obj");
+	ModelManager::GetInstance()->LoadModel("terrain.obj");
+
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
 	skybox_->Init("./Resources/images/rostock_laage_airport_4k.dds");
@@ -43,15 +47,11 @@ void GameScene::Init() {
 
 	object3d_ = std::make_unique<Object3d>();
 	object3d_->Init(BlendType::BLEND_NONE);
+	object3d_->SetModel("sphere.obj");
+	object3d_->SetEnvironmentTexture("./Resources/images/rostock_laage_airport_4k.dds");
 
 	glassObject_ = std::make_unique<Object3d>();
 	glassObject_->Init(BlendType::BLEND_NONE);
-
-	ModelManager::GetInstance()->LoadModel("plane.obj");
-	ModelManager::GetInstance()->LoadModel("sphere.obj");
-	ModelManager::GetInstance()->LoadModel("terrain.obj");
-
-	object3d_->SetModel("sphere.obj");
 	glassObject_->SetModel("terrain.obj");
 
 	object3d_->SetDefaultCamera(camera_.get());
@@ -138,10 +138,10 @@ void GameScene::Draw() {
 	// 
 	skybox_->Draw();
 
-	sprite_->Draw();
+	// sprite_->Draw();
 
 	//
-	// object3d_->Draw();
+	object3d_->Draw();
 
 	//// 地面
 	// glassObject_->Draw();
