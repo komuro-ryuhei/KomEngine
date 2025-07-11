@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cpprest/http_client.h>
-#include <string>
-#include <vector>
+//#include <cpprest/http_client.h>
+//#include <string>
+//#include <vector>
 
 //using namespace web;
 //using namespace web::http;
