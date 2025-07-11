@@ -116,7 +116,6 @@ void Object3d::SetTranslate(const Vector3& translate) { transform.translate = tr
 
 void Object3d::SetDefaultCamera(Camera* camera) { defaultCamera_ = camera; }
 
-// Object3d.cpp
 void Object3d::SetEnvironmentTexture(const std::string& filePath) {
 	environmentGpuHandle_ = TextureManager::GetInstance()->GetSrvHandleGPU(filePath);
 	if (objectParamData_) {
