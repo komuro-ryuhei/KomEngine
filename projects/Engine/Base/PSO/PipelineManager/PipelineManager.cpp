@@ -42,12 +42,48 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 		assert(vsBlob != nullptr);
 		psBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
+	} else if (objectType == "posteffect_Grayscale") {
+		// Grayscale用Shaderをコンパイルする
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(vsBlob != nullptr);
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/Grayscale.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(psBlob != nullptr);
+	} else if (objectType == "posteffect_Vignetting") {
+		// Vignetting用Shaderをコンパイルする
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(vsBlob != nullptr);
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/Vignette.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(psBlob != nullptr);
+	} else if (objectType == "posteffect_Smoothing") {
+		// Smoothing用Shaderをコンパイルする
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(vsBlob != nullptr);
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/BoxFilter.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(psBlob != nullptr);
+	} else if (objectType == "posteffect_GaussinanFilter") {
+		// GaussinanFilter用Shaderをコンパイルする
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(vsBlob != nullptr);
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/GaussianFilter.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(psBlob != nullptr);
+	} else if (objectType == "posteffect_RadialBlur") {
+		// RadialBlur用Shaderをコンパイルする
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(vsBlob != nullptr);
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/RadialBlur.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(psBlob != nullptr);
+	} else if (objectType == "posteffect_Random") {
+		// Random用Shaderをコンパイルする
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(vsBlob != nullptr);
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/Random.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(psBlob != nullptr);
 	}
 }
 
 void PipelineManager::CreatePSO(const std::string& objectType) {
 
-	if (objectType == "offscreen") {
+	if (objectType == "posteffect") {
 
 		HRESULT hr;
 
@@ -144,13 +180,19 @@ void PipelineManager::PSOSetting(const std::string& objectType, BlendType type) 
 
 	ShaderCompile(objectType);
 
-	rootSignature_->Create(objectType);
+	// shaderがposteffectの時にposteffectの設定に変更する
+	std::string baseType = objectType;
+	if (objectType.find("posteffect_") == 0 || objectType == "offscreen") {
+		baseType = "posteffect";
+	}
 
-	inputLayout_->Setting(objectType);
+	rootSignature_->Create(baseType);
+
+	inputLayout_->Setting(baseType);
 
 	rasterizer_->Setting();
 
 	blendState_->Setting(type);
 
-	CreatePSO(objectType);
+	CreatePSO(baseType);
 }

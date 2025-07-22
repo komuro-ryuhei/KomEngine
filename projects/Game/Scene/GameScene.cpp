@@ -48,7 +48,7 @@ void GameScene::Init() {
 
 	object3d_ = std::make_unique<Object3d>();
 	object3d_->Init(BlendType::BLEND_NONE);
-	object3d_->SetModel("plane.obj");
+	object3d_->SetModel("sphere.obj");
 	object3d_->SetEnvironmentTexture("./Resources/images/rostock_laage_airport_4k.dds");
 
 	glassObject_ = std::make_unique<Object3d>();
