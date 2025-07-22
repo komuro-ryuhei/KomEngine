@@ -3,7 +3,6 @@
 
 void OffscreenRendering::Init() {
 
-	// DxCommon
 	// dxCommon_ = System::GetDxCommon();
 
 	// PointLight用のマテリアルリソースを作る

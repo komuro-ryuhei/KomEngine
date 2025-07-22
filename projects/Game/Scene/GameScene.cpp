@@ -9,6 +9,7 @@
 #endif // DEBUG
 
 GameScene::GameScene() {}
+GameScene::~GameScene() {}
 
 void GameScene::Init() {
 
@@ -47,7 +48,7 @@ void GameScene::Init() {
 
 	object3d_ = std::make_unique<Object3d>();
 	object3d_->Init(BlendType::BLEND_NONE);
-	object3d_->SetModel("sphere.obj");
+	object3d_->SetModel("plane.obj");
 	object3d_->SetEnvironmentTexture("./Resources/images/rostock_laage_airport_4k.dds");
 
 	glassObject_ = std::make_unique<Object3d>();
@@ -88,7 +89,7 @@ void GameScene::Init() {
 	moonLightEffect_->Init("moonLight", { 0.0f, 0.0f, 10.0f }, 1);
 
 	ribbonEffect_ = std::make_unique<ParticleEmitter>();
-	ribbonEffect_->Init("ribbon", {0.0f, 0.0f, 10.0f}, 1);
+	ribbonEffect_->Init("ribbon", { 0.0f, 0.0f, 10.0f }, 1);
 
 	loader_ = std::make_unique<Loader>();
 	loader_->Init(camera_.get());
@@ -99,9 +100,6 @@ void GameScene::Init() {
 }
 
 void GameScene::Update() {
-
-	// Sprite描画前処理
-	// sprite_->PreDraw();
 
 	camera_->Update();
 
@@ -124,7 +122,6 @@ void GameScene::Update() {
 	// **ImGuiのデバッグ描画**
 	camera_->ImGuiDebug();
 	object3d_->ImGuiDebug();
-	glassObject_->ImGuiDebug();
 	sprite_->ImGuiDebug();
 
 	// **ランキングの描画**
@@ -143,7 +140,7 @@ void GameScene::Draw() {
 	//
 	object3d_->Draw();
 
-	//// 地面
+	// 地面
 	// glassObject_->Draw();
 
 	// loader_->Draw();

@@ -21,6 +21,7 @@ class GameScene : public IScene {
 public:
 
 	GameScene();
+	~GameScene();
 
 	void Init() override;
 
@@ -31,9 +32,6 @@ public:
 	void Finalize() override;
 
 private:
-	DirectXCommon* dxCommon_ = nullptr;
-	PipelineManager* pipelineManager_ = nullptr;
-
 	// Camera
 	std::unique_ptr<Camera> camera_ = nullptr;
 	// Audio
@@ -46,7 +44,7 @@ private:
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 	std::unique_ptr<Object3d> glassObject_ = nullptr;
 
-	// 
+	// Particle・Effect
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;
 	std::unique_ptr<ParticleEmitter> emitter2_ = nullptr;
 	std::unique_ptr<ParticleEmitter> ringEmitter_ = nullptr;
@@ -57,7 +55,7 @@ private:
 	// 
 	std::unique_ptr<Loader> loader_ = nullptr;
 
-	// 
+	// nerwork(エラー出るためコメントアウト中)
 	// RankingManager rankingManager;
 
 private:

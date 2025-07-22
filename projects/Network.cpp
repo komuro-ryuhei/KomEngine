@@ -1,7 +1,7 @@
 #include "Network.h"
 // #include <stdexcept>
 
-//Network::Network(const std::wstring& serverUrl) : serverUrl(serverUrl) {}
+//Network::Network(const std::wstring& serverUrl) : serverUrl(serverUrl) {}x
 //
 //pplx::task<void> Network::Login(const std::wstring& username, const std::wstring& password) {
 //	return pplx::create_task([=] {

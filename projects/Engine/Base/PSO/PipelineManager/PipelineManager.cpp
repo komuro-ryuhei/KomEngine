@@ -13,34 +13,34 @@ PipelineManager* PipelineManager::GetInstance() {
 void PipelineManager::ShaderCompile(const std::string& objectType) {
 
 	if (objectType == "object3d") {
-		// Shaderをコンパイルする
+		// objects用Shaderをコンパイルする
 		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Object3D.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(vsBlob != nullptr);
 		psBlob = compiler_->CompileShader(L"./Resources/shaders/Object3D.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
 	} else if (objectType == "particle") {
-		// Shaderをコンパイルする
+		// particle用Shaderをコンパイルする
 		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Particle.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(vsBlob != nullptr);
 		psBlob = compiler_->CompileShader(L"./Resources/shaders/Particle.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
 	} else if (objectType == "sprite") {
-		// Shaderをコンパイルする
+		// sprite用Shaderをコンパイルする
 		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Sprite.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(vsBlob != nullptr);
 		psBlob = compiler_->CompileShader(L"./Resources/shaders/Sprite.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
-	} else if (objectType == "offscreen") {
-		// Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
 	} else if (objectType == "skybox") {
-		// Shaderをコンパイルする
+		// slybox用Shaderをコンパイルする
 		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Skybox.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(vsBlob != nullptr);
 		psBlob = compiler_->CompileShader(L"./Resources/shaders/Skybox.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(psBlob != nullptr);
+	} else if (objectType == "offscreen") {
+		// offscreen用Shaderをコンパイルする
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(vsBlob != nullptr);
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
 	}
 }
@@ -53,8 +53,8 @@ void PipelineManager::CreatePSO(const std::string& objectType) {
 
 		graphicsPipelineStateDesc.pRootSignature = rootSignature_->GetRootSignature();        // RootSignature
 		graphicsPipelineStateDesc.InputLayout = inputLayout_->GetInputLayout();               // InputLayout
-		graphicsPipelineStateDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()}; // VertexShader
-		graphicsPipelineStateDesc.PS = {psBlob->GetBufferPointer(), psBlob->GetBufferSize()}; // PixelShader
+		graphicsPipelineStateDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() }; // VertexShader
+		graphicsPipelineStateDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() }; // PixelShader
 		graphicsPipelineStateDesc.BlendState = blendState_->GetBlendDesc();                   // BlendState
 		graphicsPipelineStateDesc.RasterizerState = rasterizer_->GetRasterizerDesc();         // RasterizerState
 
@@ -81,8 +81,8 @@ void PipelineManager::CreatePSO(const std::string& objectType) {
 
 		graphicsPipelineStateDesc.pRootSignature = rootSignature_->GetRootSignature();        // RootSignature
 		graphicsPipelineStateDesc.InputLayout = inputLayout_->GetInputLayout();               // InputLayout
-		graphicsPipelineStateDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()}; // VertexShader
-		graphicsPipelineStateDesc.PS = {psBlob->GetBufferPointer(), psBlob->GetBufferSize()}; // PixelShader
+		graphicsPipelineStateDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() }; // VertexShader
+		graphicsPipelineStateDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() }; // PixelShader
 		graphicsPipelineStateDesc.BlendState = blendState_->GetBlendDesc();                   // BlendState
 		graphicsPipelineStateDesc.RasterizerState = rasterizer_->GetRasterizerDesc();         // RasterizerState
 
@@ -112,8 +112,8 @@ void PipelineManager::CreatePSO(const std::string& objectType) {
 
 		graphicsPipelineStateDesc.pRootSignature = rootSignature_->GetRootSignature();        // RootSignature
 		graphicsPipelineStateDesc.InputLayout = inputLayout_->GetInputLayout();               // InputLayout
-		graphicsPipelineStateDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()}; // VertexShader
-		graphicsPipelineStateDesc.PS = {psBlob->GetBufferPointer(), psBlob->GetBufferSize()}; // PixelShader
+		graphicsPipelineStateDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() }; // VertexShader
+		graphicsPipelineStateDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() }; // PixelShader
 		graphicsPipelineStateDesc.BlendState = blendState_->GetBlendDesc();                   // BlendState
 		graphicsPipelineStateDesc.RasterizerState = rasterizer_->GetRasterizerDesc();         // RasterizerState
 
