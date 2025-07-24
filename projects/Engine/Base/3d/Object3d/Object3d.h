@@ -65,7 +65,7 @@ private:
 
 	// 環境マップ
 	struct ObjectParams {
-		BOOL useEnvironmentMap;
+		bool useEnvironmentMap;
 		Vector3 padding_;
 	};
 	ComPtr<ID3D12Resource> environmentTexture_ = nullptr;

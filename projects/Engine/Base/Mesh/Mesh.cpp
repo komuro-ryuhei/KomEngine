@@ -1,8 +1,11 @@
 #include "Mesh.h"
 
 #include "Engine/Base/System/System.h"
-#include "externals/imgui/imgui.h"
 #include <numbers>
+
+#ifdef _DEBUG
+#include "externals/imgui/imgui.h"
+#endif // _DEBUG
 
 D3D12_VERTEX_BUFFER_VIEW Mesh::GetVBV() const { return vertexBufferView; }
 
@@ -35,7 +38,7 @@ ComPtr<ID3D12Resource> Mesh::CreateVertexResource(size_t sizeInBytes) {
 	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	// 実際に頂点リソースを作る
 	hr = System::GetDxCommon()->GetDevice()->CreateCommittedResource(
-	    &uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
+		&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
 	assert(SUCCEEDED(hr));
 
 	return vertexResource;
@@ -66,11 +69,11 @@ void Mesh::WriteDateForResource() {
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 
 	// 左下
-	vertexData[0] = {-0.5f, -0.5f, 0.0f, 1.0f};
+	vertexData[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
 	// 上
-	vertexData[1] = {0.0f, 0.5f, 0.0f, 1.0f};
+	vertexData[1] = { 0.0f, 0.5f, 0.0f, 1.0f };
 	// 右下
-	vertexData[2] = {0.5f, -0.5f, 0.0f, 1.0f};
+	vertexData[2] = { 0.5f, -0.5f, 0.0f, 1.0f };
 
 	CreateMaterialResource();
 }
@@ -81,22 +84,22 @@ void Mesh::LightSetting() {
 	materialResourceLight = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(DirectionalLight));
 	materialResourceLight->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 
-	directionalLightData->color = {1.0f, 1.0f, 1.0f, 1.0f};
-	directionalLightData->direction = {0.0f, -1.0f, 0.0f};
+	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData->intensity = 0.0f;
 
 	// Phong用のマテリアルリソースを作る
 	materialResourcePhong = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(CameraForGPU));
 	materialResourcePhong->Map(0, nullptr, reinterpret_cast<void**>(&phongLightData));
 
-	phongLightData->worldPosition = {0.0f, 4.0f, -10.0f};
+	phongLightData->worldPosition = { 0.0f, 4.0f, -10.0f };
 
 	// PointLight用のマテリアルリソースを作る
 	materialResourcePoint = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(PointLight));
 	materialResourcePoint->Map(0, nullptr, reinterpret_cast<void**>(&pointLightData));
 
-	pointLightData->color = {1.0f, 1.0f, 1.0f, 1.0f};
-	pointLightData->position = {0.0f, 2.0f, 0.0f};
+	pointLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	pointLightData->position = { 0.0f, 2.0f, 0.0f };
 	pointLightData->intensity = 0.0f;
 	pointLightData->radius = 3.0f;
 	pointLightData->decay = 2.0f;
@@ -105,10 +108,10 @@ void Mesh::LightSetting() {
 	materialResourceSpot = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(SpotLight));
 	materialResourceSpot->Map(0, nullptr, reinterpret_cast<void**>(&spotLightData));
 
-	spotLightData->color = {1.0f, 1.0f, 1.0f, 1.0f};
-	spotLightData->position = {2.0f, 1.25f, 0.0f};
+	spotLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	spotLightData->position = { 2.0f, 1.25f, 0.0f };
 	spotLightData->distance = 7.0f;
-	spotLightData->direction = MyMath::Normalize({-1.0f, -1.0f, 0.0f});
+	spotLightData->direction = MyMath::Normalize({ -1.0f, -1.0f, 0.0f });
 	spotLightData->intensity = 4.0f;
 	spotLightData->decay = 2.0f;
 	spotLightData->casAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
@@ -116,6 +119,8 @@ void Mesh::LightSetting() {
 }
 
 void Mesh::ImGuiDebug() {
+
+#ifdef _DEBUG
 
 	ImGui::Begin("Light");
 
@@ -134,4 +139,6 @@ void Mesh::ImGuiDebug() {
 	ImGui::SliderFloat("SpotLightCosStartAngle", &spotLightData->cosFalloffStart, 1.0f, 10.0f);
 
 	ImGui::End();
+
+#endif // _DEBUG
 }

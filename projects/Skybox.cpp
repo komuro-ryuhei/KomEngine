@@ -1,6 +1,10 @@
 #include "Skybox.h"
 #include "Engine/Base/System/System.h"
 
+#ifdef _DEBUG
+#include "externals/imgui/imgui.h"
+#endif // _DEBUG
+
 void Skybox::SetDefaultCamera(Camera* camera) { defaultCamera_ = camera; }
 
 constexpr uint32_t kSkyboxVertexCount = 36;
@@ -47,6 +51,7 @@ void Skybox::Init(const std::string& filename) {
 
 void Skybox::Update() {
 
+	// カメラが存在していれば更新
 	if (defaultCamera_) {
 		// カメラの位置にスカイボックスを追従
 		transform.translate = defaultCamera_->GetTranaslate();
@@ -97,6 +102,7 @@ void Skybox::Draw() {
 }
 
 void Skybox::InitPosition() {
+
 	// +X（右）
 	vertexData[0].position = { 1.0f, 1.0f, -1.0f, 1.0f };
 	vertexData[1].position = { 1.0f, -1.0f, -1.0f, 1.0f };
@@ -144,4 +150,21 @@ void Skybox::InitPosition() {
 	vertexData[33].position = { -1.0f, 1.0f, -1.0f, 1.0f };
 	vertexData[34].position = { 1.0f, -1.0f, -1.0f, 1.0f };
 	vertexData[35].position = { 1.0f, 1.0f, -1.0f, 1.0f };
+}
+
+void Skybox::ImGuiDebug() {
+
+#ifdef _DEBUG
+
+	ImGui::Begin("Skybox");
+	
+	ImGui::SliderFloat3("Scale", &transform.scale.x, 0.0f, 100.0f);
+	ImGui::SliderAngle("Rotate X", &transform.rotate.x);
+	ImGui::SliderAngle("Rotate Y", &transform.rotate.y);
+	ImGui::SliderAngle("Rotate Z", &transform.rotate.z);
+	ImGui::DragFloat3("Translate", &transform.translate.x, 0.01f);
+	
+	ImGui::End();
+
+#endif // _DEBUG
 }

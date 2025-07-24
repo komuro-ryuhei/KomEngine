@@ -3,7 +3,6 @@
 // MyClass
 #include "Engine/Base/ImGuiManager/ImGuiManager.h"
 #include "Engine/Base/ModelManager/ModelManager.h"
-#include "Engine/Base/OffscreenRendering/OffscreenRendering.h"
 #include "Engine/Base/SrvManager/SrvManager.h"
 #include "Engine/Base/TextureManager/TextureManager.h"
 
@@ -52,6 +51,8 @@ SrvManager* System::GetSrvManager() { return srvManager_.get(); }
 Mesh* System::GetMesh() { return mesh_.get(); }
 
 WinApp* System::GetWinApp() { return winApp_.get(); }
+
+OffscreenRendering* System::GetOffscreenRendering() { return offscreenRendering_.get(); }
 
 void System::Initialize(const char* title, int width, int height) {
 
@@ -121,9 +122,9 @@ void System::EndFrame() {
 	offscreenRendering_->OffscreenBarrier();
 	offscreenRendering_->Draw();
 
+	imguiManager_->End();
 	// ImGui描画処理
 #ifdef _DEBUG
-	imguiManager_->End();
 	imguiManager_->Draw();
 #endif // DEBUG
 

@@ -58,7 +58,17 @@ private:
 	// nerwork(エラー出るためコメントアウト中)
 	// RankingManager rankingManager;
 
+	// 現在選択中のポストエフェクト
+	int selectedPostEffectIndex_ = 0;
+	std::vector<std::string> postEffectNames_ = {
+		"None", "Grayscale", "Vignetting", "Smoothing", "GaussinanFilter", "RadialBlur", "Random"
+	};
+
 private:
 
+	// ImGuiによるデバッグ処理
+	void ImGuiDebug();
+	
+	// パーティクルのデバッグ処理
 	void ParticleUpdate();
 };

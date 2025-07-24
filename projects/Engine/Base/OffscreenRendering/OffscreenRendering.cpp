@@ -1,9 +1,12 @@
 #include "OffscreenRendering.h"
 #include "Engine/Base/System/System.h"
 
-void OffscreenRendering::Init() {
+// getter,setter
+void OffscreenRendering::SetPostEffect(const std::string& effectName) {
+	pipelineManager_->PSOSetting("posteffect_" + effectName, BlendType::BLEND_NONE);
+}
 
-	// dxCommon_ = System::GetDxCommon();
+void OffscreenRendering::Init() {
 
 	// PointLight用のマテリアルリソースを作る
 	materialBufferResource_ = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(MaterialBuffer));
@@ -13,7 +16,7 @@ void OffscreenRendering::Init() {
 
 	// PSOの初期化
 	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("offscreen", BlendType::BLEND_NONE);
+	pipelineManager_->PSOSetting("posteffect_none", BlendType::BLEND_NONE);
 
 	OffScreeenRenderTargetView();
 }

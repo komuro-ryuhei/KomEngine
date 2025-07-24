@@ -27,6 +27,8 @@ public:
 
 	void Draw();
 
+	void ImGuiDebug();
+
 public:
 
 	void SetDefaultCamera(Camera* camera);

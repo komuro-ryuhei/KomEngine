@@ -19,6 +19,7 @@
 #include "Engine/Base/Mesh/Mesh.h"
 #include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 #include "Engine/Base/WinApp/WinApp.h"
+#include "Engine/Base/OffscreenRendering/OffscreenRendering.h"
 #include "Engine/lib/ComPtr/ComPtr.h"
 #include "Engine/lib/Input/Input.h"
 #include "Engine/lib/Logger/Logger.h"
@@ -84,4 +85,5 @@ public:
 	static SrvManager* GetSrvManager();
 	static Mesh* GetMesh();
 	static WinApp* GetWinApp();
+	static OffscreenRendering* GetOffscreenRendering();
 };

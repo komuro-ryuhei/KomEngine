@@ -49,13 +49,12 @@ void GameScene::Init() {
 	object3d_ = std::make_unique<Object3d>();
 	object3d_->Init(BlendType::BLEND_NONE);
 	object3d_->SetModel("sphere.obj");
+	object3d_->SetDefaultCamera(camera_.get());
 	object3d_->SetEnvironmentTexture("./Resources/images/rostock_laage_airport_4k.dds");
 
 	glassObject_ = std::make_unique<Object3d>();
 	glassObject_->Init(BlendType::BLEND_NONE);
 	glassObject_->SetModel("terrain.obj");
-
-	object3d_->SetDefaultCamera(camera_.get());
 	glassObject_->SetDefaultCamera(camera_.get());
 
 	audio_ = std::make_unique<Audio>();
@@ -114,6 +113,8 @@ void GameScene::Update() {
 
 	//
 	ParticleManager::GetInstance()->Update();
+
+	ImGuiDebug();
 	ParticleUpdate();
 
 
@@ -123,6 +124,7 @@ void GameScene::Update() {
 	camera_->ImGuiDebug();
 	object3d_->ImGuiDebug();
 	sprite_->ImGuiDebug();
+	skybox_->ImGuiDebug();
 
 	// **ランキングの描画**
 	// rankingManager.Render();
@@ -141,7 +143,7 @@ void GameScene::Draw() {
 	object3d_->Draw();
 
 	// 地面
-	// glassObject_->Draw();
+	glassObject_->Draw();
 
 	// loader_->Draw();
 
@@ -149,6 +151,28 @@ void GameScene::Draw() {
 }
 
 void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }
+
+void GameScene::ImGuiDebug() {
+
+#ifdef _DEBUG
+	static const char* effectItems[] = {
+		"None", "Grayscale", "Vignetting", "Smoothing", "GaussinanFilter", "RadialBlur", "Random","Outline"
+	};
+
+	ImGui::Begin("PostEffect Settings");
+	if (ImGui::Combo("Post Effect", &selectedPostEffectIndex_, effectItems, IM_ARRAYSIZE(effectItems))) {
+		// エフェクト名を取得
+		std::string selectedEffect = effectItems[selectedPostEffectIndex_];
+
+		if (selectedEffect == "None") {
+			System::GetOffscreenRendering()->SetPostEffect("none");
+		} else {
+			System::GetOffscreenRendering()->SetPostEffect(selectedEffect);
+		}
+	}
+	ImGui::End();
+#endif
+}
 
 void GameScene::ParticleUpdate() {
 
@@ -194,4 +218,7 @@ void GameScene::ParticleUpdate() {
 
 	// ringEmitter_->Update();
 	// cylinderEmitter_->Update();
+	COLOR 7
+	FLASHness
+		recording by NEURAY
 }
