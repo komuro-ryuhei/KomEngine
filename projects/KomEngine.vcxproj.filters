@@ -64,11 +64,11 @@
     <ClCompile Include="Game\Scene\SceneFactory.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleManager.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleEmitter.cpp" />
-    <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
-    <ClCompile Include="Loader.cpp" />
-    <ClCompile Include="Network.cpp" />
-    <ClCompile Include="RankingManager.cpp" />
+    <ClCompile Include="Engine\Base\3d\Skybox\Skybox.cpp" />
+    <ClCompile Include="Engine\Base\Loader\Loader.cpp" />
+    <ClCompile Include="Engine\lib\Network\Network.cpp" />
+    <ClCompile Include="Engine\lib\Network\RankingManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\lib\ComPtr\ComPtr.h" />
@@ -87,7 +87,7 @@
     <ClInclude Include="Engine\lib\Input\Input.h" />
     <ClInclude Include="Engine\lib\StringUtility\StringUtility.h" />
     <ClInclude Include="Engine\lib\Math\MyMath.h" />
-    <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
+    <ClInclude Include="Engine\lib\Network\Matrix\Matrix.h" />
     <ClInclude Include="Engine\Base\2d\Sprite\Sprite.h" />
     <ClInclude Include="externals\imgui\imconfig.h" />
     <ClInclude Include="externals\imgui\imgui.h" />
@@ -115,11 +115,11 @@
     <ClInclude Include="Game\Scene\SceneFactory.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleManager.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
-    <ClInclude Include="Skybox.h" />
     <ClInclude Include="Engine\Base\OffscreenRendering\OffscreenRendering.h" />
-    <ClInclude Include="Loader.h" />
-    <ClInclude Include="Network.h" />
-    <ClInclude Include="RankingManager.h" />
+    <ClInclude Include="Engine\Base\3d\Skybox\Skybox.h" />
+    <ClInclude Include="Engine\Base\Loader\Loader.h" />
+    <ClInclude Include="Engine\lib\Network\Network.h" />
+    <ClInclude Include="Engine\lib\Network\RankingManager.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

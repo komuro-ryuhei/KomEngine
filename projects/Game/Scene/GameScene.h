@@ -10,12 +10,12 @@
 #include "Engine/Base/Camera/Camera.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "Engine/Base/Particle/ParticleManager.h"
-#include "Skybox.h"
-#include "Loader.h"
+#include "Engine/Base/3d/Skybox/Skybox.h"
+#include "Engine/Base/Loader/Loader.h"
 
 #include "Game/Scene/IScene.h"
 
-#include "RankingManager.h"
+#include "Engine/lib/Network/RankingManager.h"
 
 class GameScene : public IScene {
 public:
@@ -60,9 +60,6 @@ private:
 
 	// 現在選択中のポストエフェクト
 	int selectedPostEffectIndex_ = 0;
-	std::vector<std::string> postEffectNames_ = {
-		"None", "Grayscale", "Vignetting", "Smoothing", "GaussinanFilter", "RadialBlur", "Random"
-	};
 
 private:
 

@@ -114,17 +114,17 @@ void GameScene::Update() {
 	//
 	ParticleManager::GetInstance()->Update();
 
-	ImGuiDebug();
-	ParticleUpdate();
-
-
 #ifdef _DEBUG
 
 	// **ImGuiのデバッグ描画**
-	camera_->ImGuiDebug();
-	object3d_->ImGuiDebug();
-	sprite_->ImGuiDebug();
-	skybox_->ImGuiDebug();
+	ImGuiDebug();
+
+	//camera_->ImGuiDebug(); // カメラ
+	//object3d_->ImGuiDebug(); // オブジェクト
+	//sprite_->ImGuiDebug(); // スプライト
+	//skybox_->ImGuiDebug(); // スカイボックス
+	//// Particle描画ImGui
+	//ParticleUpdate();
 
 	// **ランキングの描画**
 	// rankingManager.Render();
@@ -143,7 +143,7 @@ void GameScene::Draw() {
 	object3d_->Draw();
 
 	// 地面
-	glassObject_->Draw();
+	// glassObject_->Draw();
 
 	// loader_->Draw();
 
@@ -155,6 +155,7 @@ void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }
 void GameScene::ImGuiDebug() {
 
 #ifdef _DEBUG
+	// ポストエフェクトの選択肢
 	static const char* effectItems[] = {
 		"None", "Grayscale", "Vignetting", "Smoothing", "GaussinanFilter", "RadialBlur", "Random","Outline"
 	};
@@ -177,6 +178,8 @@ void GameScene::ImGuiDebug() {
 void GameScene::ParticleUpdate() {
 
 #ifdef _DEBUG
+
+	ImGui::Begin("Particle Emitter");
 
 	if (ImGui::Button("Emit Particles")) {
 		emitter_->Update();
@@ -212,13 +215,12 @@ void GameScene::ParticleUpdate() {
 		ribbonEffect_->Update();
 	}
 
+	ImGui::End();
+
 #endif // _DEBUG
 
 	// ribbonEffect_->Update();
 
 	// ringEmitter_->Update();
 	// cylinderEmitter_->Update();
-	COLOR 7
-	FLASHness
-		recording by NEURAY
 }

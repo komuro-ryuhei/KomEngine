@@ -106,7 +106,7 @@ void System::BeginFrame() {
 
 #ifdef _DEBUG
 
-	mesh_->ImGuiDebug();
+	// mesh_->ImGuiDebug();
 
 #endif // _DEBUG
 }

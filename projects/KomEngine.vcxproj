@@ -108,6 +108,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Base\3d\Skybox\Skybox.cpp" />
+    <ClCompile Include="Engine\Base\Loader\Loader.cpp" />
+    <ClCompile Include="Engine\lib\Network\Network.cpp" />
+    <ClCompile Include="Engine\lib\Network\RankingManager.cpp" />
     <ClCompile Include="Game\Scene\AbstractSceneFactory.cpp" />
     <ClCompile Include="Engine\Base\Audio\Audio.cpp" />
     <ClCompile Include="Engine\Base\Camera\Camera.cpp" />
@@ -127,7 +131,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Base\ImGuiManager\ImGuiManager.cpp" />
     <ClCompile Include="Game\Scene\GameScene.cpp" />
     <ClCompile Include="Game\Scene\IScene.cpp" />
-    <ClCompile Include="Loader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Base\System\System.cpp" />
     <ClCompile Include="Engine\Base\WinApp\WinApp.cpp" />
@@ -149,12 +152,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Game\Scene\SceneFactory.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleManager.cpp" />
-    <ClCompile Include="Network.cpp" />
-    <ClCompile Include="RankingManager.cpp" />
-    <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Base\3d\Skybox\Skybox.h" />
+    <ClInclude Include="Engine\Base\Loader\Loader.h" />
+    <ClInclude Include="Engine\lib\Network\Network.h" />
+    <ClInclude Include="Engine\lib\Network\RankingManager.h" />
     <ClInclude Include="Game\Scene\AbstractSceneFactory.h" />
     <ClInclude Include="Engine\Base\Audio\Audio.h" />
     <ClInclude Include="Engine\Base\Camera\Camera.h" />
@@ -170,7 +174,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="externals\imgui\imstb_textedit.h" />
     <ClInclude Include="externals\imgui\imstb_truetype.h" />
     <ClInclude Include="Engine\lib\Input\Input.h" />
-    <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
+    <ClInclude Include="Engine\lib\Network\Matrix\Matrix.h" />
     <ClInclude Include="Engine\lib\Vector\Vector.h" />
     <ClInclude Include="Engine\lib\ComPtr\ComPtr.h" />
     <ClInclude Include="Engine\Base\DirectXCommon\DirectXCommon.h" />
@@ -197,11 +201,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Game\Scene\SceneFactory.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleManager.h" />
-    <ClInclude Include="Network.h" />
-    <ClInclude Include="RankingManager.h" />
-    <ClInclude Include="Skybox.h" />
     <ClInclude Include="Engine\Base\OffscreenRendering\OffscreenRendering.h" />
-    <ClInclude Include="Loader.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="Game\Scene\TitleScene.h" />
   </ItemGroup>
