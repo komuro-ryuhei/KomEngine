@@ -35,7 +35,7 @@
     <ClCompile Include="Engine\Base\PSO\Inputlayout\InputLayout.cpp" />
     <ClCompile Include="Engine\Base\PSO\BlendState\BlendState.cpp" />
     <ClCompile Include="Engine\Base\PSO\RasterizerState\RasterizerState.cpp" />
-    <ClCompile Include="Engine\Base\Mesh\Mesh.cpp" />
+    <ClCompile Include="Engine\Base\Mesh\Light.cpp" />
     <ClCompile Include="Engine\lib\Input\Input.cpp" />
     <ClCompile Include="Engine\lib\StringUtility\StringUtility.cpp" />
     <ClCompile Include="Engine\lib\Math\MyMath.cpp" />
@@ -82,7 +82,7 @@
     <ClInclude Include="Engine\Base\PSO\Inputlayout\InputLayout.h" />
     <ClInclude Include="Engine\Base\PSO\BlendState\BlendState.h" />
     <ClInclude Include="Engine\Base\PSO\RasterizerState\RasterizerState.h" />
-    <ClInclude Include="Engine\Base\Mesh\Mesh.h" />
+    <ClInclude Include="Engine\Base\Mesh\Light.h" />
     <ClInclude Include="Engine\lib\Vector\Vector.h" />
     <ClInclude Include="Engine\lib\Input\Input.h" />
     <ClInclude Include="Engine\lib\StringUtility\StringUtility.h" />

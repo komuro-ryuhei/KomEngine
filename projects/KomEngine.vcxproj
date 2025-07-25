@@ -137,7 +137,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Base\PSO\PipelineManager\PipelineManager.cpp" />
     <ClCompile Include="Engine\Base\PSO\RootSignature\RootSignature.cpp" />
     <ClCompile Include="Engine\Base\PSO\RasterizerState\RasterizerState.cpp" />
-    <ClCompile Include="Engine\Base\Mesh\Mesh.cpp" />
+    <ClCompile Include="Engine\Base\Mesh\Light.cpp" />
     <ClCompile Include="Engine\lib\StringUtility\StringUtility.cpp" />
     <ClCompile Include="Engine\lib\Math\MyMath.cpp" />
     <ClCompile Include="Engine\Base\2d\Sprite\Sprite.cpp" />
@@ -184,7 +184,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Base\PSO\PipelineManager\PipelineManager.h" />
     <ClInclude Include="Engine\Base\PSO\RootSignature\RootSignature.h" />
     <ClInclude Include="Engine\Base\PSO\RasterizerState\RasterizerState.h" />
-    <ClInclude Include="Engine\Base\Mesh\Mesh.h" />
+    <ClInclude Include="Engine\Base\Mesh\Light.h" />
     <ClInclude Include="Engine\lib\StringUtility\StringUtility.h" />
     <ClInclude Include="Engine\lib\Math\MyMath.h" />
     <ClInclude Include="Engine\Base\2d\Sprite\Sprite.h" />

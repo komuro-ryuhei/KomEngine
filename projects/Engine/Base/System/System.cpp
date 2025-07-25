@@ -34,7 +34,7 @@ std::unique_ptr<DirectXCommon> dxCommon_ = nullptr;
 // Input
 std::unique_ptr<Input> input_ = nullptr;
 // Mesh
-std::unique_ptr<Mesh> mesh_ = nullptr;
+std::unique_ptr<Light> light_ = nullptr;
 // SrvManager
 std::unique_ptr<SrvManager> srvManager_ = nullptr;
 // ImGuiManager
@@ -48,7 +48,7 @@ Input* System::GetInput() { return input_.get(); }
 
 SrvManager* System::GetSrvManager() { return srvManager_.get(); }
 
-Mesh* System::GetMesh() { return mesh_.get(); }
+Light* System::GetLight() { return light_.get(); }
 
 WinApp* System::GetWinApp() { return winApp_.get(); }
 
@@ -85,8 +85,8 @@ void System::Initialize(const char* title, int width, int height) {
 	ModelManager::GetInstance()->Init(dxCommon_.get());
 
 	// Mesh
-	mesh_ = std::make_unique<Mesh>();
-	mesh_->LightSetting();
+	light_ = std::make_unique<Light>();
+	light_->LightSetting();
 
 	imguiManager_ = std::make_unique<ImGuiManager>();
 	imguiManager_->Init(winApp_.get(), dxCommon_.get());
@@ -140,7 +140,7 @@ void System::Finalize() {
 	winApp_.reset();
 	dxCommon_.reset();
 	input_.reset();
-	mesh_.reset();
+	light_.reset();
 
 	//
 	TextureManager::GetInstance()->Finalize();

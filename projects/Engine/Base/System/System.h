@@ -16,7 +16,7 @@
 
 // MyClass
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
-#include "Engine/Base/Mesh/Mesh.h"
+#include "Engine/Base/Mesh/Light.h"
 #include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 #include "Engine/Base/WinApp/WinApp.h"
 #include "Engine/Base/OffscreenRendering/OffscreenRendering.h"
@@ -83,7 +83,7 @@ public:
 	static DirectXCommon* GetDxCommon();
 	static Input* GetInput();
 	static SrvManager* GetSrvManager();
-	static Mesh* GetMesh();
+	static Light* GetLight();
 	static WinApp* GetWinApp();
 	static OffscreenRendering* GetOffscreenRendering();
 };

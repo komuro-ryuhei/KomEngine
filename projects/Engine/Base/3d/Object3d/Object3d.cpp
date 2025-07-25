@@ -69,13 +69,13 @@ void Object3d::Draw() {
 	// TransformationMatrixCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 	// DirectionalLight の CBV を設定（RootParameter 3）
-	commandList->SetGraphicsRootConstantBufferView(3, System::GetMesh()->GetLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(3, System::GetLight()->GetLightResource()->GetGPUVirtualAddress());
 	//
-	commandList->SetGraphicsRootConstantBufferView(4, System::GetMesh()->GetPhongLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(4, System::GetLight()->GetPhongLightResource()->GetGPUVirtualAddress());
 	//
-	commandList->SetGraphicsRootConstantBufferView(5, System::GetMesh()->GetPointLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(5, System::GetLight()->GetPointLightResource()->GetGPUVirtualAddress());
 
-	commandList->SetGraphicsRootConstantBufferView(6, System::GetMesh()->GetSpotLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(6, System::GetLight()->GetSpotLightResource()->GetGPUVirtualAddress());
 
 	if (environmentGpuHandle_.ptr != 0) {
 		commandList->SetGraphicsRootDescriptorTable(7, environmentGpuHandle_);

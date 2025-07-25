@@ -14,7 +14,7 @@
 /// <summary>
 /// メッシュ
 /// </summary>
-class Mesh {
+class Light {
 public:
 
 	struct DirectionalLight {
@@ -48,38 +48,16 @@ public:
 		Vector3 worldPosition;
 	};
 
-	ComPtr<ID3D12Resource> CreateVertexResource(size_t sizeInBytes);
-
-	void CreateVertexBufferView();
-
-	void CreateMaterialResource();
-
-	void WriteDateForResource();
-
 	void LightSetting();
 
 	void ImGuiDebug();
 
-	D3D12_VERTEX_BUFFER_VIEW GetVBV() const;
-	ID3D12Resource* GetMateialResource() const;
 	ID3D12Resource* GetLightResource()const;
 	ID3D12Resource* GetPhongLightResource()const;
 	ID3D12Resource* GetPointLightResource()const;
 	ID3D12Resource* GetSpotLightResource()const;
 
 private:
-	// DirectXCommon* dxCommon_;
-
-	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-	D3D12_RESOURCE_DESC vertexResourceDesc{};
-	ComPtr<ID3D12Resource> vertexResource = nullptr;
-
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-
-	ComPtr<ID3D12Resource> materialResource_;
-	// マテリアルリソース内のデータを指すポインタ
-	Material* materialData = nullptr;
-
 	// Light用のマテリアルリソースを作る
 	ComPtr<ID3D12Resource> materialResourceLight;
 	DirectionalLight* directionalLightData = nullptr;
