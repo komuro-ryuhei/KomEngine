@@ -3,7 +3,7 @@
 Texture2D<float4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
 
-cbuffer Material : register(b2)
+cbuffer Material : register(b1)
 {
     float time;
 };
@@ -25,16 +25,18 @@ PixelShaderOutput main(VertexShaderOutput input)
     float2 originalUV = uv;
 
     // --------------------------------
-    // 横ラインのずれ（ランダムと時間ベース）
+    // linenoise（Y軸でラインごとのシフト）
     float lineNoise = rand(float2(floor(uv.y * 100.0 + time * 60.0), floor(uv.x * 30.0)));
     if (lineNoise < 0.5)
     {
-        float shift = (rand(float2(uv.y * 80.0 + time * 15.0, uv.x * 100.0)) - 0.5) * 0.15;
+    // 大きめのずれ & ランダムに強弱をつける
+        float shiftSeed = rand(float2(uv.y * 100.0, time * 40.0));
+        float shiftAmount = lerp(0.1, 0.4, shiftSeed); // 0.1〜0.4 の間で変化
+        float shift = (rand(float2(time * 80.0, uv.y * 100.0)) - 0.5) * shiftAmount;
         uv.x += shift;
     }
 
-    // --------------------------------
-    // RGBチャンネルずらし（グリッチ感の肝）
+    // RGBチャンネルずらし
     float chromaRand = rand(uv * time * 100.0);
     float2 chromaOffset = float2(chromaRand * 0.01, 0.0);
 
@@ -44,16 +46,14 @@ PixelShaderOutput main(VertexShaderOutput input)
 
     float4 color = float4(r, g, b, 1.0f);
 
-    // --------------------------------
-    // ブロックノイズ（大粒のノイズ）
+    // ブロックノイズ
     float blockNoise = rand(floor(uv * 30.0 + time * 10.0));
     if (blockNoise < 0.07)
     {
         color.rgb = float3(blockNoise, blockNoise * 0.8, blockNoise * 0.6);
     }
 
-    // --------------------------------
-    // スキャンラインノイズ（ちらつき）
+    // スキャンラインノイズ
     float scan = sin((uv.y + time * 2.0) * 300.0) * 0.02;
     color.rgb += scan;
 
