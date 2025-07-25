@@ -124,7 +124,4 @@
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Resources\shaders\Shockwave.PS.hlsl" />
-  </ItemGroup>
 </Project>

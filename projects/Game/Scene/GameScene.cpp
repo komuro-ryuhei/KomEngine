@@ -120,7 +120,7 @@ void GameScene::Update() {
 	ImGuiDebug();
 
 	//camera_->ImGuiDebug(); // カメラ
-	object3d_->ImGuiDebug(); // オブジェクト
+	// object3d_->ImGuiDebug(); // オブジェクト
 	//sprite_->ImGuiDebug(); // スプライト
 	//skybox_->ImGuiDebug(); // スカイボックス
 	//// Particle描画ImGui
@@ -157,8 +157,8 @@ void GameScene::ImGuiDebug() {
 #ifdef _DEBUG
 	// ポストエフェクトの選択肢
 	static const char* effectItems[] = {
-		"None", "Grayscale", "Vignetting", "Smoothing", "GaussinanFilter", "RadialBlur", "Random",
-		"Outline","Glitch","Pixel", "ChromaticAberration", "VHSNoise","ColorInversion",
+		"None", "Grayscale", "Vignetting", "Smoothing", "GaussinanFilter", "RadialBlur", "Random","Outline",
+		"Glitch","Pixel", "ChromaticAberration", "VHSNoise","ColorInversion",
 	};
 
 	ImGui::Begin("PostEffect Settings");
