@@ -10,6 +10,7 @@ const uint32_t DirectXCommon::kMaxSRVCount = 512;
 // getter
 ID3D12Device* DirectXCommon::GetDevice() const { return device_.Get(); }
 ID3D12GraphicsCommandList* DirectXCommon::GetCommandList() const { return commandList_.Get(); }
+ID3D12CommandQueue* DirectXCommon::GetCommsndQueue() const { return commandQueue_.Get(); }
 D3D12_VIEWPORT DirectXCommon::GetViewPort() const { return viewPort; }
 D3D12_RECT DirectXCommon::GetScissor() const { return scissorRect; }
 ID3D12DescriptorHeap* DirectXCommon::GetSrvDescriptorHeap() { return srvDescriptorHeap_.Get(); }

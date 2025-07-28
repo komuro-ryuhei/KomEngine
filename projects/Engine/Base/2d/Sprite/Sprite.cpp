@@ -145,7 +145,7 @@ void Sprite::Update() {
 	vertexData[0].position = {left, bottom, 0.0f, 1.0f};  // 左下
 	vertexData[1].position = {left, top, 0.0f, 1.0f};     // 左上
 	vertexData[2].position = {right, bottom, 0.0f, 1.0f}; // 右下
-	vertexData[3].position = {right, top, 0.0f, 1.0f};    // 右上
+	vertexData[3].position = {right, top, 0.0f, 1.0f};    // 右上vertexData
 
 	const DirectX::TexMetadata& metaData = TextureManager::GetInstance()->GetMetaData(textureFilePath_);
 	float tex_left = textureLeftTop_.x / metaData.width;

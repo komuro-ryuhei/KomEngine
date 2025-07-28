@@ -32,6 +32,11 @@ public:
 
 	void OffscreenBarrier();
 
+public:
+
+	// getter,setter
+	void SetPostEffect(const std::string& effectName); // postEffectのセット
+
 private:
 	// DxCommon
 	// DirectXCommon* dxCommon_ = nullptr;
@@ -53,5 +58,5 @@ private:
 	MaterialBuffer* materialBufferData_ = nullptr;
 
 	// 画面をクリアする色
-	const Vector4 kRenderTargetClearValue_ = {0.1f, 0.25f, 0.5f, 1.0f};
+	const Vector4 kRenderTargetClearValue_ = { 0.1f, 0.25f, 0.5f, 1.0f };
 };

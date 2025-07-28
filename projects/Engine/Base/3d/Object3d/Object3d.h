@@ -48,6 +48,8 @@ public: // メンバ関数
 	Vector3 GetRotate() const;
 	Vector3 GetTranslate() const;
 
+	void SetEnvironmentTexture(const std::string& filePath);
+
 	// getter
 	Camera* GetDefaultCamera() const;
 
@@ -67,6 +69,17 @@ private:
 	ComPtr<ID3D12Resource> transformationMatrixResource;
 	TransformationMatrix* transformationMatrixData = nullptr;
 
+	// 環境マップ
+	struct ObjectParams {
+		bool useEnvironmentMap;
+		Vector3 padding_;
+	};
+	ComPtr<ID3D12Resource> environmentTexture_ = nullptr;
+	D3D12_GPU_DESCRIPTOR_HANDLE  environmentGpuHandle_{};
+	ComPtr<ID3D12Resource> objectParamResource_;
+	ObjectParams* objectParamData_ = nullptr;
+
+	// 座標情報
 	Transform transform_;
 	Transform cameraTransform;
 

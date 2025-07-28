@@ -10,9 +10,18 @@
 #include "externals/imgui/imgui.h"
 #endif // DEBUG
 
+GameScene::GameScene() {}
+GameScene::~GameScene() {}
+
 void GameScene::Init() {
 
-	// テクスチャのファイルパス
+	camera_ = std::make_unique<Camera>();
+	// camera_->SetRotate({0.2f, 0.0f, 0.0f});
+	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
+	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
+	camera_->SetTranslate({ 0.0f, 0.0f, -10.0f });
+
+	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
 	const std::string& circle = "./Resources/images/circle.png";
 	const std::string& circle2 = "./Resources/images/circle2.png";
@@ -25,17 +34,31 @@ void GameScene::Init() {
 	TextureManager::GetInstance()->LoadTexture(circle);
 	TextureManager::GetInstance()->LoadTexture(circle2);
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/rostock_laage_airport_4k.dds");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("terrain.obj");
-	ModelManager::GetInstance()->LoadModel("axis.obj");
-	ModelManager::GetInstance()->LoadModel("skydome.obj");
 
-	// 各種初期化
-	camera_ = std::make_unique<Camera>();
-	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
-	camera_->SetTranslate({ 0.0f, 0.0f, -10.0f });
+	// Skybox
+	skybox_ = std::make_unique<Skybox>();
+	skybox_->Init("./Resources/images/rostock_laage_airport_4k.dds");
+	skybox_->SetDefaultCamera(camera_.get());
+
+	// Sprite
+	sprite_ = std::make_unique<Sprite>();
+	sprite_->Init(uvTexture, BlendType::BLEND_NONE);
+
+	object3d_ = std::make_unique<Object3d>();
+	object3d_->Init(BlendType::BLEND_NONE);
+	object3d_->SetModel("sphere.obj");
+	object3d_->SetDefaultCamera(camera_.get());
+	object3d_->SetEnvironmentTexture("./Resources/images/rostock_laage_airport_4k.dds");
+
+	glassObject_ = std::make_unique<Object3d>();
+	glassObject_->Init(BlendType::BLEND_NONE);
+	glassObject_->SetModel("terrain.obj");
+	glassObject_->SetDefaultCamera(camera_.get());
 
 	audio_ = std::make_unique<Audio>();
 	audio_->Init();
@@ -52,13 +75,6 @@ void GameScene::Init() {
 	ParticleManager::GetInstance()->CreateParticleGeoup("moonLight", moonLight, "moonLight");
 	ParticleManager::GetInstance()->CreateParticleGeoup("ribbon", moonLight, "ribbon");
 
-	// Skydome
-	skydome_ = std::make_unique<Object3d>();
-	skydome_->Init(BlendType::BLEND_NONE);
-	skydome_->SetModel("skydome.obj");
-	skydome_->SetDefaultCamera(camera_.get());
-
-	// 
 	emitter_ = std::make_unique<ParticleEmitter>();
 	emitter_->Init("hit", { 0.0f, 0.0f, 10.0f }, 8);
 
@@ -66,7 +82,7 @@ void GameScene::Init() {
 	emitter2_->Init("explosion", { 0.0f, 0.0f, 10.0f }, 50);
 
 	ringEmitter_ = std::make_unique<ParticleEmitter>();
-	ringEmitter_->Init("ring", { -4.0f, 0.0f, 10.0f }, 1);
+	ringEmitter_->Init("ring", { 0.0f, 0.0f, 10.0f }, 1);
 
 	cylinderEmitter_ = std::make_unique<ParticleEmitter>();
 	cylinderEmitter_->Init("cylinder", { 4.0f, 0.0f, 10.0f }, 1);
@@ -79,10 +95,18 @@ void GameScene::Init() {
 	enemyTriggers_.push_back({ {0.0f, 0.0f, 5.0f}, false });  // Z方向
 	enemyTriggers_.push_back({ {10.0f, 0.0f, 5.0f}, false }); // X方向に回転したあとの位置
 
+	moonLightEffect_ = std::make_unique<ParticleEmitter>();
+	moonLightEffect_->Init("moonLight", { 0.0f, 0.0f, 10.0f }, 1);
 
+	ribbonEffect_ = std::make_unique<ParticleEmitter>();
+	ribbonEffect_->Init("ribbon", { 0.0f, 0.0f, 10.0f }, 1);
 
 	loader_ = std::make_unique<Loader>();
 	loader_->Init(camera_.get());
+	ribbonEffect_->Init("ribbon", { 0.0f, 0.0f, 10.0f }, 1);
+
+	// **ユーザー認証**
+	// rankingManager.Login(L"komuro", L"password");
 }
 
 void GameScene::Update() {
@@ -95,13 +119,14 @@ void GameScene::Update() {
 
 	camera_->Update();
 
-	skydome_->Update();
+	object3d_->Update();
+	glassObject_->Update();
+	skybox_->Update();
 
 	// Player
 	player_->Update();
 
 	if (isRotating_) {
-		Vector3 playerRot = player_->GetTransform().rotate;
 
 		playerRot.y += rotateStep_;
 		rotateFrameCount_++;
@@ -140,11 +165,7 @@ void GameScene::Update() {
 
 #ifdef _DEBUG
 
-	// シーン遷移のDebug処理
-	if (System::GetInput()->TriggerKey(DIK_RETURN)) {
-		sceneManager_->ChangeScene("TITLE");
-	}
-
+	// **ImGuiのデバッグ描画**
 	ImGuiDebug();
 
 #endif // _DEBUG
@@ -152,7 +173,15 @@ void GameScene::Update() {
 
 void GameScene::Draw() {
 
-	skydome_->Draw();
+	// 
+	skybox_->Draw();
+
+	// sprite_->Draw();
+
+	// Debug用オブジェクトの描画
+	// object3d_->Draw();
+	// 地面
+	// glassObject_->Draw();
 
 	// Player
 	player_->Draw();
@@ -168,6 +197,94 @@ void GameScene::Draw() {
 }
 
 void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }
+
+void GameScene::ImGuiDebug() {
+
+#ifdef _DEBUG
+
+	ChangePostEffect();
+
+	camera_->ImGuiDebug();
+	// object3d_->ImGuiDebug(); // オブジェクト
+	// sprite_->ImGuiDebug(); // スプライト
+
+	player_->ImGuiDebug();
+
+	// **ランキングの描画**
+	// rankingManager.Render();
+	// シーン遷移のDebug処理
+	if (System::GetInput()->TriggerKey(DIK_RETURN)) {
+		sceneManager_->ChangeScene("TITLE");
+	}
+
+#endif // _DEBUG
+}
+
+void GameScene::ChangePostEffect() {
+
+#ifdef _DEBUG
+	// ポストエフェクトの選択肢
+	static const char* effectItems[] = {
+		"None", "Grayscale", "Vignetting", "Smoothing", "GaussinanFilter", "RadialBlur", "Random","Outline",
+		"Glitch","Pixel", "ChromaticAberration", "VHSNoise","ColorInversion",
+	};
+
+	ImGui::Begin("PostEffect Settings");
+	if (ImGui::Combo("Post Effect", &selectedPostEffectIndex_, effectItems, IM_ARRAYSIZE(effectItems))) {
+		// エフェクト名を取得
+		std::string selectedEffect = effectItems[selectedPostEffectIndex_];
+
+		if (selectedEffect == "None") {
+			System::GetOffscreenRendering()->SetPostEffect("none");
+		} else {
+			System::GetOffscreenRendering()->SetPostEffect(selectedEffect);
+		}
+	}
+	ImGui::End();
+#endif
+}
+
+void GameScene::ParticleUpdate() {
+
+	// パーティクルの更新処理
+	ParticleManager::GetInstance()->Update();
+
+#ifdef _DEBUG
+
+	ImGui::Begin("Particle Emitter");
+
+	if (ImGui::Button("Emit Particles")) {
+		emitter_->Update();
+	}
+
+	if (ImGui::Button("Emit2 Particles")) {
+		emitter2_->Update();
+	}
+
+	if (ImGui::Button("Ring Particles")) {
+		ringEmitter_->Update();
+	}
+
+	if (ImGui::Button("Cylinder Particles")) {
+		cylinderEmitter_->Update();
+	}
+
+	ImGui::End();
+
+#endif // _DEBUG
+
+	if (System::TriggerKey(DIK_1)) {
+		emitter_->Update();
+	}
+	if (System::TriggerKey(DIK_2)) {
+		emitter2_->Update();
+	}
+
+	// ribbonEffect_->Update();
+
+	/*ringEmitter_->Update();
+	cylinderEmitter_->Update();*/
+}
 
 void GameScene::CheckCollisions() {
 
@@ -257,54 +374,6 @@ void GameScene::CheckCollisions() {
 			}
 		}
 	}
-}
-
-void GameScene::ImGuiDebug() {
-
-#ifdef _DEBUG
-
-	camera_->ImGuiDebug();
-	player_->ImGuiDebug();
-
-#endif // _DEBUG
-}
-
-void GameScene::ParticleUpdate() {
-
-	// パーティクルの更新処理
-	ParticleManager::GetInstance()->Update();
-
-#ifdef _DEBUG
-
-	if (ImGui::Button("Emit Particles")) {
-		emitter_->Update();
-	}
-
-	if (ImGui::Button("Emit2 Particles")) {
-		emitter2_->Update();
-	}
-
-	if (ImGui::Button("Ring Particles")) {
-		ringEmitter_->Update();
-	}
-
-	if (ImGui::Button("Cylinder Particles")) {
-		cylinderEmitter_->Update();
-	}
-
-#endif // _DEBUG
-
-	if (System::TriggerKey(DIK_1)) {
-		emitter_->Update();
-	}
-	if (System::TriggerKey(DIK_2)) {
-		emitter2_->Update();
-	}
-
-	// ribbonEffect_->Update();
-
-	/*ringEmitter_->Update();
-	cylinderEmitter_->Update();*/
 }
 
 void GameScene::SpawnEnemies() {

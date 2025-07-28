@@ -35,7 +35,7 @@
     <ClCompile Include="Engine\Base\PSO\Inputlayout\InputLayout.cpp" />
     <ClCompile Include="Engine\Base\PSO\BlendState\BlendState.cpp" />
     <ClCompile Include="Engine\Base\PSO\RasterizerState\RasterizerState.cpp" />
-    <ClCompile Include="Engine\Base\Mesh\Mesh.cpp" />
+    <ClCompile Include="Engine\Base\Mesh\Light.cpp" />
     <ClCompile Include="Engine\lib\Input\Input.cpp" />
     <ClCompile Include="Engine\lib\StringUtility\StringUtility.cpp" />
     <ClCompile Include="Engine\lib\Math\MyMath.cpp" />
@@ -69,7 +69,10 @@
     <ClCompile Include="Game\Entity\Enemy\Enemy.cpp" />
     <ClCompile Include="Game\Entity\Enemy\EnemyBullet.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
-    <ClCompile Include="Loader.cpp" />
+    <ClCompile Include="Engine\Base\3d\Skybox\Skybox.cpp" />
+    <ClCompile Include="Engine\Base\Loader\Loader.cpp" />
+    <ClCompile Include="Engine\lib\Network\Network.cpp" />
+    <ClCompile Include="Engine\lib\Network\RankingManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\lib\ComPtr\ComPtr.h" />
@@ -83,12 +86,12 @@
     <ClInclude Include="Engine\Base\PSO\Inputlayout\InputLayout.h" />
     <ClInclude Include="Engine\Base\PSO\BlendState\BlendState.h" />
     <ClInclude Include="Engine\Base\PSO\RasterizerState\RasterizerState.h" />
-    <ClInclude Include="Engine\Base\Mesh\Mesh.h" />
+    <ClInclude Include="Engine\Base\Mesh\Light.h" />
     <ClInclude Include="Engine\lib\Vector\Vector.h" />
     <ClInclude Include="Engine\lib\Input\Input.h" />
     <ClInclude Include="Engine\lib\StringUtility\StringUtility.h" />
     <ClInclude Include="Engine\lib\Math\MyMath.h" />
-    <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
+    <ClInclude Include="Engine\lib\Network\Matrix\Matrix.h" />
     <ClInclude Include="Engine\Base\2d\Sprite\Sprite.h" />
     <ClInclude Include="externals\imgui\imconfig.h" />
     <ClInclude Include="externals\imgui\imgui.h" />
@@ -122,6 +125,10 @@
     <ClInclude Include="Game\Entity\Enemy\Enemy.h" />
     <ClInclude Include="Game\Entity\Enemy\EnemyBullet.h" />
     <ClInclude Include="Loader.h" />
+    <ClInclude Include="Engine\Base\3d\Skybox\Skybox.h" />
+    <ClInclude Include="Engine\Base\Loader\Loader.h" />
+    <ClInclude Include="Engine\lib\Network\Network.h" />
+    <ClInclude Include="Engine\lib\Network\RankingManager.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

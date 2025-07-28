@@ -20,12 +20,12 @@ void Camera::Init() {}
 
 void Camera::Update() {
 
-	// シェイク処理
+	// �V�F�C�N����
 	CameraShake();
 
 	Vector3 finalPos = basePos_ + shakeInfo_.shakeOffset_;
 
-	// 行列計算
+	// �s��v�Z
 	Matrix4x4 scaleMat = MyMath::MakeScaleMatrix({ 1.0f, 1.0f, 1.0f });
 	Matrix4x4 rotMat = MyMath::MakeRotateMatrix(baseRot_);
 	Matrix4x4 transMat = MyMath::MakeTranslateMatrix(finalPos);
@@ -41,6 +41,10 @@ void Camera::ImGuiDebug() {
 #ifdef _DEBUG
 	ImGui::Begin("Camera");
 
+	ImGui::SliderAngle("rotateX", &transform_.rotate.x);
+	ImGui::SliderAngle("rotateY", &transform_.rotate.y);
+	ImGui::SliderAngle("rotateZ", &transform_.rotate.z);
+	ImGui::DragFloat3("transform", &transform_.translate.x, 0.01f);
 	ImGui::Text("Base Pos: (%.2f, %.2f, %.2f)", basePos_.x, basePos_.y, basePos_.z);
 	ImGui::Text("Shake Offset: (%.2f, %.2f, %.2f)", shakeInfo_.shakeOffset_.x, shakeInfo_.shakeOffset_.y, shakeInfo_.shakeOffset_.z);
 	ImGui::Checkbox("Is Shaking", &shakeInfo_.isShaking_);
@@ -56,19 +60,19 @@ void Camera::SetEye(const Vector3& eye) { transform_.translate = eye; }
 void Camera::SetTarget(const Vector3& target) {
 	Vector3 dir = { target.x - transform_.translate.x, target.y - transform_.translate.y, target.z - transform_.translate.z };
 
-	// ベクトルを正規化
+	// �x�N�g���𐳋K��
 	dir = MyMath::Normalize(dir);
 
-	// ピッチ（上下）とヨー（左右）を算出
-	float pitch = std::asin(-dir.y);      // 上下角
-	float yaw = std::atan2(dir.x, dir.z); // 左右角
+	// �s�b�`�i�㉺�j�ƃ��[�i���E�j��Z�o
+	float pitch = std::asin(-dir.y);      // �㉺�p
+	float yaw = std::atan2(dir.x, dir.z); // ���E�p
 
 	transform_.rotate = { 0.0f, yaw, 0.0f };
 }
 
 void Camera::StartShake(CameraShakeType type) {
 
-	// タイプによって激しさを変える
+	// �^�C�v�ɂ���Č�������ς���
 	switch (type) {
 	case CameraShakeType::Small:
 		shakeInfo_.shakeDuration_ = 0.3f;
@@ -89,7 +93,7 @@ void Camera::StartShake(CameraShakeType type) {
 
 void Camera::CameraShake() {
 
-	// シェイク処理
+	// �V�F�C�N����
 	if (shakeInfo_.isShaking_) {
 		shakeInfo_.shakeTimer_ += 1.0f / 60.0f;
 

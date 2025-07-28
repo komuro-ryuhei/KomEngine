@@ -1,4 +1,3 @@
-
 #include "Object3d.hlsli"
 
 struct Material
@@ -42,6 +41,12 @@ struct Camera
     float3 worldPosition;
 };
 
+struct ObjectParams
+{
+    bool useEnvironmentMap;
+    float3 _padding;
+};
+
 ConstantBuffer<Material> gMaterial : register(b0);
 
 ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
@@ -52,12 +57,16 @@ ConstantBuffer<PointLight> gPointLight : register(b3);
 
 ConstantBuffer<SpotLight> gSpotLight : register(b4);
 
+ConstantBuffer<ObjectParams> objectParam : register(b5);
+
 struct PixelShaderOutput
 {
     float4 color : SV_TARGET0;
 };
 
 Texture2D<float4> gTexture : register(t0);
+TextureCube<float4> gEnvironmentTexture : register(t1);
+
 SamplerState gSampler : register(s0);
 
 PixelShaderOutput main(VertexShaderOutput input)
@@ -73,6 +82,8 @@ PixelShaderOutput main(VertexShaderOutput input)
     float3 toEye = normalize(gCamera.worldPosition - input.worldPosition);
     
     float3 pointLightDirection = normalize(input.worldPosition - gPointLight.position);
+    
+    //output.color.rgb += environmentColor.rgb;
     
     if (gMaterial.enableLighting != 0)
     {
@@ -127,6 +138,16 @@ PixelShaderOutput main(VertexShaderOutput input)
     else
     {
         output.color = gMaterial.color * textureColor;
+    }
+    
+    if (objectParam.useEnvironmentMap)
+    {
+        // 環境マップのサンプリング
+        float3 cameraToPosition = normalize(input.worldPosition - gCamera.worldPosition);
+        float3 reflectVector = reflect(-cameraToPosition, normalize(input.normal));
+        float4 environmentColor = gEnvironmentTexture.Sample(gSampler, reflectVector);
+    
+        output.color.rgb += environmentColor.rgb;
     }
     
     // textureのα値が0の時にPisxelを棄却

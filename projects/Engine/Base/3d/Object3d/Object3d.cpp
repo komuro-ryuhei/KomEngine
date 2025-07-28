@@ -21,16 +21,21 @@ void Object3d::Init(BlendType type) {
 	transformationMatrixData->WVP = MyMath::MakeIdentity4x4();
 	transformationMatrixData->World = MyMath::MakeIdentity4x4();
 
+	// 
+	objectParamResource_ = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(ObjectParams));
+	objectParamResource_->Map(0, nullptr, reinterpret_cast<void**>(&objectParamData_));
+	objectParamData_->useEnvironmentMap = false;
+
 	transform_ = {
-	    {1.0f, 1.0f, 1.0f},
-	    {0.0f, 0.0f, 0.0f},
-	    {0.0f, 0.0f, 0.0f},
+		{1.0f, 1.0f, 1.0f},
+		{0.0f, 0.0f, 0.0f},
+		{0.0f, 0.0f, 0.0f},
 	};
 
 	cameraTransform = {
-	    {1.0f, 1.0f, 1.0f  },
-	    {0.3f, 0.0f, 0.0f  },
-	    {0.0f, 4.0f, -10.0f},
+		{1.0f, 1.0f, 1.0f  },
+		{0.3f, 0.0f, 0.0f  },
+		{0.0f, 4.0f, -10.0f},
 	};
 }
 
@@ -64,13 +69,19 @@ void Object3d::Draw() {
 	// TransformationMatrixCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 	// DirectionalLight の CBV を設定（RootParameter 3）
-	commandList->SetGraphicsRootConstantBufferView(3, System::GetMesh()->GetLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(3, System::GetLight()->GetLightResource()->GetGPUVirtualAddress());
 	//
-	commandList->SetGraphicsRootConstantBufferView(4, System::GetMesh()->GetPhongLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(4, System::GetLight()->GetPhongLightResource()->GetGPUVirtualAddress());
 	//
-	commandList->SetGraphicsRootConstantBufferView(5, System::GetMesh()->GetPointLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(5, System::GetLight()->GetPointLightResource()->GetGPUVirtualAddress());
 
-	commandList->SetGraphicsRootConstantBufferView(6, System::GetMesh()->GetSpotLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(6, System::GetLight()->GetSpotLightResource()->GetGPUVirtualAddress());
+
+	if (environmentGpuHandle_.ptr != 0) {
+		commandList->SetGraphicsRootDescriptorTable(7, environmentGpuHandle_);
+	}
+
+	commandList->SetGraphicsRootConstantBufferView(8, objectParamResource_->GetGPUVirtualAddress());
 
 	if (model_) {
 		//
@@ -114,5 +125,13 @@ void Object3d::SetTransform(const Transform& transform) {
 Vector3 Object3d::GetScale() const { return transform_.scale; }
 Vector3 Object3d::GetRotate() const { return transform_.rotate; }
 Vector3 Object3d::GetTranslate() const { return transform_.translate; }
+
+void Object3d::SetEnvironmentTexture(const std::string& filePath) {
+	environmentGpuHandle_ = TextureManager::GetInstance()->GetSrvHandleGPU(filePath);
+	if (objectParamData_) {
+		objectParamData_->useEnvironmentMap = true;
+	}
+}
+
 
 Camera* Object3d::GetDefaultCamera() const { return defaultCamera_; }
