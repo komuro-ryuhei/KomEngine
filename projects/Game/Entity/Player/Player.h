@@ -8,7 +8,6 @@
 #include "struct.h"
 
 #include "Engine/Base/2d/Sprite/Sprite.h"
-#include "Game/Entity/Enemy/Enemy.h"
 #include "Game/Entity/Player/PlayerBullet.h"
 
 // C++
