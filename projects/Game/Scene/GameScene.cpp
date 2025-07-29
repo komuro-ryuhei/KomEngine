@@ -17,7 +17,7 @@ void GameScene::Init() {
 	// camera_->SetRotate({0.2f, 0.0f, 0.0f});
 	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
-	camera_->SetTranslate({ 0.0f, 0.0f, -10.0f });
+	camera_->SetTranslate({ 0.0f, 0.0f, -30.0f });
 
 	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
@@ -36,6 +36,7 @@ void GameScene::Init() {
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("terrain.obj");
+	ModelManager::GetInstance()->LoadModel("axis.obj");
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
