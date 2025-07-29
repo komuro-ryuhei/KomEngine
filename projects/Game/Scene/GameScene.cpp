@@ -119,12 +119,8 @@ void GameScene::Update() {
 	// **ImGuiのデバッグ描画**
 	ImGuiDebug();
 
-	//camera_->ImGuiDebug(); // カメラ
-	// object3d_->ImGuiDebug(); // オブジェクト
-	//sprite_->ImGuiDebug(); // スプライト
-	//skybox_->ImGuiDebug(); // スカイボックス
-	//// Particle描画ImGui
-	//ParticleUpdate();
+	// Particle描画ImGui
+	ParticleUpdate();
 
 	// **ランキングの描画**
 	// rankingManager.Render();
@@ -145,7 +141,7 @@ void GameScene::Draw() {
 	// 地面
 	// glassObject_->Draw();
 
-	// loader_->Draw();
+	loader_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 }
@@ -155,25 +151,15 @@ void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }
 void GameScene::ImGuiDebug() {
 
 #ifdef _DEBUG
-	// ポストエフェクトの選択肢
-	static const char* effectItems[] = {
-		"None", "Grayscale", "Vignetting", "Smoothing", "GaussinanFilter", "RadialBlur", "Random","Outline",
-		"Glitch","Pixel", "ChromaticAberration", "VHSNoise","ColorInversion",
-	};
 
-	ImGui::Begin("PostEffect Settings");
-	if (ImGui::Combo("Post Effect", &selectedPostEffectIndex_, effectItems, IM_ARRAYSIZE(effectItems))) {
-		// エフェクト名を取得
-		std::string selectedEffect = effectItems[selectedPostEffectIndex_];
+	ChangePostEffect();
 
-		if (selectedEffect == "None") {
-			System::GetOffscreenRendering()->SetPostEffect("none");
-		} else {
-			System::GetOffscreenRendering()->SetPostEffect(selectedEffect);
-		}
-	}
-	ImGui::End();
-#endif
+	camera_->ImGuiDebug(); // カメラ
+	object3d_->ImGuiDebug(); // オブジェクト
+	sprite_->ImGuiDebug(); // スプライト
+	skybox_->ImGuiDebug(); // スカイボックス
+
+#endif // _DEBUG
 }
 
 void GameScene::ParticleUpdate() {
@@ -224,4 +210,28 @@ void GameScene::ParticleUpdate() {
 
 	// ringEmitter_->Update();
 	// cylinderEmitter_->Update();
+}
+
+void GameScene::ChangePostEffect() {
+
+#ifdef _DEBUG
+	// ポストエフェクトの選択肢
+	static const char* effectItems[] = {
+		"None", "Grayscale", "Vignetting", "Smoothing", "GaussinanFilter", "RadialBlur", "Random","Outline",
+		"Glitch","Pixel", "ChromaticAberration", "VHSNoise","ColorInversion",
+	};
+
+	ImGui::Begin("PostEffect Settings");
+	if (ImGui::Combo("Post Effect", &selectedPostEffectIndex_, effectItems, IM_ARRAYSIZE(effectItems))) {
+		// エフェクト名を取得
+		std::string selectedEffect = effectItems[selectedPostEffectIndex_];
+
+		if (selectedEffect == "None") {
+			System::GetOffscreenRendering()->SetPostEffect("none");
+		} else {
+			System::GetOffscreenRendering()->SetPostEffect(selectedEffect);
+		}
+	}
+	ImGui::End();
+#endif
 }

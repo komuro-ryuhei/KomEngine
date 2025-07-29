@@ -68,4 +68,6 @@ private:
 	
 	// パーティクルのデバッグ処理
 	void ParticleUpdate();
+	// PostEffectの変更関数
+	void ChangePostEffect();
 };
