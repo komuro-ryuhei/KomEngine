@@ -37,6 +37,8 @@ void GameScene::Init() {
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("terrain.obj");
 	ModelManager::GetInstance()->LoadModel("axis.obj");
+	ModelManager::GetInstance()->LoadModel("Player.obj");
+	ModelManager::GetInstance()->LoadModel("Enemy.obj");
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
@@ -137,7 +139,7 @@ void GameScene::Draw() {
 	// sprite_->Draw();
 
 	//
-	object3d_->Draw();
+	// object3d_->Draw();
 
 	// 地面
 	// glassObject_->Draw();
@@ -159,6 +161,10 @@ void GameScene::ImGuiDebug() {
 	object3d_->ImGuiDebug(); // オブジェクト
 	sprite_->ImGuiDebug(); // スプライト
 	skybox_->ImGuiDebug(); // スカイボックス
+
+	if (ImGui::Button("Reload Scene JSON")) {
+		loader_->Reload(camera_.get());
+	}
 
 #endif // _DEBUG
 }

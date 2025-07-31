@@ -33,6 +33,13 @@ void Loader::Init(Camera* camera) {
 		assert(object.contains("type"));
 		std::string type = object["type"].get<std::string>();
 
+		// visible が false ならスキップ
+		if (object.contains("visible") && object["visible"].is_boolean()) {
+			if (object["visible"].get<bool>() == false) {
+				continue;
+			}
+		}
+
 		if (type.compare("MESH") == 0) {
 			levelData->objects.emplace_back(LevelData::JsonObjectData{});
 			LevelData::JsonObjectData& objectData = levelData->objects.back();
@@ -45,19 +52,28 @@ void Loader::Init(Camera* camera) {
 				objectData.fileName = "sphere.obj";
 			} else if (name.find("Plane") != std::string::npos) {
 				objectData.fileName = "plane.obj";
+			} else if (name.find("Player") != std::string::npos) {
+				objectData.fileName = "Player.obj";
+			} else if (name.find("Enemy") != std::string::npos) {
+				objectData.fileName = "Enemy.obj";
 			} else {
 				objectData.fileName = "default.obj";
 			}
 
+			// トランスフォームの読み込み
 			nlohmann::json& transform = object["transform"];
+
+			// Blender → 自作エンジン座標変換（位置）
 			objectData.translate.x = (float)transform["translation"][0];
-			objectData.translate.y = (float)transform["translation"][1];
-			objectData.translate.z = (float)transform["translation"][2];
+			objectData.translate.y = (float)transform["translation"][2];
+			objectData.translate.z = (float)transform["translation"][1];
 
+			// Blender → 自作エンジン座標変換（回転）
 			objectData.rotate.x = -(float)transform["rotation"][0];
-			objectData.rotate.y = -(float)transform["rotation"][1];
-			objectData.rotate.z = -(float)transform["rotation"][2];
+			objectData.rotate.y = -(float)transform["rotation"][2];
+			objectData.rotate.z = (float)transform["rotation"][1];
 
+			// 
 			objectData.scale.x = (float)transform["scaling"][0];
 			objectData.scale.y = (float)transform["scaling"][1];
 			objectData.scale.z = (float)transform["scaling"][2];
@@ -97,4 +113,21 @@ void Loader::Draw() {
 	for (auto& object : objects) {
 		object->Draw();
 	}
+}
+
+void Loader::Clear() {
+	for (auto& object : objects) {
+		delete object;
+	}
+	objects.clear();
+
+	if (levelData) {
+		delete levelData;
+		levelData = nullptr;
+	}
+}
+
+void Loader::Reload(Camera* camera) {
+	Clear();
+	Init(camera);
 }
