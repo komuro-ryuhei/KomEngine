@@ -32,6 +32,7 @@ void GameScene::Init() {
 	TextureManager::GetInstance()->LoadTexture(circle2);
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/rostock_laage_airport_4k.dds");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -42,7 +43,7 @@ void GameScene::Init() {
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
-	skybox_->Init("./Resources/images/rostock_laage_airport_4k.dds");
+	skybox_->Init("./Resources/images/test.dds");
 	skybox_->SetDefaultCamera(camera_.get());
 
 	// Sprite
@@ -53,7 +54,7 @@ void GameScene::Init() {
 	object3d_->Init(BlendType::BLEND_NONE);
 	object3d_->SetModel("sphere.obj");
 	object3d_->SetDefaultCamera(camera_.get());
-	object3d_->SetEnvironmentTexture("./Resources/images/rostock_laage_airport_4k.dds");
+	object3d_->SetEnvironmentTexture("./Resources/images/test.dds");
 
 	glassObject_ = std::make_unique<Object3d>();
 	glassObject_->Init(BlendType::BLEND_NONE);
