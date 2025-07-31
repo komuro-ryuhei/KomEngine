@@ -19,7 +19,7 @@ void GameScene::Init() {
 	// camera_->SetRotate({0.2f, 0.0f, 0.0f});
 	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
-	camera_->SetTranslate({ 0.0f, 0.0f, -10.0f });
+	camera_->SetTranslate({ 0.0f, 3.0f, -30.0f });
 
 	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
@@ -35,14 +35,20 @@ void GameScene::Init() {
 	TextureManager::GetInstance()->LoadTexture(circle2);
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/rostock_laage_airport_4k.dds");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("terrain.obj");
+	ModelManager::GetInstance()->LoadModel("axis.obj");
+	ModelManager::GetInstance()->LoadModel("Player.obj");
+	ModelManager::GetInstance()->LoadModel("Enemy.obj");
+	ModelManager::GetInstance()->LoadModel("ground.obj");
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
-	skybox_->Init("./Resources/images/rostock_laage_airport_4k.dds");
+	skybox_->Init("./Resources/images/test.dds");
 	skybox_->SetDefaultCamera(camera_.get());
 
 	// Sprite
@@ -53,11 +59,11 @@ void GameScene::Init() {
 	object3d_->Init(BlendType::BLEND_NONE);
 	object3d_->SetModel("sphere.obj");
 	object3d_->SetDefaultCamera(camera_.get());
-	object3d_->SetEnvironmentTexture("./Resources/images/rostock_laage_airport_4k.dds");
+	object3d_->SetEnvironmentTexture("./Resources/images/test.dds");
 
 	glassObject_ = std::make_unique<Object3d>();
 	glassObject_->Init(BlendType::BLEND_NONE);
-	glassObject_->SetModel("terrain.obj");
+	glassObject_->SetModel("ground.obj");
 	glassObject_->SetDefaultCamera(camera_.get());
 
 	audio_ = std::make_unique<Audio>();
@@ -168,6 +174,12 @@ void GameScene::Update() {
 	// **ImGuiのデバッグ描画**
 	ImGuiDebug();
 
+	// Particle描画ImGui
+	ParticleUpdate();
+
+	// **ランキングの描画**
+	// rankingManager.Render();
+
 #endif // _DEBUG
 }
 
@@ -181,7 +193,7 @@ void GameScene::Draw() {
 	// Debug用オブジェクトの描画
 	// object3d_->Draw();
 	// 地面
-	// glassObject_->Draw();
+	glassObject_->Draw();
 
 	// Player
 	player_->Draw();
@@ -234,14 +246,11 @@ void GameScene::ChangePostEffect() {
 		// エフェクト名を取得
 		std::string selectedEffect = effectItems[selectedPostEffectIndex_];
 
-		if (selectedEffect == "None") {
-			System::GetOffscreenRendering()->SetPostEffect("none");
-		} else {
-			System::GetOffscreenRendering()->SetPostEffect(selectedEffect);
-		}
+	if (ImGui::Button("Reload Scene JSON")) {
+		loader_->Reload(camera_.get());
 	}
-	ImGui::End();
-#endif
+
+#endif // _DEBUG
 }
 
 void GameScene::ParticleUpdate() {

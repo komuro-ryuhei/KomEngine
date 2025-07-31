@@ -27,6 +27,10 @@ public:
 
 	void Draw();
 
+	void Reload(Camera* camera); // 再読み込み
+private:
+	void Clear(); // オブジェクト削除関数
+
 private:
 
 	// レベルデータ格納用インスタンスを生成
