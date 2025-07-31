@@ -166,9 +166,6 @@ void GameScene::Update() {
 	// トリガーチェック
 	EnemySpawnTrigger();
 
-	// パーティクル
-	ParticleUpdate();
-
 #ifdef _DEBUG
 
 	// **ImGuiのデバッグ描画**
@@ -176,9 +173,6 @@ void GameScene::Update() {
 
 	// Particle描画ImGui
 	ParticleUpdate();
-
-	// **ランキングの描画**
-	// rankingManager.Render();
 
 #endif // _DEBUG
 }
@@ -246,12 +240,16 @@ void GameScene::ChangePostEffect() {
 		// エフェクト名を取得
 		std::string selectedEffect = effectItems[selectedPostEffectIndex_];
 
-	if (ImGui::Button("Reload Scene JSON")) {
-		loader_->Reload(camera_.get());
+		if (ImGui::Button("Reload Scene JSON")) {
+			loader_->Reload(camera_.get());
+		}
 	}
+
+	ImGui::End();
 
 #endif // _DEBUG
 }
+
 
 void GameScene::ParticleUpdate() {
 
