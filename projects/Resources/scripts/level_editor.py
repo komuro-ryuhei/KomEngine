@@ -263,6 +263,11 @@ class OBJECT_PT_file_name(bpy.types.Panel):
             # プロパティがなければ、プロパティ追加ボタンを表示
             self.layout.operator(MYADDON_OT_add_filename.bl_idname)
 
+        if "visible" in context.object:
+            self.layout.prop(context.object, '["visible"]', text="Visible")
+        else:
+            self.layout.operator(MYADDON_OT_add_visibility.bl_idname)
+
         # パネルに項目に追加
         # self.layout.operator(OBJECT_PT_collider.bl_idname, text=OBJECT_PT_collider.bl_label)
         self.layout.operator(MYADDON_OT_stretch_vertex.bl_idname, text=MYADDON_OT_stretch_vertex.bl_label)
@@ -419,6 +424,54 @@ class OBJECT_PT_collider(bpy.types.Panel):
         else:
             # プロパティがなければ、プロパティ追加ボタンを追加
             self.layout.operator(MYADDON_OT_add_collider.bl_idname)
+
+#################################################################################
+
+class MYADDON_OT_add_mesh(bpy.types.Operator):
+    bl_idname = "myaddon.add_mesh"
+    bl_label = "メッシュ追加"
+    bl_description = "基本メッシュを追加します"
+    bl_options = {"REGISTER", "UNDO"}
+
+    type: bpy.props.EnumProperty(
+        name="MeshType",
+        description="追加するメッシュの種類",
+        items=[
+            ("PLANE", "平面", ""),
+            ("CUBE", "立方体", ""),
+            ("SPHERE", "UV球", ""),
+            ("CYLINDER", "円柱", ""),
+            ("CONE", "円錐", ""),
+        ],
+        default="CUBE",
+    )
+
+    def execute(self, context):
+        if self.type == "PLANE":
+            bpy.ops.mesh.primitive_plane_add()
+        elif self.type == "CUBE":
+            bpy.ops.mesh.primitive_cube_add()
+        elif self.type == "SPHERE":
+            bpy.ops.mesh.primitive_uv_sphere_add()
+        elif self.type == "CYLINDER":
+            bpy.ops.mesh.primitive_cylinder_add()
+        elif self.type == "CONE":
+            bpy.ops.mesh.primitive_cone_add()
+
+        rename_last_object_if_known_type()
+        return {"FINISHED"}
+
+#################################################################################
+
+class MYADDON_OT_add_visibility(bpy.types.Operator):
+    bl_idname = "myaddon.myaddon_ot_add_visibility"
+    bl_label = "Visible 追加"
+    bl_description = "['visible']カスタムプロパティを追加します"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        context.object["visible"] = True
+        return {"FINISHED"}
 
 #################################################################################
 
