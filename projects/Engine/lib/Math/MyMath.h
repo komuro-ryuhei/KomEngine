@@ -68,6 +68,10 @@ public:
 	// 回転行列
 	static Matrix4x4 MakeRotateMatrix(Vector3 rotate);
 
+	// 
+	// ヘッダ
+	static Matrix4x4 MakeRotateMatrixFromBlenderEuler(Vector3 blenderRotate);
+
 	// 3次元アフィン変換行列
 	static Matrix4x4 MakeAffineMatrix(Vector3 scale, Vector3 rotate, Vector3 translate);
 
