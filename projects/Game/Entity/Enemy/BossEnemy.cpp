@@ -14,21 +14,22 @@ void BossEnemy::Init(Camera* camera) {
 	object3d_ = std::make_unique<Object3d>();
 	object3d_->Init(BlendType::BLEND_NONE);
 
-	object3d_->SetModel("sphere.obj");
+	object3d_->SetModel("BossEnemy.obj");
 	object3d_->SetDefaultCamera(camera_);
 	object3d_->SetScale({ 2.0f, 2.0f, 2.0f });
 
 	leftArm_ = std::make_unique<Object3d>();
 	leftArm_->Init(BlendType::BLEND_NONE);
-	leftArm_->SetModel("sphere.obj");
+	leftArm_->SetModel("hand.obj");
 	leftArm_->SetDefaultCamera(camera_);
 	leftArm_->SetParent(object3d_.get());
 	leftArm_->SetScale({ 1.0f, 1.0f, 1.0f });
 	leftArm_->SetTranslate({ -4.0f, 0.0f, 0.0f });
+	leftArm_->SetRotate({ 0.0f, 3.0f, 0.0f });
 
 	rightArm_ = std::make_unique<Object3d>();
 	rightArm_->Init(BlendType::BLEND_NONE);
-	rightArm_->SetModel("sphere.obj");
+	rightArm_->SetModel("hand.obj");
 	rightArm_->SetDefaultCamera(camera_);
 	rightArm_->SetParent(object3d_.get());
 	rightArm_->SetScale({ 1.0f, 1.0f, 1.0f });
@@ -73,43 +74,55 @@ void BossEnemy::ImGuiDebug() {
 }
 
 void BossEnemy::Attack() {
-
 	if (!player_) return;
 
-	// クールダウンが終わってないなら何もしない
-	if (!isAttacking_) {
-		attackCooldown_ += 1.0f / 60.0f; // フレーム更新
-		if (attackCooldown_ >= attackInterval_) {
-			isAttacking_ = true;
-			attackCooldown_ = 0.0f;
-		} else {
-			return; // 待機中
-		}
-	}
+	Object3d* targetArm = attackLeftArm_ ? leftArm_.get() : rightArm_.get();
+	Vector3 baseLocalOffset = attackLeftArm_ ? Vector3{ -4.0f, 0, 0 } : Vector3{ 4.0f, 0, 0 };
+	Vector3 armPos = targetArm->GetTranslate(); // ローカル座標
 
-	// 攻撃中
-	Vector3 baseArmPos = { -4.0f, 0.0f, 0.0f };
-	Vector3 playerPos = player_->GetTranslate();
-	Vector3 target = playerPos - (transform_.translate + baseArmPos);
+	Vector3 worldBase = transform_.translate + baseLocalOffset;
+	Vector3 target = player_->GetTranslate() - worldBase;
 	Vector3 direction = MyMath::Normalize(target);
-	Vector3 armPos = leftArm_->GetTranslate();
+
+	int& hitCount = attackLeftArm_ ? leftArmHitCount_ : rightArmHitCount_;
 
 	if (isExtending_) {
-		armPos += direction * 0.5f;
-		if (MyMath::Length(armPos - baseArmPos) >= 20.0f) {
+		armPos += direction * attackSpeed_;
+
+		// 条件1: ある程度伸びたら戻す
+		// 条件2: ヒットカウントが上限に達したら戻す
+		if (MyMath::Length(armPos - baseLocalOffset) >= 20.0f || hitCount >= maxHitCount_) {
 			isExtending_ = false;
 		}
+
 	} else {
-		// 元に戻す処理
-		Vector3 toOrigin = baseArmPos - armPos;
+		// 元に戻る処理
+		Vector3 toOrigin = baseLocalOffset - armPos;
 		if (MyMath::Length(toOrigin) < 0.5f) {
-			armPos = baseArmPos;
+			armPos = baseLocalOffset;
 			isExtending_ = true;
-			isAttacking_ = false; // 攻撃終了 → 次の待機へ
+			isAttacking_ = false;
+			attackLeftArm_ = !attackLeftArm_;
+			hitCount = 0;  // カウントリセット
 		} else {
 			armPos += MyMath::Normalize(toOrigin) * 0.5f;
 		}
 	}
 
-	leftArm_->SetTranslate(armPos);
+	targetArm->SetTranslate(armPos);
+}
+
+void BossEnemy::AddHitToAttackingArm() {
+	if (attackLeftArm_) {
+		++leftArmHitCount_;
+	} else {
+		++rightArmHitCount_;
+	}
+}
+
+void BossEnemy::SetRotate(Vector3& rotate) {
+	transform_.rotate = rotate;
+	object3d_->SetRotate(rotate);
+	leftArm_->SetRotate(rotate);
+	rightArm_->SetRotate(rotate);
 }

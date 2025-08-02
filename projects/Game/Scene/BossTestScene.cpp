@@ -1,5 +1,6 @@
 #include "BossTestScene.h"
 #include "externals/imgui/imgui.h"
+#include "Engine/Base/System/System.h"
 
 void BossTestScene::Init() {
 
@@ -28,6 +29,12 @@ void BossTestScene::Init() {
 	boss_->Init(camera_.get());
 	boss_->SetTranslate({ 0.0f, 0.0f, 20.0f });
 	boss_->SetPlayer(player_.get());
+
+	ParticleManager::GetInstance()->Init(camera_.get(), BlendType::BLEND_ADD);
+	ParticleManager::GetInstance()->CreateParticleGeoup("hit", "./Resources/images/circle2.png", "hit");
+
+	emitter_ = std::make_unique<ParticleEmitter>();
+	emitter_->Init("hit", { 0.0f, 0.0f, 10.0f }, 10);
 }
 
 void BossTestScene::Update() {
@@ -57,6 +64,9 @@ void BossTestScene::Update() {
 
 	CheckCollisions();
 
+	// パーティクルの更新処理
+	ParticleManager::GetInstance()->Update();
+
 	// ------------------------------------------------------------------- //
 
 #ifdef _DEBUG
@@ -64,6 +74,7 @@ void BossTestScene::Update() {
 	ImGui::Begin("BossTestScene");
 
 	camera_->ImGuiDebug();
+	player_->ImGuiDebug();
 	boss_->ImGuiDebug();
 
 	ImGui::Checkbox("isCameraFollowPlayer", &isCameraFollowPlayer_);
@@ -79,7 +90,7 @@ void BossTestScene::Draw() {
 	// Skyboxの描画
 	skybox_->Draw();
 	// 地面オブジェクトの描画
-	glassObject_->Draw();
+	// glassObject_->Draw();
 
 	// -------------------- ゲームオブジェクトシーンの描画 -------------------- //
 
@@ -89,6 +100,8 @@ void BossTestScene::Draw() {
 	// Bossの描画
 	boss_->Draw();
 
+	ParticleManager::GetInstance()->Draw();
+
 	// --------------------------------------------------------------------//
 }
 
@@ -96,7 +109,7 @@ void BossTestScene::Finalize() {}
 
 void BossTestScene::CheckCollisions() {
 
-	// ----- 弾とボス部位の当たり判定 -----
+	// -------------------- 弾とボス部位の当たり判定 -------------------- //
 	auto& bullets = player_->GetBullets();
 	auto body = boss_->GetBody();
 	auto left = boss_->GetLeftArm();
@@ -112,7 +125,11 @@ void BossTestScene::CheckCollisions() {
 			float r = (*it)->GetRadius() + part->GetRadius();
 
 			if (d < r) {
-				// 当たり
+				// パーティクルを出す位置を弾の位置に変更
+				Vector3 hitPos = (*it)->GetTranslate();
+				emitter_->SetTranslate(hitPos);
+				emitter_->Update();
+
 				it = bullets.erase(it);
 				hit = true;
 				break;
@@ -121,6 +138,48 @@ void BossTestScene::CheckCollisions() {
 
 		if (!hit) {
 			++it;
+		}
+	}
+
+	// -------------------- 自機とボス部位の当たり判定 -------------------- //
+	if (!player_ || !boss_) return;
+
+	Vector3 playerPos = player_->GetTranslate();
+	float playerRadius = player_->GetRadius();
+
+	// 各腕との当たり判定
+	struct ArmData {
+		Object3d* object;
+		std::string name;
+	};
+
+	std::vector<ArmData> arms = {
+		{ boss_->GetLeftArm(),  "LeftArm" },
+		{ boss_->GetRightArm(), "RightArm" }
+	};
+
+	for (const auto& arm : arms) {
+		Vector3 armPos = arm.object->GetWorldPosition();
+		float armRadius = arm.object->GetRadius();
+
+		float distance = MyMath::CalculateDistance(playerPos, armPos);
+		if (distance < (playerRadius + armRadius)) {
+			// 無敵フラグがオフの時に引数分のダメージ
+			if (!player_->GetInvincible()) {
+				player_->Damage(1);
+				player_->SetInvincible(true);
+			}
+
+			// HPが引数以下ならポストエフェクトを適応
+			if (player_->IsLowHP(2)) {
+				System::GetOffscreenRendering()->SetPostEffect("Vignetting");
+			}
+
+			// カメラを揺らす
+			if (camera_) {
+				camera_->StartShake(CameraShakeType::Medium);
+			}
+			break;
 		}
 	}
 }

@@ -161,6 +161,11 @@ void Object3d::SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
 
 float Object3d::GetRadius() const { return radius_; }
 
+Vector3 Object3d::GetWorldPosition() const {
+	return { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
+}
+
+
 void Object3d::SetTransform(const Transform& transform) {
 
 	//

@@ -32,8 +32,15 @@ public:
 	Transform GetTransform() const;
 	Vector3 GetTranslate() const;
 	std::vector<std::unique_ptr<PlayerBullet>>& GetBullets();
+	int GetHP() const;
+	bool GetInvincible() const;
 
+	void SetInvincible(bool flag);
 	void SetRotate(Vector3& rotate);
+
+	bool IsInvincible() const;
+	void Damage(int amount);
+	bool IsLowHP(int hp) const;
 
 private:
 	void Attack();
@@ -63,6 +70,12 @@ private:
 	float velocity_ = 0.05f;
 	// 半径
 	float radius_ = 1.0f;
+	// HP
+	int hp_ = 5;
 	// 弾有効フラグ
 	bool isBulletActive_ = false;
+
+	// 無敵時間
+	bool isInvincible_ = false;
+	float invincibleTimer_ = 0.0f;
 };

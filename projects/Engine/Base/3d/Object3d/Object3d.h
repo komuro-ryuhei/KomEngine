@@ -47,6 +47,7 @@ public: // メンバ関数
 	Vector3 GetRotate() const;
 	Vector3 GetTranslate() const;
 	float GetRadius() const;
+	Vector3 GetWorldPosition() const;
 
 	// 親子関係の追加
 	void SetParent(Object3d* parent);

@@ -30,8 +30,12 @@ public:
 	Object3d* GetRightArm() const { return rightArm_.get(); }
 
 private:
+
 	void Attack();
 	void Move();
+
+public:
+	void AddHitToAttackingArm();
 
 private:
 	// カメラ
@@ -55,4 +59,9 @@ private:
 	bool isExtending_ = true;     // 腕を伸ばしているか
 	float attackCooldown_ = 0.0f;
 	bool isAttacking_ = false;
+	bool attackLeftArm_ = true;
+	float attackSpeed_ = 0.2f; // 腕の伸縮速度
+	int leftArmHitCount_ = 0;
+	int rightArmHitCount_ = 0;
+	const int maxHitCount_ = 5;
 };

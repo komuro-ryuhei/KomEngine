@@ -47,6 +47,8 @@ void GameScene::Init() {
 	ModelManager::GetInstance()->LoadModel("Player.obj");
 	ModelManager::GetInstance()->LoadModel("Enemy.obj");
 	ModelManager::GetInstance()->LoadModel("ground.obj");
+	ModelManager::GetInstance()->LoadModel("hand.obj");
+	ModelManager::GetInstance()->LoadModel("BossEnemy.obj");
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
@@ -171,6 +173,10 @@ void GameScene::Update() {
 	// トリガーチェック
 	EnemySpawnTrigger();
 
+	if (System::GetInput()->TriggerKey(DIK_RETURN)) {
+		sceneManager_->ChangeScene("TEST");
+	}
+
 #ifdef _DEBUG
 
 	// **ImGuiのデバッグ描画**
@@ -246,6 +252,12 @@ void GameScene::ChangePostEffect() {
 	if (ImGui::Combo("Post Effect", &selectedPostEffectIndex_, effectItems, IM_ARRAYSIZE(effectItems))) {
 		// エフェクト名を取得
 		std::string selectedEffect = effectItems[selectedPostEffectIndex_];
+
+		if (selectedEffect == "None") {
+			System::GetOffscreenRendering()->SetPostEffect("none");
+		} else {
+			System::GetOffscreenRendering()->SetPostEffect(selectedEffect);
+		}
 
 		if (ImGui::Button("Reload Scene JSON")) {
 			loader_->Reload(camera_.get());

@@ -13,7 +13,25 @@ Vector3 Player::GetTranslate() const { return transform_.translate; }
 
 std::vector<std::unique_ptr<PlayerBullet>>& Player::GetBullets() { return bulletObjects_; }
 
+void Player::SetInvincible(bool flag) {
+
+	isInvincible_ = flag;
+	if (flag) {
+		invincibleTimer_ = 1.0f;
+	}
+}
+
 void Player::SetRotate(Vector3& rotate) { transform_.rotate = rotate; }
+
+int Player::GetHP() const { return hp_; }
+
+bool Player::GetInvincible() const { return isInvincible_; }
+
+void Player::Damage(int amount) { hp_ -= amount; }
+
+bool Player::IsLowHP(int hp) const { return hp_ <= hp; }
+
+bool Player::IsInvincible() const { return isInvincible_; }
 
 Player::~Player() {
 
@@ -44,22 +62,25 @@ void Player::Update() {
 
 	Attack();
 
-	// 弾の更新と削除
+	// 無敵タイマー処理
+	if (isInvincible_) {
+		invincibleTimer_ -= 1.0f / 60.0f; // 毎フレーム減少
+		if (invincibleTimer_ <= 0.0f) {
+			isInvincible_ = false;
+			invincibleTimer_ = 0.0f;
+		}
+	}
+
+	// 弾更新と描画
 	for (auto it = bulletObjects_.begin(); it != bulletObjects_.end();) {
 		(*it)->Update();
-		(*it)->ImGuiDebug();
-
 		++it;
 	}
 
 	object3d_->Update();
-
-	// object3d_->SetTransform(transform_);
 	object3d_->SetTranslate(transform_.translate);
 	object3d_->SetRotate(transform_.rotate);
 
-	// Move();
-	// RailMove();
 	UpdateReticleSprite();
 }
 
@@ -88,6 +109,7 @@ void Player::ImGuiDebug() {
 	ImGui::SliderAngle("rotateY", &transform_.rotate.y, 0.1f);
 	ImGui::SliderAngle("rotateZ", &transform_.rotate.z, 0.1f);
 	ImGui::DragFloat3("translate", &transform_.translate.x, 0.1f);
+	ImGui::DragInt("HP", &hp_);
 
 	ImGui::End();
 }

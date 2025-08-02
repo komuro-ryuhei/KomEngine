@@ -8,6 +8,8 @@
 #include "Game/Entity/Player/Player.h"
 #include "Game/Entity/Enemy/Enemy.h"
 #include "Game/Entity/Enemy/BossEnemy.h"
+#include "Engine/Base/Particle/ParticleManager.h"
+#include "Engine/Base/Particle/ParticleEmitter.h"
 
 class BossTestScene : public IScene {
 public:
@@ -36,6 +38,11 @@ private:
 	std::unique_ptr<Player> player_ = nullptr;
 	// Boss
 	std::unique_ptr<BossEnemy> boss_ = nullptr;
+
+	// Particle・Effect
+	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;
+
+private:
 
 	// 現在選択中のポストエフェクト
 	int selectedPostEffectIndex_ = 0;
