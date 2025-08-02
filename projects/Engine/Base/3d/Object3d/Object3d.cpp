@@ -41,21 +41,21 @@ void Object3d::Init(BlendType type) {
 
 void Object3d::Update() {
 
-	Matrix4x4 scaleMatrix = MyMath::MakeScaleMatrix(transform.scale);
+	Matrix4x4 scaleMatrix = MyMath::MakeScaleMatrix(transform_.scale);
 	Matrix4x4 rotateMatrix;
 
 	if (fromBlender_) {
 		// Blender座標系から来た回転
-		rotateMatrix = MyMath::MakeRotateMatrixFromBlenderEuler(transform.rotate);
+		rotateMatrix = MyMath::MakeRotateMatrixFromBlenderEuler(transform_.rotate);
 	} else {
 		// 通常の回転
-		Matrix4x4 rotX = MyMath::MakeRotateXMatrix(transform.rotate.x);
-		Matrix4x4 rotY = MyMath::MakeRotateYMatrix(transform.rotate.y);
-		Matrix4x4 rotZ = MyMath::MakeRotateZMatrix(transform.rotate.z);
+		Matrix4x4 rotX = MyMath::MakeRotateXMatrix(transform_.rotate.x);
+		Matrix4x4 rotY = MyMath::MakeRotateYMatrix(transform_.rotate.y);
+		Matrix4x4 rotZ = MyMath::MakeRotateZMatrix(transform_.rotate.z);
 		rotateMatrix = MyMath::Multiply(rotX, MyMath::Multiply(rotY, rotZ));
 	}
 
-	Matrix4x4 translateMatrix = MyMath::MakeTranslateMatrix(transform.translate);
+	Matrix4x4 translateMatrix = MyMath::MakeTranslateMatrix(transform_.translate);
 
 	Matrix4x4 worldMatrix = MyMath::Multiply(scaleMatrix, MyMath::Multiply(rotateMatrix, translateMatrix));
 
