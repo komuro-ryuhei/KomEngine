@@ -9,6 +9,8 @@ float Player::GetRadius() const { return radius_; }
 
 Transform Player::GetTransform() const { return transform_; }
 
+Vector3 Player::GetTranslate() const { return transform_.translate; }
+
 std::vector<std::unique_ptr<PlayerBullet>>& Player::GetBullets() { return bulletObjects_; }
 
 void Player::SetRotate(Vector3& rotate) { transform_.rotate = rotate; }
@@ -63,7 +65,7 @@ void Player::Update() {
 
 void Player::Draw() {
 
-	//
+	// 
 	// object3d_->Draw();
 
 	for (auto& bullet : bulletObjects_) {

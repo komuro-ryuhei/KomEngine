@@ -20,14 +20,12 @@ void Camera::Init() {}
 
 void Camera::Update() {
 
-	// �V�F�C�N����
 	CameraShake();
 
-	Vector3 finalPos = basePos_ + shakeInfo_.shakeOffset_;
+	Vector3 finalPos = transform_.translate + shakeInfo_.shakeOffset_;
 
-	// �s��v�Z
-	Matrix4x4 scaleMat = MyMath::MakeScaleMatrix({ 1.0f, 1.0f, 1.0f });
-	Matrix4x4 rotMat = MyMath::MakeRotateMatrix(baseRot_);
+	Matrix4x4 scaleMat = MyMath::MakeScaleMatrix(transform_.scale);
+	Matrix4x4 rotMat = MyMath::MakeRotateMatrix(transform_.rotate);
 	Matrix4x4 transMat = MyMath::MakeTranslateMatrix(finalPos);
 
 	worldMatrix = MyMath::Multiply(scaleMat, MyMath::Multiply(rotMat, transMat));
@@ -35,6 +33,7 @@ void Camera::Update() {
 	projectionMatrix = MyMath::MakePerspectiveFovMatrix(fovY_, aspectRatio_, nearClip_, farClip_);
 	viewProjectionMatrix = MyMath::Multiply(viewMatrix, projectionMatrix);
 }
+
 
 void Camera::ImGuiDebug() {
 
@@ -60,19 +59,19 @@ void Camera::SetEye(const Vector3& eye) { transform_.translate = eye; }
 void Camera::SetTarget(const Vector3& target) {
 	Vector3 dir = { target.x - transform_.translate.x, target.y - transform_.translate.y, target.z - transform_.translate.z };
 
-	// �x�N�g���𐳋K��
+	// 
 	dir = MyMath::Normalize(dir);
 
-	// �s�b�`�i�㉺�j�ƃ��[�i���E�j��Z�o
-	float pitch = std::asin(-dir.y);      // �㉺�p
-	float yaw = std::atan2(dir.x, dir.z); // ���E�p
+	// 
+	float pitch = std::asin(-dir.y);
+	float yaw = std::atan2(dir.x, dir.z);
 
 	transform_.rotate = { 0.0f, yaw, 0.0f };
 }
 
 void Camera::StartShake(CameraShakeType type) {
 
-	// �^�C�v�ɂ���Č�������ς���
+	// 
 	switch (type) {
 	case CameraShakeType::Small:
 		shakeInfo_.shakeDuration_ = 0.3f;
@@ -93,7 +92,7 @@ void Camera::StartShake(CameraShakeType type) {
 
 void Camera::CameraShake() {
 
-	// �V�F�C�N����
+	// 
 	if (shakeInfo_.isShaking_) {
 		shakeInfo_.shakeTimer_ += 1.0f / 60.0f;
 

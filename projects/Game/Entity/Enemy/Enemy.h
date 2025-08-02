@@ -21,12 +21,12 @@ public:
 
 public:
 	Vector3 GetTranslate();
-	void SetTranslate(Vector3 translate);
 	float GetRadius() const;
 	bool GetIsAlive() const;
 	void OnHit();
 	std::vector<std::unique_ptr<EnemyBullet>>& GetBullets();
 
+	void SetTranslate(Vector3 translate);
 	void SetPlayer(Player* player);
 	void SetRadius(float radius);
 

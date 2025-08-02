@@ -60,11 +60,8 @@ struct Vector3 final {
 	Vector3 operator-(const Vector3& other) const { return Vector3(x - other.x, y - other.y, z - other.z); }
 
 	// + オペレーターのオーバーロード
-	Vector3& operator+(const float& other) {
-		x = x + other;
-		y = y + other;
-		z = z + other;
-		return *this;
+	Vector3 operator+(const float& other) const {
+		return Vector3{ x + other, y + other, z + other };
 	}
 
 	// + オペレーターのオーバーロード

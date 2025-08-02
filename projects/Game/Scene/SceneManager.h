@@ -6,7 +6,7 @@
 
 #include "Game/Scene/AbstractSceneFactory.h"
 #include "Game/Scene/IScene.h"
-#include <memory> // std::unique_ptr
+#include <memory>
 
 class SceneManager {
 

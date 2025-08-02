@@ -16,6 +16,7 @@
 
 #include "Game/Scene/IScene.h"
 #include "Game/Entity/Player/Player.h"
+#include "Game/Entity/Enemy/Enemy.h"
 
 #include "Engine/lib/Network/RankingManager.h"
 
@@ -65,6 +66,9 @@ private:
 	// Model
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 	std::unique_ptr<Object3d> glassObject_ = nullptr;
+
+	// Cameraをプレイヤーに追従させるかのフラグ
+	bool isCameraFollowPlayer_ = true;
 
 	// Particle・Effect
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;

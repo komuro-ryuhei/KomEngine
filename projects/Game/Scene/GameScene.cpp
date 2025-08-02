@@ -8,6 +8,7 @@
 
 #ifdef _DEBUG
 #include "externals/imgui/imgui.h"
+#include "BossTestScene.h"
 #endif // DEBUG
 
 GameScene::GameScene() {}
@@ -121,8 +122,11 @@ void GameScene::Update() {
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 playerRot = player_->GetTransform().rotate;
 
-	camera_->SetBasePos(playerPos);
-	camera_->SetBaseRot(playerRot);
+	// フラグがtrueだと追従
+	if (isCameraFollowPlayer_) {
+		camera_->SetTranslate(playerPos);
+		camera_->SetRotate(playerRot);
+	}
 
 	camera_->Update();
 
@@ -217,11 +221,13 @@ void GameScene::ImGuiDebug() {
 
 	player_->ImGuiDebug();
 
+	ImGui::Checkbox("cameraFollow", &isCameraFollowPlayer_);
+
 	// **ランキングの描画**
 	// rankingManager.Render();
 	// シーン遷移のDebug処理
 	if (System::GetInput()->TriggerKey(DIK_RETURN)) {
-		sceneManager_->ChangeScene("TITLE");
+		sceneManager_->ChangeScene("TEST");
 	}
 
 #endif // _DEBUG

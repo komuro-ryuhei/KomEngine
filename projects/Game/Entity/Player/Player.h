@@ -30,6 +30,7 @@ public:
 public:
 	float GetRadius() const;
 	Transform GetTransform() const;
+	Vector3 GetTranslate() const;
 	std::vector<std::unique_ptr<PlayerBullet>>& GetBullets();
 
 	void SetRotate(Vector3& rotate);

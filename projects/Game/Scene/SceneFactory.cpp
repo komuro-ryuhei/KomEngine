@@ -6,6 +6,8 @@ std::unique_ptr<IScene> SceneFactory::CreateScene(const std::string& sceneName) 
 		return std::make_unique<TitleScene>();
 	} else if (sceneName == "GAME") {
 		return std::make_unique<GameScene>();
+	} else if (sceneName == "TEST") {
+		return std::make_unique<BossTestScene>();
 	}
 	return nullptr;
 }

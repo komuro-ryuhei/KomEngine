@@ -41,37 +41,63 @@ void Object3d::Init(BlendType type) {
 
 void Object3d::Update() {
 
+	// スケール行列（自身のローカルスケール）
 	Matrix4x4 scaleMatrix = MyMath::MakeScaleMatrix(transform_.scale);
-	Matrix4x4 rotateMatrix;
 
+	// 回転行列
+	Matrix4x4 rotateMatrix;
 	if (fromBlender_) {
-		// Blender座標系から来た回転
 		rotateMatrix = MyMath::MakeRotateMatrixFromBlenderEuler(transform_.rotate);
 	} else {
-		// 通常の回転
 		Matrix4x4 rotX = MyMath::MakeRotateXMatrix(transform_.rotate.x);
 		Matrix4x4 rotY = MyMath::MakeRotateYMatrix(transform_.rotate.y);
 		Matrix4x4 rotZ = MyMath::MakeRotateZMatrix(transform_.rotate.z);
 		rotateMatrix = MyMath::Multiply(rotX, MyMath::Multiply(rotY, rotZ));
 	}
 
+	// 平行移動行列
 	Matrix4x4 translateMatrix = MyMath::MakeTranslateMatrix(transform_.translate);
 
-	Matrix4x4 worldMatrix = MyMath::Multiply(scaleMatrix, MyMath::Multiply(rotateMatrix, translateMatrix));
+	// ローカル行列 = R * T
+	Matrix4x4 localMatrix = MyMath::Multiply(rotateMatrix, translateMatrix);
 
-	Matrix4x4 projectionMatrix = MyMath::MakePerspectiveFovMatrix(0.45f, float(winApp_->GetWindowWidth()) / float(winApp_->GetWindowHeight()), 0.1f, 100.0f);
+	// 親がいるなら：親のスケールを含まないワールド行列と合成
+	if (parent_) {
+		Matrix4x4 parentMatrix = parent_->GetWorldMatrix();
+
+		// スケール成分を除去（各軸を正規化）
+		for (int i = 0; i < 3; ++i) {
+			Vector3 axis = { parentMatrix.m[0][i], parentMatrix.m[1][i], parentMatrix.m[2][i] };
+			axis = MyMath::Normalize(axis);
+			parentMatrix.m[0][i] = axis.x;
+			parentMatrix.m[1][i] = axis.y;
+			parentMatrix.m[2][i] = axis.z;
+		}
+
+		worldMatrix_ = MyMath::Multiply(scaleMatrix, MyMath::Multiply(localMatrix, parentMatrix));
+	} else {
+		worldMatrix_ = MyMath::Multiply(scaleMatrix, localMatrix);
+	}
+
+	// ビュー投影行列の生成
+	Matrix4x4 projectionMatrix = MyMath::MakePerspectiveFovMatrix(
+		0.45f,
+		float(winApp_->GetWindowWidth()) / float(winApp_->GetWindowHeight()),
+		0.1f,
+		100.0f);
 
 	Matrix4x4 worldViewProjectionMatrix;
 	if (defaultCamera_) {
 		const Matrix4x4& viewProjectionMatrix = defaultCamera_->GetViewProjectionMatrix();
-		worldViewProjectionMatrix = MyMath::Multiply(worldMatrix, viewProjectionMatrix);
+		worldViewProjectionMatrix = MyMath::Multiply(worldMatrix_, viewProjectionMatrix);
 	} else {
-		worldViewProjectionMatrix = worldMatrix;
+		worldViewProjectionMatrix = worldMatrix_;
 	}
 
+	// 定数バッファへの書き込み
 	transformationMatrixData->WVP = worldViewProjectionMatrix;
-	transformationMatrixData->World = worldMatrix;
-	transformationMatrixData->WorldInverseTranspose = MyMath::Transpose4x4(MyMath::Inverse4x4(worldMatrix));
+	transformationMatrixData->World = worldMatrix_;
+	transformationMatrixData->WorldInverseTranspose = MyMath::Transpose4x4(MyMath::Inverse4x4(worldMatrix_));
 }
 
 
@@ -133,6 +159,8 @@ void Object3d::SetScale(const Vector3& scale) { transform_.scale = scale; }
 void Object3d::SetTranslate(const Vector3& translate) { transform_.translate = translate; }
 void Object3d::SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
 
+float Object3d::GetRadius() const { return radius_; }
+
 void Object3d::SetTransform(const Transform& transform) {
 
 	//
@@ -155,3 +183,11 @@ void Object3d::SetEnvironmentTexture(const std::string& filePath) {
 void Object3d::SetFromBlender(bool flag) { fromBlender_ = flag; }
 
 Camera* Object3d::GetDefaultCamera() const { return defaultCamera_; }
+
+void Object3d::SetParent(Object3d* parent) {
+	parent_ = parent;
+}
+
+Object3d* Object3d::GetParent() const {
+	return parent_;
+}

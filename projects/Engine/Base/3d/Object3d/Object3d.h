@@ -40,11 +40,19 @@ public: // メンバ関数
 	void SetTranslate(const Vector3& translate);
 	void SetRotate(const Vector3& rotate);
 	void SetTransform(const Transform& transform);
+	void SetRadius(float radius) { radius_ = radius; }
 
 	// getter
 	Vector3 GetScale() const;
 	Vector3 GetRotate() const;
 	Vector3 GetTranslate() const;
+	float GetRadius() const;
+
+	// 親子関係の追加
+	void SetParent(Object3d* parent);
+	Object3d* GetParent() const;
+	// ワールド行列の取得（他のクラスでも使いたくなる）
+	const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
 
 	// 環境マップの映り込みを設定するか
 	void SetEnvironmentTexture(const std::string& filePath);
@@ -87,6 +95,12 @@ private:
 	Transform transform_;
 	Transform cameraTransform;
 
+	// 半径
+	float radius_ = 1.0f;
+
 private:
 	bool fromBlender_ = false;
+
+	Object3d* parent_ = nullptr;
+	Matrix4x4 worldMatrix_;
 };
