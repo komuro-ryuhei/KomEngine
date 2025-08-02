@@ -73,6 +73,7 @@
     <ClCompile Include="Engine\Base\Loader\Loader.cpp" />
     <ClCompile Include="Engine\lib\Network\Network.cpp" />
     <ClCompile Include="Engine\lib\Network\RankingManager.cpp" />
+    <ClCompile Include="BossEnemy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\lib\ComPtr\ComPtr.h" />
@@ -124,11 +125,11 @@
     <ClInclude Include="Game\Entity\Player\PlayerBullet.h" />
     <ClInclude Include="Game\Entity\Enemy\Enemy.h" />
     <ClInclude Include="Game\Entity\Enemy\EnemyBullet.h" />
-    <ClInclude Include="Loader.h" />
     <ClInclude Include="Engine\Base\3d\Skybox\Skybox.h" />
     <ClInclude Include="Engine\Base\Loader\Loader.h" />
     <ClInclude Include="Engine\lib\Network\Network.h" />
     <ClInclude Include="Engine\lib\Network\RankingManager.h" />
+    <ClInclude Include="BossEnemy.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

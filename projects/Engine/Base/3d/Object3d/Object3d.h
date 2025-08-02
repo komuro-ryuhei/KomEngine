@@ -30,8 +30,6 @@ public: // メンバ関数
 
 	void Draw();
 
-	// void PreDraw();
-
 	void ImGuiDebug();
 
 	// setter
@@ -67,13 +65,15 @@ private:
 	// カメラ
 	Camera* camera_ = nullptr;
 	Camera* defaultCamera_ = nullptr;
+	
+	//パイプライン
+	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
 
 	// 座標変換用
-	// Sprite用のTransformationMatrix用のリソースを作る
 	ComPtr<ID3D12Resource> transformationMatrixResource;
 	TransformationMatrix* transformationMatrixData = nullptr;
 
-	// 環境マップ
+	// 環境マップ用変数
 	struct ObjectParams {
 		bool useEnvironmentMap;
 		Vector3 padding_;
@@ -86,9 +86,6 @@ private:
 	// 座標情報
 	Transform transform_;
 	Transform cameraTransform;
-
-	//
-	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
 
 private:
 	bool fromBlender_ = false;
