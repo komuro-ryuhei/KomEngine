@@ -2,28 +2,6 @@
     "name": "scene",
     "objects": [
         {
-            "type": "MESH",
-            "name": "Cube",
-            "visible": false,
-            "transform": {
-                "translation": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "rotation": [
-                    0.0,
-                    -0.0,
-                    0.0
-                ],
-                "scaling": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            }
-        },
-        {
             "type": "LIGHT",
             "name": "Light",
             "transform": {
@@ -67,10 +45,31 @@
         },
         {
             "type": "MESH",
+            "name": "Cube",
+            "transform": {
+                "translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    -0.0,
+                    0.0
+                ],
+                "scaling": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "type": "MESH",
             "name": "Sphere",
             "transform": {
                 "translation": [
-                    3.5085408687591553,
+                    2.1916069984436035,
                     0.0,
                     0.0
                 ],
@@ -89,54 +88,11 @@
         {
             "type": "MESH",
             "name": "Sphere.001",
-            "visible": false,
             "transform": {
                 "translation": [
-                    0.0,
-                    0.0,
-                    3.1475987434387207
-                ],
-                "rotation": [
-                    0.0,
-                    -0.0,
-                    0.0
-                ],
-                "scaling": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            }
-        },
-        {
-            "type": "MESH",
-            "name": "Sphere.002",
-            "transform": {
-                "translation": [
-                    -2.9427883625030518,
+                    -2.526109457015991,
                     0.0,
                     0.0
-                ],
-                "rotation": [
-                    0.0,
-                    -0.0,
-                    0.0
-                ],
-                "scaling": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            }
-        },
-        {
-            "type": "MESH",
-            "name": "Sphere.003",
-            "transform": {
-                "translation": [
-                    0.0,
-                    0.0,
-                    -2.4883456230163574
                 ],
                 "rotation": [
                     0.0,

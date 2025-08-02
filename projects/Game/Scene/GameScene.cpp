@@ -19,7 +19,7 @@ void GameScene::Init() {
 	// camera_->SetRotate({0.2f, 0.0f, 0.0f});
 	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
-	camera_->SetTranslate({ 0.0f, 3.0f, -30.0f });
+	camera_->SetTranslate({ 0.0f, 0.0f, -30.0f });
 
 	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
@@ -42,6 +42,7 @@ void GameScene::Init() {
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("terrain.obj");
 	ModelManager::GetInstance()->LoadModel("axis.obj");
+	ModelManager::GetInstance()->LoadModel("cube.obj");
 	ModelManager::GetInstance()->LoadModel("Player.obj");
 	ModelManager::GetInstance()->LoadModel("Enemy.obj");
 	ModelManager::GetInstance()->LoadModel("ground.obj");
@@ -187,7 +188,7 @@ void GameScene::Draw() {
 	// Debug用オブジェクトの描画
 	// object3d_->Draw();
 	// 地面
-	glassObject_->Draw();
+	// glassObject_->Draw();
 
 	// Player
 	player_->Draw();

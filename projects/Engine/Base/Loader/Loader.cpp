@@ -47,7 +47,7 @@ void Loader::Init(Camera* camera) {
 			std::string name = object.contains("name") ? object["name"].get<std::string>() : "";
 
 			if (name.find("Cube") != std::string::npos) {
-				objectData.fileName = "axis.obj";
+				objectData.fileName = "cube.obj";
 			} else if (name.find("Sphere") != std::string::npos) {
 				objectData.fileName = "sphere.obj";
 			} else if (name.find("Plane") != std::string::npos) {
@@ -69,9 +69,11 @@ void Loader::Init(Camera* camera) {
 			objectData.translate.z = (float)transform["translation"][1];
 
 			// Blender → 自作エンジン座標変換（回転）
-			objectData.rotate.x = -(float)transform["rotation"][0];
-			objectData.rotate.y = -(float)transform["rotation"][2];
-			objectData.rotate.z = (float)transform["rotation"][1];
+			constexpr float ToRadians = 3.14159265f / 180.0f;
+
+			objectData.rotate.x = -(float)transform["rotation"][0] * ToRadians;
+			objectData.rotate.y = -(float)transform["rotation"][2] * ToRadians;
+			objectData.rotate.z = (float)transform["rotation"][1] * ToRadians;
 
 			// 
 			objectData.scale.x = (float)transform["scaling"][0];
@@ -92,6 +94,7 @@ void Loader::Init(Camera* camera) {
 		newObject->SetTranslate(objectData.translate);
 		newObject->SetRotate(objectData.rotate);
 		newObject->SetScale(objectData.scale);
+		newObject->SetFromBlender(true);
 
 		if (!objectData.fileName.empty()) {
 			newObject->SetModel(objectData.fileName);

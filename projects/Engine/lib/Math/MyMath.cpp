@@ -331,6 +331,18 @@ Matrix4x4 MyMath::MakeRotateMatrix(Vector3 rotate) {
 	return rotateXYZMatrix;
 }
 
+// 
+Matrix4x4 MyMath::MakeRotateMatrixFromBlenderEuler(Vector3 blenderRotate) {
+	// Blenderの回転順：X → Y → Z（ローカル軸回転）
+	Matrix4x4 rotX = MyMath::MakeRotateXMatrix(blenderRotate.x);
+	Matrix4x4 rotY = MyMath::MakeRotateYMatrix(blenderRotate.y);
+	Matrix4x4 rotZ = MyMath::MakeRotateZMatrix(blenderRotate.z);
+
+	// Blenderの回転順に合わせる：Z * Y * X
+	Matrix4x4 rotateMatrix = MyMath::Multiply(rotZ, MyMath::Multiply(rotY, rotX));
+	return rotateMatrix;
+}
+
 // 3次元アフィン変換行列
 Matrix4x4 MyMath::MakeAffineMatrix(Vector3 scale, Vector3 rotate, Vector3 translate) {
 	Matrix4x4 affineMatrix;

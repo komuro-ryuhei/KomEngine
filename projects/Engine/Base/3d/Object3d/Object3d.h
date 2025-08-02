@@ -48,7 +48,11 @@ public: // メンバ関数
 	Vector3 GetRotate() const;
 	Vector3 GetTranslate() const;
 
+	// 環境マップの映り込みを設定するか
 	void SetEnvironmentTexture(const std::string& filePath);
+
+	// 
+	void SetFromBlender(bool flag);
 
 	// getter
 	Camera* GetDefaultCamera() const;
@@ -85,4 +89,7 @@ private:
 
 	//
 	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
+
+private:
+	bool fromBlender_ = false;
 };

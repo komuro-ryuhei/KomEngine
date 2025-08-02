@@ -41,8 +41,26 @@ void Object3d::Init(BlendType type) {
 
 void Object3d::Update() {
 
-	Matrix4x4 worldMatrix = MyMath::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+	Matrix4x4 scaleMatrix = MyMath::MakeScaleMatrix(transform.scale);
+	Matrix4x4 rotateMatrix;
+
+	if (fromBlender_) {
+		// Blender座標系から来た回転
+		rotateMatrix = MyMath::MakeRotateMatrixFromBlenderEuler(transform.rotate);
+	} else {
+		// 通常の回転
+		Matrix4x4 rotX = MyMath::MakeRotateXMatrix(transform.rotate.x);
+		Matrix4x4 rotY = MyMath::MakeRotateYMatrix(transform.rotate.y);
+		Matrix4x4 rotZ = MyMath::MakeRotateZMatrix(transform.rotate.z);
+		rotateMatrix = MyMath::Multiply(rotX, MyMath::Multiply(rotY, rotZ));
+	}
+
+	Matrix4x4 translateMatrix = MyMath::MakeTranslateMatrix(transform.translate);
+
+	Matrix4x4 worldMatrix = MyMath::Multiply(scaleMatrix, MyMath::Multiply(rotateMatrix, translateMatrix));
+
 	Matrix4x4 projectionMatrix = MyMath::MakePerspectiveFovMatrix(0.45f, float(winApp_->GetWindowWidth()) / float(winApp_->GetWindowHeight()), 0.1f, 100.0f);
+
 	Matrix4x4 worldViewProjectionMatrix;
 	if (defaultCamera_) {
 		const Matrix4x4& viewProjectionMatrix = defaultCamera_->GetViewProjectionMatrix();
@@ -50,11 +68,12 @@ void Object3d::Update() {
 	} else {
 		worldViewProjectionMatrix = worldMatrix;
 	}
+
 	transformationMatrixData->WVP = worldViewProjectionMatrix;
 	transformationMatrixData->World = worldMatrix;
-	transformationMatrixData->WorldInverseTranspose = MyMath::Inverse4x4(worldMatrix);
-	transformationMatrixData->WorldInverseTranspose = MyMath::Transpose4x4(transformationMatrixData->WorldInverseTranspose);
+	transformationMatrixData->WorldInverseTranspose = MyMath::Transpose4x4(MyMath::Inverse4x4(worldMatrix));
 }
+
 
 void Object3d::Draw() {
 
@@ -133,5 +152,6 @@ void Object3d::SetEnvironmentTexture(const std::string& filePath) {
 	}
 }
 
+void Object3d::SetFromBlender(bool flag) { fromBlender_ = flag; }
 
 Camera* Object3d::GetDefaultCamera() const { return defaultCamera_; }
