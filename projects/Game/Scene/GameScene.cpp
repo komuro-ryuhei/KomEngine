@@ -167,6 +167,8 @@ void GameScene::Update() {
 		enemy->Update();
 	}
 
+	loader_->Update();
+
 	// 当たり判定
 	CheckCollisions();
 
@@ -208,7 +210,7 @@ void GameScene::Draw() {
 		enemy->Draw();
 	}
 
-	// loader_->Draw();
+	loader_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 }

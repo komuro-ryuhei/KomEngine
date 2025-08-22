@@ -11,17 +11,24 @@ void PlayerBullet::Init(Camera* camera, Object3d* object3d) {
 	object3d_->Init(BlendType::BLEND_NONE);
 	object3d_->SetDefaultCamera(camera_);
 
-	object3d_->SetScale({0.1f, 0.1f, 0.1f});
+	object3d_->SetScale({ 0.1f, 0.1f, 0.1f });
 }
 
 void PlayerBullet::Update() {
 
-	// 
-	object3d_->Update();
-
+	// 前進
 	transform_.translate += direction_ * speed_;
 	object3d_->SetTranslate(transform_.translate);
+
+	// 寿命タイマー
+	lifeTimer_ += 1.0f / 60.0f;
+	if (lifeTimer_ >= lifeTime_) {
+		isAlive_ = false;
+	}
+
+	object3d_->Update();
 }
+
 
 void PlayerBullet::Draw() { object3d_->Draw(); }
 
@@ -46,3 +53,5 @@ void PlayerBullet::SetTranlate(Vector3 translate) {
 }
 
 void PlayerBullet::SetDirection(const Vector3& direction) { direction_ = direction; }
+
+bool PlayerBullet::IsAlive() const { return isAlive_; }

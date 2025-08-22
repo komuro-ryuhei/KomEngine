@@ -22,6 +22,7 @@ public:
 	Vector3 GetTranslate() const;
 	void SetTranlate(Vector3 translate);
 	void SetDirection(const Vector3& direction);
+	bool IsAlive() const;
 
 private:
 	Camera* camera_ = nullptr;
@@ -35,4 +36,8 @@ private:
 	Vector3 direction_;
 
 	float radius_ = 0.8f;
+
+	float lifeTime_ = 5.0f;  // 寿命(秒)
+	float lifeTimer_ = 0.0f; // 経過時間(秒)
+	bool  isAlive_ = true;   // 生存フラグ
 };

@@ -72,9 +72,14 @@ void Player::Update() {
 	}
 
 	// 弾更新と描画
-	for (auto it = bulletObjects_.begin(); it != bulletObjects_.end();) {
+	for (auto it = bulletObjects_.begin(); it != bulletObjects_.end(); ) {
 		(*it)->Update();
-		++it;
+		(*it)->ImGuiDebug();
+		if (!(*it)->IsAlive()) {
+			it = bulletObjects_.erase(it);
+		} else {
+			++it;
+		}
 	}
 
 	object3d_->Update();
