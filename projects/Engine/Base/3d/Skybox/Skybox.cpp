@@ -41,7 +41,7 @@ void Skybox::Init(const std::string& filename) {
 	transformationMatrixData->World = MyMath::MakeIdentity4x4();
 
 	transform = {
-		{100.0f, 100.0f, 100.0f},
+		{30.0f, 30.0f, 30.0f},
 		{0.0f, 0.0f, 0.0f},
 		{0.0f, 0.0f, 0.0f},
 	};
@@ -157,13 +157,13 @@ void Skybox::ImGuiDebug() {
 #ifdef _DEBUG
 
 	ImGui::Begin("Skybox");
-	
+
 	ImGui::SliderFloat3("Scale", &transform.scale.x, 0.0f, 100.0f);
 	ImGui::SliderAngle("Rotate X", &transform.rotate.x);
 	ImGui::SliderAngle("Rotate Y", &transform.rotate.y);
 	ImGui::SliderAngle("Rotate Z", &transform.rotate.z);
 	ImGui::DragFloat3("Translate", &transform.translate.x, 0.01f);
-	
+
 	ImGui::End();
 
 #endif // _DEBUG

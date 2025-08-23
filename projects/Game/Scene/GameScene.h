@@ -97,16 +97,6 @@ private:
 	// 
 	std::unique_ptr<Loader> loader_ = nullptr;
 
-	// --- 回転管理の追加 ---
-	bool isRotating_ = false;
-	float startRotationY_ = 0.0f;
-	float targetRotationY_ = 0.0f;
-	float rotateStep_ = 0.0f;       // 1フレームごとの回転量
-	int rotateFrameCount_ = 0;      // 今のフレーム数
-	int rotateFrameMax_ = 30;       // 30フレームで回転
-
-	bool hasSpawnedAfterRotate_ = false;
-
 	// nerwork(エラー出るためコメントアウト中)
 	// RankingManager rankingManager;
 

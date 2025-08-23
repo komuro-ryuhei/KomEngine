@@ -121,6 +121,12 @@ void GameScene::Init() {
 
 void GameScene::Update() {
 
+	// 背景やカメラなどの更新
+	camera_->Update();
+	object3d_->Update();
+	glassObject_->Update();
+	skybox_->Update();
+
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 playerRot = player_->GetTransform().rotate;
 
@@ -130,35 +136,10 @@ void GameScene::Update() {
 		camera_->SetRotate(playerRot);
 	}
 
-	camera_->Update();
-
-	object3d_->Update();
-	glassObject_->Update();
-	skybox_->Update();
-
 	// Player
 	player_->Update();
 
-	if (isRotating_) {
-
-		playerRot.y += rotateStep_;
-		rotateFrameCount_++;
-
-		if (rotateFrameCount_ >= rotateFrameMax_) {
-			playerRot.y = targetRotationY_;
-			isRotating_ = false;
-		}
-
-		player_->SetRotate(playerRot);
-		camera_->SetBaseRot(playerRot);
-
-		if (!isRotating_ && !hasSpawnedAfterRotate_) {
-			SpawnEnemies();
-			hasSpawnedAfterRotate_ = true;
-		}
-	}
-
-	if (!isFighting_ && !isRotating_) {
+	if (!isFighting_) {
 		player_->RailMove();
 	}
 
@@ -192,7 +173,7 @@ void GameScene::Update() {
 
 void GameScene::Draw() {
 
-	// 
+	// 背景(スカイボックス)の描画
 	skybox_->Draw();
 
 	// sprite_->Draw();
@@ -202,15 +183,16 @@ void GameScene::Draw() {
 	// 地面
 	// glassObject_->Draw();
 
-	// Player
+	// プレイヤーの描画
 	player_->Draw();
 
-	// Enemy
+	// エネミーの描画
 	for (auto& enemy : enemies_) {
 		enemy->Draw();
 	}
 
-	loader_->Draw();
+	// ステージエディターの描画
+	// loader_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 }
@@ -484,17 +466,5 @@ void GameScene::EnemySpawnTrigger() {
 	if (isFighting_ && enemies_.empty()) {
 		isFighting_ = false;
 		currentTriggerIndex_++;
-
-		if (currentTriggerIndex_ == 1) {
-			isRotating_ = true;
-			hasSpawnedAfterRotate_ = false;
-
-			startRotationY_ = player_->GetTransform().rotate.y;
-			targetRotationY_ = startRotationY_ + MyMath::DegreeToRadian(90.0f); // 90度
-
-			rotateFrameCount_ = 0;
-			rotateFrameMax_ = 30;  // 30フレームで回転
-			rotateStep_ = (targetRotationY_ - startRotationY_) / (float)rotateFrameMax_;
-		}
 	}
 }
