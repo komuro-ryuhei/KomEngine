@@ -244,6 +244,7 @@ void GameScene::ImGuiDebug() {
 void GameScene::ChangePostEffect() {
 
 #ifdef _DEBUG
+
 	// ポストエフェクトの選択肢
 	static const char* effectItems[] = {
 		"None", "Grayscale", "Vignetting", "Smoothing", "GaussinanFilter", "RadialBlur", "Random","Outline",
