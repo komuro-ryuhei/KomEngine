@@ -101,9 +101,8 @@ void GameScene::Init() {
 	player_ = std::make_unique<Player>();
 	player_->Init(camera_.get());
 
-	// 敵の出現トリガー（例：Z=5.0f）
-	enemyTriggers_.push_back({ {0.0f, 0.0f, 5.0f}, false });  // Z方向
-	enemyTriggers_.push_back({ {10.0f, 0.0f, 5.0f}, false }); // X方向に回転したあとの位置
+	// 敵の出現トリガー
+	enemyTriggers_.push_back({ {0.0f, 0.0f, 5.0f}, false }); // Z方向
 
 	moonLightEffect_ = std::make_unique<ParticleEmitter>();
 	moonLightEffect_->Init("moonLight", { 0.0f, 0.0f, 10.0f }, 1);

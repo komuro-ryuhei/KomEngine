@@ -1,5 +1,4 @@
 #pragma once
-
 #include <windows.h>
 
 #define DIRECTINPUT_VERSION 0x0800
@@ -40,23 +39,54 @@ public: // メンバ関数
 	/// <summary>
 	/// キーの押下をチェック
 	/// </summary>
-	/// <param name="keyNumber">キー番号</param>
-	/// <returns></returns>
 	bool PushKey(BYTE keyNumber);
-
 	/// <summary>
 	/// キーのトリガーをチェック
 	/// </summary>
-	/// <param name="ketNumber">キー番号</param>
-	/// <returns></returns>
 	bool TriggerKey(BYTE ketNumber);
+
+	/// <summary>
+	/// マウスボタンの押下をチェック
+	/// </summary>
+	bool PushMouse(int button) const;
+	/// <summary>
+	/// マウスボタンのトリガーをチェック
+	/// </summary>
+	bool TriggerMouse(int button) const;
+
+	/// <summary>
+	/// マウスの移動量を取得
+	/// </summary>
+	POINT GetMouseDelta() const;
+	/// <summary>
+	/// マウスホイールの回転量を取得
+	/// </summary>
+	LONG  GetWheelDelta() const;
+
+	/// <summary>
+	/// マウスを中央に固定する
+	/// </summary>
+	void  SetMouseCenterLock(bool enable); // setter
+	bool  IsMouseCenterLocked() const { return centerLock_; } // getter
 
 private:
 
 	ComPtr<IDirectInput8> directInput = nullptr;
-	ComPtr<IDirectInputDevice8> keyboard;
+	ComPtr<IDirectInputDevice8> keyboard = nullptr;
+	ComPtr<IDirectInputDevice8> mouse = nullptr;
+
 	// 全キーの入力情報を取得する
 	BYTE key[256] = {};
 	// 前回の全キー状態
 	BYTE preKey[256] = {};
+
+	DIMOUSESTATE2 mouseState_ = {};
+	DIMOUSESTATE2 prevMouseState_ = {};
+
+	// cursor lock
+	bool   centerLock_ = false;
+	WinApp* winApp_ = nullptr;
+
+	// helpers
+	void CenterCursorToClient();
 };
