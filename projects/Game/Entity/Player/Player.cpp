@@ -56,6 +56,9 @@ void Player::Init(Camera* camera) {
 	reticleSprite_ = std::make_unique<Sprite>();
 	reticleSprite_->Init("./Resources/images/uvChecker.png", BlendType::BLEND_NONE);
 	reticleSprite_->SetSize({ 50.0f, 50.0f });
+	// 初期位置を画面中央へ
+	reticleSprite_->SetAnchorPoint({ 0.5f, 0.5f });
+	reticleSprite_->SetPosition({ 1280.0f * 0.5f, 720.0f * 0.5f });
 }
 
 void Player::Update() {
@@ -121,7 +124,7 @@ void Player::ImGuiDebug() {
 
 void Player::Attack() {
 
-	if (System::TriggerKey(DIK_SPACE)) {
+	if (System::GetInput()->TriggerMouse(0)) {
 
 		// 弾の見た目（Object3d）を新規作成
 		Object3d* bulletObject = new Object3d();
@@ -202,27 +205,49 @@ void Player::RotateY90() {
 
 void Player::UpdateReticleSprite() {
 
-	// レティクル操作（十字キー）
-	Vector2 reticlePos = reticleSprite_->GetPosition();
-	float moveSpeed = 10.0f;
+	//// レティクル操作（十字キー）
+	//Vector2 reticlePos = reticleSprite_->GetPosition();
+	//float moveSpeed = 10.0f;
 
-	if (System::PushKey(DIK_LEFT)) {
-		reticlePos.x -= moveSpeed;
-	}
-	if (System::PushKey(DIK_RIGHT)) {
-		reticlePos.x += moveSpeed;
-	}
-	if (System::PushKey(DIK_UP)) {
-		reticlePos.y -= moveSpeed;
-	}
-	if (System::PushKey(DIK_DOWN)) {
-		reticlePos.y += moveSpeed;
-	}
+	//if (System::PushKey(DIK_LEFT)) {
+	//	reticlePos.x -= moveSpeed;
+	//}
+	//if (System::PushKey(DIK_RIGHT)) {
+	//	reticlePos.x += moveSpeed;
+	//}
+	//if (System::PushKey(DIK_UP)) {
+	//	reticlePos.y -= moveSpeed;
+	//}
+	//if (System::PushKey(DIK_DOWN)) {
+	//	reticlePos.y += moveSpeed;
+	//}
 
-	// 画面外に出ないよう制限（1280x720前提）
+	//// 画面外に出ないよう制限（1280x720前提）
+	//reticlePos.x = std::clamp(reticlePos.x, 0.0f, 1280.0f);
+	//reticlePos.y = std::clamp(reticlePos.y, 0.0f, 720.0f);
+	//reticleSprite_->SetPosition(reticlePos);
+
+	//reticleSprite_->Update();
+
+	// 1) OSカーソルのスクリーン座標を取得
+	POINT pt;
+	GetCursorPos(&pt);
+
+	// 2) ゲームウィンドウのクライアント座標系に変換
+	HWND hwnd = System::GetWinApp()->GetHwnd(); // ← 取得できるAPIあり
+	ScreenToClient(hwnd, &pt);
+
+	// 3) （必要なら）アンカーを中央に
+	//    Init時など一度だけ:
+	//    reticleSprite_->SetAnchorPoint({0.5f, 0.5f});
+
+	// 4) そのままレティクルへ反映
+	Vector2 reticlePos = { (float)pt.x, (float)pt.y };
+
+	// 5) クランプ（安全のため）
 	reticlePos.x = std::clamp(reticlePos.x, 0.0f, 1280.0f);
 	reticlePos.y = std::clamp(reticlePos.y, 0.0f, 720.0f);
-	reticleSprite_->SetPosition(reticlePos);
 
+	reticleSprite_->SetPosition(reticlePos);
 	reticleSprite_->Update();
 }
