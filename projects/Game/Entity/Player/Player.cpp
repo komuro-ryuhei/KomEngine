@@ -4,6 +4,7 @@
 #include "Engine/Base/System/System.h"
 
 #include <iostream>
+#include <algorithm>
 
 float Player::GetRadius() const { return radius_; }
 
@@ -63,6 +64,9 @@ void Player::Init(Camera* camera) {
 
 void Player::Update() {
 
+	// 連射タイマーを減算
+	autofireTimer_ = std::max(0.0f, autofireTimer_ - 1.0f / 60.0f);
+
 	Attack();
 
 	// 無敵タイマー処理
@@ -111,6 +115,8 @@ void Player::Draw() {
 
 void Player::ImGuiDebug() {
 
+#ifdef _DEBUG
+
 	ImGui::Begin("Player");
 
 	ImGui::SliderAngle("rotateX", &transform_.rotate.x, 0.1f);
@@ -120,70 +126,21 @@ void Player::ImGuiDebug() {
 	ImGui::DragInt("HP", &hp_);
 
 	ImGui::End();
+
+#endif // _DEBUG
 }
 
 void Player::Attack() {
 
-	if (System::GetInput()->TriggerMouse(0)) {
-
-		// 弾の見た目（Object3d）を新規作成
-		Object3d* bulletObject = new Object3d();
-		bulletObject->Init(BlendType::BLEND_NONE);
-		bulletObject->SetModel("sphere.obj");
-		bulletObject->SetDefaultCamera(camera_);
-
-		auto newBullet = std::make_unique<PlayerBullet>();
-		newBullet->Init(camera_, bulletObject);
-		newBullet->SetTranlate(transform_.translate);
-
-		Vector3 direction;
-
-		if (reticleSprite_) {
-			Matrix4x4 viewMatrix = camera_->GetViewMatrix();
-			Matrix4x4 projMatrix = camera_->GetProjectionMatrix();
-			Matrix4x4 vpMatrix = MyMath::Multiply(viewMatrix, projMatrix);
-			Matrix4x4 invVPMatrix = MyMath::Inverse4x4(vpMatrix);
-
-			Matrix4x4 viewportMatrix = MyMath::MakeViewportMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f);
-			Matrix4x4 invViewportMatrix = MyMath::Inverse4x4(viewportMatrix);
-
-			Vector2 spritePos = reticleSprite_->GetCenterPosition();
-			Vector3 screenNear = { spritePos.x, spritePos.y, 0.0f };
-			Vector3 screenFar = { spritePos.x, spritePos.y, 1.0f };
-
-			Vector3 ndcNear = MyMath::Transform(screenNear, invViewportMatrix);
-			Vector3 ndcFar = MyMath::Transform(screenFar, invViewportMatrix);
-
-			Vector3 worldNear = MyMath::Transform(ndcNear, invVPMatrix);
-			Vector3 worldFar = MyMath::Transform(ndcFar, invVPMatrix);
-
-			direction = worldFar - worldNear;
-		} else {
-			direction = { 0.0f, 0.0f, 1.0f };
-		}
-
-		MyMath::Normalize(direction);
-		newBullet->SetDirection(direction);
-		bulletObjects_.emplace_back(std::move(newBullet));
-	}
-}
-
-void Player::Move() {
-
-	if (System::PushKey(DIK_A)) {
-		transform_.translate.x -= velocity_;
+	// --- 右クリック：単発 --- //
+	if (System::GetInput()->TriggerMouse(1)) {
+		SpawnBullet();
 	}
 
-	if (System::PushKey(DIK_D)) {
-		transform_.translate.x += velocity_;
-	}
-
-	if (System::PushKey(DIK_W)) {
-		transform_.translate.y += velocity_;
-	}
-
-	if (System::PushKey(DIK_S)) {
-		transform_.translate.y -= velocity_;
+	// --- 左クリック：長押し連射 --- //
+	if (System::GetInput()->PushMouse(0) && autofireTimer_ <= 0.0f) {
+		SpawnBullet();
+		autofireTimer_ = autofireInterval_;
 	}
 }
 
@@ -203,48 +160,62 @@ void Player::RotateY90() {
 	}
 }
 
+void Player::SpawnBullet() {
+	// 弾の見た目（Object3d）を新規作成
+	Object3d* bulletObject = new Object3d();
+	bulletObject->Init(BlendType::BLEND_NONE);
+	bulletObject->SetModel("sphere.obj");
+	bulletObject->SetDefaultCamera(camera_);
+
+	auto newBullet = std::make_unique<PlayerBullet>();
+	newBullet->Init(camera_, bulletObject);
+	newBullet->SetTranlate(transform_.translate);
+
+	Vector3 direction;
+
+	if (reticleSprite_) {
+		Matrix4x4 viewMatrix = camera_->GetViewMatrix();
+		Matrix4x4 projMatrix = camera_->GetProjectionMatrix();
+		Matrix4x4 vpMatrix = MyMath::Multiply(viewMatrix, projMatrix);
+		Matrix4x4 invVPMatrix = MyMath::Inverse4x4(vpMatrix);
+
+		Matrix4x4 viewportMatrix = MyMath::MakeViewportMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f);
+		Matrix4x4 invViewportMatrix = MyMath::Inverse4x4(viewportMatrix);
+
+		Vector2 spritePos = reticleSprite_->GetCenterPosition();
+		Vector3 screenNear = { spritePos.x, spritePos.y, 0.0f };
+		Vector3 screenFar = { spritePos.x, spritePos.y, 1.0f };
+
+		Vector3 ndcNear = MyMath::Transform(screenNear, invViewportMatrix);
+		Vector3 ndcFar = MyMath::Transform(screenFar, invViewportMatrix);
+
+		Vector3 worldNear = MyMath::Transform(ndcNear, invVPMatrix);
+		Vector3 worldFar = MyMath::Transform(ndcFar, invVPMatrix);
+
+		direction = worldFar - worldNear;
+	} else {
+		direction = { 0.0f, 0.0f, 1.0f };
+	}
+
+	MyMath::Normalize(direction);
+	newBullet->SetDirection(direction);
+	bulletObjects_.emplace_back(std::move(newBullet));
+}
+
 void Player::UpdateReticleSprite() {
 
-	//// レティクル操作（十字キー）
-	//Vector2 reticlePos = reticleSprite_->GetPosition();
-	//float moveSpeed = 10.0f;
-
-	//if (System::PushKey(DIK_LEFT)) {
-	//	reticlePos.x -= moveSpeed;
-	//}
-	//if (System::PushKey(DIK_RIGHT)) {
-	//	reticlePos.x += moveSpeed;
-	//}
-	//if (System::PushKey(DIK_UP)) {
-	//	reticlePos.y -= moveSpeed;
-	//}
-	//if (System::PushKey(DIK_DOWN)) {
-	//	reticlePos.y += moveSpeed;
-	//}
-
-	//// 画面外に出ないよう制限（1280x720前提）
-	//reticlePos.x = std::clamp(reticlePos.x, 0.0f, 1280.0f);
-	//reticlePos.y = std::clamp(reticlePos.y, 0.0f, 720.0f);
-	//reticleSprite_->SetPosition(reticlePos);
-
-	//reticleSprite_->Update();
-
-	// 1) OSカーソルのスクリーン座標を取得
+	// マウスカーソルのスクリーン座標を取得
 	POINT pt;
 	GetCursorPos(&pt);
 
-	// 2) ゲームウィンドウのクライアント座標系に変換
-	HWND hwnd = System::GetWinApp()->GetHwnd(); // ← 取得できるAPIあり
+	// ゲームウィンドウのクライアント座標系に変換
+	HWND hwnd = System::GetWinApp()->GetHwnd();
 	ScreenToClient(hwnd, &pt);
 
-	// 3) （必要なら）アンカーを中央に
-	//    Init時など一度だけ:
-	//    reticleSprite_->SetAnchorPoint({0.5f, 0.5f});
-
-	// 4) そのままレティクルへ反映
+	// レティクルへ反映
 	Vector2 reticlePos = { (float)pt.x, (float)pt.y };
 
-	// 5) クランプ（安全のため）
+	// クランプ
 	reticlePos.x = std::clamp(reticlePos.x, 0.0f, 1280.0f);
 	reticlePos.y = std::clamp(reticlePos.y, 0.0f, 720.0f);
 

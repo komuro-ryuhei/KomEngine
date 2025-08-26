@@ -44,7 +44,8 @@ public:
 
 private:
 	void Attack();
-	void Move();
+
+	void SpawnBullet();
 
 	void UpdateReticleSprite();
 
@@ -78,4 +79,8 @@ private:
 	// 無敵時間
 	bool isInvincible_ = false;
 	float invincibleTimer_ = 0.0f;
+
+	// 連射制御（左クリック長押し用）
+	float autofireInterval_ = 0.10f;
+	float autofireTimer_ = 0.0f;
 };
