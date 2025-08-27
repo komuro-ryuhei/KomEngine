@@ -103,6 +103,7 @@ void GameScene::Init() {
 
 	// 敵の出現トリガー
 	enemyTriggers_.push_back({ {0.0f, 0.0f, 5.0f}, false }); // Z方向
+	enemyTriggers_.push_back({ {0.0f, 0.0f, 10.0f}, false });
 
 	moonLightEffect_ = std::make_unique<ParticleEmitter>();
 	moonLightEffect_->Init("moonLight", { 0.0f, 0.0f, 10.0f }, 1);
@@ -145,7 +146,10 @@ void GameScene::Update() {
 	// Enemy
 	for (auto& enemy : enemies_) {
 		enemy->Update();
+		enemy->ImGuiDebug();
 	}
+
+	UpdateJumpWave(NowSec());
 
 	loader_->Update();
 
@@ -166,6 +170,17 @@ void GameScene::Update() {
 
 	// Particle描画ImGui
 	ParticleUpdate();
+
+#ifdef _DEBUG
+
+	ImGui::Begin("GameScene");
+
+	ImGui::DragFloat3("playerpos", &playerPos.x, 0.01f);
+
+	ImGui::End();
+
+#endif // _DEBUG
+
 
 #endif // _DEBUG
 }
@@ -253,6 +268,12 @@ void GameScene::ChangePostEffect() {
 #endif // _DEBUG
 }
 
+// ===== 時間取得ヘルパ =====
+double GameScene::NowSec() {
+	using clock = std::chrono::steady_clock;
+	auto now = clock::now().time_since_epoch();
+	return std::chrono::duration<double>(now).count();
+}
 
 void GameScene::ParticleUpdate() {
 
@@ -456,14 +477,95 @@ void GameScene::EnemySpawnTrigger() {
 		float distance = sqrt(diff.x * diff.x + diff.z * diff.z);
 
 		if (!trigger.triggered && distance < 1.0f) {
-			SpawnEnemies();
+			if (currentTriggerIndex_ == 0) {
+				// 第1フェーズ: 通常スポーン
+				SpawnEnemies();
+			} else if (currentTriggerIndex_ == 1) {
+				// 第2フェーズ: ジャンプ波（10体、0.5〜1.0秒ランダム）
+				StartJumpWave(10, 0.5f, 1.0f);
+			}
 			trigger.triggered = true;
 			isFighting_ = true;
 		}
 	}
 
-	if (isFighting_ && enemies_.empty()) {
+	// 全滅したら戦闘終了 → 次のトリガーへ
+	if (isFighting_ && !jumpWave_.active && enemies_.empty()) {
 		isFighting_ = false;
 		currentTriggerIndex_++;
 	}
+}
+
+// ====== ジャンプ波：開始 ======
+void GameScene::StartJumpWave(int count, float minIntervalSec, float maxIntervalSec) {
+
+	jumpWave_.active = true;
+	jumpWave_.toSpawn = count;
+	jumpWave_.spawned = 0;
+	jumpWave_.minInterval = minIntervalSec;
+	jumpWave_.maxInterval = maxIntervalSec;
+	jumpWave_.nextSpawnAt = NowSec();
+}
+
+// ====== ジャンプ波：毎フレーム更新 ======
+void GameScene::UpdateJumpWave(double nowSec) {
+
+	if (!jumpWave_.active) return;
+	if (jumpWave_.spawned >= jumpWave_.toSpawn) {
+		jumpWave_.active = false;
+		return;
+	}
+	if (nowSec < jumpWave_.nextSpawnAt) return;
+
+	// スポーン実行
+	SpawnOneJumpingEnemy();
+	jumpWave_.spawned++;
+
+	// 次回までのランダム間隔（0.5〜1.0秒）
+	std::uniform_real_distribution<float> dist(jumpWave_.minInterval, jumpWave_.maxInterval);
+	jumpWave_.nextSpawnAt = nowSec + dist(rng_);
+}
+
+// 横の画面外（左右どちらか）→ z=+12 の帯に着地（Xだけランダム）
+void GameScene::SpawnOneJumpingEnemy() {
+
+	// Object3D
+	auto enemyObj = std::make_unique<Object3d>();
+	enemyObj->Init(BlendType::BLEND_NONE);
+	enemyObj->SetModel("sphere.obj");
+	enemyObj->SetDefaultCamera(camera_.get());
+
+	// Enemy
+	auto enemy = std::make_unique<Enemy>();
+	enemy->Init(camera_.get(), enemyObj.get());
+	enemy->SetPlayer(player_.get());
+
+	const Vector3 playerPos = player_->GetTransform().translate;
+
+	// 着地点：zは前方固定(+12)、xだけランダム、y=0
+	const float kLandZOffset = 15.0f;   // 着地の前方距離
+	const float kSpawnSideX = 20.0f;   // 画面外(左右)の距離
+	std::uniform_real_distribution<float> xrand(-3.0f, 3.0f);
+	std::bernoulli_distribution          pickRight(0.5);
+
+	float targetX = playerPos.x + xrand(rng_);                // Xだけ散らす
+	float targetZ = playerPos.z + kLandZOffset;
+
+	// 左右どちらの画面外から来るか
+	bool fromRight = pickRight(rng_);
+	float spawnX = playerPos.x + (fromRight ? +kSpawnSideX : -kSpawnSideX);
+	float spawnZ = targetZ;                                 // 横から来るのでZは同じ帯
+
+	Vector3 targetPos = { targetX, 0.0f, targetZ };          // 必ずここで静止
+	Vector3 startPos = { spawnX,  0.0f, spawnZ };          // ここからジャンプ
+
+	// 放物線ジャンプ：必ず target に着地するように Enemy 側で制御
+	std::uniform_real_distribution<float> vy0(0.24f, 0.32f); // 見た目の弧用（未使用でもOK）
+	enemy->StartJump(startPos, targetPos, 0.25f, vy0(rng_));
+
+	enemyObj->SetTranslate(startPos);  // 生成位置をObject3dへ反映
+	enemyObj->Update();                // 行列更新
+
+	enemies_.emplace_back(std::move(enemy));
+	enemyObjects3d_.emplace_back(std::move(enemyObj));
 }

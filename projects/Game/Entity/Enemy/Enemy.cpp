@@ -27,6 +27,8 @@ void Enemy::Init(Camera* camera, Object3d* object3d) {
 
 void Enemy::Update() {
 
+	Move();
+
 	// 出現してからのタイマー進行
 	if (spawnWaitTimer_ < spawnWaitDuration_) {
 		spawnWaitTimer_++;
@@ -82,6 +84,56 @@ void Enemy::ImGuiDebug() {
 	}
 
 #endif // _DEBUG
+}
+
+// 必ず target に“放物線で”着地する StartJump
+void Enemy::StartJump(const Vector3& start, const Vector3& target,
+	float speedXZ /*1フレームあたりの水平速度*/, float /*unused*/)
+{
+	transform_.translate = start;
+
+	// 水平距離とT(到達フレーム数)を決める
+	Vector3 delta = target - start; delta.y = 0.0f;
+	float distXZ = MyMath::Length(delta);
+	int   T = std::max(1, (int)std::ceil(distXZ / std::max(0.0001f, speedXZ)));
+
+	// 垂直初速：Tフレーム後に y=0 に戻る v0y = -0.5 * g * T
+	float v0y = -0.5f * jumpParams_.gravity_ * (float)T;
+
+	// パラメータ保存
+	jumpParams_.isJumping_ = true;
+	jumpParams_.start_ = start;
+	jumpParams_.target_ = target;
+	jumpParams_.framesTotal_ = T;
+	jumpParams_.framesElapsed_ = 0;
+	jumpParams_.v0y_ = v0y;
+}
+
+// 放物運動の更新（ワープさせない）
+void Enemy::Move() {
+	if (!jumpParams_.isJumping_) return;
+
+	// 経過フレームを進める
+	jumpParams_.framesElapsed_++;
+	int   k = jumpParams_.framesElapsed_;
+	int   T = jumpParams_.framesTotal_;
+	float a = (float)k / (float)T;                 // 0→1
+
+	// 水平は start→target を等速で補間（Tフレームで必ず到達）
+	Vector3 p = jumpParams_.start_ + (jumpParams_.target_ - jumpParams_.start_) * a;
+	p.y = 0.0f;
+
+	// 垂直は等加速度運動: y = v0*t + 0.5*g*t^2
+	float y = jumpParams_.v0y_ * (float)k + 0.5f * jumpParams_.gravity_ * (float)k * (float)k;
+	if (y < 0.0f) y = 0.0f;                         // 数値誤差のクランプ
+
+	transform_.translate = { p.x, y, p.z };
+
+	// ちょうどTフレームで終了（誤差は最終フレームで吸着）
+	if (k >= T) {
+		transform_.translate = { jumpParams_.target_.x, 0.0f, jumpParams_.target_.z };
+		jumpParams_.isJumping_ = false;
+	}
 }
 
 void Enemy::OnHit() {

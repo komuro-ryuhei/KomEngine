@@ -138,7 +138,7 @@ void Player::Attack() {
 	}
 
 	// --- 左クリック：長押し連射 --- //
-	if (System::GetInput()->PushMouse(0) && autofireTimer_ <= 0.0f) {
+	if (System::GetInput()->PushMouse(1) && autofireTimer_ <= 0.0f) {
 		SpawnBullet();
 		autofireTimer_ = autofireInterval_;
 	}

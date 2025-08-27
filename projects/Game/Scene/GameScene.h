@@ -29,6 +29,18 @@ class GameScene : public IScene {
 		Clear
 	};
 
+	struct JumpWave {
+		bool active = false;
+		int toSpawn = 0;
+		int spawned = 0;
+		float minInterval = 0.5f;   // 秒
+		float maxInterval = 1.0f;   // 秒
+		double nextSpawnAt = 0.0;   // 絶対秒
+	};
+
+	JumpWave jumpWave_{};
+	std::mt19937 rng_{ std::random_device{}() };
+
 	GamePhase phase_ = GamePhase::FirstBattle;
 
 	std::chrono::steady_clock::time_point lastTime;
@@ -112,4 +124,12 @@ private:
 	void ParticleUpdate();
 	void SpawnEnemies();
 	void EnemySpawnTrigger();
+
+	// 敵のジャンプウェーブの処理
+	void StartJumpWave(int count, float minIntervalSec, float maxIntervalSec);
+	void UpdateJumpWave(double nowSec);
+	void SpawnOneJumpingEnemy();
+
+	// 時間取得ヘルパ
+	static double NowSec();
 };
