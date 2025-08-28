@@ -322,11 +322,11 @@ void GameScene::ParticleUpdate() {
 
 void GameScene::TriggerSpawnRandomPattern() {
 
-	std::bernoulli_distribution pick(0.5);
-	if (pick(rng_)) {
-		SpawnPatternScatter(6);
-	} else {
-		StartPatternSideJumpWave(10, 0.5f, 1.0f); // 10体を0.5〜1.0秒間隔
+	std::uniform_int_distribution<int> pick(0, 2); // 0:散開 1:横ジャンプ 2:上から落下
+	switch (pick(rng_)) {
+	case 0: SpawnPatternScatter(6); break;
+	case 1: StartPatternSideJumpWave(10, 0.5f, 1.0f); break;
+	case 2: SpawnPatternDropFall(5); break;
 	}
 }
 
@@ -338,6 +338,43 @@ void GameScene::StartPatternSideJumpWave(int count, float minSec, float maxSec) 
 
 	// 
 	StartJumpWave(count, minSec, maxSec);
+}
+
+// ★新パターン：真上から落下
+void GameScene::SpawnPatternDropFall(int count) {
+
+	std::uniform_real_distribution<float> distX(-5.0f, 5.0f);  // 散開と同じくらい
+	Vector3 playerPos = player_->GetTransform().translate;
+
+	const float landZ = playerPos.z + 15.0f;   // 前方帯に着地
+	const float startY = 12.0f;                // 落下開始の高さ
+	const int   T = 45;                   // 落下にかけるフレーム数(≒0.75s)
+
+	for (int i = 0; i < count; ++i) {
+		// Object3D
+		auto enemyObj = std::make_unique<Object3d>();
+		enemyObj->Init(BlendType::BLEND_NONE);
+		enemyObj->SetModel("Enemy.obj");
+		enemyObj->SetDefaultCamera(camera_.get());
+
+		// Enemy
+		auto enemy = std::make_unique<Enemy>();
+		enemy->Init(camera_.get(), enemyObj.get());
+		enemy->SetPlayer(player_.get());
+
+		float x = playerPos.x + distX(rng_);
+		Vector3 start = { x, startY, landZ };
+		Vector3 target = { x, 0.0f,  landZ };
+
+		enemy->StartDrop(start, target, T);
+
+		// 初期同期（生成フレームの描画崩れ防止）
+		enemyObj->SetTranslate(start);
+		enemyObj->Update();
+
+		enemies_.emplace_back(std::move(enemy));
+		enemyObjects3d_.emplace_back(std::move(enemyObj));
+	}
 }
 
 void GameScene::CheckCollisions() {

@@ -109,30 +109,77 @@ void Enemy::StartJump(const Vector3& start, const Vector3& target,
 	jumpParams_.v0y_ = v0y;
 }
 
+void Enemy::StartDrop(const Vector3& start, const Vector3& target, int frames) {
+
+	transform_.translate = start;
+
+	drop_.active = true;
+	drop_.start = start;
+	drop_.target = target;
+	drop_.framesTotal = std::max(1, frames);
+	drop_.framesElapsed = 0;
+
+	// s = (targetY - startY) = v0y*T + 0.5*g*T^2 から v0y を解く
+	float s = (target.y - start.y);
+	drop_.v0y = (s - 0.5f * drop_.gravity * (float)drop_.framesTotal * (float)drop_.framesTotal)
+		/ (float)drop_.framesTotal;
+}
+
 // 放物運動の更新（ワープさせない）
 void Enemy::Move() {
-	if (!jumpParams_.isJumping_) return;
 
-	// 経過フレームを進める
-	jumpParams_.framesElapsed_++;
-	int   k = jumpParams_.framesElapsed_;
-	int   T = jumpParams_.framesTotal_;
-	float a = (float)k / (float)T;                 // 0→1
+	// ---- 1) 放物線ジャンプ ----
+	if (jumpParams_.isJumping_) {
+		// 経過フレームを先に進める
+		jumpParams_.framesElapsed_++;
+		const int   T = std::max(1, jumpParams_.framesTotal_);
+		const int   k = jumpParams_.framesElapsed_;
+		const float a = std::min(1.0f, static_cast<float>(k) / static_cast<float>(T)); // 0〜1にサチる
 
-	// 水平は start→target を等速で補間（Tフレームで必ず到達）
-	Vector3 p = jumpParams_.start_ + (jumpParams_.target_ - jumpParams_.start_) * a;
-	p.y = 0.0f;
+		// 水平は start→target を等速補間（Tフレームで必ず到達）
+		Vector3 p = jumpParams_.start_ + (jumpParams_.target_ - jumpParams_.start_) * a;
 
-	// 垂直は等加速度運動: y = v0*t + 0.5*g*t^2
-	float y = jumpParams_.v0y_ * (float)k + 0.5f * jumpParams_.gravity_ * (float)k * (float)k;
-	if (y < 0.0f) y = 0.0f;                         // 数値誤差のクランプ
+		// 垂直は等加速度運動: y = v0*t + 0.5*g*t^2
+		float y = jumpParams_.v0y_ * static_cast<float>(k)
+			+ 0.5f * jumpParams_.gravity_ * static_cast<float>(k) * static_cast<float>(k);
 
-	transform_.translate = { p.x, y, p.z };
+		// 地面(=target.y)より下に行かないようクランプ（固定0ではなく target.y を使う）
+		if (y < jumpParams_.target_.y) y = jumpParams_.target_.y;
 
-	// ちょうどTフレームで終了（誤差は最終フレームで吸着）
-	if (k >= T) {
-		transform_.translate = { jumpParams_.target_.x, 0.0f, jumpParams_.target_.z };
-		jumpParams_.isJumping_ = false;
+		transform_.translate = { p.x, y, p.z };
+
+		// ちょうどTフレームで終了（誤差は最終フレームで吸着）
+		if (k >= T) {
+			transform_.translate = { jumpParams_.target_.x, jumpParams_.target_.y, jumpParams_.target_.z };
+			jumpParams_.isJumping_ = false;
+		}
+		return;
+	}
+
+	// ---- 2) 直下降（使っている場合。使っていなければこのブロックごと削除でOK）----
+	if (drop_.active) {
+		drop_.framesElapsed++;
+		const int   T = std::max(1, drop_.framesTotal);
+		const int   k = drop_.framesElapsed;
+		const float a = std::min(1.0f, static_cast<float>(k) / static_cast<float>(T));
+
+		// XZ は開始→目標（通常同じ）を等速補間
+		Vector3 p = drop_.start + (drop_.target - drop_.start) * a;
+
+		// Y は等加速度運動
+		float y = drop_.start.y
+			+ drop_.v0y * static_cast<float>(k)
+			+ 0.5f * drop_.gravity * static_cast<float>(k) * static_cast<float>(k);
+
+		if (y < drop_.target.y) y = drop_.target.y;
+
+		transform_.translate = { p.x, y, p.z };
+
+		if (k >= T) {
+			transform_.translate = drop_.target;
+			drop_.active = false;
+		}
+		return;
 	}
 }
 

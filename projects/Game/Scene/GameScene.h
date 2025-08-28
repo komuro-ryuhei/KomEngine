@@ -131,6 +131,7 @@ private:
 	void TriggerSpawnRandomPattern();                 // どちらかを乱択
 	void SpawnPatternScatter(int count);              // XY ランダム配置
 	void StartPatternSideJumpWave(int count, float minSec, float maxSec); // 左右ジャンプ波
+	void SpawnPatternDropFall(int count);
 	void SpawnEnemies(int count);
 
 	void EnemySpawnTrigger();

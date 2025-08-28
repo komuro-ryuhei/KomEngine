@@ -19,7 +19,10 @@ public:
 	void Draw();
 	void ImGuiDebug();
 
+	// ジャンプ開始
 	void StartJump(const Vector3& start, const Vector3& target, float speedXZ = 0.35f, float initialVy = 0.28f);
+	// 落下開始
+	void StartDrop(const Vector3& start, const Vector3& target, int frames = 45);
 
 public:
 	Vector3 GetTranslate();
@@ -74,4 +77,16 @@ private:
 		float v0y_ = 0.0f;        // 垂直初速( T フレームで y=0 に戻す )
 	};
 	JumpParams jumpParams_;
+
+	// 落下に必要な処理
+	struct DropParams {
+		bool active = false;
+		Vector3 start{ 0,0,0 };
+		Vector3 target{ 0,0,0 }; // y=0 に着地させる
+		int framesTotal = 0;
+		int framesElapsed = 0;
+		float v0y = 0.0f;
+		float gravity = -0.02f; // 落下の加速度（好みで調整）
+	};
+	DropParams drop_;
 };
