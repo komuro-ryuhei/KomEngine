@@ -126,7 +126,13 @@ private:
 	
 	// パーティクルのデバッグ処理
 	void ParticleUpdate();
-	void SpawnEnemies();
+
+	// 敵の出現パターン
+	void TriggerSpawnRandomPattern();                 // どちらかを乱択
+	void SpawnPatternScatter(int count);              // XY ランダム配置
+	void StartPatternSideJumpWave(int count, float minSec, float maxSec); // 左右ジャンプ波
+	void SpawnEnemies(int count);
+
 	void EnemySpawnTrigger();
 
 	// 敵のジャンプウェーブの処理

@@ -320,6 +320,26 @@ void GameScene::ParticleUpdate() {
 	cylinderEmitter_->Update();*/
 }
 
+void GameScene::TriggerSpawnRandomPattern() {
+
+	std::bernoulli_distribution pick(0.5);
+	if (pick(rng_)) {
+		SpawnPatternScatter(6);
+	} else {
+		StartPatternSideJumpWave(10, 0.5f, 1.0f); // 10体を0.5〜1.0秒間隔
+	}
+}
+
+// 散開スポーン
+void GameScene::SpawnPatternScatter(int count) { SpawnEnemies(count); }
+
+// 左右からのジャンプスポーン
+void GameScene::StartPatternSideJumpWave(int count, float minSec, float maxSec) {
+
+	// 
+	StartJumpWave(count, minSec, maxSec);
+}
+
 void GameScene::CheckCollisions() {
 
 	auto& bullets = player_->GetBullets();
@@ -410,64 +430,43 @@ void GameScene::CheckCollisions() {
 	}
 }
 
-void GameScene::SpawnEnemies() {
+void GameScene::SpawnEnemies(int count) {
 
-	const int enemyCount = 5;
+	const int enemyCount = count;
 
-	std::random_device rd;
-	std::mt19937 gen(rd());
-
-	// --- 横方向（side）の範囲 ---
-	float sideMin = -5.0f;
-	float sideMax = 5.0f;
-
-	if (currentTriggerIndex_ == 1) {
-		// 回転後は横方向（Z）をもっと奥に
-		sideMin = -20.0f;
-		sideMax = 20.0f;
-	}
-
-	std::uniform_real_distribution<float> distX(sideMin, sideMax);
-	std::uniform_real_distribution<float> distY(-2.0f, 2.0f); // 高さ
-	std::uniform_real_distribution<float> distZ(20.0f, 30.0f); // 前方向の奥行き
+	// ★左右・上下・前方のランダム
+	std::uniform_real_distribution<float> distX(-5.0f, 5.0f);  // 横(±)
+	std::uniform_real_distribution<float> distY(-1.0f, 1.0f);  // 高さ
+	std::uniform_real_distribution<float> distZ(12.0f, 18.0f); // 前(手前~奥)
 
 	Vector3 playerPos = player_->GetTransform().translate;
 
-	Vector3 forward;
-	Vector3 side;
-
-	if (currentTriggerIndex_ == 0) {
-		// 回転前 → Zが前
-		forward = { 0.0f, 0.0f, 1.0f };
-		side = { 1.0f, 0.0f, 0.0f };
-	} else if (currentTriggerIndex_ == 1) {
-		// 回転後 → Xが前
-		forward = { 1.0f, 0.0f, 0.0f };
-		side = { 0.0f, 0.0f, -1.0f };
-	}
+	// 前=+Z、横=+Xで固定
+	const Vector3 forward = { 0.0f, 0.0f, 1.0f };
+	const Vector3 side = { 1.0f, 0.0f, 0.0f };
 
 	for (int i = 0; i < enemyCount; ++i) {
-		auto enemyObject = std::make_unique<Object3d>();
-		enemyObject->Init(BlendType::BLEND_NONE);
-		enemyObject->SetModel("Enemy.obj");
-		enemyObject->SetDefaultCamera(camera_.get());
+		auto enemyObj = std::make_unique<Object3d>();
+		enemyObj->Init(BlendType::BLEND_NONE);
+		enemyObj->SetModel("Enemy.obj");
+		enemyObj->SetDefaultCamera(camera_.get());
 
 		auto enemy = std::make_unique<Enemy>();
-		enemy->Init(camera_.get(), enemyObject.get());
+		enemy->Init(camera_.get(), enemyObj.get());
 		enemy->SetPlayer(player_.get());
-		enemy->Update();
 
 		Vector3 pos = playerPos
-			+ forward * distZ(gen)
-			+ side * distX(gen)
-			+ Vector3{ 0.0f, distY(gen), 0.0f };
+			+ forward * distZ(rng_)
+			+ side * distX(rng_)
+			+ Vector3{ 0.0f, distY(rng_), 0.0f };
 
 		enemy->SetTranslate(pos);
-
+		enemy->Update();
 		enemies_.emplace_back(std::move(enemy));
-		enemyObjects3d_.emplace_back(std::move(enemyObject));
+		enemyObjects3d_.emplace_back(std::move(enemyObj));
 	}
 }
+
 
 void GameScene::EnemySpawnTrigger() {
 
@@ -480,13 +479,7 @@ void GameScene::EnemySpawnTrigger() {
 		float distance = sqrt(diff.x * diff.x + diff.z * diff.z);
 
 		if (!trigger.triggered && distance < 1.0f) {
-			if (currentTriggerIndex_ == 0) {
-				// 第1フェーズ: 通常スポーン
-				SpawnEnemies();
-			} else if (currentTriggerIndex_ == 1) {
-				// 第2フェーズ: ジャンプ波（10体、0.5〜1.0秒ランダム）
-				StartJumpWave(10, 0.5f, 1.0f);
-			}
+			TriggerSpawnRandomPattern();
 			trigger.triggered = true;
 			isFighting_ = true;
 		}

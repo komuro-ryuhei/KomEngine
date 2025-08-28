@@ -64,6 +64,12 @@ struct Vector3 final {
 		return Vector3{ x + other, y + other, z + other };
 	}
 
+	// Vector3 と float の掛け算のオペレーター
+	Vector3 operator*(float scalar) const {
+		return Vector3{ x * scalar, y * scalar, z * scalar };
+	}
+
+
 	// + オペレーターのオーバーロード
 	Vector3& operator+=(const float& other) {
 		x = x += other;
