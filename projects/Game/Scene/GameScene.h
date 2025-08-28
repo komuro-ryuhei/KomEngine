@@ -109,6 +109,10 @@ private:
 	// 
 	std::unique_ptr<Loader> loader_ = nullptr;
 
+	// カメラ
+	bool camFollowRotation_ = false;               // 回転は追従しない（自由にする）
+	Vector3 camFollowOffset_ = { 0.0f, 0.0f, 0.0f };
+
 	// nerwork(エラー出るためコメントアウト中)
 	// RankingManager rankingManager;
 

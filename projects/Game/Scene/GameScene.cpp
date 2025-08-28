@@ -130,11 +130,14 @@ void GameScene::Update() {
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 playerRot = player_->GetTransform().rotate;
 
-	// フラグがtrueだと追従
+	// 位置だけ追従
 	if (isCameraFollowPlayer_) {
-		camera_->SetTranslate(playerPos);
-		camera_->SetRotate(playerRot);
+		camera_->SetTranslate(playerPos + camFollowOffset_);
+		if (camFollowRotation_) {
+			camera_->SetRotate(playerRot);
+		}
 	}
+
 
 	// Player
 	player_->Update();
@@ -446,7 +449,7 @@ void GameScene::SpawnEnemies() {
 	for (int i = 0; i < enemyCount; ++i) {
 		auto enemyObject = std::make_unique<Object3d>();
 		enemyObject->Init(BlendType::BLEND_NONE);
-		enemyObject->SetModel("sphere.obj");
+		enemyObject->SetModel("Enemy.obj");
 		enemyObject->SetDefaultCamera(camera_.get());
 
 		auto enemy = std::make_unique<Enemy>();
@@ -526,13 +529,12 @@ void GameScene::UpdateJumpWave(double nowSec) {
 	jumpWave_.nextSpawnAt = nowSec + dist(rng_);
 }
 
-// 横の画面外（左右どちらか）→ z=+12 の帯に着地（Xだけランダム）
 void GameScene::SpawnOneJumpingEnemy() {
 
 	// Object3D
 	auto enemyObj = std::make_unique<Object3d>();
 	enemyObj->Init(BlendType::BLEND_NONE);
-	enemyObj->SetModel("sphere.obj");
+	enemyObj->SetModel("Enemy.obj");
 	enemyObj->SetDefaultCamera(camera_.get());
 
 	// Enemy

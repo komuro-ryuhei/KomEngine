@@ -35,7 +35,7 @@ private:
 	float speed_ = 0.01f;
 	Vector3 direction_;
 
-	float radius_ = 0.8f;
+	float radius_ = 0.08f;
 
 	float lifeTime_ = 5.0f;  // 寿命(秒)
 	float lifeTimer_ = 0.0f; // 経過時間(秒)
