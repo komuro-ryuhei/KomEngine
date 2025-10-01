@@ -19,7 +19,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	MyGame game;
 
-	game.Run("GAME");
+	game.Run("TEST");
 
 	return 0;
 }

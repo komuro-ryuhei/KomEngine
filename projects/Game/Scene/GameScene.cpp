@@ -102,8 +102,9 @@ void GameScene::Init() {
 	player_->Init(camera_.get());
 
 	// 敵の出現トリガー
-	enemyTriggers_.push_back({ {0.0f, 0.0f, 5.0f}, false }); // Z方向
+	enemyTriggers_.push_back({ {0.0f, 0.0f, 5.0f}, false });
 	enemyTriggers_.push_back({ {0.0f, 0.0f, 10.0f}, false });
+	enemyTriggers_.push_back({ {0.0f, 0.0f, 15.0f}, false });
 
 	moonLightEffect_ = std::make_unique<ParticleEmitter>();
 	moonLightEffect_->Init("moonLight", { 0.0f, 0.0f, 10.0f }, 1);
@@ -163,10 +164,8 @@ void GameScene::Update() {
 	EnemySpawnTrigger();
 
 	if (System::GetInput()->TriggerKey(DIK_RETURN)) {
-		sceneManager_->ChangeScene("TEST");
+		sceneManager_->ChangeScene("TITLE");
 	}
-
-#ifdef _DEBUG
 
 	// **ImGuiのデバッグ描画**
 	ImGuiDebug();
@@ -181,9 +180,6 @@ void GameScene::Update() {
 	ImGui::DragFloat3("playerpos", &playerPos.x, 0.01f);
 
 	ImGui::End();
-
-#endif // _DEBUG
-
 
 #endif // _DEBUG
 }

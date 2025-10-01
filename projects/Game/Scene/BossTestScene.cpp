@@ -4,6 +4,24 @@
 
 void BossTestScene::Init() {
 
+
+	// テクスチャ、モデルの読み込み
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/uvChecker.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle2.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
+
+	ModelManager::GetInstance()->LoadModel("plane.obj");
+	ModelManager::GetInstance()->LoadModel("sphere.obj");
+	ModelManager::GetInstance()->LoadModel("axis.obj");
+	ModelManager::GetInstance()->LoadModel("cube.obj");
+	ModelManager::GetInstance()->LoadModel("Player.obj");
+	ModelManager::GetInstance()->LoadModel("Enemy.obj");
+	ModelManager::GetInstance()->LoadModel("ground.obj");
+	ModelManager::GetInstance()->LoadModel("hand.obj");
+	ModelManager::GetInstance()->LoadModel("BossEnemy.obj");
+
 	// 
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
@@ -57,7 +75,7 @@ void BossTestScene::Update() {
 	glassObject_->Update();
 
 
-	// -------------------- ゲームオブジェクトシーンの更新 -------------------- //
+	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
 
 	player_->Update();
 	boss_->Update();
@@ -67,7 +85,7 @@ void BossTestScene::Update() {
 	// パーティクルの更新処理
 	ParticleManager::GetInstance()->Update();
 
-	// ------------------------------------------------------------------- //
+	// -------------------------------------------------------------------- //
 
 #ifdef _DEBUG
 
