@@ -5,6 +5,7 @@
 
 #ifdef _DEBUG
 #include "externals/imgui/imgui.h"
+#include "BossEnemy.h"
 #endif // _DEBUG
 
 float Enemy::GetRadius() const { return radius_; }

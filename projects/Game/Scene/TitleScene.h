@@ -12,6 +12,8 @@
 #include "Game/Scene/GameScene.h"
 #include "Game/Scene/IScene.h"
 #include "Game/Scene/SceneManager.h"
+#include "Game/Entity/Enemy/BossEnemy.h"
+#include "Engine/Base/3d/Skybox/Skybox.h"
 
 class TitleScene : public IScene {
 
@@ -28,5 +30,17 @@ private:
 	// Camera
 	std::unique_ptr<Camera> camera_ = nullptr;
 	// Sprite
-	std::unique_ptr<Sprite> sprite_ = nullptr;
+	std::unique_ptr<Sprite> titleSprite_ = nullptr;
+	std::unique_ptr<Sprite> enterSprite_ = nullptr;
+
+	// Skybox
+	std::unique_ptr<Skybox> skybox_ = nullptr;
+
+	// Boss
+	std::unique_ptr<BossEnemy> boss_ = nullptr;
+
+private:
+
+	Vector2 titleSpriteScale_ = { 0.0f,200.0f };
+	bool isPushEnter_ = false;
 };

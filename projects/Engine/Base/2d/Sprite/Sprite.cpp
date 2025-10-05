@@ -229,6 +229,7 @@ void Sprite::ImGuiDebug() {
 	ImGui::Begin("Sprite");
 
 	ImGui::DragFloat2("transfoem", &position_.x, 1.0f);
+	ImGui::DragFloat2("size", &size_.x, 1.0f);
 	ImGui::DragFloat2("uvTranslate", &uvTransform.translate.x, 0.01f);
 	ImGui::DragFloat2("uvScale", &uvTransform.scale.x, 0.01f);
 	ImGui::DragFloat("uvRotate", &uvTransform.rotate.z, 0.01f);

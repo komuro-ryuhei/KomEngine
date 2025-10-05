@@ -45,12 +45,31 @@ void BossEnemy::Update() {
 	object3d_->SetTranslate(transform_.translate);
 	object3d_->SetRotate(transform_.rotate);
 
+	rightArm_->SetTranslate(rightArmPos_);
+	leftArm_->SetTranslate(leftArmPos_);
+	rightArm_->SetRotate(rightArmRot_);
+	leftArm_->SetRotate(leftArmRot_);
+
 	// radius（スケールベース）を設定
 	object3d_->SetRadius(2.0f * object3d_->GetScale().x);
 	leftArm_->SetRadius(1.0f * leftArm_->GetScale().x);
 	rightArm_->SetRadius(1.0f * rightArm_->GetScale().x);
 
-	Attack();
+	if (System::GetInput()->PushKey(DIK_SPACE)) {
+		pushEnter_ = true;
+	}
+
+	// 攻撃フラグが立っていたら攻撃
+	if (isAttack_) {
+		Attack();
+	}
+
+	// TitleScene用の動き
+	if (pushEnter_) {
+		if (isInTitleScene_) {
+			TitleSceneMove();
+		}
+	}
 }
 
 
@@ -73,6 +92,11 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::DragInt("R_HitCount", &rightArmHitCount_);
 	ImGui::DragInt("L_HitCount", &leftArmHitCount_);
 
+	ImGui::DragFloat3("rightArmPos", &rightArmPos_.x, 0.01f);
+	ImGui::DragFloat3("rightArmRot", &rightArmRot_.x, 0.01f);
+	ImGui::DragFloat3("leftArmPos", &leftArmPos_.x, 0.01f);
+	ImGui::DragFloat3("leftArmRot", &leftArmRot_.x, 0.01f);
+
 	ImGui::End();
 }
 
@@ -93,8 +117,7 @@ void BossEnemy::Attack() {
 	if (isExtending_) {
 		armPos += direction * attackSpeed_;
 
-		// 条件1: ある程度伸びたら戻す
-		// 条件2: ヒットカウントが上限に達したら戻す
+		// 
 		if (MyMath::Length(armPos - baseLocalOffset) >= 20.0f || hitCount >= maxHitCount_) {
 			isExtending_ = false;
 		}
@@ -116,12 +139,40 @@ void BossEnemy::Attack() {
 	targetArm->SetTranslate(armPos);
 }
 
+void BossEnemy::TitleSceneMove() {
+
+	if (!isMoveRight_) {
+		if (leftArmPos_.x >= 0.19f) {
+			leftArmPos_.x -= 0.1f;
+		} else if (leftArmPos_.x <= 0.19f) {
+			isMoveRight_ = true;
+		}
+	}
+	// 
+	if (isMoveRight_) {
+		if (leftArmPos_.x <= 5.8f) {
+			leftArmPos_.x += 0.1f;
+		}
+	}
+}
+
 void BossEnemy::AddHitToAttackingArm() {
+
 	if (attackLeftArm_) {
 		++leftArmHitCount_;
 	} else {
 		++rightArmHitCount_;
 	}
+}
+
+void BossEnemy::InitTitleScenePos() {
+
+	// 
+	rightArmPos_ = { -0.15f,0.0f,-12.0f };
+	rightArmRot_ = { 0.0f,-1.57f,0.0f };
+	leftArmPos_ = { 0.19f,0.0f,-12.0f };
+	leftArmPos_ = { 5.9f,0.0f,-12.0f };
+	leftArmRot_ = { 0.0f,1.56f,0.0f };
 }
 
 void BossEnemy::SetRotate(Vector3& rotate) {

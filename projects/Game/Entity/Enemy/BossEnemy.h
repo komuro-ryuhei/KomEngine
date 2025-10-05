@@ -13,16 +13,19 @@ public:
 
 	void Draw();
 
-	void ImGuiDebug	();
+	void ImGuiDebug();
 
 public:
 
 	// getter・setter
 	float GetRadius() const;
 	Transform GetTransform() const;
+	bool GetIsmoveRight() const { return isMoveRight_; }
 	void SetRotate(Vector3& rotate);
 	void SetTranslate(Vector3 translate);
 	void SetPlayer(Player* player) { player_ = player; }
+	void SetAttack(bool isAttack) { isAttack_ = isAttack; }
+	void SetInTitleScene(bool isTitleScene) { isInTitleScene_ = isTitleScene; }
 
 public:
 	Object3d* GetBody() const { return object3d_.get(); }
@@ -33,9 +36,11 @@ private:
 
 	void Attack();
 	void Move();
+	void TitleSceneMove();
 
 public:
 	void AddHitToAttackingArm();
+	void InitTitleScenePos();
 
 private:
 	// カメラ
@@ -64,4 +69,18 @@ private:
 	int leftArmHitCount_ = 0;
 	int rightArmHitCount_ = 0;
 	const int maxHitCount_ = 5;
+	
+	bool isAttack_ = true;
+
+	// TitleScene用のフラグ
+	bool isInTitleScene_ = false;
+
+	// 
+	Vector3 rightArmPos_;
+	Vector3 leftArmPos_;
+	Vector3 rightArmRot_;
+	Vector3 leftArmRot_;
+
+	bool isMoveRight_ = false;
+	bool pushEnter_ = false;
 };

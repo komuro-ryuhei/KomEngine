@@ -4,7 +4,6 @@
 
 void BossTestScene::Init() {
 
-
 	// テクスチャ、モデルの読み込み
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/uvChecker.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle.png");
@@ -22,7 +21,7 @@ void BossTestScene::Init() {
 	ModelManager::GetInstance()->LoadModel("hand.obj");
 	ModelManager::GetInstance()->LoadModel("BossEnemy.obj");
 
-	// 
+	// カメラ
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
 	camera_->SetTranslate({ 0.0f, 0.0f, -30.0f });
@@ -48,6 +47,7 @@ void BossTestScene::Init() {
 	boss_->SetTranslate({ 0.0f, 0.0f, 20.0f });
 	boss_->SetPlayer(player_.get());
 
+	// パーティクル
 	ParticleManager::GetInstance()->Init(camera_.get(), BlendType::BLEND_ADD);
 	ParticleManager::GetInstance()->CreateParticleGeoup("hit", "./Resources/images/circle2.png", "hit");
 
@@ -68,7 +68,6 @@ void BossTestScene::Update() {
 
 	// カメラの更新
 	camera_->Update();
-
 	// Skyboxの更新
 	skybox_->Update();
 	// 地面オブジェクトの更新
