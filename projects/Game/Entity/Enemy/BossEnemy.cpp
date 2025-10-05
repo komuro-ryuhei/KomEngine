@@ -70,10 +70,14 @@ void BossEnemy::ImGuiDebug() {
 
 	object3d_->ImGuiDebug();
 
+	ImGui::DragInt("R_HitCount", &rightArmHitCount_);
+	ImGui::DragInt("L_HitCount", &leftArmHitCount_);
+
 	ImGui::End();
 }
 
 void BossEnemy::Attack() {
+
 	if (!player_) return;
 
 	Object3d* targetArm = attackLeftArm_ ? leftArm_.get() : rightArm_.get();

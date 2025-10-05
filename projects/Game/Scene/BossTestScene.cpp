@@ -148,6 +148,8 @@ void BossTestScene::CheckCollisions() {
 				emitter_->SetTranslate(hitPos);
 				emitter_->Update();
 
+				boss_->AddHitToAttackingArm();
+
 				it = bullets.erase(it);
 				hit = true;
 				break;

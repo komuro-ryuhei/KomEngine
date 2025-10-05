@@ -13,7 +13,7 @@ public:
 
 	void Draw();
 
-	void ImGuiDebug();
+	void ImGuiDebug	();
 
 public:
 
