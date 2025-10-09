@@ -26,6 +26,8 @@ void BossEnemy::Init(Camera* camera) {
 	leftArm_->SetScale({ 1.0f, 1.0f, 1.0f });
 	leftArm_->SetTranslate({ -4.0f, 0.0f, 0.0f });
 	leftArm_->SetRotate({ 0.0f, 3.0f, 0.0f });
+	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
+	leftArmRot_ = { 0.0f, 3.0f, 0.0f };
 
 	rightArm_ = std::make_unique<Object3d>();
 	rightArm_->Init(BlendType::BLEND_NONE);
@@ -34,6 +36,7 @@ void BossEnemy::Init(Camera* camera) {
 	rightArm_->SetParent(object3d_.get());
 	rightArm_->SetScale({ 1.0f, 1.0f, 1.0f });
 	rightArm_->SetTranslate({ 4.0f, 0.0f, 0.0f });
+	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
 }
 
 void BossEnemy::Update() {
