@@ -77,6 +77,8 @@ public:
 	Particle MakeMoonLightParticle(const Vector3& translate, bool isVertical);
 	Particle MakeSpiralParticle(const Vector3& translate, float angleOffset);
 
+	bool Exists(const std::string& name) const;
+
 private:
 	ParticleManager() = default;
 	~ParticleManager() = default;

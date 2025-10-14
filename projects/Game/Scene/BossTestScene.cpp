@@ -54,8 +54,13 @@ void BossTestScene::Init() {
 	boss_->SetPlayer(player_.get());
 
 	// パーティクル
-	ParticleManager::GetInstance()->Init(camera_.get(), BlendType::BLEND_ADD);
-	ParticleManager::GetInstance()->CreateParticleGeoup("hit", "./Resources/images/circle2.png", "hit");
+	auto* pm = ParticleManager::GetInstance();
+	pm->Init(camera_.get(), BlendType::BLEND_ADD);
+
+	// グループが既にあれば作らない
+	if (!pm->Exists("hit")) {
+		pm->CreateParticleGeoup("hit", "./Resources/images/circle2.png", "hit");
+	}
 
 	emitter_ = std::make_unique<ParticleEmitter>();
 	emitter_->Init("hit", { 0.0f, 0.0f, 10.0f }, 10);
