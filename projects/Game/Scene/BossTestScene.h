@@ -2,6 +2,7 @@
 
 // Scene
 #include "Game/Scene/IScene.h"
+#include "Game/Scene/SceneManager.h"
 
 // Entity
 #include "Engine/Base/3d/Skybox/Skybox.h"
@@ -10,6 +11,7 @@
 #include "Game/Entity/Enemy/BossEnemy.h"
 #include "Engine/Base/Particle/ParticleManager.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
+#include "Fade.h"
 
 class BossTestScene : public IScene {
 public:
@@ -49,6 +51,11 @@ private:
 
 	// Cameraをプレイヤーに追従させるかのフラグ
 	bool isCameraFollowPlayer_ = true;
+
+	// フェード
+	std::unique_ptr<Fade> fade_ = nullptr;
+	enum class Phase { kFadeIn, kMain, kFadeOut };
+	Phase phase_ = Phase::kFadeIn;
 
 private:
 

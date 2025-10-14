@@ -37,6 +37,12 @@ void BossTestScene::Init() {
 	glassObject_->SetModel("ground.obj");
 	glassObject_->SetDefaultCamera(camera_.get());
 
+	// --- フェード初期化（画面サイズは 1280x720）---
+	fade_ = std::make_unique<Fade>();
+	fade_->Initialize(1280, 720);
+	fade_->Start(Fade::Status::FadeIn, 0.6f);
+	phase_ = Phase::kFadeIn;
+
 	// Player
 	player_ = std::make_unique<Player>();
 	player_->Init(camera_.get());
@@ -86,6 +92,31 @@ void BossTestScene::Update() {
 
 	// -------------------------------------------------------------------- //
 
+	switch (phase_) {
+	case Phase::kFadeIn:
+		fade_->Update();
+		if (fade_->IsFinished()) {
+			fade_->Stop();
+			phase_ = Phase::kMain;
+		}
+		break;
+
+	case Phase::kMain:
+		// ★遷移トリガ（例：Enter）
+		if (System::TriggerKey(DIK_RETURN)) {
+			fade_->Start(Fade::Status::FadeOut, 0.6f);
+			phase_ = Phase::kFadeOut;
+		}
+		break;
+
+	case Phase::kFadeOut:
+		fade_->Update();
+		if (fade_->IsFinished()) {
+			sceneManager_->ChangeScene("TITLE");
+		}
+		break;
+	}
+
 #ifdef _DEBUG
 
 	ImGui::Begin("BossTestScene");
@@ -120,6 +151,8 @@ void BossTestScene::Draw() {
 	ParticleManager::GetInstance()->Draw();
 
 	// --------------------------------------------------------------------//
+
+	if (fade_) { fade_->Draw(); }
 }
 
 void BossTestScene::Finalize() {}

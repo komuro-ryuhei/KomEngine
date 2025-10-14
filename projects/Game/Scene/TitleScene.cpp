@@ -44,6 +44,11 @@ void TitleScene::Init() {
 	skybox_->Init("./Resources/images/test.dds");
 	skybox_->SetDefaultCamera(camera_.get());
 
+	// --- フェード初期化（画面サイズは 1280x720）---
+	fade_ = std::make_unique<Fade>();
+	fade_->Initialize(1280, 720);
+	fade_->Start(Fade::Status::FadeIn, 0.6f);  // 入りで明転
+
 	// boss
 	boss_ = std::make_unique<BossEnemy>();
 	boss_->Init(camera_.get());
@@ -84,9 +89,34 @@ void TitleScene::Update() {
 	boss_->Update();
 	boss_->ImGuiDebug();
 
-	if (System::TriggerKey(DIK_RETURN)) {
-		// ゲームシーンを生成
-		sceneManager_->ChangeScene("TEST");
+	//if (System::TriggerKey(DIK_RETURN)) {
+	//	// ゲームシーンを生成
+	//	sceneManager_->ChangeScene("TEST");
+	//}
+
+	// 
+	switch (phase_) {
+	case Phase::kFadeIn:
+		fade_->Update();
+		if (fade_->IsFinished()) {
+			fade_->Stop();
+			phase_ = Phase::kMain;
+		}
+		break;
+
+	case Phase::kMain:
+		if (System::TriggerKey(DIK_RETURN)) {
+			fade_->Start(Fade::Status::FadeOut, 0.6f);
+			phase_ = Phase::kFadeOut;
+		}
+		break;
+
+	case Phase::kFadeOut:
+		fade_->Update();
+		if (fade_->IsFinished()) {
+			sceneManager_->ChangeScene("TEST");   // ゲームへ
+		}
+		break;
 	}
 }
 
@@ -104,6 +134,8 @@ void TitleScene::Draw() {
 
 	// Bossの描画
 	boss_->Draw();
+
+	fade_->Draw();
 }
 
 void TitleScene::Finalize() {}

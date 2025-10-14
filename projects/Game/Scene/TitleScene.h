@@ -14,6 +14,7 @@
 #include "Game/Scene/SceneManager.h"
 #include "Game/Entity/Enemy/BossEnemy.h"
 #include "Engine/Base/3d/Skybox/Skybox.h"
+#include "Fade.h"
 
 class TitleScene : public IScene {
 
@@ -43,4 +44,9 @@ private:
 
 	Vector2 titleSpriteScale_ = { 0.0f,200.0f };
 	bool isPushEnter_ = false;
+
+	// フェード
+	std::unique_ptr<Fade> fade_ = nullptr;
+	enum class Phase { kFadeIn, kMain, kFadeOut };
+	Phase phase_ = Phase::kFadeIn;
 };
