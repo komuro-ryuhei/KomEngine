@@ -100,6 +100,7 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::DragFloat3("leftArmPos", &leftArmPos_.x, 0.01f);
 	ImGui::DragFloat3("leftArmRot", &leftArmRot_.x, 0.01f);
 
+	ImGui::Checkbox("isAttack", &isAttack_);
 	ImGui::End();
 }
 
@@ -107,28 +108,38 @@ void BossEnemy::Attack() {
 
 	if (!player_) return;
 
+	// どっちの腕で攻撃するか決定
 	Object3d* targetArm = attackLeftArm_ ? leftArm_.get() : rightArm_.get();
-	Vector3 baseLocalOffset = attackLeftArm_ ? Vector3{ -4.0f, 0, 0 } : Vector3{ 4.0f, 0, 0 };
-	Vector3 armPos = targetArm->GetTranslate(); // ローカル座標
-
-	Vector3 worldBase = transform_.translate + baseLocalOffset;
-	Vector3 target = player_->GetTranslate() - worldBase;
-	Vector3 direction = MyMath::Normalize(target);
-
+	Vector3& targetPos = attackLeftArm_ ? leftArmPos_ : rightArmPos_;
 	int& hitCount = attackLeftArm_ ? leftArmHitCount_ : rightArmHitCount_;
 
-	if (isExtending_) {
-		armPos += direction * attackSpeed_;
+	// 腕のローカル基準位置（初期の取り付け位置）
+	const Vector3 baseLocalOffset = attackLeftArm_ ? Vector3{ -4.0f, 0.0f, 0.0f }
+	: Vector3{ 4.0f, 0.0f, 0.0f };
 
-		// 
+	// 現在の腕ローカル位置（※必ず“その腕”の位置から始める）
+	Vector3 armPos = targetPos;
+
+	// プレイヤーへの方向（ワールド→ローカル混在を避けたいなら将来は親回転を考慮）
+	const Vector3 worldBase = transform_.translate + baseLocalOffset;
+	Vector3 toPlayer = player_->GetTranslate() - worldBase;
+	Vector3 dir = MyMath::Normalize(toPlayer);
+
+	// 伸縮ステート
+	if (isExtending_) {
+		// 伸ばす
+		armPos += dir * attackSpeed_;
+
+		// 到達 or 規定回数ヒットで引き戻しへ
 		if (MyMath::Length(armPos - baseLocalOffset) >= 20.0f || hitCount >= maxHitCount_) {
 			isExtending_ = false;
 		}
-
 	} else {
-		// 元に戻る処理
+		// 基準位置へ戻す
 		Vector3 toOrigin = baseLocalOffset - armPos;
-		if (MyMath::Length(toOrigin) < 0.5f) {
+		float dist = MyMath::Length(toOrigin);
+		if (dist < 0.5f) {
+			// 完全に戻ったら次の腕へ
 			armPos = baseLocalOffset;
 			isExtending_ = true;
 			isAttacking_ = false;
@@ -139,7 +150,9 @@ void BossEnemy::Attack() {
 		}
 	}
 
+	// モデルに反映 & ローカル保存（次フレームで消えないように）
 	targetArm->SetTranslate(armPos);
+	targetPos = armPos;
 }
 
 void BossEnemy::TitleSceneMove() {
@@ -174,7 +187,7 @@ void BossEnemy::InitTitleScenePos() {
 	rightArmPos_ = { -0.15f,0.0f,-12.0f };
 	rightArmRot_ = { 0.0f,-1.57f,0.0f };
 	leftArmPos_ = { 0.19f,0.0f,-12.0f };
-	leftArmPos_ = { 5.9f,0.0f,-12.0f };
+	// leftArmPos_ = { 5.9f,0.0f,-12.0f };
 	leftArmRot_ = { 0.0f,1.56f,0.0f };
 }
 

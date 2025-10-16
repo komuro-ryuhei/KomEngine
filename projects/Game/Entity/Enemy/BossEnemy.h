@@ -70,6 +70,7 @@ private:
 	int rightArmHitCount_ = 0;
 	const int maxHitCount_ = 5;
 	
+	// 攻撃用フラグ
 	bool isAttack_ = true;
 
 	// TitleScene用のフラグ

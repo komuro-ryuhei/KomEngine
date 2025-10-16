@@ -47,7 +47,8 @@ void TitleScene::Init() {
 	// --- フェード初期化（画面サイズは 1280x720）---
 	fade_ = std::make_unique<Fade>();
 	fade_->Initialize(1280, 720);
-	fade_->Start(Fade::Status::FadeIn, 0.6f);  // 入りで明転
+	// fade_->Start(Fade::Status::FadeIn, 0.6f);  // 入りで明転
+	fade_->StartSlashOpen(0.6f, 60.0f, true);
 
 	// boss
 	boss_ = std::make_unique<BossEnemy>();

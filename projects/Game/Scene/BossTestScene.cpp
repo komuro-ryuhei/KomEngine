@@ -40,7 +40,8 @@ void BossTestScene::Init() {
 	// --- フェード初期化（画面サイズは 1280x720）---
 	fade_ = std::make_unique<Fade>();
 	fade_->Initialize(1280, 720);
-	fade_->Start(Fade::Status::FadeIn, 0.6f);
+	// fade_->Start(Fade::Status::FadeIn, 0.6f);
+	fade_->StartSlashOpen(0.6f, 60.0f, true);
 	phase_ = Phase::kFadeIn;
 
 	// Player
@@ -107,7 +108,7 @@ void BossTestScene::Update() {
 		break;
 
 	case Phase::kMain:
-		// ★遷移トリガ（例：Enter）
+		// 遷移トリガー
 		if (System::TriggerKey(DIK_RETURN)) {
 			fade_->Start(Fade::Status::FadeOut, 0.6f);
 			phase_ = Phase::kFadeOut;
