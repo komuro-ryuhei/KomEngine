@@ -200,45 +200,47 @@ void BossTestScene::Finalize() {}
 void BossTestScene::CheckCollisions() {
 
 	// -------------------- 弾とボス部位の当たり判定 -------------------- //
-	auto& bullets = player_->GetBullets();
-	auto body = boss_->GetBody();
-	auto left = boss_->GetLeftArm();
-	auto right = boss_->GetRightArm();
+	{
+		auto& bullets = player_->GetBullets();
+		auto body = boss_->GetBody();
+		auto left = boss_->GetLeftArm();
+		auto right = boss_->GetRightArm();
 
-	for (auto it = bullets.begin(); it != bullets.end();) {
-		bool hit = false;
+		for (auto it = bullets.begin(); it != bullets.end();) {
+			bool hit = false;
 
-		// 判定対象（パーツごと）
-		std::vector<Object3d*> parts = { body, left, right };
-		for (auto* part : parts) {
-			// 
-			const Vector3 partPos = part->GetWorldPosition();
-			const float   d = MyMath::CalculateDistance((*it)->GetTranslate(), partPos);
-			const float   r = (*it)->GetRadius() + part->GetRadius();
+			// 判定対象（パーツごと）
+			std::vector<Object3d*> parts = { body, left, right };
+			for (auto* part : parts) {
+				// 
+				const Vector3 partPos = part->GetWorldPosition();
+				const float   d = MyMath::CalculateDistance((*it)->GetTranslate(), partPos);
+				const float   r = (*it)->GetRadius() + part->GetRadius();
 
-			if (d < r) {
-				// パーティクル位置＝弾の位置
-				const Vector3 hitPos = (*it)->GetTranslate();
-				emitter_->SetTranslate(hitPos);
-				emitter_->Update();
+				if (d < r) {
+					// パーティクル位置＝弾の位置
+					const Vector3 hitPos = (*it)->GetTranslate();
+					emitter_->SetTranslate(hitPos);
+					emitter_->Update();
 
-				// どの部位に当たったかで加算先を分ける
-				if (part == left) {
-					boss_->AddHitLeftArm();
-				} else if (part == right) {
-					boss_->AddHitRightArm();
-				} else {
-					// 本体に命中したときの処理があればここに
-					
+					// どの部位に当たったかで加算先を分ける
+					if (part == left) {
+						boss_->AddHitLeftArm();
+					} else if (part == right) {
+						boss_->AddHitRightArm();
+					} else {
+						// 本体に命中したときの処理があればここに
+
+					}
+
+					it = bullets.erase(it);
+					hit = true;
+					break;
 				}
-
-				it = bullets.erase(it);
-				hit = true;
-				break;
 			}
-		}
 
-		if (!hit) { ++it; }
+			if (!hit) { ++it; }
+		}
 	}
 
 	// -------------------- 自機とボス部位の当たり判定 -------------------- //
@@ -280,6 +282,27 @@ void BossTestScene::CheckCollisions() {
 				camera_->StartShake(CameraShakeType::Medium);
 			}
 			break;
+		}
+	}
+
+	// ---- プレイヤー vs メテオ ----
+	{
+		Vector3 ppos = player_->GetTranslate();
+		float   pr = player_->GetRadius();
+		for (auto& m : meteors_) {
+			if (!m->IsAlive()) continue;
+			Vector3 mpos = m->GetObject()->GetWorldPosition();
+			float   mr = m->GetRadius();
+
+			if (MyMath::CalculateDistance(ppos, mpos) < (pr + mr)) {
+				if (!player_->GetInvincible()) {
+					player_->Damage(1);
+					player_->SetInvincible(true);
+				}
+				if (camera_) camera_->StartShake(CameraShakeType::Medium);
+				m->Explode();
+				break;
+			}
 		}
 	}
 
