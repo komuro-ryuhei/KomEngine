@@ -326,7 +326,7 @@ Matrix4x4 MyMath::MakeRotateZMatrix(float radian) {
 
 Matrix4x4 MyMath::MakeRotateMatrix(Vector3 rotate) {
 
-	Matrix4x4 rotateXYZMatrix = Multiply(MakeRotateXMatrix(rotate.x), Multiply(MakeRotateYMatrix(rotate.y), MakeRotateZMatrix(rotate.x)));
+	Matrix4x4 rotateXYZMatrix = Multiply(MakeRotateXMatrix(rotate.x), Multiply(MakeRotateYMatrix(rotate.y), MakeRotateZMatrix(rotate.z)));
 
 	return rotateXYZMatrix;
 }
@@ -481,6 +481,25 @@ float MyMath::Lerp(float p1, float p2, float t) { return p1 + (p2 - p1) * t; }
 
 // 線形補間(Vector3)
 Vector3 MyMath::Vector3Lerp(const Vector3& p1, const Vector3& p2, float t) { return { Lerp(p1.x, p2.x, t), Lerp(p1.y, p2.y, t), Lerp(p1.z, p2.z, t) }; }
+
+// Vector3 の線形補間
+Vector3 MyMath::Lerp(const Vector3& a, const Vector3& b, float t) {
+	return { Lerp(a.x, b.x, t), Lerp(a.y, b.y, t), Lerp(a.z, b.z, t) };
+}
+
+// 0-1 クランプ（任意）
+float MyMath::Clamp01(float t) {
+	if (t < 0.0f) return 0.0f;
+	if (t > 1.0f) return 1.0f;
+	return t;
+}
+
+// 区間乱数 [min, max]
+float MyMath::Rand(float min, float max) {
+	static thread_local std::mt19937 rng{ std::random_device{}() };
+	std::uniform_real_distribution<float> dist(min, max);
+	return dist(rng);
+}
 
 // 度数 → ラジアン
 float MyMath::DegreeToRadian(float degree) {

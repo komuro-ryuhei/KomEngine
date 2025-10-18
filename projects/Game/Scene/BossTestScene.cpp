@@ -2,6 +2,9 @@
 #include "externals/imgui/imgui.h"
 #include "Engine/Base/System/System.h"
 
+#include <memory>
+#include <vector>
+
 void BossTestScene::Init() {
 
 	// テクスチャ、モデルの読み込み
@@ -54,6 +57,15 @@ void BossTestScene::Init() {
 	boss_->SetTranslate({ 0.0f, 0.0f, 20.0f });
 	boss_->SetPlayer(player_.get());
 
+	// ボスのメテオ
+	meteors_.clear();
+	meteors_.reserve(32);
+	for (int i = 0; i < 32; ++i) {
+		auto m = std::make_unique<BossMeteor>();
+		m->Init(camera_.get());
+		meteors_.push_back(std::move(m));
+	}
+
 	// パーティクル
 	auto* pm = ParticleManager::GetInstance();
 	pm->Init(camera_.get(), BlendType::BLEND_ADD);
@@ -68,6 +80,22 @@ void BossTestScene::Init() {
 }
 
 void BossTestScene::Update() {
+
+	const float dt = 1.0f / 60.0f;
+
+	// デバッグ用トグル（Mキーで開始）
+	if (System::TriggerKey(DIK_M)) {
+		if (meteorPhase_ == MeteorPhase::kIdle) StartMeteorMode();
+		else if (meteorPhase_ != MeteorPhase::kIdle) EndMeteorMode();
+	}
+
+	// メテオ中は自動追従を一時停止して、こちらの制御に任せる
+	if (meteorPhase_ == MeteorPhase::kIdle && isCameraFollowPlayer_) {
+		camera_->SetTranslate(player_->GetTransform().translate);
+		camera_->SetRotate(player_->GetTransform().rotate);
+	} else if (meteorPhase_ != MeteorPhase::kIdle) {
+		UpdateMeteorMode(dt);  // カメラ補間とメテオ処理
+	}
 
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 playerRot = player_->GetTransform().rotate;
@@ -88,8 +116,12 @@ void BossTestScene::Update() {
 
 	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
 
+	// プレイヤー
 	player_->Update();
+	// ボス
 	boss_->Update();
+	// ボスのメテオ攻撃用
+	for (auto& m : meteors_) m->Update();
 
 	CheckCollisions();
 
@@ -153,6 +185,8 @@ void BossTestScene::Draw() {
 
 	// Bossの描画
 	boss_->Draw();
+	// Bossのメテオ描画
+	for (auto& m : meteors_) m->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 
@@ -174,19 +208,29 @@ void BossTestScene::CheckCollisions() {
 	for (auto it = bullets.begin(); it != bullets.end();) {
 		bool hit = false;
 
-		// 各部位に対してチェック
+		// 判定対象（パーツごと）
 		std::vector<Object3d*> parts = { body, left, right };
-		for (auto part : parts) {
-			float d = MyMath::CalculateDistance((*it)->GetTranslate(), part->GetTranslate());
-			float r = (*it)->GetRadius() + part->GetRadius();
+		for (auto* part : parts) {
+			// 
+			const Vector3 partPos = part->GetWorldPosition();
+			const float   d = MyMath::CalculateDistance((*it)->GetTranslate(), partPos);
+			const float   r = (*it)->GetRadius() + part->GetRadius();
 
 			if (d < r) {
-				// パーティクルを出す位置を弾の位置に変更
-				Vector3 hitPos = (*it)->GetTranslate();
+				// パーティクル位置＝弾の位置
+				const Vector3 hitPos = (*it)->GetTranslate();
 				emitter_->SetTranslate(hitPos);
 				emitter_->Update();
 
-				boss_->AddHitToAttackingArm();
+				// どの部位に当たったかで加算先を分ける
+				if (part == left) {
+					boss_->AddHitLeftArm();
+				} else if (part == right) {
+					boss_->AddHitRightArm();
+				} else {
+					// 本体に命中したときの処理があればここに
+					
+				}
 
 				it = bullets.erase(it);
 				hit = true;
@@ -194,9 +238,7 @@ void BossTestScene::CheckCollisions() {
 			}
 		}
 
-		if (!hit) {
-			++it;
-		}
+		if (!hit) { ++it; }
 	}
 
 	// -------------------- 自機とボス部位の当たり判定 -------------------- //
@@ -240,4 +282,168 @@ void BossTestScene::CheckCollisions() {
 			break;
 		}
 	}
+
+	// -------------------- プレイヤー弾 vs メテオ -------------------- //
+	{
+		auto& bullets = player_->GetBullets();
+		for (auto it = bullets.begin(); it != bullets.end(); ) {
+			bool removed = false;
+
+			for (auto& m : meteors_) {
+				if (!m->IsAlive()) continue;
+
+				// メテオの中心位置と半径
+				const Vector3 mpos = m->GetObject()->GetWorldPosition(); // もしくは m->GetTransform().translate
+				const float   mr = m->GetRadius();
+
+				// 弾の中心と半径
+				const Vector3 bpos = (*it)->GetTranslate();
+				const float   br = (*it)->GetRadius();
+
+				if (MyMath::CalculateDistance(bpos, mpos) < (br + mr)) {
+					// ヒット演出
+					emitter_->SetTranslate(bpos);
+					emitter_->Update();
+					if (camera_) camera_->StartShake(CameraShakeType::Small);
+
+					// メテオ破壊 & 弾削除
+					m->Explode();
+					it = bullets.erase(it);
+					removed = true;
+					break;
+				}
+			}
+			if (!removed) ++it;
+		}
+	}
+}
+
+void BossTestScene::StartMeteorMode() {
+	meteorPhase_ = MeteorPhase::kIntro;
+	meteorModeTimer_ = 0.0f;
+	spawnTimer_ = 0.0f;
+
+	// 現在のカメラ状態を保存
+	savedCamPos_ = camera_->GetTranaslate();
+	savedCamRot_ = camera_->GetRotate();
+}
+
+void BossTestScene::UpdateMeteorMode(float dt) {
+	Vector3 playerPos = player_->GetTransform().translate;
+
+	switch (meteorPhase_) {
+	case MeteorPhase::kIntro: {
+		meteorModeTimer_ += dt;
+		camLerp_ = std::min(1.0f, meteorModeTimer_ / camIntroTime_);
+
+		// 目標カメラ：プレイヤー位置 + 少し上、ピッチだけ上向きに
+		Vector3 targetPos = playerPos + targetCamPosOffset_;
+		Vector3 targetRot = savedCamRot_;
+		targetRot.x = targetPitchUp_;
+
+		// 補間
+		camera_->SetTranslate(MyMath::Lerp(savedCamPos_, targetPos, camLerp_));
+		camera_->SetRotate(MyMath::Lerp(savedCamRot_, targetRot, camLerp_));
+
+		if (camLerp_ >= 1.0f) {
+			meteorPhase_ = MeteorPhase::kShower;
+			meteorModeTimer_ = 0.0f;
+		}
+		break;
+	}
+
+	case MeteorPhase::kShower: {
+
+		meteorModeTimer_ += dt;
+		spawnTimer_ += dt;
+
+		// カメラはプレイヤー位置を追いながら“上向き固定”
+		camera_->SetTranslate(playerPos + targetCamPosOffset_);
+		Vector3 rot = camera_->GetRotate();
+		rot.x = targetPitchUp_;
+		camera_->SetRotate(rot);
+
+		// スポーン
+		if (spawnTimer_ >= spawnInterval_) {
+			spawnTimer_ = 0.0f;
+
+			// --- カメラ姿勢 ---
+			Vector3 camPos = camera_->GetTranaslate();
+			Vector3 camRot = camera_->GetRotate(); // rot.x = pitch, rot.y = yaw
+
+			// --- カメラ基底ベクトル ---
+			float cp = std::cos(camRot.x), sp = std::sin(camRot.x);
+			float cy = std::cos(camRot.y), sy = std::sin(camRot.y);
+
+			// 前方（rot=0 で +Z）
+			Vector3 forward = { sy * cp, -sp, cy * cp };
+			Vector3 right = { cy, 0.0f, -sy };
+			Vector3 up = { 0.0f, 1.0f, 0.0f };
+
+			// ---- 発生位置：前方かなり遠く（地平線付近）----
+			float dist = MyMath::Rand(110.0f, 160.0f); // ★遠く
+			float spreadX = MyMath::Rand(-8.0f, 8.0f);    // 左右
+			float spreadUp = MyMath::Rand(8.0f, 18.0f);   // 少し上
+
+			Vector3 start = camPos + forward * dist + right * spreadX + up * spreadUp;
+
+			// ---- ターゲット：カメラの “すぐ手前”（= forward の少し内側）----
+			// これで進行方向はほぼ -forward、画面奥→手前へ突っ込んでくる
+			Vector3 target = camPos + forward * 6.0f + up * (-2.0f);
+
+			// 距離に応じて速度を上げる（遠いほど速い）
+			float speed = 0.25f + 0.012f * dist;      // dist=120 → speed=1.69 くらい
+
+			// 空きスロットに生成
+			for (auto& m : meteors_) {
+				if (!m->IsAlive()) {
+					m->SetScale({ 1.5f, 1.5f, 1.5f });
+					m->SetGravity(0.0f);
+					m->Spawn(start, target, speed);
+					break;
+				}
+			}
+		}
+
+		// 終了判定
+		if (meteorModeTimer_ >= meteorModeDuration_) {
+			meteorPhase_ = MeteorPhase::kOutro;
+			meteorModeTimer_ = 0.0f;
+		}
+		break;
+	}
+
+	case MeteorPhase::kOutro: {
+		meteorModeTimer_ += dt;
+		camLerp_ = std::min(1.0f, meteorModeTimer_ / camOutroTime_);
+
+		// 目標は保存していた通常カメラ
+		Vector3 curPos = camera_->GetTranaslate();
+		Vector3 curRot = camera_->GetRotate();
+
+		camera_->SetTranslate(MyMath::Lerp(curPos, savedCamPos_, camLerp_));
+		camera_->SetRotate(MyMath::Lerp(curRot, savedCamRot_, camLerp_));
+
+		if (camLerp_ >= 1.0f) {
+			EndMeteorMode();
+		}
+		break;
+	}
+
+	case MeteorPhase::kIdle: default: break;
+	}
+}
+
+void BossTestScene::EndMeteorMode() {
+	meteorPhase_ = MeteorPhase::kIdle;
+	camLerp_ = 0.0f;
+
+	// 生き残っているメテオは、まずは即消す
+	for (auto& m : meteors_) {
+		if (m->IsAlive()) m->Explode();
+	}
+
+	// カメラを元に
+	camera_->SetTranslate(savedCamPos_);
+	camera_->SetRotate(savedCamRot_);
 }

@@ -9,6 +9,7 @@
 #include "Game/Entity/Player/Player.h"
 #include "Game/Entity/Enemy/Enemy.h"
 #include "Game/Entity/Enemy/BossEnemy.h"
+#include "Game/Entity/Enemy/BossMeteor.h"  
 #include "Engine/Base/Particle/ParticleManager.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "Fade.h"
@@ -64,4 +65,31 @@ private:
 
 	// PostEffectの変更関数
 	void ChangePostEffect();
+
+	// ------------------------ メテオ耐久モード ------------------------ //
+	enum class MeteorPhase { kIdle, kIntro, kShower, kOutro };
+	MeteorPhase meteorPhase_ = MeteorPhase::kIdle;
+
+	// カメラ保存＆補間
+	Vector3 savedCamPos_{};
+	Vector3 savedCamRot_{};
+	Vector3 targetCamPosOffset_{ 0.0f, 2.0f, 0.0f }; // プレイヤー位置から少し上
+	float   targetPitchUp_ = -0.45f;                 // 上向き(マイナスX回転)
+	float   camLerp_ = 0.0f;
+	float   camIntroTime_ = 0.6f;
+	float   camOutroTime_ = 0.6f;
+
+	// 進行管理
+	float meteorModeTimer_ = 0.0f;
+	float meteorModeDuration_ = 8.0f;    // 耐久時間
+
+	// メテオ
+	std::vector<std::unique_ptr<BossMeteor>> meteors_;
+	float spawnInterval_ = 0.7f;
+	float spawnTimer_ = 0.0f;
+
+	// 内部ユーティリティ
+	void StartMeteorMode();
+	void UpdateMeteorMode(float dt);
+	void EndMeteorMode();
 };

@@ -5,6 +5,7 @@
 #include <cassert>
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <random>
 
 class MyMath {
 public:
@@ -78,8 +79,16 @@ public:
 	// 線形補間関数(float)
 	static float Lerp(float p1, float p2, float t);
 
+	static Vector3 Lerp(const Vector3& a, const Vector3& b, float t);
+
 	// 線形補間関数(Vector3)
 	static Vector3 Vector3Lerp(const Vector3& p1, const Vector3& p2, float t);
+
+	// 区間乱数 [min, max]
+	static float Rand(float min, float max);
+
+	// 0-1にクランプ（カメラ補間等で便利：任意）
+	static float Clamp01(float t);
 
 	// ベクトル変換
 	static Vector3 TransformNormal(const Vector3& v, const Matrix4x4& m);

@@ -284,6 +284,7 @@
       <Filter>Engine\Base\WinApp</Filter>
     </ClCompile>
     <ClCompile Include="Fade.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossMeteor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -450,6 +451,7 @@
       <Filter>lib\Vector</Filter>
     </ClInclude>
     <ClInclude Include="Fade.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

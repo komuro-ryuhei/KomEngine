@@ -2,6 +2,7 @@
 #include "Engine/Base/3d/Object3d/Object3d.h"
 
 class Player;
+class Camera;
 
 class BossEnemy {
 
@@ -27,10 +28,14 @@ public:
 	void SetAttack(bool isAttack) { isAttack_ = isAttack; }
 	void SetInTitleScene(bool isTitleScene) { isInTitleScene_ = isTitleScene; }
 
-public:
 	Object3d* GetBody() const { return object3d_.get(); }
 	Object3d* GetLeftArm() const { return leftArm_.get(); }
 	Object3d* GetRightArm() const { return rightArm_.get(); }
+
+public:
+
+	void AddHitLeftArm() { ++leftArmHitCount_; }
+	void AddHitRightArm() { ++rightArmHitCount_; }
 
 private:
 
@@ -69,7 +74,7 @@ private:
 	int leftArmHitCount_ = 0;
 	int rightArmHitCount_ = 0;
 	const int maxHitCount_ = 5;
-	
+
 	// 攻撃用フラグ
 	bool isAttack_ = true;
 

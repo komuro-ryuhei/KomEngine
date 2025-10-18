@@ -75,7 +75,6 @@ void BossEnemy::Update() {
 	}
 }
 
-
 void BossEnemy::Draw() {
 
 	//
@@ -87,7 +86,6 @@ void BossEnemy::Draw() {
 void BossEnemy::ImGuiDebug() {
 
 	// 
-
 	ImGui::Begin("BossEnemy");
 
 	object3d_->ImGuiDebug();
