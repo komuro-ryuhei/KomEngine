@@ -104,6 +104,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game\Entity\Enemy\BossSword.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossMeteor.cpp" />
     <ClCompile Include="Fade.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossEnemy.cpp" />
@@ -159,6 +160,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\Entity\Enemy\BossSword.h" />
     <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
     <ClInclude Include="Fade.h" />
     <ClInclude Include="Game\Entity\Enemy\BossEnemy.h" />

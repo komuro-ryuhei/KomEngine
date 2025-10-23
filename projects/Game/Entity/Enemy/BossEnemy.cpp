@@ -195,3 +195,54 @@ void BossEnemy::SetRotate(Vector3& rotate) {
 	leftArm_->SetRotate(rotate);
 	rightArm_->SetRotate(rotate);
 }
+
+// 末尾あたりに実装を追加
+
+void BossEnemy::SetRightHandScale(const Vector3& s) {
+	if (rightArm_) {
+		rightArm_->SetScale(s);
+		// 半径は Scale に応じて毎フレーム Update で設定しているが、
+		// 念のためここでも更新しておくと安全
+		rightArm_->SetRadius(1.0f * rightArm_->GetScale().x);
+	}
+}
+
+Vector3 BossEnemy::GetRightHandWorldPos() const {
+	if (rightArm_) {
+		// 子オブジェクトなので WorldPosition を取るのが正確
+		return rightArm_->GetWorldPosition();
+	}
+	// フォールバック（親＋ローカル）
+	return transform_.translate + rightArmPos_;
+}
+
+float BossEnemy::GetRightHandRadius() const {
+	if (rightArm_) {
+		// Update() で「1.0f * scale.x」を SetRadius 済み
+		return rightArm_->GetRadius();
+	}
+	// フォールバック（右手の基準半径=1.0f）
+	return 1.0f;
+}
+
+// ---- 左手（必要なら使って） ----
+void BossEnemy::SetLeftHandScale(const Vector3& s) {
+	if (leftArm_) {
+		leftArm_->SetScale(s);
+		leftArm_->SetRadius(1.0f * leftArm_->GetScale().x);
+	}
+}
+
+Vector3 BossEnemy::GetLeftHandWorldPos() const {
+	if (leftArm_) {
+		return leftArm_->GetWorldPosition();
+	}
+	return transform_.translate + leftArmPos_;
+}
+
+float BossEnemy::GetLeftHandRadius() const {
+	if (leftArm_) {
+		return leftArm_->GetRadius();
+	}
+	return 1.0f;
+}

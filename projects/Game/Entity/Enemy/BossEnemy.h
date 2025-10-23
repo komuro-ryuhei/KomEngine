@@ -32,6 +32,15 @@ public:
 	Object3d* GetLeftArm() const { return leftArm_.get(); }
 	Object3d* GetRightArm() const { return rightArm_.get(); }
 
+	void    SetRightHandScale(const Vector3& s);
+	Vector3 GetRightHandWorldPos() const;
+	float   GetRightHandRadius() const;
+
+	// --- 左手（必要なら） ---
+	void    SetLeftHandScale(const Vector3& s);
+	Vector3 GetLeftHandWorldPos() const;
+	float   GetLeftHandRadius() const;
+
 public:
 
 	void AddHitLeftArm() { ++leftArmHitCount_; }

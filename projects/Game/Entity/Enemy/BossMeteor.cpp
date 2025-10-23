@@ -4,16 +4,17 @@
 #include "Engine/lib/Math/MyMath.h"
 
 void BossMeteor::Init(Camera* camera) {
+
 	camera_ = camera;
 
 	object3d_ = std::make_unique<Object3d>();
 	object3d_->Init(BlendType::BLEND_NONE);
-	// モデルは暫定で sphere。
+	// モデルは仮で sphere。
 	object3d_->SetModel("sphere.obj");
 	object3d_->SetDefaultCamera(camera_);
 	object3d_->SetScale({ 0.9f, 0.9f, 0.9f });
 
-	// 物理初期値
+	// 加速度、重力
 	accel_ = { 0.0f, -gravity_, 0.0f };
 	velocity_ = { 0.0f, 0.0f, 0.0f };
 
@@ -22,6 +23,7 @@ void BossMeteor::Init(Camera* camera) {
 }
 
 void BossMeteor::Spawn(const Vector3& startPos, const Vector3& targetPos, float speed) {
+
 	transform_.translate = startPos;
 	transform_.rotate = { 0.0f, 0.0f, 0.0f };
 
@@ -35,6 +37,7 @@ void BossMeteor::Spawn(const Vector3& startPos, const Vector3& targetPos, float 
 }
 
 void BossMeteor::Update() {
+
 	if (!isAlive_) return;
 
 	ApplyPhysics();
@@ -56,6 +59,7 @@ void BossMeteor::Update() {
 }
 
 void BossMeteor::ApplyPhysics() {
+
 	// 加速度→速度→位置
 	velocity_ += accel_;
 	transform_.translate += velocity_;
@@ -67,23 +71,26 @@ void BossMeteor::ApplyPhysics() {
 }
 
 void BossMeteor::OnHitGround() {
+
 	transform_.translate.y = groundY_;
 	Explode();
 }
 
 void BossMeteor::Explode() {
-	// ここでパーティクル発生やカメラシェイク等は、
-	// シーン側・ボス側から呼び出す or コールバックを後で追加予定。
+
+	// 
 	isExploding_ = true;
 	isAlive_ = false;
 }
 
 void BossMeteor::Draw() {
+
 	if (!isAlive_) return;
 	object3d_->Draw();
 }
 
 void BossMeteor::ImGuiDebug() {
+
 #ifdef _DEBUG
 	ImGui::Begin("BossMeteor");
 	ImGui::Checkbox("Alive", &isAlive_);

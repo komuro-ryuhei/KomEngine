@@ -285,6 +285,7 @@
     </ClCompile>
     <ClCompile Include="Fade.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossMeteor.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossSword.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -452,6 +453,7 @@
     </ClInclude>
     <ClInclude Include="Fade.h" />
     <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossSword.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

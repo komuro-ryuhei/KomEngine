@@ -9,7 +9,8 @@
 #include "Game/Entity/Player/Player.h"
 #include "Game/Entity/Enemy/Enemy.h"
 #include "Game/Entity/Enemy/BossEnemy.h"
-#include "Game/Entity/Enemy/BossMeteor.h"  
+#include "Game/Entity/Enemy/BossMeteor.h"
+#include "Game/Entity/Enemy/BossSword.h"
 #include "Engine/Base/Particle/ParticleManager.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "Fade.h"
@@ -87,6 +88,24 @@ private:
 	std::vector<std::unique_ptr<BossMeteor>> meteors_;
 	float spawnInterval_ = 0.7f;
 	float spawnTimer_ = 0.0f;
+
+	// 剣
+	std::unique_ptr<BossSword> sword_;
+	bool swordAttack_ = false;
+	float swordPhaseT_ = 0.f;
+
+	// ---- 剣カメラフォーカス制御 ----
+	bool  swordCamActive_ = false;
+	float swordCamIntroT_ = 0.0f;
+	float swordCamOutroT_ = 0.0f;
+	float swordCamIntroDur_ = 0.25f;
+	float swordCamOutroDur_ = 0.25f;
+	Vector3 swordSavedPos_{}, swordSavedRot_{};
+	Vector3 swordAimPoint_{};
+	// ---- 剣スイープの遅延開始用 ----
+	bool    swordPendingSweep_ = false;
+	Vector3 swordCenter_{}, swordRight_{}, swordForward_{};
+	float   swordHalfLen_ = 10.0f, swordToward_ = 2.0f, swordDuration_ = 0.5f;
 
 	// 内部ユーティリティ
 	void StartMeteorMode();

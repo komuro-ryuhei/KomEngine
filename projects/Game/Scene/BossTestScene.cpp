@@ -66,6 +66,10 @@ void BossTestScene::Init() {
 		meteors_.push_back(std::move(m));
 	}
 
+	// ボスの剣
+	sword_ = std::make_unique<BossSword>();
+	sword_->Init(camera_.get());
+
 	// パーティクル
 	auto* pm = ParticleManager::GetInstance();
 	pm->Init(camera_.get(), BlendType::BLEND_ADD);
@@ -97,6 +101,12 @@ void BossTestScene::Update() {
 		UpdateMeteorMode(dt);  // カメラ補間とメテオ処理
 	}
 
+	// 剣攻撃トリガー
+	if (System::TriggerKey(DIK_J) && !swordAttack_) {
+		swordAttack_ = true;
+		swordPhaseT_ = 0.f;
+	}
+
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 playerRot = player_->GetTransform().rotate;
 
@@ -116,17 +126,106 @@ void BossTestScene::Update() {
 
 	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
 
+	// ---- 剣フォーカス中はカメラをターゲットに向ける ---- //
+
+	if (swordCamActive_) {
+		Vector3 camPos = camera_->GetTranaslate();
+		Vector3 to = swordAimPoint_ - camPos;
+		Vector3 dir = MyMath::Normalize(to);
+		float pitch = -std::asin(dir.y);
+		float yaw = std::atan2(dir.x, dir.z);
+
+		// イントロ補間（向ける）
+		if (swordPhaseT_ >= 0.41f && (swordCamIntroT_ < 1.0f)) {
+			swordCamIntroT_ += dt / swordCamIntroDur_;
+			float t = MyMath::Clamp01(swordCamIntroT_);
+			camera_->SetRotate(MyMath::Lerp(swordSavedRot_, Vector3{ pitch, yaw, 0.0f }, t));
+
+			// ★ 向き終わった瞬間にスイープ開始（遅延発動）
+			if (t >= 1.0f && swordPendingSweep_ && sword_) {
+				swordPendingSweep_ = false;
+				sword_->SetScale({ 1.6f,1.6f,1.6f });
+				sword_->StartSweep(swordCenter_, swordRight_, swordForward_,
+					swordHalfLen_, swordToward_, swordDuration_);
+			}
+		}
+
+		// アウトロ補間（元に戻す）
+		if (!sword_->IsAlive()) {
+			swordCamOutroT_ += dt / swordCamOutroDur_;
+			float t = MyMath::Clamp01(swordCamOutroT_);
+			camera_->SetRotate(MyMath::Lerp(camera_->GetRotate(), swordSavedRot_, t));
+			if (t >= 1.0f) swordCamActive_ = false;
+		}
+	}
+
 	// プレイヤー
 	player_->Update();
 	// ボス
 	boss_->Update();
 	// ボスのメテオ攻撃用
 	for (auto& m : meteors_) m->Update();
+	// ボスの剣
+	if (sword_) sword_->Update();
 
 	CheckCollisions();
 
 	// パーティクルの更新処理
 	ParticleManager::GetInstance()->Update();
+
+	if (swordAttack_) {
+
+		// ① 右手を縮める（0.4秒）
+		if (swordPhaseT_ < 0.4f) {
+			swordPhaseT_ += dt;
+			float t = std::min(1.f, swordPhaseT_ / 0.4f);
+			// 右手のスケールを徐々に0へ（BossEnemy側にsetterが無いなら rightArmScale 直接）
+			boss_->SetRightHandScale(MyMath::Lerp(Vector3{ 1,1,1 }, Vector3{ 0,0,0 }, t));
+		}
+		// ② 縮みきった直後：スイープ開始（カメラ演出なし版）
+		else if (swordPhaseT_ < 0.41f) {
+			swordPhaseT_ = 0.41f;
+
+			Vector3 handPos = boss_->GetRightHandWorldPos();
+
+			// カメラ基底
+			Vector3 camPos = camera_->GetTranaslate();
+			Vector3 camRot = camera_->GetRotate();
+			float cp = std::cos(camRot.x), sp = std::sin(camRot.x);
+			float cy = std::cos(camRot.y), sy = std::sin(camRot.y);
+			Vector3 forward = { sy * cp, -sp, cy * cp };
+			Vector3 right = { cy,   0.0f, -sy };
+
+			// 画面中央より少し右、右手の高さ
+			Vector3 center = camPos + forward * 6.0f + right * 3.0f;
+			center.y = handPos.y;
+
+			// 右→左に薙ぎ（right を反転）
+			swordCenter_ = center;
+			swordRight_ = { -right.x,-right.y,-right.z };
+			swordForward_ = forward;
+			swordHalfLen_ = 10.0f;
+			swordToward_ = 2.0f;
+			swordDuration_ = 0.5f;
+
+			// ★ここで即スイープ開始（カメラ演出は使わない）
+			sword_->SetScale({ 1.6f,1.6f,1.6f });
+			sword_->StartSweep(swordCenter_, swordRight_, swordForward_,
+				swordHalfLen_, swordToward_, swordDuration_);
+
+			// カメラ制御フラグは明示的にオフ
+			swordCamActive_ = false;
+			swordPendingSweep_ = false;
+		}
+
+		// ③ 剣が消えたら右手を戻して終了（0.3秒）
+		else if (!sword_->IsAlive()) {
+			swordPhaseT_ += dt;
+			float t = std::min(1.f, (swordPhaseT_ - 0.41f) / 0.3f);
+			boss_->SetRightHandScale(MyMath::Lerp(Vector3{ 0,0,0 }, Vector3{ 1,1,1 }, t));
+			if (t >= 1.f) { swordAttack_ = false; swordPhaseT_ = 0.f; }
+		}
+	}
 
 	// -------------------------------------------------------------------- //
 
@@ -187,8 +286,10 @@ void BossTestScene::Draw() {
 	boss_->Draw();
 	// Bossのメテオ描画
 	for (auto& m : meteors_) m->Draw();
+	// Bossの剣描画
+	if (sword_) sword_->Draw();
 
-	ParticleManager::GetInstance()->Draw();
+	// ParticleManager::GetInstance()->Draw();
 
 	// --------------------------------------------------------------------//
 
@@ -337,6 +438,59 @@ void BossTestScene::CheckCollisions() {
 				}
 			}
 			if (!removed) ++it;
+		}
+	}
+
+	// -------------------- プレイヤー弾 vs 剣 -------------------- //
+
+	if (sword_ && sword_->IsAlive()) {
+		auto& bullets = player_->GetBullets();
+		for (auto it = bullets.begin(); it != bullets.end();) {
+			const Vector3 bpos = (*it)->GetTranslate();
+			const float   br = (*it)->GetRadius();
+			const Vector3 spos = sword_->GetPos();
+			const float   sr = sword_->GetRadius();
+
+			if (MyMath::CalculateDistance(bpos, spos) < (br + sr)) {
+				// 命中演出（パーティクル/SE/小シェイク）
+				emitter_->SetTranslate(bpos); emitter_->Update();
+				camera_->StartShake(CameraShakeType::Small);
+
+				bool destroyed = sword_->OnHitByBullet();
+				it = bullets.erase(it);
+				// 破壊できたらパリィ成功
+				if (destroyed) {
+					camera_->StartShake(CameraShakeType::Medium);
+
+					// 反射方向：カメラの forward 方向の逆（= 画面奥＝ボス側）
+					Vector3 camRot = camera_->GetRotate();
+					float cp = std::cos(camRot.x), sp = std::sin(camRot.x);
+					float cy = std::cos(camRot.y), sy = std::sin(camRot.y);
+					Vector3 forward = { sy * cp, -sp, cy * cp };
+
+					sword_->ReflectTo(forward, /*speed*/1.6f);  // 画面奥へ飛ばす
+				} else {
+					++it;
+				}
+			}
+		}
+
+		// -------------------- プレイヤー vs 剣 -------------------- //
+
+		if (sword_ && sword_->IsAlive() && !sword_->IsBroken()) {
+			Vector3 ppos = player_->GetTranslate();
+			float   pr = player_->GetRadius();
+			if (MyMath::CalculateDistance(ppos, sword_->GetPos()) < (pr + sword_->GetRadius())) {
+				if (!player_->GetInvincible()) {
+					player_->Damage(1);
+					player_->SetInvincible(true);
+					camera_->StartShake(CameraShakeType::Large);
+				}
+				// ヒット後は剣を消す
+				// （斬り抜け演出したいなら alive 継続でもOK）
+				// ここでは消す：
+				sword_->OnHitByBullet(); // 強制破壊扱い
+			}
 		}
 	}
 }
