@@ -124,7 +124,6 @@ void OffscreenRendering::RenderToTexture() {
 	System::GetDxCommon()->GetCommandList()->ClearDepthStencilView(System::GetDxCommon()->GetDsvHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	// ビューポートとシザー矩形を設定
-
 	D3D12_VIEWPORT viewport = System::GetDxCommon()->GetViewPort();
 	D3D12_RECT scissorRect = System::GetDxCommon()->GetScissor();
 	System::GetDxCommon()->GetCommandList()->RSSetViewports(1, &viewport);

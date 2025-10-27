@@ -1,7 +1,5 @@
 #pragma once
-
 #include <xaudio2.h>
-
 #pragma comment(lib, "xaudio2.lib")
 
 // C++
@@ -38,6 +36,10 @@ struct SoundData {
 	unsigned int bufferSize;
 };
 
+/// <summary>
+/// オーディオクラス
+/// 音声の読み込み、再生などを行うクラス
+/// </summary>
 class Audio {
 
 public:
@@ -50,7 +52,7 @@ public:
 	// 音声再生
 	void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData);
 
-
+	// XAudio2取得
 	IXAudio2* GetXAudio2() const;
 
 private:

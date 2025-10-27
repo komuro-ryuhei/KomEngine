@@ -52,10 +52,6 @@ public: // 静的メンバ変数
 	void PostDraw();
 
 	/// <summary>
-	///
-	/// </summary>
-
-	/// <summary>
 	/// レンダーターゲットのクリア
 	/// </summary>
 	void CrearRenderTargets();
@@ -75,20 +71,20 @@ public: // 静的メンバ変数
 	/// <summary>
 	/// getter
 	/// </summary>
-	ID3D12Device* GetDevice() const;
-	ID3D12GraphicsCommandList* GetCommandList() const;
-	ID3D12CommandQueue* GetCommsndQueue() const;
-	D3D12_VIEWPORT GetViewPort() const;
-	D3D12_RECT GetScissor() const;
-	ID3D12DescriptorHeap* GetSrvDescriptorHeap();
-	uint32_t GetDescriptorSizeSRV() const;
-	uint32_t GetDescriptorSizeRTV() const;
-	uint32_t GetDescriptorSizeDSV() const;
-	D3D12_DEPTH_STENCIL_DESC GetDepthStencilDesc() const;
-	size_t GetBackBufferCount() const;
-	D3D12_RENDER_TARGET_VIEW_DESC GetRtvDesc() const;
-	D3D12_CPU_DESCRIPTOR_HANDLE GetDsvHandle() const;
-	D3D12_CPU_DESCRIPTOR_HANDLE GetRtvStartHandle() const;
+	ID3D12Device* GetDevice() const; // デバイスの取得
+	ID3D12GraphicsCommandList* GetCommandList() const; // コマンドリストの取得
+	ID3D12CommandQueue* GetCommsndQueue() const; // コマンドキューの取得
+	D3D12_VIEWPORT GetViewPort() const; // ビューポートの取得
+	D3D12_RECT GetScissor() const; // シザー矩形の取得
+	ID3D12DescriptorHeap* GetSrvDescriptorHeap(); // SRVディスクリタヒープの取得
+	uint32_t GetDescriptorSizeSRV() const; // SRVのディスクリタサイズ取得
+	uint32_t GetDescriptorSizeRTV() const; // RTVのディスクリタサイズ取得
+	uint32_t GetDescriptorSizeDSV() const; // DSVのディスクリタサイズ取得
+	D3D12_DEPTH_STENCIL_DESC GetDepthStencilDesc() const; // デプスステンシルステートの取得
+	size_t GetBackBufferCount() const; // バックバッファの数を取得
+	D3D12_RENDER_TARGET_VIEW_DESC GetRtvDesc() const; // RTVディスクリプタの取得
+	D3D12_CPU_DESCRIPTOR_HANDLE GetDsvHandle() const; // DSVハンドルの取得
+	D3D12_CPU_DESCRIPTOR_HANDLE GetRtvStartHandle() const; // RTVスタートハンドルの取得
 
 private: // メンバ変数
 	// ウィンドウサイズ
@@ -219,19 +215,24 @@ private: // メンバ関数
 	/// </summary>
 	void InitializeDepthStencilView();
 
-	//
+	// レンダーターゲット用テクスチャリソースの作成
 	ComPtr<ID3D12Resource> CreateRenderTextureResource(ID3D12Device* device, UINT width, UINT height, DXGI_FORMAT format, const Vector4& clearColor);
 	//
 
 public:
+	// CPU/GPUハンドルの取得
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
+	// テクスチャ読み込み
 	DirectX::ScratchImage LoadTexture(const std::string& filePath);
 
+	// テクスチャリソース作成
 	ComPtr<ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
 
+	// テクスチャデータ転送
 	void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
 
+	// デプスステンシル用テクスチャリソースの作成
 	ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height);
 };

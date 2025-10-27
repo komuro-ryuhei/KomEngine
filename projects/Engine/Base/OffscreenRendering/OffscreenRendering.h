@@ -9,27 +9,64 @@
 
 class PipelineManager;
 
+/// <summary>
+/// オフスクリーンレンダリングクラス
+/// </summary>
 class OffscreenRendering {
 
 public:
+
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
 	void Init();
 
+	/// <summary>
+	/// 更新処理
+	/// </summary>
 	void Update();
 
+	/// <summary>
+	/// 描画処理
+	/// </summary>
 	void Draw();
 
+	/// <summary>
+	/// 描画前処理
+	/// </summary>
 	void PostDraw();
 
-	//
+	/// <summary>
+	/// レンダーターゲット用テクスチャリソースの生成
+	/// </summary>
+	/// <param name="device"> デバイス </param>
+	/// <param name="width"> 横幅 </param>
+	/// <param name="height"> 高さ </param>
+	/// <param name="format"> フォーマット </param>
+	/// <param name="clearColor"> 画面の色 </param>
+	/// <returns></returns>
 	ComPtr<ID3D12Resource> CreateRenderTextureResource(ID3D12Device* device, UINT width, UINT height, DXGI_FORMAT format, const Vector4& clearColor);
-	//
+	
+	/// <summary>
+	/// オフスクリーンレンダーターゲットビューの設定
+	/// </summary>
 	void OffScreeenRenderTargetView();
-	//
+
+	/// <summary>
+	/// オフスクリーンシェーダーリソースビューの設定
+	/// </summary>
 	void OffScreenShaderResourceView();
 
 public:
+
+	/// <summary>
+	/// レンダーテクスチャに描画する
+	/// </summary>
 	void RenderToTexture();
 
+	/// <summary>
+	/// バリアを貼る
+	/// </summary>
 	void OffscreenBarrier();
 
 public:

@@ -2,16 +2,26 @@
 
 #include "Engine/lib/ComPtr/ComPtr.h"
 
+#include "Engine/Base/System/System.h"
 #include "Engine/Base/WinApp/WinApp.h"
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
 
-// ImGuiの管理
+/// <summary>
+/// ImGuiの管理
+/// </summary>
 class ImGuiManager {
 
 public:
 
-	void Init(WinApp* winApp, DirectXCommon* dxCommon);
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	/// <param name="winApp"> ウィンドウズアプリケーション </param>
+	void Init(WinApp* winApp);
 
+	/// <summary>
+	/// 終了処理
+	/// </summary>
 	void Finalize();
 
 	/// <summary>
@@ -32,7 +42,6 @@ public:
 private:
 
 	WinApp* winApp_ = nullptr;
-	DirectXCommon* dxCommon_ = nullptr;
 
 	ComPtr<ID3D12DescriptorHeap> srvHeap_;
 };

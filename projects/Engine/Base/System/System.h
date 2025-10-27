@@ -29,6 +29,7 @@
 /// システム
 /// </summary>
 class System {
+
 public: // 静的メンバ関数
 	/// <summary>
 	/// システム全体の初期化
@@ -80,10 +81,10 @@ public:
 	/// <summary>
 	/// getter・setter
 	/// </summary>
-	static DirectXCommon* GetDxCommon();
-	static Input* GetInput();
-	static SrvManager* GetSrvManager();
-	static Light* GetLight();
-	static WinApp* GetWinApp();
-	static OffscreenRendering* GetOffscreenRendering();
+	static DirectXCommon* GetDxCommon(); // DxCommonの取得
+	static Input* GetInput(); // Inputの取得
+	static SrvManager* GetSrvManager(); // SrvManagerの取得
+	static Light* GetLight(); // Lightの取得
+	static WinApp* GetWinApp(); // WinAppの取得
+	static OffscreenRendering* GetOffscreenRendering(); // OffscreenRenderingの取得
 };

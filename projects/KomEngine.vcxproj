@@ -160,6 +160,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
     <ClInclude Include="Game\Entity\Enemy\BossSword.h" />
     <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
     <ClInclude Include="Fade.h" />

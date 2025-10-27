@@ -63,7 +63,7 @@ void Camera::SetTarget(const Vector3& target) {
 	dir = MyMath::Normalize(dir);
 
 	// 
-	float pitch = std::asin(-dir.y);
+	// float pitch = std::asin(-dir.y);
 	float yaw = std::atan2(dir.x, dir.z);
 
 	transform_.rotate = { 0.0f, yaw, 0.0f };

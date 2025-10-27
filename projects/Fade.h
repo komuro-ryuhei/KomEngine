@@ -3,6 +3,9 @@
 #include <algorithm>
 #include "Engine/Base/2d/Sprite/Sprite.h"
 
+/// <summary>
+/// フェードクラス
+/// </summary>
 class Fade {
 public:
 	enum class Status { None, FadeIn, FadeOut };
@@ -19,14 +22,23 @@ public:
 	// フェード停止（非表示＆計算停止）
 	void Stop();
 
+	/// <summary>
+	/// 更新処理
+	/// </summary>
 	void Update();
+
+	/// <summary>
+	/// 描画処理
+	/// </summary>
 	void Draw();
 
 	// 進行が完了したか（FadeIn / FadeOutとも）
 	bool IsFinished() const;
 
+	// フェード中かどうか
 	bool IsActive() const { return status_ != Status::None; }
 
+	// スラッシュオープン開始
 	void StartSlashOpen(float durationSec, float angleDeg = 45.0f, bool withFlash = true);
 
 private:
