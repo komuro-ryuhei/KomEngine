@@ -67,8 +67,14 @@ public: // メンバ関数
 	/// </summary>
 	void TerminateGameWindow();
 
+	/// <summary>
+	/// ウィンドウクラスの取得
+	/// </summary>
 	WNDCLASS GetWindowClass() const;
 
+	/// <summary>
+	/// ウィンドウハンドルの取得
+	/// </summary>
 	HWND GetHwnd() const;
 
 private: // メンバ変数

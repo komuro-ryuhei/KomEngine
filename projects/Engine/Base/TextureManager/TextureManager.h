@@ -10,15 +10,24 @@
 #include "Engine/Base/SrvManager/SrvManager.h"
 #include "Engine/lib/ComPtr/ComPtr.h"
 
-// テクスチャマネージャー
+/// <summary>
+/// テクスチャ管理クラス
+/// </summary>
 class TextureManager {
 
 public:
 	// シングルトンインスタンスの取得
 	static TextureManager* GetInstance();
 
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
+	/// <param name="srvManager"> SRVManager </param>
 	void Init(SrvManager* srvManager);
-	// 終了処理
+
+	/// <summary>
+	/// 終了処理
+	/// </summary>
 	void Finalize();
 
 public:
@@ -33,7 +42,7 @@ public:
 	ComPtr<ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
 
 	/// <summary>
-	///
+	/// テクスチャデータのアップロード
 	/// </summary>
 	ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
 
@@ -52,6 +61,7 @@ public:
 	// テクスチャ番号からGPUハンドルを取得
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(const std::string& filePath);
 
+	// テクスチャ番号からCPUハンドルを取得
 	uint32_t GetSrvIndex(const std::string& filePath);
 
 public:

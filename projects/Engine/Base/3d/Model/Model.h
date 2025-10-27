@@ -7,6 +7,7 @@
 #include <vector>
 
 // MyClass
+#include "Engine/Base/System/System.h"
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/Base/PSO/PipelineManager/PipelineManager.h"
 #include "Engine/Base/TextureManager/TextureManager.h"
@@ -14,11 +15,23 @@
 #include "Engine/lib/Math/MyMath.h"
 #include "struct.h"
 
+/// <summary>
+/// Modelクラス
+/// 3Dモデル描画を行うクラス
+/// </summary>
 class Model {
 
 public:
-	void Init(DirectXCommon* dxCommon, const std::string& directoryPath, const std::string& filename);
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	/// <param name="directoryPath"> ディレクトリーパス </param>
+	/// <param name="filename"> ファイルネーム </param>
+	void Init(const std::string& directoryPath, const std::string& filename);
 
+	/// <summary>
+	/// 描画
+	/// </summary>
 	void Draw();
 
 public: // メンバ関数
@@ -44,7 +57,6 @@ private:
 	static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
 
 private: // メンバ変数
-	DirectXCommon* dxCommon_ = nullptr;
 
 	// Objファイルのデータ
 	ModelData modelData;

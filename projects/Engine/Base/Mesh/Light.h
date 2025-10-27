@@ -12,7 +12,7 @@
 #include "struct.h"
 
 /// <summary>
-/// メッシュ
+/// ライトクラス
 /// </summary>
 class Light {
 public:
@@ -48,14 +48,20 @@ public:
 		Vector3 worldPosition;
 	};
 
+	/// <summary>
+	/// ライトの初期設定
+	/// </summary>
 	void LightSetting();
 
+	/// <summary>
+	/// ImGuiによるデバッグ表示
+	/// </summary>
 	void ImGuiDebug();
 
-	ID3D12Resource* GetLightResource()const;
-	ID3D12Resource* GetPhongLightResource()const;
-	ID3D12Resource* GetPointLightResource()const;
-	ID3D12Resource* GetSpotLightResource()const;
+	ID3D12Resource* GetLightResource()const; // Light用のマテリアルリソースを取得
+	ID3D12Resource* GetPhongLightResource()const; // Phong用のマテリアルリソースを取得
+	ID3D12Resource* GetPointLightResource()const; // PointLight用のマテリアルリソースを取得
+	ID3D12Resource* GetSpotLightResource()const; // SpotLight用のマテリアルリソースを取得
 
 private:
 	// Light用のマテリアルリソースを作る

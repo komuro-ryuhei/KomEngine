@@ -6,6 +6,9 @@
 #include "externals/nlohmann/json.hpp"
 #include <map>
 
+/// <summary>
+/// レベルローダークラス
+/// </summary>
 class Loader {
 
 	struct LevelData {
@@ -21,15 +24,34 @@ class Loader {
 	};
 
 public:
+
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	/// <param name="camera"> カメラ </param>
 	void Init(Camera* camera);
 
+	/// <summary>
+	/// 更新処理
+	/// </summary>
 	void Update();
 
+	/// <summary>
+	/// 描画処理
+	/// </summary>
 	void Draw();
 
-	void Reload(Camera* camera); // 再読み込み
+	/// <summary>
+	/// ホットリロード
+	/// </summary>
+	/// <param name="camera"> カメラ </param>
+	void Reload(Camera* camera);
 private:
-	void Clear(); // オブジェクト削除関数
+
+	/// <summary>
+	/// オブジェクト削除関数
+	/// </summary>
+	void Clear();
 
 private:
 

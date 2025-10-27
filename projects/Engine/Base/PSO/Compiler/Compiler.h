@@ -37,7 +37,6 @@ public:
 	/// <param name="dxcUtils">初期化で生成したもの</param>
 	/// <param name="dxcCompiler">初期化で生成したもの</param>
 	/// <param name="includeHandler">初期化で生成したもの</param>
-	/// <returns></returns>
 	ComPtr<IDxcBlob> CompileShader(
 		const std::wstring& filePath,
 		const wchar_t* profile,
@@ -46,9 +45,9 @@ public:
 		IDxcIncludeHandler* includeHandler);
 
 	// getter
-	IDxcUtils* GetDxcUtils()const;
-	IDxcCompiler3* GetCompiler()const;
-	IDxcIncludeHandler* GetIncludeHandler()const;
+	IDxcUtils* GetDxcUtils()const; // dxcUtilsの取得
+	IDxcCompiler3* GetCompiler()const; // dxcCompilerの取得
+	IDxcIncludeHandler* GetIncludeHandler()const; // includeHandlerの取得
 
 private:
 

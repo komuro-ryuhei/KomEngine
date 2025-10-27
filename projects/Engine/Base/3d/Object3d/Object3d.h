@@ -17,37 +17,56 @@
 #include "Engine/lib/Math/MyMath.h"
 #include "struct.h"
 
-// 3Dオブジェクト
+/// <summary>
+/// 3Dオブジェクトクラス
+/// 3Dモデルの実態を描画するクラス
+/// </summary>
 class Object3d {
 
 public: // メンバ関数
 	Object3d() = default;
 	~Object3d() = default;
 
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	/// <param name="type"> ブレンドタイプ </param>
 	void Init(BlendType type);
 
+	/// <summary>
+	/// 更新
+	/// </summary>
 	void Update();
 
+	/// <summary>
+	/// 描画
+	/// </summary>
 	void Draw();
 
+	/// <summary>
+	/// ImGuiでのデバッグ処理
+	/// </summary>
 	void ImGuiDebug();
 
-	// setter
-	void SetModel(const std::string& filePath);
-	void SetCamera(Camera* camera);
-	void SetDefaultCamera(Camera* camera);
-	void SetScale(const Vector3& scale);
-	void SetTranslate(const Vector3& translate);
-	void SetRotate(const Vector3& rotate);
-	void SetTransform(const Transform& transform);
-	void SetRadius(float radius) { radius_ = radius; }
+	// ------------------- setter ------------------- //
 
-	// getter
-	Vector3 GetScale() const;
-	Vector3 GetRotate() const;
-	Vector3 GetTranslate() const;
-	float GetRadius() const;
-	Vector3 GetWorldPosition() const;
+	void SetModel(const std::string& filePath); // モデルのセット
+	void SetCamera(Camera* camera); // カメラのセット
+	void SetDefaultCamera(Camera* camera); // デフォルトカメラのセット
+	void SetScale(const Vector3& scale); // スケールのセット
+	void SetTranslate(const Vector3& translate); // 座標のセット
+	void SetRotate(const Vector3& rotate); // 回転のセット
+	void SetTransform(const Transform& transform); // トランスフォームのセット
+	void SetRadius(float radius) { radius_ = radius; } // 半径のセット
+
+	// ------------------- getter ------------------- //
+
+	Vector3 GetScale() const; // スケールの取得
+	Vector3 GetRotate() const; // 回転の取得
+	Vector3 GetTranslate() const; // 座標の取得
+	float GetRadius() const; // 半径の取得
+	Vector3 GetWorldPosition() const; // ワールド座標の取得
+	Camera* GetDefaultCamera() const; // デフォルトカメラの取得
 
 	// 親子関係の追加
 	void SetParent(Object3d* parent);
@@ -58,11 +77,8 @@ public: // メンバ関数
 	// 環境マップの映り込みを設定するか
 	void SetEnvironmentTexture(const std::string& filePath);
 
-	// 
+	// Blenderからの座標系かどうかを設定
 	void SetFromBlender(bool flag);
-
-	// getter
-	Camera* GetDefaultCamera() const;
 
 private:
 	// ウィンドウズアプリケーション

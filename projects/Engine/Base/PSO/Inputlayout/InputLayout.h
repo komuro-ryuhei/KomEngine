@@ -8,14 +8,16 @@
 /// インプットレイアウトの設定
 /// </summary>
 class InputLayout {
+
 public:
+
 	/// <summary>
-	/// 設定
+	/// 初期化設定
 	/// </summary>
 	void Setting(const std::string& objectType);
 
 	// getter
-	D3D12_INPUT_LAYOUT_DESC GetInputLayout() const;
+	D3D12_INPUT_LAYOUT_DESC GetInputLayout() const; // インプットレイアウトの取得
 
 private:
 	// D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};

@@ -24,8 +24,8 @@ void Loader::Init(Camera* camera) {
 	assert(deserialized.contains("name"));
 	assert(deserialized["name"].is_string());
 
-	std::string name = deserialized["name"].get<std::string>();
-	assert(name.compare("scene") == 0);
+	std::string sceneName = deserialized["name"].get<std::string>();
+	assert(sceneName.compare("scene") == 0);
 
 	levelData = new LevelData();
 

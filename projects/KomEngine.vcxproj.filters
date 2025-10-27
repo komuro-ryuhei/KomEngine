@@ -454,6 +454,7 @@
     <ClInclude Include="Fade.h" />
     <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
     <ClInclude Include="Game\Entity\Enemy\BossSword.h" />
+    <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

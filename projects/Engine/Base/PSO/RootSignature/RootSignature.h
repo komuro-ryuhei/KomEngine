@@ -8,15 +8,20 @@
 
 #include <string>
 
+/// <summary>
+/// ルートシグネチャクラス
+/// </summary>
 class RootSignature {
+
 public:
+
 	/// <summary>
 	/// 生成
 	/// </summary>
 	void Create(const std::string& objectName);
 
 	// getter
-	ID3D12RootSignature* GetRootSignature() const;
+	ID3D12RootSignature* GetRootSignature() const; // ルートシグネチャの取得
 
 	RootSignature() = default;
 	~RootSignature() = default;

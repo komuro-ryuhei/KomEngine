@@ -47,19 +47,42 @@ struct SpiralEmitter {
 };
 static SpiralEmitter spiralEmitter;
 
+/// <summary>
+/// パーティクルマネージャークラス
+/// </summary>
 class ParticleManager {
 
 public:
 	static ParticleManager* GetInstance();
 
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
+	/// <param name="camera"> カメラ </param>
+	/// <param name="type"> ブレンドタイプ </param>
 	void Init(Camera* camera, BlendType type);
 
+	/// <summary>
+	/// 更新処理
+	/// </summary>
 	void Update();
 
+	/// <summary>
+	/// 描画処理
+	/// </summary>
 	void Draw();
 
+	/// <summary>
+	/// 終了処理
+	/// </summary>
 	void Finalize();
 
+	/// <summary>
+	/// 生成
+	/// </summary>
+	/// <param name="name"> 生成するパーティクルの名前 </param>
+	/// <param name="position"> 生成する座標 </param>
+	/// <param name="count"> 生成数 </param>
 	void Emit(const std::string name, const Vector3& position, uint32_t count);
 
 	void CreateParticleGeoup(const std::string name, const std::string textureFilePath, const std::string& particleType);
@@ -72,11 +95,15 @@ public:
 	Particle MakeRingParticle(std::mt19937& randomEngine, const Vector3& translate);
 	// シリンダーのエフェクト
 	Particle MakeCylinderParticle(std::mt19937& randomEngine, const Vector3& translate);
-
-	// 
+	// 月のような光のエフェクト
 	Particle MakeMoonLightParticle(const Vector3& translate, bool isVertical);
+	// 渦巻くエフェクト
 	Particle MakeSpiralParticle(const Vector3& translate, float angleOffset);
 
+	/// <summary>
+	/// 存在確認
+	/// </summary>
+	/// <param name="name"> 名前 </param>
 	bool Exists(const std::string& name) const;
 
 private:
@@ -105,7 +132,15 @@ private:
 
 private:
 
+	/// <summary>
+	///　頂点データ作成
+	/// </summary>
+	/// <param name="group">　グループ　</param>
+	/// <param name="particleType"> パーティクルのタイプ </param>
 	void MakeVertexData(ParticleGroup& group, const std::string& particleType);
 
+	/// <summary>
+	/// 渦巻きエミッター更新
+	/// </summary>
 	void UpdateSpiralEmitter();
 };

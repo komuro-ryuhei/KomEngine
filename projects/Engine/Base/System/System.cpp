@@ -84,14 +84,14 @@ void System::Initialize(const char* title, int width, int height) {
 	// TextureManager
 	TextureManager::GetInstance()->Init(srvManager_.get());
 
-	ModelManager::GetInstance()->Init(dxCommon_.get());
+	ModelManager::GetInstance()->Init();
 
 	// Mesh
 	light_ = std::make_unique<Light>();
 	light_->LightSetting();
 
 	imguiManager_ = std::make_unique<ImGuiManager>();
-	imguiManager_->Init(winApp_.get(), dxCommon_.get());
+	imguiManager_->Init(winApp_.get());
 }
 
 bool System::ProcessMessage() { return winApp_->ProcessMessage(); }

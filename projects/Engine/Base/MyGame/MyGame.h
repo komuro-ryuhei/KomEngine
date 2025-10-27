@@ -9,9 +9,17 @@
 
 #include <memory>
 
+/// <summary>
+/// ゲームの進行を管理するクラス
+/// </summary>
 class MyGame {
 
 public:
+
+	/// <summary>
+	/// 指定したシーンを実行
+	/// </summary>
+	/// <param name="sceneName"> 開始するシーン </param>
 	void Run(const std::string& sceneName);
 
 private:

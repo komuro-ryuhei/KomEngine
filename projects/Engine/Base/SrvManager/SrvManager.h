@@ -8,21 +8,31 @@
 #include <cassert>
 #include <d3d12.h>
 
-// SRV管理
+/// <summary>
+/// SRV管理クラス
+/// </summary>
 class SrvManager {
 public:
 
 	SrvManager() = default;
 	~SrvManager() = default;
 
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
 	void Init();
 
+	/// <summary>
+	/// 描画前処理
+	/// </summary>
 	void PreDraw();
 
 public:
 
+	// SRV用のデスクリプタヒープからデスクリプタを1つ割り当てる関数
 	uint32_t Allocate();
 
+	// CPU/GPUデスクリプタハンドル取得関数
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(uint32_t index);
 
@@ -32,7 +42,7 @@ public:
 	void CreateSRVforTextureCube(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT format, UINT mipLevels);
 	// SRV生成 (Structured Buffer用)
 	void CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride);
-
+	// SRV生成 (Raw Buffer用)
 	void SetGraphicsRootDescriptorTable(UINT RootParameterIndex, uint32_t srvIndex);
 
 	// 最大テクスチャ数に達しているかを確認する関数

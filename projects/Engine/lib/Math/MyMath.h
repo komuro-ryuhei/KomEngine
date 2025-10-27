@@ -7,6 +7,9 @@
 #include <cmath>
 #include <random>
 
+/// <summary>
+/// 数学関数クラス
+/// </summary>
 class MyMath {
 public:
 	// π
@@ -69,7 +72,6 @@ public:
 	// 回転行列
 	static Matrix4x4 MakeRotateMatrix(Vector3 rotate);
 
-	// 
 	// ヘッダ
 	static Matrix4x4 MakeRotateMatrixFromBlenderEuler(Vector3 blenderRotate);
 

@@ -15,26 +15,46 @@
 #include "Engine/lib/Math/MyMath.h"
 #include "struct.h"
 
+/// <summary>
+/// スカイボックスのクラス
+/// スカイボックス描画を行うクラス
+/// </summary>
 class Skybox {
 
 public:
 	Skybox() = default;
 	~Skybox() = default;
 
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	/// <param name="filename"> ファイルネーム </param>
 	void Init(const std::string& filename);
 
+	/// <summary>
+	/// 更新
+	/// </summary>
 	void Update();
 
+	/// <summary>
+	/// 描画
+	/// </summary>
 	void Draw();
 
+	/// <summary>
+	/// ImGuiによるデバッグ処理
+	/// </summary>
 	void ImGuiDebug();
 
 public:
 
+	// ------------------- setter ------------------- //
+
+	// デフォルトカメラのセット
 	void SetDefaultCamera(Camera* camera);
 
 private:
-	//
+	// 座標初期化
 	void InitPosition();
 
 private: // メンバ変数

@@ -16,10 +16,15 @@ enum BlendType {
 /// </summary>
 class BlendState {
 public:
+
+	/// <summary>
+	/// 初期化設定
+	/// </summary>
+	/// <param name="type"> ブレンドタイプ </param>
 	void Setting(BlendType type);
 
 	// setter
-	D3D12_BLEND_DESC GetBlendDesc() const;
+	D3D12_BLEND_DESC GetBlendDesc() const; // ブレンドステートの取得
 
 private:
 	D3D12_BLEND_DESC blendDesc{};

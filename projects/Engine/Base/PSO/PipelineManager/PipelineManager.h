@@ -38,10 +38,15 @@ public:
 	/// </summary>
 	void CreatePSO(const std::string& objectType);
 
+	/// <summary>
+	/// PSOの設定
+	/// </summary>
+	/// <param name="objectType"> オブジェクトタイプ </param>
+	/// <param name="type"> ブレンドタイプ </param>
 	void PSOSetting(const std::string& objectType, BlendType type);
 
-	ID3D12RootSignature* GetRootSignature() const;
-	ID3D12PipelineState* GetGraphicsPipelineState() const;
+	ID3D12RootSignature* GetRootSignature() const; // ルートシグネチャの取得
+	ID3D12PipelineState* GetGraphicsPipelineState() const; // グラフィックスパイプラインステートの取得
 
 private:
 	std::unique_ptr<Compiler> compiler_ = std::make_unique<Compiler>();

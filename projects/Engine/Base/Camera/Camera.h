@@ -9,6 +9,10 @@ enum class CameraShakeType {
 	Large
 };
 
+/// <summary>
+/// カメラのクラス
+/// カメラの位置、向き、射影変換などを管理するクラス
+/// </summary>
 class Camera {
 
 public:
