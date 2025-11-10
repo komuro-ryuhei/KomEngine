@@ -5,6 +5,7 @@
 #include "Game/Scene/GameScene.h"
 #include "Game/Scene/TitleScene.h"
 #include "Game/Scene/BossTestScene.h"
+#include "Game/Scene/GameOverScene.h"
 
 class SceneFactory : public AbstractSceneFactory {
 

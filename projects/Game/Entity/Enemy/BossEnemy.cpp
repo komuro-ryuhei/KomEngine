@@ -227,6 +227,7 @@ float BossEnemy::GetRightHandRadius() const {
 
 // ---- 左手（必要なら使って） ----
 void BossEnemy::SetLeftHandScale(const Vector3& s) {
+
 	if (leftArm_) {
 		leftArm_->SetScale(s);
 		leftArm_->SetRadius(1.0f * leftArm_->GetScale().x);
@@ -234,6 +235,7 @@ void BossEnemy::SetLeftHandScale(const Vector3& s) {
 }
 
 Vector3 BossEnemy::GetLeftHandWorldPos() const {
+
 	if (leftArm_) {
 		return leftArm_->GetWorldPosition();
 	}
@@ -241,8 +243,15 @@ Vector3 BossEnemy::GetLeftHandWorldPos() const {
 }
 
 float BossEnemy::GetLeftHandRadius() const {
+
 	if (leftArm_) {
 		return leftArm_->GetRadius();
 	}
 	return 1.0f;
+}
+
+void BossEnemy::Damage(int v) {
+
+	if (v <= 0) return;
+	hp_ = std::max(0, hp_ - v);
 }

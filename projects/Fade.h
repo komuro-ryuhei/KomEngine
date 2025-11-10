@@ -41,7 +41,15 @@ public:
 	// スラッシュオープン開始
 	void StartSlashOpen(float durationSec, float angleDeg = 45.0f, bool withFlash = true);
 
+	// スラッシュクローズ開始
+	static void SetDefaultOpenModeSlash(bool enabled);
+	static bool GetDefaultOpenModeSlash();
+
 private:
+
+	// デフォルトでスラッシュオープンを使うかどうか
+	static bool s_defaultSlashOpen;
+
 	std::unique_ptr<Sprite> sprite_;
 
 	Status status_ = Status::None;

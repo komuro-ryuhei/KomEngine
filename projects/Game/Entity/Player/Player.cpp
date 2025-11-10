@@ -161,6 +161,7 @@ void Player::RotateY90() {
 }
 
 void Player::SpawnBullet() {
+
 	// 弾の見た目（Object3d）を新規作成
 	Object3d* bulletObject = new Object3d();
 	bulletObject->Init(BlendType::BLEND_NONE);

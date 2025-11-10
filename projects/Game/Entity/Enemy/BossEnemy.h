@@ -41,6 +41,11 @@ public:
 	Vector3 GetLeftHandWorldPos() const;
 	float   GetLeftHandRadius() const;
 
+	// HP
+	void   Damage(int v);
+	int    GetHP() const { return hp_; }
+	bool   IsDead() const { return hp_ <= 0; }
+
 public:
 
 	void AddHitLeftArm() { ++leftArmHitCount_; }
@@ -98,4 +103,7 @@ private:
 
 	bool isMoveRight_ = false;
 	bool pushEnter_ = false;
+
+	// HP
+	int hp_ = 10;
 };

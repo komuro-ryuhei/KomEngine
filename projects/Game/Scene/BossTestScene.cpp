@@ -39,12 +39,16 @@ void BossTestScene::Init() {
 	glassObject_->Init(BlendType::BLEND_NONE);
 	glassObject_->SetModel("ground.obj");
 	glassObject_->SetDefaultCamera(camera_.get());
+	glassObject_->SetTranslate({ 0.0f, -5.0f, 0.0f });
 
 	// --- フェード初期化（画面サイズは 1280x720）---
 	fade_ = std::make_unique<Fade>();
 	fade_->Initialize(1280, 720);
-	// fade_->Start(Fade::Status::FadeIn, 0.6f);
-	fade_->StartSlashOpen(0.6f, 60.0f, true);
+	if (Fade::GetDefaultOpenModeSlash()) {
+		fade_->StartSlashOpen(0.6f, 60.0f, true);
+	} else {
+		fade_->Start(Fade::Status::FadeIn, 0.6f);
+	}
 	phase_ = Phase::kFadeIn;
 
 	// Player
@@ -123,6 +127,28 @@ void BossTestScene::Update() {
 	// 地面オブジェクトの更新
 	glassObject_->Update();
 
+	// ノックアウトカメラの開始（Kキー）
+	if (System::TriggerKey(DIK_K)) {
+		if (!koActive_) {
+			KnockoutCameraController::Params p; p.fallSide = +1;
+			ko_.Start(camera_.get(), 0.0f, p);
+			koActive_ = true; isCameraFollowPlayer_ = false;
+		}
+	}
+
+	// ノックアウトカメラの更新
+	if (koActive_) {
+		ko_.Update(dt, camera_.get());
+		if (ko_.IsDone()) {
+			koActive_ = false;
+
+			// フェードアウト開始
+			if (fade_ && phase_ == Phase::kMain) {
+				fade_->Start(Fade::Status::FadeOut, 0.6f); // 0.6秒の黒フェード
+				phase_ = Phase::kFadeOut;
+			}
+		}
+	}
 
 	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
 
@@ -173,16 +199,30 @@ void BossTestScene::Update() {
 	// パーティクルの更新処理
 	ParticleManager::GetInstance()->Update();
 
+	{
+		constexpr int LOW_HP_THRESHOLD = 0; // HP2以下
+		bool nowLow = player_->IsLowHP(LOW_HP_THRESHOLD);
+
+		if (nowLow && !lowHpVfxOn_) {
+			System::GetOffscreenRendering()->SetPostEffect("Vignetting");
+			lowHpVfxOn_ = true;
+		} else if (!nowLow && lowHpVfxOn_) {
+			// 低HPを脱したら元に戻す
+			System::GetOffscreenRendering()->SetPostEffect("none");
+			lowHpVfxOn_ = false;
+		}
+	}
+
 	if (swordAttack_) {
 
-		// ① 右手を縮める（0.4秒）
+		// 右手を縮める
 		if (swordPhaseT_ < 0.4f) {
 			swordPhaseT_ += dt;
 			float t = std::min(1.f, swordPhaseT_ / 0.4f);
 			// 右手のスケールを徐々に0へ（BossEnemy側にsetterが無いなら rightArmScale 直接）
 			boss_->SetRightHandScale(MyMath::Lerp(Vector3{ 1,1,1 }, Vector3{ 0,0,0 }, t));
 		}
-		// ② 縮みきった直後：スイープ開始（カメラ演出なし版）
+		// 縮みきった直後：スイープ開始
 		else if (swordPhaseT_ < 0.41f) {
 			swordPhaseT_ = 0.41f;
 
@@ -208,7 +248,7 @@ void BossTestScene::Update() {
 			swordToward_ = 2.0f;
 			swordDuration_ = 0.5f;
 
-			// ★ここで即スイープ開始（カメラ演出は使わない）
+			// ここで即スイープ開始
 			sword_->SetScale({ 1.6f,1.6f,1.6f });
 			sword_->StartSweep(swordCenter_, swordRight_, swordForward_,
 				swordHalfLen_, swordToward_, swordDuration_);
@@ -218,7 +258,7 @@ void BossTestScene::Update() {
 			swordPendingSweep_ = false;
 		}
 
-		// ③ 剣が消えたら右手を戻して終了（0.3秒）
+		// 剣が消えたら右手を戻して終了
 		else if (!sword_->IsAlive()) {
 			swordPhaseT_ += dt;
 			float t = std::min(1.f, (swordPhaseT_ - 0.41f) / 0.3f);
@@ -240,7 +280,7 @@ void BossTestScene::Update() {
 
 	case Phase::kMain:
 		// 遷移トリガー
-		if (System::TriggerKey(DIK_RETURN)) {
+		if (System::TriggerKey(DIK_RETURN) || boss_->GetHP() <= 0) {
 			fade_->Start(Fade::Status::FadeOut, 0.6f);
 			phase_ = Phase::kFadeOut;
 		}
@@ -249,6 +289,7 @@ void BossTestScene::Update() {
 	case Phase::kFadeOut:
 		fade_->Update();
 		if (fade_->IsFinished()) {
+			Fade::SetDefaultOpenModeSlash(false);
 			sceneManager_->ChangeScene("TITLE");
 		}
 		break;
@@ -258,9 +299,11 @@ void BossTestScene::Update() {
 
 	ImGui::Begin("BossTestScene");
 
+	glassObject_->ImGuiDebug();
 	camera_->ImGuiDebug();
 	player_->ImGuiDebug();
 	boss_->ImGuiDebug();
+
 
 	ImGui::Checkbox("isCameraFollowPlayer", &isCameraFollowPlayer_);
 
@@ -275,7 +318,7 @@ void BossTestScene::Draw() {
 	// Skyboxの描画
 	skybox_->Draw();
 	// 地面オブジェクトの描画
-	// glassObject_->Draw();
+	glassObject_->Draw();
 
 	// -------------------- ゲームオブジェクトシーンの描画 -------------------- //
 
@@ -331,6 +374,7 @@ void BossTestScene::CheckCollisions() {
 						boss_->AddHitRightArm();
 					} else {
 						// 本体に命中したときの処理があればここに
+						boss_->Damage(1);
 
 					}
 
@@ -373,9 +417,12 @@ void BossTestScene::CheckCollisions() {
 				player_->SetInvincible(true);
 			}
 
-			// HPが引数以下ならポストエフェクトを適応
-			if (player_->IsLowHP(2)) {
-				System::GetOffscreenRendering()->SetPostEffect("Vignetting");
+			if (!koActive_ && player_->GetHP() <= 0) {
+				KnockoutCameraController::Params p;
+				p.fallSide = +1;                    // 左へなら -1
+				ko_.Start(camera_.get(), /*groundY*/ 0.0f, p);
+				koActive_ = true;
+				isCameraFollowPlayer_ = false;
 			}
 
 			// カメラを揺らす
@@ -386,7 +433,7 @@ void BossTestScene::CheckCollisions() {
 		}
 	}
 
-	// ---- プレイヤー vs メテオ ----
+	// -------------------- プレイヤー vs メテオ -------------------- //
 	{
 		Vector3 ppos = player_->GetTranslate();
 		float   pr = player_->GetRadius();

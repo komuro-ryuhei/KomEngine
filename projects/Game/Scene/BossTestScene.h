@@ -14,6 +14,7 @@
 #include "Engine/Base/Particle/ParticleManager.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "Fade.h"
+#include "KnockoutCameraController.h"
 
 class BossTestScene : public IScene {
 public:
@@ -28,6 +29,7 @@ public:
 	void Draw() override;
 
 	void Finalize() override;
+
 
 private:
 	// Camera
@@ -106,6 +108,14 @@ private:
 	bool    swordPendingSweep_ = false;
 	Vector3 swordCenter_{}, swordRight_{}, swordForward_{};
 	float   swordHalfLen_ = 10.0f, swordToward_ = 2.0f, swordDuration_ = 0.5f;
+
+
+	KnockoutCameraController ko_;
+	bool koActive_ = false;
+
+	bool lowHpVfxOn_ = false;
+
+private:
 
 	// 内部ユーティリティ
 	void StartMeteorMode();

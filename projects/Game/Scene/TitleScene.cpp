@@ -13,6 +13,7 @@ void TitleScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/Title.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/PushEnter.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/YOUDIE.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -33,6 +34,7 @@ void TitleScene::Init() {
 	enterSprite_ = std::make_unique<Sprite>();
 	enterSprite_->Init("./Resources/images/PushEnter.png", BlendType::BLEND_NONE);
 	enterSprite_->SetPosition({ 640.0f,500.0f });
+	enterSprite_->SetSize({ 500.0f,256.0f });
 
 	// camera
 	camera_ = std::make_unique<Camera>();
@@ -44,11 +46,14 @@ void TitleScene::Init() {
 	skybox_->Init("./Resources/images/test.dds");
 	skybox_->SetDefaultCamera(camera_.get());
 
-	// --- フェード初期化（画面サイズは 1280x720）---
+	// --- フェード初期化（画面サイズは 1280x720）--- //
 	fade_ = std::make_unique<Fade>();
 	fade_->Initialize(1280, 720);
-	// fade_->Start(Fade::Status::FadeIn, 0.6f);  // 入りで明転
-	fade_->StartSlashOpen(0.6f, 60.0f, true);
+	if (Fade::GetDefaultOpenModeSlash()) {
+		fade_->StartSlashOpen(0.6f, 60.0f, true);
+	} else {
+		fade_->Start(Fade::Status::FadeIn, 0.6f);  // 普通の黒フェードで明転
+	}
 
 	// boss
 	boss_ = std::make_unique<BossEnemy>();
@@ -129,9 +134,11 @@ void TitleScene::Draw() {
 	// タイトル
 	titleSprite_->Draw();
 
-	if (isPushEnter_) {
+	/*if (isPushEnter_) {
 		enterSprite_->Draw();
-	}
+	}*/
+
+	enterSprite_->Draw();
 
 	// Bossの描画
 	boss_->Draw();

@@ -1,5 +1,7 @@
 #include "Fade.h"
 
+bool Fade::s_defaultSlashOpen = false; // 初期設定は「普通の黒フェード」
+
 void Fade::Initialize(int screenWidth, int screenHeight, const char* texturePath) {
 
     w_ = screenWidth;
@@ -141,3 +143,6 @@ void Fade::StartSlashOpen(float durationSec, float angleDeg, bool withFlash) {
         flash_->SetColor({ 1,1,1,1 });
     }
 }
+
+void Fade::SetDefaultOpenModeSlash(bool enabled) { s_defaultSlashOpen = enabled; }
+bool Fade::GetDefaultOpenModeSlash() { return s_defaultSlashOpen; }
