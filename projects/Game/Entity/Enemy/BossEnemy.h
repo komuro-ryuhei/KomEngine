@@ -148,7 +148,7 @@ private:
 	Vector3 leftArmRot_;
 
 	bool isMoveRight_ = false;
-	bool pushEnter_ = false;
+	bool pushEnter_ = true;
 
 	// HP
 	int hp_ = 10;

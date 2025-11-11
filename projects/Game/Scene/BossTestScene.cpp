@@ -178,10 +178,13 @@ void BossTestScene::Update() {
 		if (ko_.IsDone()) {
 			koActive_ = false;
 
-			// フェードアウト開始
+			// フェードアウト開始（まだ何も決まってなければプレイヤー死亡扱い）
 			if (fade_ && phase_ == Phase::kMain) {
-				fade_->Start(Fade::Status::FadeOut, 0.6f); // 0.6秒の黒フェード
+				fade_->Start(Fade::Status::FadeOut, 0.6f);
 				phase_ = Phase::kFadeOut;
+				if (endReason_ == EndReason::None) {
+					endReason_ = EndReason::PlayerDeath;
+				}
 			}
 		}
 	}
@@ -221,7 +224,11 @@ void BossTestScene::Update() {
 		}
 	}
 
-	if (!koActive_ && meteorPhase_ == MeteorPhase::kIdle && !swordCamActive_) {
+	if (!koActive_
+		&& phase_ == Phase::kMain           // フェード中は動かさない
+		&& meteorPhase_ == MeteorPhase::kIdle
+		&& !swordCamActive_
+		&& isCameraFollowPlayer_) {         // プレイヤー追従中だけ
 
 		// 伸ばし始めた瞬間に一回だけ開始
 		if (!armCamActive_ && boss_->IsExtending()) {
@@ -247,8 +254,13 @@ void BossTestScene::Update() {
 			armCamTargetRot_ = MyMath::Lerp(armCamSavedRot_, fullLook, lookWeight);
 		}
 
-		if (armCamActive_) {
+		if (armCamActive_
+			&& !koActive_
+			&& phase_ == Phase::kMain
+			&& isCameraFollowPlayer_) {
+
 			if (boss_->IsExtending()) {
+
 				// 腕が伸びている間：腕方向へ「じわっ」と向ける
 				armCamT_ += dt / armCamIntroTime_;
 				float t = MyMath::Clamp01(armCamT_);
@@ -386,10 +398,17 @@ void BossTestScene::Update() {
 		break;
 
 	case Phase::kMain:
-		// 遷移トリガー
-		if (System::TriggerKey(DIK_RETURN) || boss_->GetHP() <= 0) {
+		// ボス撃破 → クリア遷移
+		if (boss_ && boss_->GetHP() <= 0 && endReason_ == EndReason::None) {
 			fade_->Start(Fade::Status::FadeOut, 0.6f);
 			phase_ = Phase::kFadeOut;
+			endReason_ = EndReason::BossDeath;
+		}
+		// （任意）デバッグでEnter押したらゲームオーバー行きたいなら
+		else if (System::TriggerKey(DIK_RETURN) && endReason_ == EndReason::None) {
+			fade_->Start(Fade::Status::FadeOut, 0.6f);
+			phase_ = Phase::kFadeOut;
+			endReason_ = EndReason::PlayerDeath; // or None/Title 用など好みで
 		}
 		break;
 
@@ -397,7 +416,12 @@ void BossTestScene::Update() {
 		fade_->Update();
 		if (fade_->IsFinished()) {
 			Fade::SetDefaultOpenModeSlash(false);
-			sceneManager_->ChangeScene("TITLE");
+
+			if (endReason_ == EndReason::BossDeath) {
+				sceneManager_->ChangeScene("TITLE");    // ★クリア用シーン名に変更
+			} else {
+				sceneManager_->ChangeScene("GAMEOVER");
+			}
 		}
 		break;
 	}
@@ -557,48 +581,28 @@ void BossTestScene::CheckCollisions() {
 			float   mr = m->GetRadius();
 
 			if (MyMath::CalculateDistance(ppos, mpos) < (pr + mr)) {
+
 				if (!player_->GetInvincible()) {
 					player_->Damage(1);
 					player_->SetInvincible(true);
+
+					// ★ HP0ならノックアウト開始（腕の処理と同じ）
+					if (!koActive_ && player_->GetHP() <= 0) {
+						KnockoutCameraController::Params p;
+						p.fallSide = +1; // 好きな方向でOK
+						ko_.Start(camera_.get(), /*groundY*/ 0.0f, p);
+						koActive_ = true;
+						isCameraFollowPlayer_ = false;
+					}
 				}
-				if (camera_) camera_->StartShake(CameraShakeType::Medium);
+
+				if (camera_) {
+					camera_->StartShake(CameraShakeType::Medium);
+				}
+
 				m->Explode();
 				break;
 			}
-		}
-	}
-
-	// -------------------- プレイヤー弾 vs メテオ -------------------- //
-	{
-		auto &bullets = player_->GetBullets();
-		for (auto it = bullets.begin(); it != bullets.end(); ) {
-			bool removed = false;
-
-			for (auto &m : meteors_) {
-				if (!m->IsAlive()) continue;
-
-				// メテオの中心位置と半径
-				const Vector3 mpos = m->GetObject()->GetWorldPosition(); // もしくは m->GetTransform().translate
-				const float   mr = m->GetRadius();
-
-				// 弾の中心と半径
-				const Vector3 bpos = (*it)->GetTranslate();
-				const float   br = (*it)->GetRadius();
-
-				if (MyMath::CalculateDistance(bpos, mpos) < (br + mr)) {
-					// ヒット演出
-					emitter_->SetTranslate(bpos);
-					emitter_->Update();
-					if (camera_) camera_->StartShake(CameraShakeType::Small);
-
-					// メテオ破壊 & 弾削除
-					m->Explode();
-					it = bullets.erase(it);
-					removed = true;
-					break;
-				}
-			}
-			if (!removed) ++it;
 		}
 	}
 

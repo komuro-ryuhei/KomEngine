@@ -67,6 +67,14 @@ private:
 	enum class Phase { kFadeIn, kMain, kFadeOut };
 	Phase phase_ = Phase::kFadeIn;
 
+	// シーン終了理由
+	enum class EndReason {
+		None,
+		PlayerDeath,
+		BossDeath,
+	};
+	EndReason endReason_ = EndReason::None;
+
 private:
 
 	// 当たり判定

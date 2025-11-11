@@ -133,9 +133,6 @@ void TitleScene::Draw() {
 	// Skyboxの描画
 	skybox_->Draw();
 
-	// タイトル
-	titleSprite_->Draw();
-
 	/*if (isPushEnter_) {
 		enterSprite_->Draw();
 	}*/
@@ -145,6 +142,10 @@ void TitleScene::Draw() {
 	// Bossの描画
 	boss_->Draw();
 
+	// タイトル
+	titleSprite_->Draw();
+
+	// フェード
 	fade_->Draw();
 }
 
