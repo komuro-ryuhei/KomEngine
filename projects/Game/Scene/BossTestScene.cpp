@@ -76,16 +76,21 @@ void BossTestScene::Init() {
 	boss_->SetTranslate({ 0.0f, 0.0f, 20.0f });
 	boss_->SetPlayer(player_.get());
 
-	// 
-	targetOuter_ = std::make_unique<Sprite>();
-	targetOuter_->Init("./Resources/images/outer.png", BlendType::BLEND_ALPHA);
-	targetOuter_->SetAnchorPoint({ 0.5f, 0.5f });
-	targetOuter_->SetSize({ 128, 128 });
+	auto makeTarget = [](std::unique_ptr<Sprite> &outer, std::unique_ptr<Sprite> &inner)
+		{
+			outer = std::make_unique<Sprite>();
+			outer->Init("./Resources/images/outer.png", BlendType::BLEND_ALPHA);
+			outer->SetAnchorPoint({ 0.5f, 0.5f });
+			outer->SetSize({ 128,128 });
 
-	targetInner_ = std::make_unique<Sprite>();
-	targetInner_->Init("./Resources/images/inner.png", BlendType::BLEND_ALPHA);
-	targetInner_->SetAnchorPoint({ 0.5f, 0.5f });
-	targetInner_->SetSize({ 128, 128 });
+			inner = std::make_unique<Sprite>();
+			inner->Init("./Resources/images/inner.png", BlendType::BLEND_ALPHA);
+			inner->SetAnchorPoint({ 0.5f, 0.5f });
+			inner->SetSize({ 128,128 });
+		};
+
+	makeTarget(leftTargetOuter_, leftTargetInner_);
+	makeTarget(rightTargetOuter_, rightTargetInner_);
 
 	// ボスのメテオ
 	meteors_.clear();
@@ -130,6 +135,11 @@ void BossTestScene::Update() {
 		else if (meteorPhase_ != MeteorPhase::kIdle) EndMeteorMode();
 	}
 
+	// ボスからのリクエストでメテオ開始
+	if (meteorPhase_ == MeteorPhase::kIdle && boss_ && boss_->ConsumeMeteorRequest()) {
+		StartMeteorMode();
+	}
+
 	// メテオ中は自動追従を一時停止して、こちらの制御に任せる
 	if (meteorPhase_ == MeteorPhase::kIdle && isCameraFollowPlayer_) {
 		camera_->SetTranslate(player_->GetTransform().translate);
@@ -147,8 +157,8 @@ void BossTestScene::Update() {
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 playerRot = player_->GetTransform().rotate;
 
-	// フラグがtrueだと追従
-	if (isCameraFollowPlayer_) {
+	// フラグがtrueだと追従（※メテオ中はしない）
+	if (meteorPhase_ == MeteorPhase::kIdle && isCameraFollowPlayer_) {
 		camera_->SetTranslate(playerPos);
 		camera_->SetRotate(playerRot);
 	}
@@ -277,8 +287,11 @@ void BossTestScene::Update() {
 
 	UpdateArmTargetMarker();
 
-	targetOuter_->Update();
-	targetInner_->Update();
+	leftTargetOuter_->Update();
+	leftTargetInner_->Update();
+	rightTargetOuter_->Update();
+	rightTargetInner_->Update();
+
 
 	// パーティクルの更新処理
 	ParticleManager::GetInstance()->Update();
@@ -415,8 +428,12 @@ void BossTestScene::Draw() {
 
 	// Playerは一人称視点なので非描画
 	player_->Draw();
-	targetOuter_->Draw();
-	targetInner_->Draw();
+
+	// 
+	leftTargetOuter_->Draw();
+	leftTargetInner_->Draw();
+	rightTargetOuter_->Draw();
+	rightTargetInner_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 
@@ -745,106 +762,103 @@ void BossTestScene::UpdateMeteorMode(float dt) {
 }
 
 void BossTestScene::EndMeteorMode() {
+
 	meteorPhase_ = MeteorPhase::kIdle;
 	camLerp_ = 0.0f;
 
-	// 生き残っているメテオは、まずは即消す
-	for (auto& m : meteors_) {
+	for (auto &m : meteors_) {
 		if (m->IsAlive()) m->Explode();
 	}
 
-	// カメラを元に
 	camera_->SetTranslate(savedCamPos_);
 	camera_->SetRotate(savedCamRot_);
-}
 
+	// ★ ボスに「メテオ終わったよ」と伝える
+	if (boss_) {
+		boss_->OnMeteorFinished();
+	}
+}
 void BossTestScene::UpdateArmTargetMarker() {
 
-	// ==== 攻撃中の腕ターゲットUI更新 ==== //
-	if (boss_ && targetOuter_ && targetInner_) {
+	if (!boss_ || !camera_) return;
 
-		// 今攻撃している腕のワールド座標
-		Vector3 p = boss_->GetCurrentArmWorldPos();
+	// 共通取得
+	const int leftHits = boss_->GetLeftHitCount();
+	const int rightHits = boss_->GetRightHitCount();
+	const int maxHits = boss_->GetMaxHitCount();
 
-		// ViewProjection
-		Matrix4x4 view = camera_->GetViewMatrix();
-		Matrix4x4 proj = camera_->GetProjectionMatrix();
-		Matrix4x4 vp = MyMath::Multiply(view, proj);
+	const bool isLeftAttack = boss_->IsLeftArmAttacking();      // 片手(左)
+	const bool isRightAttack = boss_->IsRightArmAttacking();     // 片手(右)
+	const bool isBothAttack = boss_->IsBothHandsAttacking();    // 両手
+	// WaitMeteor 中などはどれにも当てはまらない
 
-		// 行列は row-major / mul(v, M) 前提で CPU 側も合わせる
-		float clipX =
-			p.x * vp.m[0][0] +
-			p.y * vp.m[1][0] +
-			p.z * vp.m[2][0] +
-			vp.m[3][0];
+	// ViewProj
+	Matrix4x4 view = camera_->GetViewMatrix();
+	Matrix4x4 proj = camera_->GetProjectionMatrix();
+	Matrix4x4 vp = MyMath::Multiply(view, proj);
 
-		float clipY =
-			p.x * vp.m[0][1] +
-			p.y * vp.m[1][1] +
-			p.z * vp.m[2][1] +
-			vp.m[3][1];
+	auto projectToScreen = [&](const Vector3 &worldPos, Vector2 &outScreen) -> bool {
 
-		float clipZ =
-			p.x * vp.m[0][2] +
-			p.y * vp.m[1][2] +
-			p.z * vp.m[2][2] +
-			vp.m[3][2];
-
-		float clipW =
-			p.x * vp.m[0][3] +
-			p.y * vp.m[1][3] +
-			p.z * vp.m[2][3] +
+		// wチェック（0だと Transform 内 assert になるので弾く）
+		float w =
+			worldPos.x * vp.m[0][3] +
+			worldPos.y * vp.m[1][3] +
+			worldPos.z * vp.m[2][3] +
 			vp.m[3][3];
 
-		auto hideMarker = [&]() {
-			targetOuter_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
-			targetInner_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
-			};
+		if (std::fabs(w) < 1e-6f) return false;
 
-		// カメラ背面 or wゼロ近傍なら表示しない
-		if (clipW <= 0.0001f) {
-			hideMarker();
-		} else {
-			float invW = 1.0f / clipW;
-			float ndcX = clipX * invW;
-			float ndcY = clipY * invW;
-			float ndcZ = clipZ * invW;
+		Vector3 ndc = MyMath::Transform(worldPos, vp);
 
-			// NDC範囲外なら非表示
-			if (ndcZ < 0.0f || ndcZ > 1.0f ||
-				ndcX < -1.0f || ndcX > 1.0f ||
-				ndcY < -1.0f || ndcY > 1.0f) {
+		if (ndc.z <= 0.0f || ndc.z >= 1.0f) return false;
 
-				hideMarker();
-			} else {
-				// NDC → スクリーン座標（1280x720想定）
-				constexpr float SCREEN_W = 1280.0f;
-				constexpr float SCREEN_H = 720.0f;
+		constexpr float SCREEN_W = 1280.0f;
+		constexpr float SCREEN_H = 720.0f;
 
-				float screenX = (ndcX * 0.5f + 0.5f) * SCREEN_W;
-				float screenY = (-ndcY * 0.5f + 0.5f) * SCREEN_H;
+		outScreen.x = (ndc.x * 0.5f + 0.5f) * SCREEN_W;
+		outScreen.y = (-ndc.y * 0.5f + 0.5f) * SCREEN_H;
+		return true;
+		};
 
-				targetOuter_->SetPosition({ screenX, screenY });
-				targetInner_->SetPosition({ screenX, screenY });
+	auto hide = [](std::unique_ptr<Sprite> &o, std::unique_ptr<Sprite> &i) {
+		if (!o || !i) return;
+		o->SetColor({ 1,1,1,0 });
+		i->SetColor({ 1,1,1,0 });
+		};
 
-				// ヒット数に応じて内側リングの色
-				int hitCount = boss_->IsLeftArmAttacking()
-					? boss_->GetLeftHitCount()
-					: boss_->GetRightHitCount();
+	// まず全部消しておく
+	hide(leftTargetOuter_, leftTargetInner_);
+	hide(rightTargetOuter_, rightTargetInner_);
 
-				Vector4 innerColor;
-				if (hitCount < 2) {
-					innerColor = { 0.0f, 1.0f, 0.0f, 1.0f }; // 緑
-				} else if (hitCount < 4) {
-					innerColor = { 1.0f, 1.0f, 0.0f, 1.0f }; // 黄
-				} else {
-					innerColor = { 1.0f, 0.0f, 0.0f, 1.0f }; // 赤
-				}
+	// ---- 左手ターゲット表示条件 ----
+	bool showLeft =
+		// 左片手攻撃中 か
+		(isLeftAttack && leftHits < maxHits) ||
+		// 両手攻撃中で、左が規定未満
+		(isBothAttack && leftHits < maxHits);
 
-				// 外側は常に表示
-				targetOuter_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
-				targetInner_->SetColor(innerColor);
-			}
+	if (showLeft) {
+		Vector2 screen;
+		if (projectToScreen(boss_->GetLeftHandWorldPos(), screen)) {
+			leftTargetOuter_->SetPosition(screen);
+			leftTargetInner_->SetPosition(screen);
+			leftTargetOuter_->SetColor({ 1,1,1,1 });
+			leftTargetInner_->SetColor({ 1,1,1,1 });
+		}
+	}
+
+	// ---- 右手ターゲット表示条件 ----
+	bool showRight =
+		(isRightAttack && rightHits < maxHits) ||
+		(isBothAttack && rightHits < maxHits);
+
+	if (showRight) {
+		Vector2 screen;
+		if (projectToScreen(boss_->GetRightHandWorldPos(), screen)) {
+			rightTargetOuter_->SetPosition(screen);
+			rightTargetInner_->SetPosition(screen);
+			rightTargetOuter_->SetColor({ 1,1,1,1 });
+			rightTargetInner_->SetColor({ 1,1,1,1 });
 		}
 	}
 }

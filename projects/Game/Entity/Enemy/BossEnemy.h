@@ -6,6 +6,18 @@ class Camera;
 
 class BossEnemy {
 
+private:
+
+	enum class AttackPhase {
+		SingleLeft,   // 左腕のみ
+		SingleRight,  // 右腕のみ
+		BothHands,    // 両手同時
+		WaitMeteor,   // 流星攻撃中（腕は攻撃しない）
+	};
+
+	AttackPhase attackPhase_ = AttackPhase::SingleLeft;
+	bool meteorRequest_ = false; // 両手攻撃完了後にtrue
+
 public:
 
 	void Init(Camera* camera);
@@ -59,7 +71,7 @@ public:
 	bool IsExtending() const { return isExtending_; }
 
 	// 現在攻撃に使っている腕が左かどうか
-	bool IsLeftArmAttacking() const { return attackLeftArm_; }
+	bool IsLeftArmAttacking() const { return attackPhase_ == AttackPhase::SingleLeft; }
 
 	// 今攻撃に使っている腕のワールド座標
 	Vector3 GetCurrentArmWorldPos() const;
@@ -73,6 +85,13 @@ public:
 	void AddHitLeftArm() { ++leftArmHitCount_; }
 	void AddHitRightArm() { ++rightArmHitCount_; }
 
+	// AttackPhase 取得系（UpdateArmTargetMarker用）
+	bool IsRightArmAttacking() const { return attackPhase_ == AttackPhase::SingleRight; }
+	bool IsBothHandsAttacking() const { return attackPhase_ == AttackPhase::BothHands; }
+
+	// 最大ヒット数（ターゲット消す条件に使う）
+	int GetMaxHitCount() const { return maxHitCount_; }
+
 private:
 
 	void Attack();
@@ -82,6 +101,11 @@ private:
 public:
 	void AddHitToAttackingArm();
 	void InitTitleScenePos();
+
+	// 流星攻撃との連携
+	bool ConsumeMeteorRequest(); // trueを返したタイミングでフラグを消費
+	void OnMeteorFinished();     // メテオ終了後に呼ぶ
+
 
 private:
 	// カメラ
@@ -128,4 +152,8 @@ private:
 
 	// HP
 	int hp_ = 10;
+
+	// 両手攻撃用：左右個別に伸縮管理
+	bool leftExtending_ = true;
+	bool rightExtending_ = true;
 };

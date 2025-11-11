@@ -46,8 +46,10 @@ private:
 	std::unique_ptr<BossEnemy> boss_ = nullptr;
 
 	// target
-	std::unique_ptr<Sprite> targetOuter_ = nullptr;
-	std::unique_ptr<Sprite> targetInner_ = nullptr;
+	std::unique_ptr<Sprite> leftTargetOuter_;
+	std::unique_ptr<Sprite> leftTargetInner_;
+	std::unique_ptr<Sprite> rightTargetOuter_;
+	std::unique_ptr<Sprite> rightTargetInner_;
 
 	// Particle・Effect
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;

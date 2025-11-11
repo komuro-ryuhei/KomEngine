@@ -9,7 +9,7 @@
 
 void BossEnemy::SetTranslate(Vector3 translate) { transform_.translate = translate; }
 
-void BossEnemy::Init(Camera* camera) {
+void BossEnemy::Init(Camera *camera) {
 
 	// カメラの設定
 	camera_ = camera;
@@ -114,51 +114,157 @@ void BossEnemy::Attack() {
 
 	if (!player_) return;
 
-	// どっちの腕で攻撃するか決定
-	Object3d* targetArm = attackLeftArm_ ? leftArm_.get() : rightArm_.get();
-	Vector3& targetPos = attackLeftArm_ ? leftArmPos_ : rightArmPos_;
-	int& hitCount = attackLeftArm_ ? leftArmHitCount_ : rightArmHitCount_;
+	switch (attackPhase_) {
 
-	// 腕のローカル基準位置（初期の取り付け位置）
-	const Vector3 baseLocalOffset = attackLeftArm_ ? Vector3{ -4.0f, 0.0f, 0.0f }
-	: Vector3{ 4.0f, 0.0f, 0.0f };
+		// ================== 左右片手攻撃 ================== //
+	case AttackPhase::SingleLeft:
+	case AttackPhase::SingleRight:
+	{
+		const bool useLeft = (attackPhase_ == AttackPhase::SingleLeft);
 
-	// 現在の腕ローカル位置（※必ず“その腕”の位置から始める）
-	Vector3 armPos = targetPos;
+		Object3d *targetArm = useLeft ? leftArm_.get() : rightArm_.get();
+		Vector3 &targetPos = useLeft ? leftArmPos_ : rightArmPos_;
+		int &hitCount = useLeft ? leftArmHitCount_ : rightArmHitCount_;
 
-	// プレイヤーへの方向（ワールド→ローカル混在を避けたいなら将来は親回転を考慮）
-	const Vector3 worldBase = transform_.translate + baseLocalOffset;
-	Vector3 toPlayer = player_->GetTranslate() - worldBase;
-	Vector3 dir = MyMath::Normalize(toPlayer);
+		const Vector3 baseLocalOffset = useLeft
+			? Vector3{ -4.0f, 0.0f, 0.0f }
+		: Vector3{ 4.0f, 0.0f, 0.0f };
 
-	// 伸縮ステート
-	if (isExtending_) {
-		// 伸ばす
-		armPos += dir * attackSpeed_;
+		Vector3 armPos = targetPos;
 
-		// 到達 or 規定回数ヒットで引き戻しへ
-		if (MyMath::Length(armPos - baseLocalOffset) >= 20.0f || hitCount >= maxHitCount_) {
-			isExtending_ = false;
-		}
-	} else {
-		// 基準位置へ戻す
-		Vector3 toOrigin = baseLocalOffset - armPos;
-		float dist = MyMath::Length(toOrigin);
-		if (dist < 0.5f) {
-			// 完全に戻ったら次の腕へ
-			armPos = baseLocalOffset;
-			isExtending_ = true;
-			isAttacking_ = false;
-			attackLeftArm_ = !attackLeftArm_;
-			hitCount = 0;  // カウントリセット
+		const Vector3 worldBase = transform_.translate + baseLocalOffset;
+		Vector3 toPlayer = player_->GetTranslate() - worldBase;
+		Vector3 dir = MyMath::Normalize(toPlayer);
+
+		if (isExtending_) {
+			// 伸ばす
+			armPos += dir * attackSpeed_;
+
+			// 一定距離 or 規定ヒット数で戻りフェーズへ
+			if (MyMath::Length(armPos - baseLocalOffset) >= 20.0f ||
+				hitCount >= maxHitCount_) {
+				isExtending_ = false;
+			}
 		} else {
-			armPos += MyMath::Normalize(toOrigin) * 0.5f;
+			// 基本位置へ戻す
+			Vector3 toOrigin = baseLocalOffset - armPos;
+			float dist = MyMath::Length(toOrigin);
+
+			if (dist < 0.5f) {
+				// 戻り完了
+				armPos = baseLocalOffset;
+				hitCount = 0;
+				isExtending_ = true;
+
+				// 次フェーズへ
+				if (attackPhase_ == AttackPhase::SingleLeft) {
+					attackPhase_ = AttackPhase::SingleRight; // 次は右
+				} else {
+					attackPhase_ = AttackPhase::BothHands;   // 両手攻撃へ
+				}
+			} else {
+				armPos += MyMath::Normalize(toOrigin) * 0.5f;
+			}
 		}
+
+		targetArm->SetTranslate(armPos);
+		targetPos = armPos;
+		break;
 	}
 
-	// モデルに反映 & ローカル保存（次フレームで消えないように）
-	targetArm->SetTranslate(armPos);
-	targetPos = armPos;
+	// ================== 両手同時攻撃 ================== //
+	case AttackPhase::BothHands:
+	{
+		const Vector3 leftBase{ -4.0f, 0.0f, 0.0f };
+		const Vector3 rightBase{ 4.0f, 0.0f, 0.0f };
+
+		Vector3 leftPos = leftArmPos_;
+		Vector3 rightPos = rightArmPos_;
+
+		Vector3 leftWorldBase = transform_.translate + leftBase;
+		Vector3 rightWorldBase = transform_.translate + rightBase;
+
+		Vector3 dirL = MyMath::Normalize(player_->GetTranslate() - leftWorldBase);
+		Vector3 dirR = MyMath::Normalize(player_->GetTranslate() - rightWorldBase);
+
+		const float maxLen = 18.0f;  // 伸びきる距離
+		const float returnSpeed = 0.5f;   // 戻る速度
+		const float endThreshold = 0.5f;   // 基準位置に戻ったと判定する距離
+
+		// ===== 左腕 =====
+		if (leftExtending_) {
+			leftPos += dirL * attackSpeed_;
+
+			bool reachedDist = MyMath::Length(leftPos - leftBase) >= maxLen;
+			bool hitEnough = (leftArmHitCount_ >= maxHitCount_);
+
+			// 規定距離 or 規定ヒット数で左腕だけ戻りフェーズへ
+			if (reachedDist || hitEnough) {
+				leftExtending_ = false;
+			}
+		} else {
+			Vector3 toBase = leftBase - leftPos;
+			float dist = MyMath::Length(toBase);
+
+			if (dist < endThreshold) {
+				leftPos = leftBase;
+			} else {
+				leftPos += MyMath::Normalize(toBase) * returnSpeed;
+			}
+		}
+
+		// ===== 右腕 =====
+		if (rightExtending_) {
+			rightPos += dirR * attackSpeed_;
+
+			bool reachedDist = MyMath::Length(rightPos - rightBase) >= maxLen;
+			bool hitEnough = (rightArmHitCount_ >= maxHitCount_);
+
+			// 規定距離 or 規定ヒット数で右腕だけ戻りフェーズへ
+			if (reachedDist || hitEnough) {
+				rightExtending_ = false;
+			}
+		} else {
+			Vector3 toBase = rightBase - rightPos;
+			float dist = MyMath::Length(toBase);
+
+			if (dist < endThreshold) {
+				rightPos = rightBase;
+			} else {
+				rightPos += MyMath::Normalize(toBase) * returnSpeed;
+			}
+		}
+
+		// 位置を反映
+		if (leftArm_)  leftArm_->SetTranslate(leftPos);
+		if (rightArm_) rightArm_->SetTranslate(rightPos);
+		leftArmPos_ = leftPos;
+		rightArmPos_ = rightPos;
+
+		// ===== メテオ移行判定 =====
+		bool leftFinished = !leftExtending_ && MyMath::Length(leftPos - leftBase) < endThreshold;
+		bool rightFinished = !rightExtending_ && MyMath::Length(rightPos - rightBase) < endThreshold;
+
+		// 両方「戻り完了」したらメテオへ
+		if (leftFinished && rightFinished) {
+			leftArmHitCount_ = 0;
+			rightArmHitCount_ = 0;
+
+			leftExtending_ = true;
+			rightExtending_ = true;
+
+			attackPhase_ = AttackPhase::WaitMeteor;
+			meteorRequest_ = true;
+		}
+
+		break;
+	}
+
+	// ================== メテオ待ち ================== //
+	case AttackPhase::WaitMeteor:
+		// Scene側でメテオを出している間は腕攻撃しない
+		break;
+	}
 }
 
 void BossEnemy::TitleSceneMove() {
@@ -197,7 +303,37 @@ void BossEnemy::InitTitleScenePos() {
 	leftArmRot_ = { 0.0f,1.56f,0.0f };
 }
 
-void BossEnemy::SetRotate(Vector3& rotate) {
+bool BossEnemy::ConsumeMeteorRequest() {
+
+	if (meteorRequest_) {
+		meteorRequest_ = false;
+		return true;
+	}
+	return false;
+}
+
+void BossEnemy::OnMeteorFinished() {
+
+	// 次は左片手攻撃から再開
+	attackPhase_ = AttackPhase::SingleLeft;
+	isExtending_ = true;
+
+	// 片手フェーズ用にヒット数リセット
+	leftArmHitCount_ = 0;
+	rightArmHitCount_ = 0;
+
+	// 両手フェーズ用フラグも初期化
+	leftExtending_ = true;
+	rightExtending_ = true;
+
+	// 腕位置を基準に戻しておく（お好みで）
+	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
+	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
+	if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
+	if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
+}
+
+void BossEnemy::SetRotate(Vector3 &rotate) {
 	transform_.rotate = rotate;
 	object3d_->SetRotate(rotate);
 	leftArm_->SetRotate(rotate);
@@ -206,7 +342,7 @@ void BossEnemy::SetRotate(Vector3& rotate) {
 
 // 末尾あたりに実装を追加
 
-void BossEnemy::SetRightHandScale(const Vector3& s) {
+void BossEnemy::SetRightHandScale(const Vector3 &s) {
 	if (rightArm_) {
 		rightArm_->SetScale(s);
 		// 半径は Scale に応じて毎フレーム Update で設定しているが、
@@ -234,7 +370,7 @@ float BossEnemy::GetRightHandRadius() const {
 }
 
 // ---- 左手（必要なら使って） ----
-void BossEnemy::SetLeftHandScale(const Vector3& s) {
+void BossEnemy::SetLeftHandScale(const Vector3 &s) {
 
 	if (leftArm_) {
 		leftArm_->SetScale(s);
@@ -265,11 +401,29 @@ void BossEnemy::Damage(int v) {
 }
 
 Vector3 BossEnemy::GetCurrentArmWorldPos() const {
-	if (attackLeftArm_) {
-		if (leftArm_) { return leftArm_->GetWorldPosition(); }
+
+	switch (attackPhase_) {
+	case AttackPhase::SingleLeft:
+		if (leftArm_)  return leftArm_->GetWorldPosition();
 		return transform_.translate + leftArmPos_;
-	} else {
-		if (rightArm_) { return rightArm_->GetWorldPosition(); }
+
+	case AttackPhase::SingleRight:
+		if (rightArm_) return rightArm_->GetWorldPosition();
 		return transform_.translate + rightArmPos_;
+
+	case AttackPhase::BothHands:
+		// 両手攻撃中は真ん中あたり返しておく（レティクル用）
+		if (leftArm_ && rightArm_) {
+			return (leftArm_->GetWorldPosition() + rightArm_->GetWorldPosition()) * 0.5f;
+		}
+		break;
+
+	case AttackPhase::WaitMeteor:
+	default:
+		break;
 	}
+
+	// フォールバック（左腕基準）
+	if (leftArm_) return leftArm_->GetWorldPosition();
+	return transform_.translate + leftArmPos_;
 }
