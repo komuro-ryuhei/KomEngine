@@ -106,7 +106,7 @@ void BossTestScene::Init() {
 	sword_->Init(camera_.get());
 
 	// パーティクル
-	auto* pm = ParticleManager::GetInstance();
+	auto *pm = ParticleManager::GetInstance();
 	pm->Init(camera_.get(), BlendType::BLEND_ADD);
 
 	pm->CreateParticleGeoup("hit", circle2, "a");
@@ -267,6 +267,16 @@ void BossTestScene::Update() {
 		}
 	}
 
+	// ターゲットシェイク時間更新
+	if (leftTargetShakeTime_ > 0.0f) {
+		leftTargetShakeTime_ -= dt;
+		if (leftTargetShakeTime_ < 0.0f) leftTargetShakeTime_ = 0.0f;
+	}
+	if (rightTargetShakeTime_ > 0.0f) {
+		rightTargetShakeTime_ -= dt;
+		if (rightTargetShakeTime_ < 0.0f) rightTargetShakeTime_ = 0.0f;
+	}
+
 	// カメラの更新
 	camera_->Update();
 	// Skyboxの更新
@@ -279,7 +289,7 @@ void BossTestScene::Update() {
 	// ボス
 	boss_->Update();
 	// ボスのメテオ攻撃用
-	for (auto& m : meteors_) m->Update();
+	for (auto &m : meteors_) m->Update();
 	// ボスの剣
 	if (sword_) sword_->Update();
 
@@ -422,7 +432,7 @@ void BossTestScene::Draw() {
 	// Bossの描画
 	boss_->Draw();
 	// Bossのメテオ描画
-	for (auto& m : meteors_) m->Draw();
+	for (auto &m : meteors_) m->Draw();
 	// Bossの剣描画
 	if (sword_) sword_->Draw();
 
@@ -448,7 +458,7 @@ void BossTestScene::CheckCollisions() {
 
 	// -------------------- 弾とボス部位の当たり判定 -------------------- //
 	{
-		auto& bullets = player_->GetBullets();
+		auto &bullets = player_->GetBullets();
 		auto body = boss_->GetBody();
 		auto left = boss_->GetLeftArm();
 		auto right = boss_->GetRightArm();
@@ -457,8 +467,8 @@ void BossTestScene::CheckCollisions() {
 			bool hit = false;
 
 			// 判定対象（パーツごと）
-			std::vector<Object3d*> parts = { body, left, right };
-			for (auto* part : parts) {
+			std::vector<Object3d *> parts = { body, left, right };
+			for (auto *part : parts) {
 				// 
 				const Vector3 partPos = part->GetWorldPosition();
 				const float   d = MyMath::CalculateDistance((*it)->GetTranslate(), partPos);
@@ -473,13 +483,14 @@ void BossTestScene::CheckCollisions() {
 					// どの部位に当たったかで加算先を分ける
 					if (part == left) {
 						boss_->AddHitLeftArm();
+						leftTargetShakeTime_ = targetShakeDuration_;   // 左ターゲット揺らす
 					} else if (part == right) {
 						boss_->AddHitRightArm();
+						rightTargetShakeTime_ = targetShakeDuration_;  // 右ターゲット揺らす
 					} else {
-						// 本体に命中したときの処理があればここに
 						boss_->Damage(1);
-
 					}
+
 
 					it = bullets.erase(it);
 					hit = true;
@@ -499,7 +510,7 @@ void BossTestScene::CheckCollisions() {
 
 	// 各腕との当たり判定
 	struct ArmData {
-		Object3d* object;
+		Object3d *object;
 		std::string name;
 	};
 
@@ -508,7 +519,7 @@ void BossTestScene::CheckCollisions() {
 		{ boss_->GetRightArm(), "RightArm" }
 	};
 
-	for (const auto& arm : arms) {
+	for (const auto &arm : arms) {
 		Vector3 armPos = arm.object->GetWorldPosition();
 		float armRadius = arm.object->GetRadius();
 
@@ -540,7 +551,7 @@ void BossTestScene::CheckCollisions() {
 	{
 		Vector3 ppos = player_->GetTranslate();
 		float   pr = player_->GetRadius();
-		for (auto& m : meteors_) {
+		for (auto &m : meteors_) {
 			if (!m->IsAlive()) continue;
 			Vector3 mpos = m->GetObject()->GetWorldPosition();
 			float   mr = m->GetRadius();
@@ -559,11 +570,11 @@ void BossTestScene::CheckCollisions() {
 
 	// -------------------- プレイヤー弾 vs メテオ -------------------- //
 	{
-		auto& bullets = player_->GetBullets();
+		auto &bullets = player_->GetBullets();
 		for (auto it = bullets.begin(); it != bullets.end(); ) {
 			bool removed = false;
 
-			for (auto& m : meteors_) {
+			for (auto &m : meteors_) {
 				if (!m->IsAlive()) continue;
 
 				// メテオの中心位置と半径
@@ -594,7 +605,7 @@ void BossTestScene::CheckCollisions() {
 	// -------------------- プレイヤー弾 vs 剣 -------------------- //
 
 	if (sword_ && sword_->IsAlive()) {
-		auto& bullets = player_->GetBullets();
+		auto &bullets = player_->GetBullets();
 		for (auto it = bullets.begin(); it != bullets.end();) {
 			const Vector3 bpos = (*it)->GetTranslate();
 			const float   br = (*it)->GetRadius();
@@ -722,7 +733,7 @@ void BossTestScene::UpdateMeteorMode(float dt) {
 			float speed = 0.25f + 0.012f * dist;      // dist=120 → speed=1.69 くらい
 
 			// 空きスロットに生成
-			for (auto& m : meteors_) {
+			for (auto &m : meteors_) {
 				if (!m->IsAlive()) {
 					m->SetScale({ 1.5f, 1.5f, 1.5f });
 					m->SetGravity(0.0f);
@@ -778,6 +789,7 @@ void BossTestScene::EndMeteorMode() {
 		boss_->OnMeteorFinished();
 	}
 }
+
 void BossTestScene::UpdateArmTargetMarker() {
 
 	if (!boss_ || !camera_) return;
@@ -840,6 +852,17 @@ void BossTestScene::UpdateArmTargetMarker() {
 	if (showLeft) {
 		Vector2 screen;
 		if (projectToScreen(boss_->GetLeftHandWorldPos(), screen)) {
+
+			// シェイク中なら少しランダムにずらす（時間とともに減衰）
+			if (leftTargetShakeTime_ > 0.0f) {
+				float t = leftTargetShakeTime_ / targetShakeDuration_;
+				float amp = targetShakeAmplitude_ * t;
+				float ox = MyMath::Rand(-amp, amp);
+				float oy = MyMath::Rand(-amp, amp);
+				screen.x += ox;
+				screen.y += oy;
+			}
+
 			leftTargetOuter_->SetPosition(screen);
 			leftTargetInner_->SetPosition(screen);
 			leftTargetOuter_->SetColor({ 1,1,1,1 });
@@ -855,6 +878,16 @@ void BossTestScene::UpdateArmTargetMarker() {
 	if (showRight) {
 		Vector2 screen;
 		if (projectToScreen(boss_->GetRightHandWorldPos(), screen)) {
+
+			if (rightTargetShakeTime_ > 0.0f) {
+				float t = rightTargetShakeTime_ / targetShakeDuration_;
+				float amp = targetShakeAmplitude_ * t;
+				float ox = MyMath::Rand(-amp, amp);
+				float oy = MyMath::Rand(-amp, amp);
+				screen.x += ox;
+				screen.y += oy;
+			}
+
 			rightTargetOuter_->SetPosition(screen);
 			rightTargetInner_->SetPosition(screen);
 			rightTargetOuter_->SetColor({ 1,1,1,1 });

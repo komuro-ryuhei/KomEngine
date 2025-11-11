@@ -132,6 +132,13 @@ private:
 
 	bool lowHpVfxOn_ = false;
 
+	// ターゲットシェイク
+	float leftTargetShakeTime_ = 0.0f;
+	float rightTargetShakeTime_ = 0.0f;
+	const float targetShakeDuration_ = 0.15f;   // 揺れる時間(秒)
+	const float targetShakeAmplitude_ = 12.0f;   // 揺れ幅(ピクセル)
+
+
 private:
 
 	// 内部ユーティリティ
