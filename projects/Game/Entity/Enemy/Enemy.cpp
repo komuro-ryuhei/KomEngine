@@ -3,10 +3,11 @@
 #include <random>
 #include "Engine/lib/Math/MyMath.h"
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
-#include "BossEnemy.h"
 #endif // _DEBUG
+
+#include "BossEnemy.h"
 
 float Enemy::GetRadius() const { return radius_; }
 bool Enemy::GetIsAlive() const { return isAlive_; }
@@ -74,7 +75,7 @@ void Enemy::Draw() {
 
 void Enemy::ImGuiDebug() {
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 
 	ImGui::Begin("Enemy");
 	ImGui::DragFloat3("translate", &transform_.translate.x, 0.01f);

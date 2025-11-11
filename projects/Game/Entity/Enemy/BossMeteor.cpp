@@ -1,6 +1,10 @@
 #include "BossMeteor.h"
 #include "Engine/Base/Camera/Camera.h"
+
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
+#endif
+
 #include "Engine/lib/Math/MyMath.h"
 
 void BossMeteor::Init(Camera* camera) {
@@ -91,7 +95,9 @@ void BossMeteor::Draw() {
 
 void BossMeteor::ImGuiDebug() {
 
-#ifdef _DEBUG
+
+#ifdef USE_IMGUI
+
 	ImGui::Begin("BossMeteor");
 	ImGui::Checkbox("Alive", &isAlive_);
 	ImGui::DragFloat3("Pos", &transform_.translate.x, 0.05f);

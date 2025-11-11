@@ -1,5 +1,8 @@
 #include "Player.h"
+
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
+#endif
 
 #include "Engine/Base/System/System.h"
 
@@ -115,7 +118,7 @@ void Player::Draw() {
 
 void Player::ImGuiDebug() {
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 
 	ImGui::Begin("Player");
 

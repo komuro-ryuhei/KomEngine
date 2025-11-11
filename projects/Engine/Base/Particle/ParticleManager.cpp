@@ -75,6 +75,7 @@ void ParticleManager::Update() {
 
 			++it;
 		}
+		group.instanceCount = static_cast<uint32_t>(numInstance);
 	}
 }
 
@@ -90,15 +91,21 @@ void ParticleManager::Draw() {
 	System::GetDxCommon()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// コマンド: VBV(Vertex Buffer View)を設定
-	System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
+	// System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
 
 	for (auto& [name, group] : particleGroups) {
+
+		// 頂点なし or インスタンスなしならスキップ
+		if (group.vertices.empty() || group.instanceCount == 0) {
+			continue;
+		}
+
 		System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &group.vertexBufferView);
 
 		System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(0, System::GetSrvManager()->GetGPUDescriptorHandle(group.instancingSrvIndex));
 		System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(1, System::GetSrvManager()->GetGPUDescriptorHandle(group.srvIndex));
 
-		System::GetDxCommon()->GetCommandList()->DrawInstanced(static_cast<UINT>(group.vertices.size()), static_cast<UINT>(group.particles.size()), 0, 0);
+		System::GetDxCommon()->GetCommandList()->DrawInstanced(static_cast<UINT>(group.vertices.size()), group.instanceCount, 0, 0);
 	}
 }
 

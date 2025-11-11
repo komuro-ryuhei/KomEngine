@@ -3,7 +3,7 @@
 void KnockoutCameraController::Start(Camera* cam, float groundY, const Params& p) {
     phase_ = Phase::Shock;
     t_ = 0.0f;
-    startY_ = cam->GetTranaslate().y;     // ※Cameraは GetTranaslate() / GetRotate() を想定
+    startY_ = cam->GetTranaslate().y;
     groundY_ = groundY;
     savedRot_ = cam->GetRotate();
     params_ = p;

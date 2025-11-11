@@ -3,7 +3,7 @@
 #include "Engine/Base/System/System.h"
 #include <numbers>
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
 #endif // _DEBUG
 
@@ -57,7 +57,7 @@ void Light::LightSetting() {
 
 void Light::ImGuiDebug() {
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 
 	ImGui::Begin("Light");
 

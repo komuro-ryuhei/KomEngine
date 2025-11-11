@@ -2,7 +2,7 @@
 #include "Engine/Base/System/System.h"
 #include "Engine/lib/Logger/Logger.h"
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
 #endif // _DEBUG
 
@@ -136,7 +136,7 @@ void Object3d::Draw() {
 
 void Object3d::ImGuiDebug() {
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 
 	ImGui::Begin("object3d");
 

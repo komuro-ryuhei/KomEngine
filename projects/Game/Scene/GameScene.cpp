@@ -6,10 +6,11 @@
 
 #include <random>
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
-#include "BossTestScene.h"
 #endif // DEBUG
+
+#include "BossTestScene.h"
 
 GameScene::GameScene() {}
 GameScene::~GameScene() {}
@@ -173,7 +174,7 @@ void GameScene::Update() {
 	// Particle描画ImGui
 	ParticleUpdate();
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 
 	ImGui::Begin("GameScene");
 
@@ -214,7 +215,7 @@ void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }
 
 void GameScene::ImGuiDebug() {
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 
 	ChangePostEffect();
 
@@ -279,7 +280,7 @@ void GameScene::ParticleUpdate() {
 	// パーティクルの更新処理
 	ParticleManager::GetInstance()->Update();
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 
 	ImGui::Begin("Particle Emitter");
 

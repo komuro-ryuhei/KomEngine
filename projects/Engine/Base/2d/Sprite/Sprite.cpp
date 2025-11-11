@@ -3,7 +3,7 @@
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/Base/System/System.h"
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
 #endif // _DEBUG
 
@@ -224,7 +224,7 @@ void Sprite::AdjustTextureSize() {
 
 void Sprite::ImGuiDebug() {
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 
 	ImGui::Begin("Sprite");
 

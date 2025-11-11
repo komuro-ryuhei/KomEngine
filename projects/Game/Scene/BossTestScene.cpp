@@ -1,5 +1,9 @@
 #include "BossTestScene.h"
+
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
+#endif
+
 #include "Engine/Base/System/System.h"
 
 #include <memory>
@@ -7,10 +11,18 @@
 
 void BossTestScene::Init() {
 
+	const std::string &uvTexture = "./Resources/images/uvChecker.png";
+	const std::string &circle = "./Resources/images/circle.png";
+	const std::string &circle2 = "./Resources/images/circle2.png";
+	const std::string &monsterBallTexture = "./Resources/images/monsterBall.png";
+	const std::string &ring = "./Resources/images/gradationLine.png";
+	const std::string &moonLight = "./Resources/images/moonLight.png";
+
 	// テクスチャ、モデルの読み込み
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/uvChecker.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle2.png");
+	TextureManager::GetInstance()->LoadTexture(uvTexture);
+	TextureManager::GetInstance()->LoadTexture(circle);
+	TextureManager::GetInstance()->LoadTexture(circle2);
+	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
 
@@ -77,6 +89,13 @@ void BossTestScene::Init() {
 	// パーティクル
 	auto* pm = ParticleManager::GetInstance();
 	pm->Init(camera_.get(), BlendType::BLEND_ADD);
+
+	pm->CreateParticleGeoup("hit", circle2, "a");
+	pm->CreateParticleGeoup("explosion", monsterBallTexture, "a");
+	pm->CreateParticleGeoup("ring", ring, "ring");
+	pm->CreateParticleGeoup("cylinder", ring, "cylinder");
+	pm->CreateParticleGeoup("moonLight", moonLight, "moonLight");
+	pm->CreateParticleGeoup("ribbon", moonLight, "ribbon");
 
 	// グループが既にあれば作らない
 	if (!pm->Exists("hit")) {
@@ -295,7 +314,7 @@ void BossTestScene::Update() {
 		break;
 	}
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 
 	ImGui::Begin("BossTestScene");
 
@@ -332,7 +351,7 @@ void BossTestScene::Draw() {
 	// Bossの剣描画
 	if (sword_) sword_->Draw();
 
-	// ParticleManager::GetInstance()->Draw();
+	ParticleManager::GetInstance()->Draw();
 
 	// --------------------------------------------------------------------//
 

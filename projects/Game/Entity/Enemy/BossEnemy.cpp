@@ -1,5 +1,9 @@
 #include "BossEnemy.h"
+
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
+#endif // USE_IMGUI
+
 #include "Game/Entity/Player/Player.h"
 #include "Engine/Base/System/System.h"
 
@@ -85,6 +89,8 @@ void BossEnemy::Draw() {
 
 void BossEnemy::ImGuiDebug() {
 
+#ifdef USE_IMGUI
+
 	// 
 	ImGui::Begin("BossEnemy");
 
@@ -100,6 +106,8 @@ void BossEnemy::ImGuiDebug() {
 
 	ImGui::Checkbox("isAttack", &isAttack_);
 	ImGui::End();
+
+#endif
 }
 
 void BossEnemy::Attack() {

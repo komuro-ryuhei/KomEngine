@@ -1,5 +1,8 @@
 #include "EnemyBullet.h"
+
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
+#endif
 
 float EnemyBullet::GetRadius() const { return radius_; }
 
@@ -27,6 +30,8 @@ void EnemyBullet::Draw() { object3d_->Draw(); }
 
 void EnemyBullet::ImGuiDebug() {
 
+#ifdef USE_IMGUI
+
 	//
 	ImGui::Begin("EnemyBullet");
 
@@ -34,6 +39,8 @@ void EnemyBullet::ImGuiDebug() {
 	ImGui::DragFloat3("bulletRotate", &transform_.rotate.x, 0.01f);
 
 	ImGui::End();
+
+#endif
 }
 
 Vector3 EnemyBullet::GetTranslate() const { return transform_.translate; }

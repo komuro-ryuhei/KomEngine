@@ -37,6 +37,8 @@ struct ParticleGroup {
 	std::vector<VertexData> vertices;
 	ComPtr<ID3D12Resource> vertexResource;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+
+	uint32_t instanceCount = 0;
 };
 
 struct SpiralEmitter {

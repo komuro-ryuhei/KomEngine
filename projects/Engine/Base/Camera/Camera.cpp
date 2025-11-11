@@ -1,7 +1,7 @@
 #include "Camera.h"
 #include "Engine/Base/WinApp/WinApp.h"
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
 #endif // DEBUG
 
@@ -37,7 +37,8 @@ void Camera::Update() {
 
 void Camera::ImGuiDebug() {
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
+
 	ImGui::Begin("Camera");
 
 	ImGui::SliderAngle("rotateX", &transform_.rotate.x);
@@ -51,6 +52,7 @@ void Camera::ImGuiDebug() {
 	ImGui::DragFloat("Shake Duration", &shakeInfo_.shakeDuration_, 0.01f);
 
 	ImGui::End();
+
 #endif
 }
 
