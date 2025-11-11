@@ -263,3 +263,13 @@ void BossEnemy::Damage(int v) {
 	if (v <= 0) return;
 	hp_ = std::max(0, hp_ - v);
 }
+
+Vector3 BossEnemy::GetCurrentArmWorldPos() const {
+	if (attackLeftArm_) {
+		if (leftArm_) { return leftArm_->GetWorldPosition(); }
+		return transform_.translate + leftArmPos_;
+	} else {
+		if (rightArm_) { return rightArm_->GetWorldPosition(); }
+		return transform_.translate + rightArmPos_;
+	}
+}

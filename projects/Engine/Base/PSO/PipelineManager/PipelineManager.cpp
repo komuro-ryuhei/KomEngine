@@ -117,97 +117,52 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 	} 
 }
 
-void PipelineManager::CreatePSO(const std::string& objectType) {
+void PipelineManager::CreatePSO(const std::string &objectType)
+{
+	HRESULT hr = S_OK;
 
+	// 一旦クリアして毎回フル設定（他の分岐と統一）
+	graphicsPipelineStateDesc = {};
+
+	// 共通設定
+	graphicsPipelineStateDesc.pRootSignature = rootSignature_->GetRootSignature();
+	graphicsPipelineStateDesc.InputLayout = inputLayout_->GetInputLayout();
+	graphicsPipelineStateDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() };
+	graphicsPipelineStateDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() };
+	graphicsPipelineStateDesc.BlendState = blendState_->GetBlendDesc();
+	graphicsPipelineStateDesc.RasterizerState = rasterizer_->GetRasterizerDesc();
+	graphicsPipelineStateDesc.NumRenderTargets = 1;
+	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	graphicsPipelineStateDesc.SampleDesc.Count = 1;
+	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT; // 共通DSV
+
+	// 種類別設定
 	if (objectType == "posteffect") {
-
-		HRESULT hr;
-
-		graphicsPipelineStateDesc.pRootSignature = rootSignature_->GetRootSignature();        // RootSignature
-		graphicsPipelineStateDesc.InputLayout = inputLayout_->GetInputLayout();               // InputLayout
-		graphicsPipelineStateDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() }; // VertexShader
-		graphicsPipelineStateDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() }; // PixelShader
-		graphicsPipelineStateDesc.BlendState = blendState_->GetBlendDesc();                   // BlendState
-		graphicsPipelineStateDesc.RasterizerState = rasterizer_->GetRasterizerDesc();         // RasterizerState
-
-		// 書き込むRTVの情報
-		graphicsPipelineStateDesc.NumRenderTargets = 1;
-		graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-
-		// 利用するトポロジ(形状)のタイプ。三角形
-		graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-
-		// どのように画面に色を打ち込むのか設定
-		graphicsPipelineStateDesc.SampleDesc.Count = 1;
-		graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-
-		// DepthStencilの設定
-		graphicsPipelineStateDesc.DepthStencilState.DepthEnable = false; // DepthStencilを無効化
-
-		// 実際に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState));
-		assert(SUCCEEDED(hr));
+		// オフスクリーン/フルスクリーン用：深度なし
+		graphicsPipelineStateDesc.DepthStencilState.DepthEnable = FALSE;
+		graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	} else if (objectType == "sprite") {
+		// 2Dスプライト/HUD：深度なし（奥オブジェクトに隠れない）
+		graphicsPipelineStateDesc.DepthStencilState.DepthEnable = FALSE;
+		graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	} else if (objectType == "skybox") {
-
-		HRESULT hr;
-
-		graphicsPipelineStateDesc.pRootSignature = rootSignature_->GetRootSignature();        // RootSignature
-		graphicsPipelineStateDesc.InputLayout = inputLayout_->GetInputLayout();               // InputLayout
-		graphicsPipelineStateDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() }; // VertexShader
-		graphicsPipelineStateDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() }; // PixelShader
-		graphicsPipelineStateDesc.BlendState = blendState_->GetBlendDesc();                   // BlendState
-		graphicsPipelineStateDesc.RasterizerState = rasterizer_->GetRasterizerDesc();         // RasterizerState
-
-		// 書き込むRTVの情報
-		graphicsPipelineStateDesc.NumRenderTargets = 1;
-		graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-
-		// 利用するトポロジ(形状)のタイプ。三角形
-		graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-
-		// どのように画面に色を打ち込むのか設定
-		graphicsPipelineStateDesc.SampleDesc.Count = 1;
-		graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-
-		// DepthStencilの設定
-		graphicsPipelineStateDesc.DepthStencilState.DepthEnable = true;                           // DepthStencilを有効化
-		graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // Depthを全て書き込む
-		graphicsPipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL; // Depthの比較方法
-		graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
-		// 実際に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState));
-		assert(SUCCEEDED(hr));
+		// スカイボックス：深度比較のみ、有効・書き込みなし
+		graphicsPipelineStateDesc.DepthStencilState.DepthEnable = TRUE;
+		graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+		graphicsPipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 	} else {
-
-		HRESULT hr;
-
-		graphicsPipelineStateDesc.pRootSignature = rootSignature_->GetRootSignature();        // RootSignature
-		graphicsPipelineStateDesc.InputLayout = inputLayout_->GetInputLayout();               // InputLayout
-		graphicsPipelineStateDesc.VS = { vsBlob->GetBufferPointer(), vsBlob->GetBufferSize() }; // VertexShader
-		graphicsPipelineStateDesc.PS = { psBlob->GetBufferPointer(), psBlob->GetBufferSize() }; // PixelShader
-		graphicsPipelineStateDesc.BlendState = blendState_->GetBlendDesc();                   // BlendState
-		graphicsPipelineStateDesc.RasterizerState = rasterizer_->GetRasterizerDesc();         // RasterizerState
-
-		// 書き込むRTVの情報
-		graphicsPipelineStateDesc.NumRenderTargets = 1;
-		graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-
-		// 利用するトポロジ(形状)のタイプ。三角形
-		graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-
-		// どのように画面に色を打ち込むのか設定
-		graphicsPipelineStateDesc.SampleDesc.Count = 1;
-		graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-
-		// DepthStencilの設定
+		// 通常3D(Object3D, Particle 等)：エンジン既定のDepth設定
 		graphicsPipelineStateDesc.DepthStencilState = System::GetDxCommon()->GetDepthStencilDesc();
-		graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
-		// 実際に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState));
-		assert(SUCCEEDED(hr));
 	}
+
+	// PSO生成（全分岐共通）
+	hr = System::GetDxCommon()->GetDevice()->CreateGraphicsPipelineState(
+		&graphicsPipelineStateDesc,
+		IID_PPV_ARGS(&graphicsPipelineState)
+	);
+	assert(SUCCEEDED(hr));
 }
 
 void PipelineManager::PSOSetting(const std::string& objectType, BlendType type) {

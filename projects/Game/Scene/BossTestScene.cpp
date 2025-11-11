@@ -25,6 +25,9 @@ void BossTestScene::Init() {
 	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/reticle.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/inner.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/outer.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -72,6 +75,17 @@ void BossTestScene::Init() {
 	boss_->Init(camera_.get());
 	boss_->SetTranslate({ 0.0f, 0.0f, 20.0f });
 	boss_->SetPlayer(player_.get());
+
+	// 
+	targetOuter_ = std::make_unique<Sprite>();
+	targetOuter_->Init("./Resources/images/outer.png", BlendType::BLEND_ALPHA);
+	targetOuter_->SetAnchorPoint({ 0.5f, 0.5f });
+	targetOuter_->SetSize({ 128, 128 });
+
+	targetInner_ = std::make_unique<Sprite>();
+	targetInner_->Init("./Resources/images/inner.png", BlendType::BLEND_ALPHA);
+	targetInner_->SetAnchorPoint({ 0.5f, 0.5f });
+	targetInner_->SetSize({ 128, 128 });
 
 	// ボスのメテオ
 	meteors_.clear();
@@ -139,13 +153,6 @@ void BossTestScene::Update() {
 		camera_->SetRotate(playerRot);
 	}
 
-	// カメラの更新
-	camera_->Update();
-	// Skyboxの更新
-	skybox_->Update();
-	// 地面オブジェクトの更新
-	glassObject_->Update();
-
 	// ノックアウトカメラの開始（Kキー）
 	if (System::TriggerKey(DIK_K)) {
 		if (!koActive_) {
@@ -204,6 +211,59 @@ void BossTestScene::Update() {
 		}
 	}
 
+	if (!koActive_ && meteorPhase_ == MeteorPhase::kIdle && !swordCamActive_) {
+
+		// 伸ばし始めた瞬間に一回だけ開始
+		if (!armCamActive_ && boss_->IsExtending()) {
+
+			armCamActive_ = true;
+			armCamT_ = 0.0f;
+
+			// 元の向き保存
+			armCamSavedRot_ = camera_->GetRotate();
+
+			// 腕方向の目標回転を計算
+			Vector3 camPos = camera_->GetTranaslate();
+			Vector3 armPos = boss_->GetCurrentArmWorldPos();
+			Vector3 to = MyMath::Normalize(armPos - camPos);
+
+			float pitch = -std::asin(to.y);
+			float yaw = std::atan2(to.x, to.z);
+
+			Vector3 fullLook = { pitch, yaw, 0.0f };
+
+			// ガッツリ向けると違和感出るので、少しだけ腕方向を混ぜる
+			const float lookWeight = 0.35f; // 0.2〜0.5くらいで好み調整
+			armCamTargetRot_ = MyMath::Lerp(armCamSavedRot_, fullLook, lookWeight);
+		}
+
+		if (armCamActive_) {
+			if (boss_->IsExtending()) {
+				// 腕が伸びている間：腕方向へ「じわっ」と向ける
+				armCamT_ += dt / armCamIntroTime_;
+				float t = MyMath::Clamp01(armCamT_);
+				camera_->SetRotate(MyMath::Lerp(armCamSavedRot_, armCamTargetRot_, t));
+			} else {
+				// 腕が戻り始めたら：元の向きへ戻す
+				armCamT_ += dt / armCamOutroTime_;
+				float t = MyMath::Clamp01(armCamT_);
+				camera_->SetRotate(MyMath::Lerp(armCamTargetRot_, armCamSavedRot_, t));
+
+				if (t >= 1.0f) {
+					armCamActive_ = false;
+					armCamT_ = 0.0f;
+				}
+			}
+		}
+	}
+
+	// カメラの更新
+	camera_->Update();
+	// Skyboxの更新
+	skybox_->Update();
+	// 地面オブジェクトの更新
+	glassObject_->Update();
+
 	// プレイヤー
 	player_->Update();
 	// ボス
@@ -214,6 +274,11 @@ void BossTestScene::Update() {
 	if (sword_) sword_->Update();
 
 	CheckCollisions();
+
+	// UpdateArmTargetMarker();
+
+	targetOuter_->Update();
+	targetInner_->Update();
 
 	// パーティクルの更新処理
 	ParticleManager::GetInstance()->Update();
@@ -341,15 +406,17 @@ void BossTestScene::Draw() {
 
 	// -------------------- ゲームオブジェクトシーンの描画 -------------------- //
 
-	// Playerは一人称視点なので非描画
-	player_->Draw();
-
 	// Bossの描画
 	boss_->Draw();
 	// Bossのメテオ描画
 	for (auto& m : meteors_) m->Draw();
 	// Bossの剣描画
 	if (sword_) sword_->Draw();
+
+	// Playerは一人称視点なので非描画
+	player_->Draw();
+	targetOuter_->Draw();
+	targetInner_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
 
@@ -689,4 +756,98 @@ void BossTestScene::EndMeteorMode() {
 	// カメラを元に
 	camera_->SetTranslate(savedCamPos_);
 	camera_->SetRotate(savedCamRot_);
+}
+
+void BossTestScene::UpdateArmTargetMarker() {
+
+	// 
+	CheckCollisions();
+
+	// ==== 攻撃中の腕ターゲットUI更新 ==== //
+	if (boss_ && targetOuter_ && targetInner_) {
+
+		// 今攻撃している腕のワールド座標
+		Vector3 p = boss_->GetCurrentArmWorldPos();
+
+		// ViewProjection
+		Matrix4x4 view = camera_->GetViewMatrix();
+		Matrix4x4 proj = camera_->GetProjectionMatrix();
+		Matrix4x4 vp = MyMath::Multiply(view, proj);
+
+		// 行列は row-major / mul(v, M) 前提で CPU 側も合わせる
+		float clipX =
+			p.x * vp.m[0][0] +
+			p.y * vp.m[1][0] +
+			p.z * vp.m[2][0] +
+			vp.m[3][0];
+
+		float clipY =
+			p.x * vp.m[0][1] +
+			p.y * vp.m[1][1] +
+			p.z * vp.m[2][1] +
+			vp.m[3][1];
+
+		float clipZ =
+			p.x * vp.m[0][2] +
+			p.y * vp.m[1][2] +
+			p.z * vp.m[2][2] +
+			vp.m[3][2];
+
+		float clipW =
+			p.x * vp.m[0][3] +
+			p.y * vp.m[1][3] +
+			p.z * vp.m[2][3] +
+			vp.m[3][3];
+
+		auto hideMarker = [&]() {
+			targetOuter_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+			targetInner_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+			};
+
+		// カメラ背面 or wゼロ近傍なら表示しない
+		if (clipW <= 0.0001f) {
+			hideMarker();
+		} else {
+			float invW = 1.0f / clipW;
+			float ndcX = clipX * invW;
+			float ndcY = clipY * invW;
+			float ndcZ = clipZ * invW;
+
+			// NDC範囲外なら非表示
+			if (ndcZ < 0.0f || ndcZ > 1.0f ||
+				ndcX < -1.0f || ndcX > 1.0f ||
+				ndcY < -1.0f || ndcY > 1.0f) {
+
+				hideMarker();
+			} else {
+				// NDC → スクリーン座標（1280x720想定）
+				constexpr float SCREEN_W = 1280.0f;
+				constexpr float SCREEN_H = 720.0f;
+
+				float screenX = (ndcX * 0.5f + 0.5f) * SCREEN_W;
+				float screenY = (-ndcY * 0.5f + 0.5f) * SCREEN_H;
+
+				targetOuter_->SetPosition({ screenX, screenY });
+				targetInner_->SetPosition({ screenX, screenY });
+
+				// ヒット数に応じて内側リングの色
+				int hitCount = boss_->IsLeftArmAttacking()
+					? boss_->GetLeftHitCount()
+					: boss_->GetRightHitCount();
+
+				Vector4 innerColor;
+				if (hitCount < 2) {
+					innerColor = { 0.0f, 1.0f, 0.0f, 1.0f }; // 緑
+				} else if (hitCount < 4) {
+					innerColor = { 1.0f, 1.0f, 0.0f, 1.0f }; // 黄
+				} else {
+					innerColor = { 1.0f, 0.0f, 0.0f, 1.0f }; // 赤
+				}
+
+				// 外側は常に表示
+				targetOuter_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+				targetInner_->SetColor(innerColor);
+			}
+		}
+	}
 }

@@ -22,21 +22,29 @@ public:
 	float GetRadius() const;
 	Transform GetTransform() const;
 	bool GetIsmoveRight() const { return isMoveRight_; }
+
 	void SetRotate(Vector3& rotate);
 	void SetTranslate(Vector3 translate);
+
 	void SetPlayer(Player* player) { player_ = player; }
+
 	void SetAttack(bool isAttack) { isAttack_ = isAttack; }
+	void SetAttackSpeed(float speed) { attackSpeed_ = speed; }
+	float GetAttackSpeed() const { return attackSpeed_; }
+
 	void SetInTitleScene(bool isTitleScene) { isInTitleScene_ = isTitleScene; }
 
+	// ----- 部位 ----- //
 	Object3d* GetBody() const { return object3d_.get(); }
 	Object3d* GetLeftArm() const { return leftArm_.get(); }
 	Object3d* GetRightArm() const { return rightArm_.get(); }
 
+	// ----- 右手 ----- //
 	void    SetRightHandScale(const Vector3& s);
 	Vector3 GetRightHandWorldPos() const;
 	float   GetRightHandRadius() const;
 
-	// --- 左手（必要なら） ---
+	// ----- 左手 ----- //
 	void    SetLeftHandScale(const Vector3& s);
 	Vector3 GetLeftHandWorldPos() const;
 	float   GetLeftHandRadius() const;
@@ -45,6 +53,20 @@ public:
 	void   Damage(int v);
 	int    GetHP() const { return hp_; }
 	bool   IsDead() const { return hp_ <= 0; }
+
+	// ----- 攻撃 ----- //
+	// 攻撃中かどうか（腕が伸びているフェーズか）を外からチェック用
+	bool IsExtending() const { return isExtending_; }
+
+	// 現在攻撃に使っている腕が左かどうか
+	bool IsLeftArmAttacking() const { return attackLeftArm_; }
+
+	// 今攻撃に使っている腕のワールド座標
+	Vector3 GetCurrentArmWorldPos() const;
+
+	// 腕のヒット数
+	int GetLeftHitCount() const { return leftArmHitCount_; }
+	int GetRightHitCount() const { return rightArmHitCount_; }
 
 public:
 
@@ -84,7 +106,7 @@ private:
 	float attackCooldown_ = 0.0f;
 	bool isAttacking_ = false;
 	bool attackLeftArm_ = true;
-	float attackSpeed_ = 0.2f; // 腕の伸縮速度
+	float attackSpeed_ = 0.1f; // 腕の伸縮速度
 	int leftArmHitCount_ = 0;
 	int rightArmHitCount_ = 0;
 	const int maxHitCount_ = 5;

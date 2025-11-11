@@ -45,6 +45,10 @@ private:
 	// Boss
 	std::unique_ptr<BossEnemy> boss_ = nullptr;
 
+	// target
+	std::unique_ptr<Sprite> targetOuter_ = nullptr;
+	std::unique_ptr<Sprite> targetInner_ = nullptr;
+
 	// Particle・Effect
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;
 
@@ -109,6 +113,17 @@ private:
 	Vector3 swordCenter_{}, swordRight_{}, swordForward_{};
 	float   swordHalfLen_ = 10.0f, swordToward_ = 2.0f, swordDuration_ = 0.5f;
 
+	// -----  ----- //
+	// 腕攻撃フォーカス用カメラ
+	bool   armCamActive_ = false;
+	float  armCamT_ = 0.0f;
+	float  armCamIntroTime_ = 0.15f; // 寄る速さ
+	float  armCamOutroTime_ = 0.20f; // 戻る速さ
+
+	Vector3 armCamSavedPos_{};
+	Vector3 armCamSavedRot_{};
+	Vector3 armCamTargetPos_{};
+	Vector3 armCamTargetRot_{};
 
 	KnockoutCameraController ko_;
 	bool koActive_ = false;
@@ -121,4 +136,7 @@ private:
 	void StartMeteorMode();
 	void UpdateMeteorMode(float dt);
 	void EndMeteorMode();
+
+	// 
+	void UpdateArmTargetMarker();
 };

@@ -5,6 +5,8 @@
 
 void TitleScene::Init() {
 
+	System::GetOffscreenRendering()->SetPostEffect("none");
+
 	// テクスチャ、モデルの読み込み
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/uvChecker.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle.png");

@@ -58,8 +58,8 @@ void Player::Init(Camera* camera) {
 
 	// レティクルのスプライトを生成
 	reticleSprite_ = std::make_unique<Sprite>();
-	reticleSprite_->Init("./Resources/images/uvChecker.png", BlendType::BLEND_NONE);
-	reticleSprite_->SetSize({ 50.0f, 50.0f });
+	reticleSprite_->Init("./Resources/images/reticle.png", BlendType::BLEND_ALPHA);
+	reticleSprite_->SetSize({ 100.0f, 100.0f });
 	// 初期位置を画面中央へ
 	reticleSprite_->SetAnchorPoint({ 0.5f, 0.5f });
 	reticleSprite_->SetPosition({ 1280.0f * 0.5f, 720.0f * 0.5f });
