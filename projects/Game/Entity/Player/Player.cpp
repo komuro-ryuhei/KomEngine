@@ -136,7 +136,7 @@ void Player::ImGuiDebug() {
 void Player::Attack() {
 
 	// --- 右クリック：単発 --- //
-	if (System::GetInput()->TriggerMouse(1)) {
+	if (System::GetInput()->TriggerMouse(0)) {
 		SpawnBullet();
 	}
 

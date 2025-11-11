@@ -175,77 +175,87 @@ void BossEnemy::Attack() {
 	// ================== 両手同時攻撃 ================== //
 	case AttackPhase::BothHands:
 	{
-		const Vector3 leftBase{ -4.0f, 0.0f, 0.0f };
-		const Vector3 rightBase{ 4.0f, 0.0f, 0.0f };
+		// ローカル基準位置
+		const Vector3 leftBaseLocal{ -4.0f, 0.0f, 0.0f };
+		const Vector3 rightBaseLocal{ 4.0f, 0.0f, 0.0f };
 
-		Vector3 leftPos = leftArmPos_;
-		Vector3 rightPos = rightArmPos_;
+		// ワールド基準位置
+		const Vector3 leftBaseWorld = transform_.translate + leftBaseLocal;
+		const Vector3 rightBaseWorld = transform_.translate + rightBaseLocal;
 
-		Vector3 leftWorldBase = transform_.translate + leftBase;
-		Vector3 rightWorldBase = transform_.translate + rightBase;
+		// 今のワールド位置（毎フレーム取得）
+		Vector3 leftWorldPos = leftArm_->GetWorldPosition();
+		Vector3 rightWorldPos = rightArm_->GetWorldPosition();
 
-		Vector3 dirL = MyMath::Normalize(player_->GetTranslate() - leftWorldBase);
-		Vector3 dirR = MyMath::Normalize(player_->GetTranslate() - rightWorldBase);
+		const Vector3 playerPos = player_->GetTranslate();
 
-		const float maxLen = 18.0f;  // 伸びきる距離
-		const float returnSpeed = 0.5f;   // 戻る速度
-		const float endThreshold = 0.5f;   // 基準位置に戻ったと判定する距離
+		const float maxLen = 22.0f;    // どこまで伸ばすか（必要なら調整）
+		const float extendSpeed = attackSpeed_;
+		const float returnSpeed = 0.6f;
+		const float endThreshold = 0.3f;
 
 		// ===== 左腕 =====
 		if (leftExtending_) {
-			leftPos += dirL * attackSpeed_;
+			Vector3 dirL = MyMath::Normalize(playerPos - leftBaseWorld);
+			leftWorldPos += dirL * extendSpeed;
 
-			bool reachedDist = MyMath::Length(leftPos - leftBase) >= maxLen;
+			float len = MyMath::Length(leftWorldPos - leftBaseWorld);
+			bool reachedDist = (len >= maxLen);
 			bool hitEnough = (leftArmHitCount_ >= maxHitCount_);
 
-			// 規定距離 or 規定ヒット数で左腕だけ戻りフェーズへ
 			if (reachedDist || hitEnough) {
 				leftExtending_ = false;
 			}
 		} else {
-			Vector3 toBase = leftBase - leftPos;
+			Vector3 toBase = leftBaseWorld - leftWorldPos;
 			float dist = MyMath::Length(toBase);
-
 			if (dist < endThreshold) {
-				leftPos = leftBase;
+				leftWorldPos = leftBaseWorld;
 			} else {
-				leftPos += MyMath::Normalize(toBase) * returnSpeed;
+				leftWorldPos += MyMath::Normalize(toBase) * returnSpeed;
 			}
 		}
 
 		// ===== 右腕 =====
 		if (rightExtending_) {
-			rightPos += dirR * attackSpeed_;
+			Vector3 dirR = MyMath::Normalize(playerPos - rightBaseWorld);
+			rightWorldPos += dirR * extendSpeed;
 
-			bool reachedDist = MyMath::Length(rightPos - rightBase) >= maxLen;
+			float len = MyMath::Length(rightWorldPos - rightBaseWorld);
+			bool reachedDist = (len >= maxLen);
 			bool hitEnough = (rightArmHitCount_ >= maxHitCount_);
 
-			// 規定距離 or 規定ヒット数で右腕だけ戻りフェーズへ
 			if (reachedDist || hitEnough) {
 				rightExtending_ = false;
 			}
 		} else {
-			Vector3 toBase = rightBase - rightPos;
+			Vector3 toBase = rightBaseWorld - rightWorldPos;
 			float dist = MyMath::Length(toBase);
-
 			if (dist < endThreshold) {
-				rightPos = rightBase;
+				rightWorldPos = rightBaseWorld;
 			} else {
-				rightPos += MyMath::Normalize(toBase) * returnSpeed;
+				rightWorldPos += MyMath::Normalize(toBase) * returnSpeed;
 			}
 		}
 
-		// 位置を反映
-		if (leftArm_)  leftArm_->SetTranslate(leftPos);
-		if (rightArm_) rightArm_->SetTranslate(rightPos);
-		leftArmPos_ = leftPos;
-		rightArmPos_ = rightPos;
+		// ===== ワールド→ローカルに戻して反映 =====
+		Vector3 leftLocal = leftWorldPos - transform_.translate;
+		Vector3 rightLocal = rightWorldPos - transform_.translate;
+
+		leftArm_->SetTranslate(leftLocal);
+		rightArm_->SetTranslate(rightLocal);
+		leftArmPos_ = leftLocal;
+		rightArmPos_ = rightLocal;
 
 		// ===== メテオ移行判定 =====
-		bool leftFinished = !leftExtending_ && MyMath::Length(leftPos - leftBase) < endThreshold;
-		bool rightFinished = !rightExtending_ && MyMath::Length(rightPos - rightBase) < endThreshold;
+		bool leftFinished =
+			!leftExtending_ &&
+			MyMath::Length(leftWorldPos - leftBaseWorld) < endThreshold;
 
-		// 両方「戻り完了」したらメテオへ
+		bool rightFinished =
+			!rightExtending_ &&
+			MyMath::Length(rightWorldPos - rightBaseWorld) < endThreshold;
+
 		if (leftFinished && rightFinished) {
 			leftArmHitCount_ = 0;
 			rightArmHitCount_ = 0;

@@ -319,7 +319,7 @@ void BossTestScene::Update() {
 	ParticleManager::GetInstance()->Update();
 
 	{
-		constexpr int LOW_HP_THRESHOLD = 0; // HP2以下
+		constexpr int LOW_HP_THRESHOLD = 1; // HP1以下
 		bool nowLow = player_->IsLowHP(LOW_HP_THRESHOLD);
 
 		if (nowLow && !lowHpVfxOn_) {
