@@ -275,7 +275,7 @@ void BossTestScene::Update() {
 
 	CheckCollisions();
 
-	// UpdateArmTargetMarker();
+	UpdateArmTargetMarker();
 
 	targetOuter_->Update();
 	targetInner_->Update();
@@ -759,9 +759,6 @@ void BossTestScene::EndMeteorMode() {
 }
 
 void BossTestScene::UpdateArmTargetMarker() {
-
-	// 
-	CheckCollisions();
 
 	// ==== 攻撃中の腕ターゲットUI更新 ==== //
 	if (boss_ && targetOuter_ && targetInner_) {
