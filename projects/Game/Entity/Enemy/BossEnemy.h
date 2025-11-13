@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Base/3d/Object3d/Object3d.h"
+#include "Engine/Base/2d/Sprite/Sprite.h"
 
 class Player;
 class Camera;
@@ -106,6 +107,8 @@ public:
 	bool ConsumeMeteorRequest(); // trueを返したタイミングでフラグを消費
 	void OnMeteorFinished();     // メテオ終了後に呼ぶ
 
+	void HPDraw();
+
 
 private:
 	// カメラ
@@ -123,6 +126,9 @@ private:
 	std::unique_ptr<Object3d> leftArm_;
 	std::unique_ptr<Object3d> rightArm_;
 
+	// 
+	std::unique_ptr<Sprite> hpSprite_;
+ 
 	// 攻撃用のタイマーと状態
 	float attackTimer_ = 0.0f;
 	float attackInterval_ = 2.0f; // 2秒周期
@@ -151,7 +157,7 @@ private:
 	bool pushEnter_ = true;
 
 	// HP
-	int hp_ = 10;
+	int hp_ = 20;
 
 	// 両手攻撃用：左右個別に伸縮管理
 	bool leftExtending_ = true;

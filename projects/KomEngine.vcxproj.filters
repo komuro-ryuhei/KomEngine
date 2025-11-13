@@ -58,9 +58,6 @@
     <Filter Include="Engine\Base\PSO\Compiler">
       <UniqueIdentifier>{85f58a6f-8f64-4d84-95de-938d5c352867}</UniqueIdentifier>
     </Filter>
-    <Filter Include="externals">
-      <UniqueIdentifier>{40321bfe-1bdb-4da7-a8e1-2db16159d1ab}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\Base\ImGuiManager">
       <UniqueIdentifier>{0d937d44-b5e4-4b6b-9440-c588de7a55fd}</UniqueIdentifier>
     </Filter>
@@ -165,27 +162,6 @@
     </ClCompile>
     <ClCompile Include="Game\Scene\GameScene.cpp">
       <Filter>Game\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui.cpp">
-      <Filter>externals</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_demo.cpp">
-      <Filter>externals</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_draw.cpp">
-      <Filter>externals</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_impl_dx12.cpp">
-      <Filter>externals</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_impl_win32.cpp">
-      <Filter>externals</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_tables.cpp">
-      <Filter>externals</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\imgui\imgui_widgets.cpp">
-      <Filter>externals</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Base\ImGuiManager\ImGuiManager.cpp">
       <Filter>Engine\Base\ImGuiManager</Filter>
@@ -327,32 +303,8 @@
     <ClInclude Include="Game\Scene\GameScene.h">
       <Filter>Game\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="externals\imgui\imconfig.h">
-      <Filter>externals</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imgui.h">
-      <Filter>externals</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imgui_impl_dx12.h">
-      <Filter>externals</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imgui_impl_win32.h">
-      <Filter>externals</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imgui_internal.h">
-      <Filter>externals</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Base\ImGuiManager\ImGuiManager.h">
       <Filter>Engine\Base\ImGuiManager</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imstb_rectpack.h">
-      <Filter>externals</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imstb_textedit.h">
-      <Filter>externals</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\imgui\imstb_truetype.h">
-      <Filter>externals</Filter>
     </ClInclude>
     <ClInclude Include="Engine\lib\Input\Input.h">
       <Filter>lib\Input</Filter>

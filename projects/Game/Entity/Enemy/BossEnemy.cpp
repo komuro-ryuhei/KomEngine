@@ -41,6 +41,13 @@ void BossEnemy::Init(Camera *camera) {
 	rightArm_->SetScale({ 1.0f, 1.0f, 1.0f });
 	rightArm_->SetTranslate({ 4.0f, 0.0f, 0.0f });
 	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
+
+	// 
+	hpSprite_ = std::make_unique<Sprite>();
+	hpSprite_->Init("./Resources/images/hp.png", BlendType::BLEND_NONE);
+	hpSprite_->SetAnchorPoint({ 0.0f, 0.5f });
+	hpSprite_->SetSize({ 700.0f,50.0f });
+	hpSprite_->SetPosition({ 200.0f,100.0f });
 }
 
 void BossEnemy::Update() {
@@ -48,6 +55,20 @@ void BossEnemy::Update() {
 	object3d_->Update();
 	leftArm_->Update();
 	rightArm_->Update();
+
+	if (hpSprite_) {
+		// 現在HP比率を計算（0～1）
+		float hpRatio = static_cast<float>(hp_) / 20.0f; // 最大HPが10
+		hpRatio = std::clamp(hpRatio, 0.0f, 1.0f);
+
+		// 元のサイズ（初期値と同じ）
+		Vector2 baseSize = { 700.0f, 50.0f };
+
+		// 横幅をHP比率に応じて縮小（マイナスにはならない）
+		hpSprite_->SetSize({ baseSize.x * hpRatio, baseSize.y });
+	}
+
+	hpSprite_->Update();
 
 	object3d_->SetTranslate(transform_.translate);
 	object3d_->SetRotate(transform_.rotate);
@@ -341,6 +362,12 @@ void BossEnemy::OnMeteorFinished() {
 	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
 	if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
 	if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
+}
+
+void BossEnemy::HPDraw() {
+
+	// 
+	hpSprite_->Draw();
 }
 
 void BossEnemy::SetRotate(Vector3 &rotate) {

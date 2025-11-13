@@ -1,9 +1,14 @@
 #include "PlayerBullet.h"
+
+#ifdef USE_IMGUI
+
 #include "externals/imgui/imgui.h"
+
+#endif
 
 float PlayerBullet::GetRadius() const { return radius_; }
 
-void PlayerBullet::Init(Camera* camera, Object3d* object3d) {
+void PlayerBullet::Init(Camera *camera, Object3d *object3d) {
 
 	camera_ = camera;
 	object3d_ = object3d;
@@ -34,6 +39,8 @@ void PlayerBullet::Draw() { object3d_->Draw(); }
 
 void PlayerBullet::ImGuiDebug() {
 
+#ifdef USE_IMGUI
+
 	//
 	ImGui::Begin("PlayerBullet");
 
@@ -41,6 +48,8 @@ void PlayerBullet::ImGuiDebug() {
 	ImGui::DragFloat3("bulletRotate", &transform_.rotate.x, 0.01f);
 
 	ImGui::End();
+
+#endif
 }
 
 Vector3 PlayerBullet::GetTranslate() const { return transform_.translate; }
@@ -52,6 +61,6 @@ void PlayerBullet::SetTranlate(Vector3 translate) {
 	}
 }
 
-void PlayerBullet::SetDirection(const Vector3& direction) { direction_ = direction; }
+void PlayerBullet::SetDirection(const Vector3 &direction) { direction_ = direction; }
 
 bool PlayerBullet::IsAlive() const { return isAlive_; }

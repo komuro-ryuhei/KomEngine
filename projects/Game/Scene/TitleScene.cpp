@@ -16,6 +16,7 @@ void TitleScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/Title.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/PushEnter.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/YOUDIE.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/hp.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");

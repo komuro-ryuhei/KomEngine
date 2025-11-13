@@ -1,10 +1,16 @@
 #include "ImGuiManager.h"
 
+#ifdef USE_IMGUI
+
 #include <externals/imgui/imgui.h>
 #include <externals/imgui/imgui_impl_dx12.h>
 #include <externals/imgui/imgui_impl_win32.h>
 
+#endif
+
 void ImGuiManager::Init(WinApp* winApp) {
+
+#ifdef USE_IMGUI
 
 	HRESULT hr;
 
@@ -34,14 +40,20 @@ void ImGuiManager::Init(WinApp* winApp) {
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+#endif
 }
 
 void ImGuiManager::Finalize() {
 	
+#ifdef USE_IMGUI
+
 	// 後始末
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+
+#endif
 
 	// デスクリプタヒープを解放
 	srvHeap_.Reset();
@@ -49,16 +61,24 @@ void ImGuiManager::Finalize() {
 
 void ImGuiManager::Begin() {
 
+#ifdef USE_IMGUI
+
 	// ImGuiフレーム開始
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+
+#endif
 }
 
 void ImGuiManager::End() {
 
+#ifdef USE_IMGUI
+
 	// 描画前準備
 	ImGui::Render();
+
+#endif
 }
 
 void ImGuiManager::Draw() {
@@ -68,6 +88,11 @@ void ImGuiManager::Draw() {
 	// デスクリプタヒープ
 	ID3D12DescriptorHeap* ppHeaps[] = {srvHeap_.Get()};
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+#ifdef USE_IMGUI
+
 	// 描画コマンドを発行
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+
+#endif
 }

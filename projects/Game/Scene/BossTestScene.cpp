@@ -28,6 +28,7 @@ void BossTestScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/reticle.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/inner.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/outer.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/hp.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -455,6 +456,8 @@ void BossTestScene::Draw() {
 
 	// Bossの描画
 	boss_->Draw();
+	boss_->HPDraw();
+
 	// Bossのメテオ描画
 	for (auto &m : meteors_) m->Draw();
 	// Bossの剣描画
