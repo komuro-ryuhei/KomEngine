@@ -114,7 +114,7 @@ void TitleScene::Update() {
 		break;
 
 	case Phase::kMain:
-		if (System::TriggerKey(DIK_RETURN)) {
+		if (System::TriggerKey(DIK_RETURN) || System::TriggerKey(DIK_SPACE)) {
 			fade_->Start(Fade::Status::FadeOut, 0.6f);
 			phase_ = Phase::kFadeOut;
 		}

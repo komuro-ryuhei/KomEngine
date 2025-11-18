@@ -29,6 +29,8 @@ void BossTestScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/inner.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/outer.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/hp.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/blackBG.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/gameClear.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -116,6 +118,7 @@ void BossTestScene::Init() {
 	pm->CreateParticleGeoup("cylinder", ring, "cylinder");
 	pm->CreateParticleGeoup("moonLight", moonLight, "moonLight");
 	pm->CreateParticleGeoup("ribbon", moonLight, "ribbon");
+	pm->CreateParticleGeoup("dust", "./Resources/images/circle.png", "a");
 
 	// グループが既にあれば作らない
 	if (!pm->Exists("hit")) {
@@ -124,6 +127,9 @@ void BossTestScene::Init() {
 
 	emitter_ = std::make_unique<ParticleEmitter>();
 	emitter_->Init("hit", { 0.0f, 0.0f, 10.0f }, 10);
+
+	result_ = std::make_unique<ResultImage>();
+	result_->Init();
 }
 
 void BossTestScene::Update() {
@@ -306,6 +312,8 @@ void BossTestScene::Update() {
 	// ボスの剣
 	if (sword_) sword_->Update();
 
+	result_->Update();
+
 	CheckCollisions();
 
 	UpdateArmTargetMarker();
@@ -399,18 +407,45 @@ void BossTestScene::Update() {
 		break;
 
 	case Phase::kMain:
-		// ボス撃破 → クリア遷移
-		if (boss_ && boss_->GetHP() <= 0 && endReason_ == EndReason::None) {
-			fade_->Start(Fade::Status::FadeOut, 0.6f);
-			phase_ = Phase::kFadeOut;
-			endReason_ = EndReason::BossDeath;
+
+		// ★ ボスが死んでいて、着地済みならタイマー進行
+		if (boss_
+			&& boss_->GetHP() <= 0
+			&& boss_->HasLanded()
+			&& endReason_ == EndReason::None) {
+
+			// ★ 撃破後はプレイヤーの射撃を無効化
+			if (player_) {
+				player_->SetCanShoot(false);
+			}
+
+			bossDeathTimer_ += dt;
+
+			// 3秒経ったらリザルトスプライトをスライドイン開始
+			if (bossDeathTimer_ >= 3.0f) {
+				if (result_) {
+					result_->StartSlideIn();
+				}
+				endReason_ = EndReason::BossDeath;   // 「クリア状態」になっただけ
+			}
+		} else {
+			// ボスが死んでいない or 未着地の時はタイマーリセット
+			bossDeathTimer_ = 0.0f;
 		}
-		// （任意）デバッグでEnter押したらゲームオーバー行きたいなら
-		else if (System::TriggerKey(DIK_RETURN) && endReason_ == EndReason::None) {
-			fade_->Start(Fade::Status::FadeOut, 0.6f);
-			phase_ = Phase::kFadeOut;
-			endReason_ = EndReason::PlayerDeath; // or None/Title 用など好みで
+
+		// ★ ResultImage がスライド完了したら SPACE でフェードアウト開始
+		if (result_ && result_->IsSlideFinished()) {
+			if (System::TriggerKey(DIK_SPACE) || System::TriggerKey(DIK_RETURN)) {
+
+				// フェードアウト開始
+				fade_->Start(Fade::Status::FadeOut, 0.6f);
+				phase_ = Phase::kFadeOut;
+				endReason_ = EndReason::BossDeath;   // ← ボス撃破扱い
+
+				return;
+			}
 		}
+
 		break;
 
 	case Phase::kFadeOut:
@@ -419,8 +454,8 @@ void BossTestScene::Update() {
 			Fade::SetDefaultOpenModeSlash(false);
 
 			if (endReason_ == EndReason::BossDeath) {
-				sceneManager_->ChangeScene("TITLE");    // ★クリア用シーン名に変更
-			} else {
+				sceneManager_->ChangeScene("TITLE");   // ★復活
+			} else if (endReason_ == EndReason::PlayerDeath) {
 				sceneManager_->ChangeScene("GAMEOVER");
 			}
 		}
@@ -473,6 +508,8 @@ void BossTestScene::Draw() {
 	rightTargetInner_->Draw();
 
 	ParticleManager::GetInstance()->Draw();
+
+	result_->Draw();
 
 	// --------------------------------------------------------------------//
 

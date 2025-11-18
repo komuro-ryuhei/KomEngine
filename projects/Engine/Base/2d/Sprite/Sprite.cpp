@@ -233,6 +233,7 @@ void Sprite::ImGuiDebug() {
 	ImGui::DragFloat2("uvTranslate", &uvTransform.translate.x, 0.01f);
 	ImGui::DragFloat2("uvScale", &uvTransform.scale.x, 0.01f);
 	ImGui::DragFloat("uvRotate", &uvTransform.rotate.z, 0.01f);
+	ImGui::ColorEdit4("color", &materialData->color.x);
 
 	ImGui::End();
 

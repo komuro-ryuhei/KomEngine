@@ -6,6 +6,7 @@
 
 #include "Game/Entity/Player/Player.h"
 #include "Engine/Base/System/System.h"
+#include "Engine/Base/Particle/ParticleManager.h"
 
 void BossEnemy::SetTranslate(Vector3 translate) { transform_.translate = translate; }
 
@@ -52,25 +53,116 @@ void BossEnemy::Init(Camera *camera) {
 
 void BossEnemy::Update() {
 
+	// 3Dオブジェクト更新
 	object3d_->Update();
 	leftArm_->Update();
 	rightArm_->Update();
 
+	// HPバーの更新
 	if (hpSprite_) {
-		// 現在HP比率を計算（0～1）
-		float hpRatio = static_cast<float>(hp_) / 20.0f; // 最大HPが10
+		float hpRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 		hpRatio = std::clamp(hpRatio, 0.0f, 1.0f);
-
-		// 元のサイズ（初期値と同じ）
 		Vector2 baseSize = { 700.0f, 50.0f };
-
-		// 横幅をHP比率に応じて縮小（マイナスにはならない）
 		hpSprite_->SetSize({ baseSize.x * hpRatio, baseSize.y });
+		hpSprite_->Update();
 	}
 
-	hpSprite_->Update();
+	// ---------------------- 撃破後 / 生存中で分岐 ---------------------- //
 
-	object3d_->SetTranslate(transform_.translate);
+	if (hp_ <= 0) {
+
+		if (!fallStarted_) {
+			fallStarted_ = true;
+			fallVelY_ = 0.0f;
+
+			// ★開始姿勢の保存
+			fallRotateStart_ = transform_.rotate.x;
+
+			// ★重力を弱くする（ゆっくり落下）
+			// gravityY_ = -0.01f;
+
+			// シェイクタイマー初期化
+			fallShakeTime_ = 0.0f;
+		}
+
+		if (!hasLanded_) {
+
+			fallShakeTime_ += 1.0f / 60.0f;
+
+			// ---- 落下 ----
+			fallVelY_ += gravityY_;
+			transform_.translate.y += fallVelY_;
+
+			// ---- 回転（前に倒れる）----
+			//   落下の進行度で角度をなめらかに変化
+			float fallProgress = (transform_.translate.y - groundY_) / (2.0f - groundY_);
+			fallProgress = std::clamp(1.0f - fallProgress, 0.0f, 1.0f);
+
+			// イージング（顔から落ちる時ちょっと速くする）
+			float ease = fallProgress * fallProgress;
+
+			transform_.rotate.x = MyMath::Lerp(fallRotateStart_, fallRotateEnd_, ease);
+
+			// ---- 地面に到達したら停止 ----
+			if (transform_.translate.y <= groundY_) {
+				transform_.translate.y = groundY_;
+				fallVelY_ = 0.0f;
+				hasLanded_ = true;
+
+				// ★ ここで一度だけカメラシェイク
+				if (!landingShakeDone_ && camera_) {
+					camera_->StartShake(CameraShakeType::Large);
+					landingShakeDone_ = true;
+				}
+				if (transform_.translate.y <= groundY_) {
+					transform_.translate.y = groundY_;
+					fallVelY_ = 0.0f;
+					hasLanded_ = true;
+
+					// ★ 着地時シェイク（既存）
+					if (!landingShakeDone_ && camera_) {
+						camera_->StartShake(CameraShakeType::Large);
+						landingShakeDone_ = true;
+					}
+					// ★ 着地時に砂ぼこりパーティクル発生
+					ParticleManager::GetInstance()->Emit("dust", transform_.translate, 80);
+				}
+
+			}
+		}
+	} else {
+		// ★ 生きている間の従来処理
+
+		if (System::GetInput()->PushKey(DIK_SPACE)) {
+			pushEnter_ = true;
+		}
+
+		// 攻撃
+		if (isAttack_) {
+			Attack();
+		}
+
+		// TitleScene用移動
+		if (pushEnter_) {
+			if (isInTitleScene_) {
+				TitleSceneMove();
+			}
+		}
+	}
+
+	// ---------------------- SRT 反映＆当たり判定用半径 ---------------------- //
+
+	// ★ 落下中だけ見た目にシェイクをかける
+	Vector3 drawPos = transform_.translate;
+	if (hp_ <= 0 && !hasLanded_) {
+		// ちょっと不規則な揺れにするため周波数を変えたsin/cosを足す
+		float sx = std::sin(fallShakeTime_ * 40.0f) * fallShakeAmplitude_;
+		float sz = std::cos(fallShakeTime_ * 55.0f) * fallShakeAmplitude_;
+		drawPos.x += sx;
+		drawPos.z += sz;
+	}
+
+	object3d_->SetTranslate(drawPos);
 	object3d_->SetRotate(transform_.rotate);
 
 	rightArm_->SetTranslate(rightArmPos_);
@@ -78,26 +170,10 @@ void BossEnemy::Update() {
 	rightArm_->SetRotate(rightArmRot_);
 	leftArm_->SetRotate(leftArmRot_);
 
-	// radius（スケールベース）を設定
+
 	object3d_->SetRadius(2.0f * object3d_->GetScale().x);
 	leftArm_->SetRadius(1.0f * leftArm_->GetScale().x);
 	rightArm_->SetRadius(1.0f * rightArm_->GetScale().x);
-
-	if (System::GetInput()->PushKey(DIK_SPACE)) {
-		pushEnter_ = true;
-	}
-
-	// 攻撃フラグが立っていたら攻撃
-	if (isAttack_) {
-		Attack();
-	}
-
-	// TitleScene用の動き
-	if (pushEnter_) {
-		if (isInTitleScene_) {
-			TitleSceneMove();
-		}
-	}
 }
 
 void BossEnemy::Draw() {

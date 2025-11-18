@@ -264,6 +264,7 @@
     <ClCompile Include="Game\Entity\Enemy\BossSword.cpp" />
     <ClCompile Include="KnockoutCameraController.cpp" />
     <ClCompile Include="Game\Scene\GameOverScene.cpp" />
+    <ClCompile Include="ResultImage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -411,6 +412,7 @@
     <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
     <ClInclude Include="KnockoutCameraController.h" />
     <ClInclude Include="Game\Scene\GameOverScene.h" />
+    <ClInclude Include="ResultImage.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

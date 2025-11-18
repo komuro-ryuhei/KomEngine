@@ -67,6 +67,9 @@ public:
 	int    GetHP() const { return hp_; }
 	bool   IsDead() const { return hp_ <= 0; }
 
+	// 着地(墜落)したかのフラグ
+	bool   HasLanded() const { return hasLanded_; }
+
 	// ----- 攻撃 ----- //
 	// 攻撃中かどうか（腕が伸びているフェーズか）を外からチェック用
 	bool IsExtending() const { return isExtending_; }
@@ -157,9 +160,27 @@ private:
 	bool pushEnter_ = true;
 
 	// HP
-	int hp_ = 20;
+	int maxHp_ = 10;
+	int hp_ = maxHp_;
 
 	// 両手攻撃用：左右個別に伸縮管理
 	bool leftExtending_ = true;
 	bool rightExtending_ = true;
+
+	// 撃破後の墜落制御
+	bool  fallStarted_ = false;   // 落下開始したか
+	bool  hasLanded_ = false;   // 地面に着いたか
+	float fallVelY_ = 0.0f;    // 落下速度
+	float gravityY_ = -0.006f;  // 重力加速度（毎フレーム加算）
+	float groundY_ = -5.0f;   // 地面のY（glassObject_ と合わせた）
+	// 回転しながら落下用
+	float fallRotateStart_ = 0.0f;    // 開始角度（今の回転を保存）
+	float fallRotateEnd_ = -1.2f;   // 最終角度（ラジアン）＝約 -70 度前に倒す
+
+	// ★ 落下中シェイク用
+	float fallShakeTime_ = 0.0f;
+	float fallShakeAmplitude_ = 0.25f; // 揺れ幅（XZ方向）
+
+	// 落下後のカメラシェイクフラグ
+	bool landingShakeDone_ = false;
 };

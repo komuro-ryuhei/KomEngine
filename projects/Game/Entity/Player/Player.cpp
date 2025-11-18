@@ -135,6 +135,11 @@ void Player::ImGuiDebug() {
 
 void Player::Attack() {
 
+	// ★ 追加：撃てない状態なら何もしない
+	if (!canShoot_) {
+		return;
+	}
+
 	// --- 右クリック：単発 --- //
 	if (System::GetInput()->TriggerMouse(0)) {
 		SpawnBullet();

@@ -15,6 +15,7 @@
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "Fade.h"
 #include "KnockoutCameraController.h"
+#include "ResultImage.h"
 
 class BossTestScene : public IScene {
 public:
@@ -44,6 +45,9 @@ private:
 	std::unique_ptr<Player> player_ = nullptr;
 	// Boss
 	std::unique_ptr<BossEnemy> boss_ = nullptr;
+
+	// リザルトのスプライト
+	std::unique_ptr<ResultImage> result_ = nullptr;
 
 	// target
 	std::unique_ptr<Sprite> leftTargetOuter_;
@@ -139,6 +143,9 @@ private:
 	bool koActive_ = false;
 
 	bool lowHpVfxOn_ = false;
+
+	// ★ ボス撃破後 → 着地してからの待ち時間用
+	float bossDeathTimer_ = 0.0f;
 
 	// ターゲットシェイク
 	float leftTargetShakeTime_ = 0.0f;

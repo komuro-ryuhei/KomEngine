@@ -121,7 +121,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\lib\Network\Network.cpp" />
     <ClCompile Include="Engine\lib\Network\RankingManager.cpp" />
     <ClCompile Include="Game\Scene\AbstractSceneFactory.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Engine\Base\Audio\Audio.cpp" />
     <ClCompile Include="Engine\Base\Camera\Camera.cpp" />
@@ -159,6 +159,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Game\Entity\Player\Player.cpp" />
     <ClCompile Include="Game\Entity\Player\PlayerBullet.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
+    <ClCompile Include="ResultImage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
@@ -212,6 +213,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Game\Entity\Player\PlayerBullet.h" />
     <ClInclude Include="Engine\Base\OffscreenRendering\OffscreenRendering.h" />
     <ClInclude Include="KnockoutCameraController.h" />
+    <ClInclude Include="ResultImage.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="Game\Scene\TitleScene.h" />
   </ItemGroup>

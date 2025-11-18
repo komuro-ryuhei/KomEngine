@@ -136,6 +136,8 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 			group.particles.push_back(MakeRandomParticle(randomEngine, position));
 		} else if (name == "hit") {
 			group.particles.push_back(MakeNewParticle(randomEngine, position));
+		} else if (name == "dust") {
+			group.particles.push_back(MakeDustParticle(randomEngine, position));
 		} else if (name == "ring") {
 			group.particles.push_back(MakeRingParticle(randomEngine, position));
 		} else if (name == "cylinder") {
@@ -219,6 +221,38 @@ Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vect
 	particle.lifeTime = 1.0f;
 	particle.currentTime = 0.0f;
 	return particle;
+}
+
+Particle ParticleManager::MakeDustParticle(std::mt19937 &randomEngine, const Vector3 &translate)
+{
+	std::uniform_real_distribution<float> distPos(-1.2f, 1.2f);   // 広めに散る
+	std::uniform_real_distribution<float> distVelX(-0.05f, 0.05f);
+	std::uniform_real_distribution<float> distVelZ(-0.05f, 0.05f);
+	std::uniform_real_distribution<float> distVelY(0.02f, 0.08f); // 上方向へフワッと
+	std::uniform_real_distribution<float> distLife(0.8f, 1.4f);
+
+	Particle p;
+	p.transform.scale = { 1.5f,1.5f,1.5f }; // 少し大きめ
+	p.transform.rotate = { 0,0,0 };
+	p.transform.translate = {
+		translate.x + distPos(randomEngine),
+		translate.y,
+		translate.z + distPos(randomEngine)
+	};
+
+	p.velocity = {
+		distVelX(randomEngine),
+		distVelY(randomEngine),
+		distVelZ(randomEngine)
+	};
+
+	// 砂っぽい薄い色
+	p.color = { 0.6f, 0.55f, 0.45f, 1.0f };
+
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
 }
 
 Particle ParticleManager::MakeRingParticle(std::mt19937& randomEngine, const Vector3& translate) {

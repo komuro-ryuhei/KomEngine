@@ -42,6 +42,9 @@ public:
 	void Damage(int amount);
 	bool IsLowHP(int hp) const;
 
+	void SetCanShoot(bool can) { canShoot_ = can; }
+	bool CanShoot() const { return canShoot_; }
+
 private:
 	void Attack();
 
@@ -83,4 +86,7 @@ private:
 	// 連射制御（左クリック長押し用）
 	float autofireInterval_ = 0.10f;
 	float autofireTimer_ = 0.0f;
+
+	// ★ 追加：射撃許可フラグ（初期は撃てる）
+	bool canShoot_ = true;
 };
