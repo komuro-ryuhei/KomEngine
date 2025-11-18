@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.10.35013.160
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KomEngine", "KomEngine.vcxproj", "{71C99448-9F54-4EAE-BB92-3285BC5F0C96}"
+	ProjectSection(ProjectDependencies) = postProject
+		{467A1913-7B37-47B6-82D9-9911402AB896} = {467A1913-7B37-47B6-82D9-9911402AB896}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ソリューション項目", "ソリューション項目", "{94E96389-255F-4015-A973-D4D6832CCC07}"
 	ProjectSection(SolutionItems) = preProject
