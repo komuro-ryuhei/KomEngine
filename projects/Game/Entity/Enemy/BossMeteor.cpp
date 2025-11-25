@@ -22,7 +22,7 @@ void BossMeteor::Init(Camera* camera) {
 	accel_ = { 0.0f, -gravity_, 0.0f };
 	velocity_ = { 0.0f, 0.0f, 0.0f };
 
-	// 判定半径（スケールを掛けておく）
+	// 判定半径
 	object3d_->SetRadius(radius_ * object3d_->GetScale().x);
 }
 

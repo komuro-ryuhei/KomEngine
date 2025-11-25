@@ -43,6 +43,12 @@ private:
 
 	// Player
 	std::unique_ptr<Player> player_ = nullptr;
+	// Playerが持つ銃
+	std::unique_ptr<Object3d> gun_ = nullptr;
+	// カメラからの相対位置・回転
+	Vector3 gunOffset_{ -1.0f, -1.0f, 5.0f }; // 右/左, 上下, 前
+	Vector3 gunRotOffset_{ 0.0f, 1.5f, 0.0f }; // カメラからの回転オフセット
+
 	// Boss
 	std::unique_ptr<BossEnemy> boss_ = nullptr;
 
@@ -86,6 +92,9 @@ private:
 
 	// PostEffectの変更関数
 	void ChangePostEffect();
+
+	// 銃の更新用
+	void UpdateGun();
 
 	// ------------------------ メテオ耐久モード ------------------------ //
 	enum class MeteorPhase { kIdle, kIntro, kShower, kOutro };

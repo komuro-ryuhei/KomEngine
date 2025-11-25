@@ -10,7 +10,7 @@
 
 void BossEnemy::SetTranslate(Vector3 translate) { transform_.translate = translate; }
 
-void BossEnemy::Init(Camera *camera) {
+void BossEnemy::Init(Camera* camera) {
 
 	// カメラの設定
 	camera_ = camera;
@@ -191,7 +191,7 @@ void BossEnemy::ImGuiDebug() {
 	// 
 	ImGui::Begin("BossEnemy");
 
-	object3d_->ImGuiDebug();
+	object3d_->ImGuiDebug("Boss");
 
 	ImGui::DragInt("R_HitCount", &rightArmHitCount_);
 	ImGui::DragInt("L_HitCount", &leftArmHitCount_);
@@ -200,6 +200,8 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::DragFloat3("rightArmRot", &rightArmRot_.x, 0.01f);
 	ImGui::DragFloat3("leftArmPos", &leftArmPos_.x, 0.01f);
 	ImGui::DragFloat3("leftArmRot", &leftArmRot_.x, 0.01f);
+
+	ImGui::DragInt("HP", &hp_);
 
 	ImGui::Checkbox("isAttack", &isAttack_);
 	ImGui::End();
@@ -219,9 +221,9 @@ void BossEnemy::Attack() {
 	{
 		const bool useLeft = (attackPhase_ == AttackPhase::SingleLeft);
 
-		Object3d *targetArm = useLeft ? leftArm_.get() : rightArm_.get();
-		Vector3 &targetPos = useLeft ? leftArmPos_ : rightArmPos_;
-		int &hitCount = useLeft ? leftArmHitCount_ : rightArmHitCount_;
+		Object3d* targetArm = useLeft ? leftArm_.get() : rightArm_.get();
+		Vector3& targetPos = useLeft ? leftArmPos_ : rightArmPos_;
+		int& hitCount = useLeft ? leftArmHitCount_ : rightArmHitCount_;
 
 		const Vector3 baseLocalOffset = useLeft
 			? Vector3{ -4.0f, 0.0f, 0.0f }
@@ -446,7 +448,7 @@ void BossEnemy::HPDraw() {
 	hpSprite_->Draw();
 }
 
-void BossEnemy::SetRotate(Vector3 &rotate) {
+void BossEnemy::SetRotate(Vector3& rotate) {
 	transform_.rotate = rotate;
 	object3d_->SetRotate(rotate);
 	leftArm_->SetRotate(rotate);
@@ -455,7 +457,7 @@ void BossEnemy::SetRotate(Vector3 &rotate) {
 
 // 末尾あたりに実装を追加
 
-void BossEnemy::SetRightHandScale(const Vector3 &s) {
+void BossEnemy::SetRightHandScale(const Vector3& s) {
 	if (rightArm_) {
 		rightArm_->SetScale(s);
 		// 半径は Scale に応じて毎フレーム Update で設定しているが、
@@ -483,7 +485,7 @@ float BossEnemy::GetRightHandRadius() const {
 }
 
 // ---- 左手（必要なら使って） ----
-void BossEnemy::SetLeftHandScale(const Vector3 &s) {
+void BossEnemy::SetLeftHandScale(const Vector3& s) {
 
 	if (leftArm_) {
 		leftArm_->SetScale(s);

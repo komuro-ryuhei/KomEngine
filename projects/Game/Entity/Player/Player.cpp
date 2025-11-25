@@ -178,11 +178,18 @@ void Player::SpawnBullet() {
 
 	auto newBullet = std::make_unique<PlayerBullet>();
 	newBullet->Init(camera_, bulletObject);
-	newBullet->SetTranlate(transform_.translate);
+
+	// ★ ここを変更：銃口位置が来ていればそこから撃つ
+	Vector3 spawnPos = transform_.translate;
+	if (hasGunMuzzlePos_) {
+		spawnPos = gunMuzzlePos_;
+	}
+	newBullet->SetTranlate(spawnPos);
 
 	Vector3 direction;
 
 	if (reticleSprite_) {
+		// （ここは今のまま：レティクルから方向を求める）
 		Matrix4x4 viewMatrix = camera_->GetViewMatrix();
 		Matrix4x4 projMatrix = camera_->GetProjectionMatrix();
 		Matrix4x4 vpMatrix = MyMath::Multiply(viewMatrix, projMatrix);

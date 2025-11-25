@@ -45,6 +45,8 @@ public:
 	void SetCanShoot(bool can) { canShoot_ = can; }
 	bool CanShoot() const { return canShoot_; }
 
+	void SetGunMuzzlePos(const Vector3& pos) { gunMuzzlePos_ = pos; hasGunMuzzlePos_ = true; }
+
 private:
 	void Attack();
 
@@ -87,6 +89,10 @@ private:
 	float autofireInterval_ = 0.10f;
 	float autofireTimer_ = 0.0f;
 
-	// ★ 追加：射撃許可フラグ（初期は撃てる）
+	// 射撃許可フラグ（初期は撃てる）
 	bool canShoot_ = true;
+
+	// 銃の先端のワールド座標
+	Vector3 gunMuzzlePos_{};
+	bool    hasGunMuzzlePos_ = false;
 };

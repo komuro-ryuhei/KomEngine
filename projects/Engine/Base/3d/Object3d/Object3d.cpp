@@ -134,11 +134,11 @@ void Object3d::Draw() {
 	}
 }
 
-void Object3d::ImGuiDebug() {
+void Object3d::ImGuiDebug(const char* ImGuiName) {
 
 #ifdef USE_IMGUI
 
-	ImGui::Begin("object3d");
+	ImGui::Begin(ImGuiName);
 
 	ImGui::DragFloat3("scale", &transform_.scale.x, 0.01f);
 	ImGui::DragFloat3("rotate", &transform_.rotate.x, 0.01f);

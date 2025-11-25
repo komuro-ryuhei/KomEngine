@@ -46,7 +46,7 @@ public: // メンバ関数
 	/// <summary>
 	/// ImGuiでのデバッグ処理
 	/// </summary>
-	void ImGuiDebug();
+	void ImGuiDebug(const char* ImGuiName);
 
 	// ------------------- setter ------------------- //
 

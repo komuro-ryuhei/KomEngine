@@ -41,6 +41,7 @@ void BossTestScene::Init() {
 	ModelManager::GetInstance()->LoadModel("ground.obj");
 	ModelManager::GetInstance()->LoadModel("hand.obj");
 	ModelManager::GetInstance()->LoadModel("BossEnemy.obj");
+	ModelManager::GetInstance()->LoadModel("gun.obj");
 
 	// カメラ
 	camera_ = std::make_unique<Camera>();
@@ -72,6 +73,12 @@ void BossTestScene::Init() {
 	// Player
 	player_ = std::make_unique<Player>();
 	player_->Init(camera_.get());
+
+	// Playerが持つ銃
+	gun_ = std::make_unique<Object3d>();
+	gun_->Init(BlendType::BLEND_NONE);
+	gun_->SetModel("gun.obj");
+	gun_->SetDefaultCamera(camera_.get());
 
 	// Boss
 	boss_ = std::make_unique<BossEnemy>();
@@ -303,8 +310,11 @@ void BossTestScene::Update() {
 	// 地面オブジェクトの更新
 	glassObject_->Update();
 
-	// プレイヤー
+	// Playerの銃の更新
+	UpdateGun();
+	// Playerの更新()
 	player_->Update();
+
 	// ボス
 	boss_->Update();
 	// ボスのメテオ攻撃用
@@ -312,10 +322,13 @@ void BossTestScene::Update() {
 	// ボスの剣
 	if (sword_) sword_->Update();
 
+	// リザルトスプライトの更新
 	result_->Update();
 
+	// 当たり判定の確認
 	CheckCollisions();
 
+	// 狙う弱点マーカーの更新
 	UpdateArmTargetMarker();
 
 	leftTargetOuter_->Update();
@@ -466,11 +479,11 @@ void BossTestScene::Update() {
 
 	ImGui::Begin("BossTestScene");
 
-	glassObject_->ImGuiDebug();
+	glassObject_->ImGuiDebug("glass");
 	camera_->ImGuiDebug();
 	player_->ImGuiDebug();
+	gun_->ImGuiDebug("gun");
 	boss_->ImGuiDebug();
-
 
 	ImGui::Checkbox("isCameraFollowPlayer", &isCameraFollowPlayer_);
 
@@ -488,6 +501,9 @@ void BossTestScene::Draw() {
 	glassObject_->Draw();
 
 	// -------------------- ゲームオブジェクトシーンの描画 -------------------- //
+
+	// Playerの銃描画
+	gun_->Draw();
 
 	// Bossの描画
 	boss_->Draw();
@@ -697,6 +713,44 @@ void BossTestScene::CheckCollisions() {
 				sword_->OnHitByBullet(); // 強制破壊扱い
 			}
 		}
+	}
+}
+
+void BossTestScene::UpdateGun() {
+
+	if (!gun_ || !camera_) return;
+
+	Vector3 camPos = camera_->GetTranaslate();
+	Vector3 camRot = camera_->GetRotate();
+
+	float cp = std::cos(camRot.x), sp = std::sin(camRot.x);
+	float cy = std::cos(camRot.y), sy = std::sin(camRot.y);
+
+	Vector3 forward = { sy * cp, -sp, cy * cp }; // カメラ前方
+	Vector3 right = { cy, 0.0f, -sy };         // カメラ右
+	Vector3 up = { 0.0f, 1.0f, 0.0f };      // ワールド上
+
+	Vector3 gunWorldPos =
+		camPos
+		+ right * gunOffset_.x
+		+ up * gunOffset_.y
+		+ forward * gunOffset_.z;
+
+	gun_->SetTranslate(gunWorldPos);
+
+	Vector3 gunWorldRot;
+	gunWorldRot.x = gunRotOffset_.x + camRot.x * 0.0f;
+	gunWorldRot.y = camRot.y + gunRotOffset_.y;
+	gunWorldRot.z = gunRotOffset_.z;
+	gun_->SetRotate(gunWorldRot);
+
+	gun_->Update();
+
+	// ★ 追加：銃の先端（今はモデルの原点）をプレイヤーに渡す
+	if (player_) {
+		// もし本当に「銃の先」にしたければ forward に少し足す
+		Vector3 muzzle = gun_->GetWorldPosition() + forward * 1.0f; // 1.0f は好みで調整
+		player_->SetGunMuzzlePos(muzzle);
 	}
 }
 
