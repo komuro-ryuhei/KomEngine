@@ -126,6 +126,14 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 
 	ParticleGroup& group = it->second;
 
+	if (name == "trail") {
+		// ★ 弾道用：ランダムは使わず、位置固定・短命の線を量産
+		for (int i = 0; i < count; ++i) {
+			group.particles.push_back(MakeTrailParticle(position));
+		}
+		return;
+	}
+
 	// ランダムエンジンの初期化
 	std::random_device seedGenerator;
 	std::mt19937 randomEngine(seedGenerator());
@@ -317,6 +325,33 @@ Particle ParticleManager::MakeMuzzleFlashParticle(std::mt19937& randomEngine, co
 	p.velocity = { 0.0f, 0.0f, 0.0f };
 
 	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+Particle ParticleManager::MakeTrailParticle(const Vector3& pos)
+{
+	Particle p;
+
+	// 位置：弾の現在位置
+	p.transform.translate = pos;
+
+	// 細長くて明るい「線」っぽい粒
+	float sx = 0.05f;   // 太さ
+	float sy = 0.35f;   // 長さ
+	p.transform.scale = { sx, sy, 1.0f };
+
+	p.transform.rotate = { 0.0f, 0.0f, 0.0f };   // ビルボードなのでZ回転だけでもOK
+
+	// 動かさない（その場に残像として残る）
+	p.velocity = { 0.0f, 0.0f, 0.0f };
+
+	// 色：白っぽい黄色
+	p.color = { 1.0f, 0.95f, 0.6f, 1.0f };
+
+	// 寿命：かなり短くしてスッと消える
+	p.lifeTime = 0.06f;
 	p.currentTime = 0.0f;
 
 	return p;

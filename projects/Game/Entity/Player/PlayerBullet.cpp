@@ -17,15 +17,25 @@ void PlayerBullet::Init(Camera *camera, Object3d *object3d) {
 	object3d_->SetDefaultCamera(camera_);
 
 	object3d_->SetScale({ 0.1f, 0.1f, 0.1f });
+
+	// トレイル用エミッター生成
+	trailEmitter_ = std::make_unique<ParticleEmitter>();
+	trailEmitter_->Init("trail", transform_.translate, 5); // 1フレームに1個生成くらい
 }
 
 void PlayerBullet::Update() {
 
-	// 前進
+	// 弾を進める
 	transform_.translate += direction_ * speed_;
 	object3d_->SetTranslate(transform_.translate);
 
-	// 寿命タイマー
+	// ★ ここを ParticleManager::EmitTrail から Emitter に変更
+	if (trailEmitter_) {
+		trailEmitter_->SetTranslate(transform_.translate);
+		trailEmitter_->Update();   // Update の中で Emit() が呼ばれてパーティクル生成
+	}
+
+	// 寿命処理
 	lifeTimer_ += 1.0f / 60.0f;
 	if (lifeTimer_ >= lifeTime_) {
 		isAlive_ = false;
@@ -33,7 +43,6 @@ void PlayerBullet::Update() {
 
 	object3d_->Update();
 }
-
 
 void PlayerBullet::Draw() { object3d_->Draw(); }
 
@@ -58,6 +67,10 @@ void PlayerBullet::SetTranlate(Vector3 translate) {
 	transform_.translate = translate;
 	if (object3d_) {
 		object3d_->SetTranslate(translate);
+	}
+	// トレイルエミッターの座標も更新
+	if (trailEmitter_) {
+		trailEmitter_->SetTranslate(translate);
 	}
 }
 

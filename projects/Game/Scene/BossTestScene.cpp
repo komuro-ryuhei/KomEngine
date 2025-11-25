@@ -127,6 +127,8 @@ void BossTestScene::Init() {
 	pm->CreateParticleGeoup("ribbon", moonLight, "ribbon");
 	pm->CreateParticleGeoup("dust", "./Resources/images/circle.png", "a");
 	pm->CreateParticleGeoup("muzzle", circle2, "a");
+	pm->CreateParticleGeoup("trail", "./Resources/images/circle.png", "a");
+
 
 	// グループが既にあれば作らない
 	if (!pm->Exists("hit")) {

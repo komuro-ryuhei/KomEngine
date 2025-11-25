@@ -5,6 +5,7 @@
 #include "Engine/Base/Camera/Camera.h"
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/lib/Input/Input.h"
+#include "Engine/Base/Particle/ParticleEmitter.h"
 #include "struct.h"
 
 class PlayerBullet {
@@ -40,4 +41,6 @@ private:
 	float lifeTime_ = 5.0f;  // 寿命(秒)
 	float lifeTimer_ = 0.0f; // 経過時間(秒)
 	bool  isAlive_ = true;   // 生存フラグ
+
+	std::unique_ptr<ParticleEmitter> trailEmitter_ = nullptr;
 };
