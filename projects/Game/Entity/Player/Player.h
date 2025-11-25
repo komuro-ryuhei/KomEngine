@@ -9,6 +9,7 @@
 
 #include "Engine/Base/2d/Sprite/Sprite.h"
 #include "Game/Entity/Player/PlayerBullet.h"
+#include "Engine/Base/Particle/ParticleEmitter.h"
 
 // C++
 #include <algorithm>
@@ -95,4 +96,6 @@ private:
 	// 銃の先端のワールド座標
 	Vector3 gunMuzzlePos_{};
 	bool    hasGunMuzzlePos_ = false;
+
+	std::unique_ptr<ParticleEmitter> muzzleEmitter_ = nullptr;
 };

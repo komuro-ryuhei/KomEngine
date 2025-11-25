@@ -11,12 +11,12 @@
 
 void BossTestScene::Init() {
 
-	const std::string &uvTexture = "./Resources/images/uvChecker.png";
-	const std::string &circle = "./Resources/images/circle.png";
-	const std::string &circle2 = "./Resources/images/circle2.png";
-	const std::string &monsterBallTexture = "./Resources/images/monsterBall.png";
-	const std::string &ring = "./Resources/images/gradationLine.png";
-	const std::string &moonLight = "./Resources/images/moonLight.png";
+	const std::string& uvTexture = "./Resources/images/uvChecker.png";
+	const std::string& circle = "./Resources/images/circle.png";
+	const std::string& circle2 = "./Resources/images/circle2.png";
+	const std::string& monsterBallTexture = "./Resources/images/monsterBall.png";
+	const std::string& ring = "./Resources/images/gradationLine.png";
+	const std::string& moonLight = "./Resources/images/moonLight.png";
 
 	// テクスチャ、モデルの読み込み
 	TextureManager::GetInstance()->LoadTexture(uvTexture);
@@ -86,7 +86,7 @@ void BossTestScene::Init() {
 	boss_->SetTranslate({ 0.0f, 0.0f, 20.0f });
 	boss_->SetPlayer(player_.get());
 
-	auto makeTarget = [](std::unique_ptr<Sprite> &outer, std::unique_ptr<Sprite> &inner)
+	auto makeTarget = [](std::unique_ptr<Sprite>& outer, std::unique_ptr<Sprite>& inner)
 		{
 			outer = std::make_unique<Sprite>();
 			outer->Init("./Resources/images/outer.png", BlendType::BLEND_ALPHA);
@@ -116,7 +116,7 @@ void BossTestScene::Init() {
 	sword_->Init(camera_.get());
 
 	// パーティクル
-	auto *pm = ParticleManager::GetInstance();
+	auto* pm = ParticleManager::GetInstance();
 	pm->Init(camera_.get(), BlendType::BLEND_ADD);
 
 	pm->CreateParticleGeoup("hit", circle2, "a");
@@ -126,6 +126,7 @@ void BossTestScene::Init() {
 	pm->CreateParticleGeoup("moonLight", moonLight, "moonLight");
 	pm->CreateParticleGeoup("ribbon", moonLight, "ribbon");
 	pm->CreateParticleGeoup("dust", "./Resources/images/circle.png", "a");
+	pm->CreateParticleGeoup("muzzle", circle2, "a");
 
 	// グループが既にあれば作らない
 	if (!pm->Exists("hit")) {
@@ -318,7 +319,7 @@ void BossTestScene::Update() {
 	// ボス
 	boss_->Update();
 	// ボスのメテオ攻撃用
-	for (auto &m : meteors_) m->Update();
+	for (auto& m : meteors_) m->Update();
 	// ボスの剣
 	if (sword_) sword_->Update();
 
@@ -510,7 +511,7 @@ void BossTestScene::Draw() {
 	boss_->HPDraw();
 
 	// Bossのメテオ描画
-	for (auto &m : meteors_) m->Draw();
+	for (auto& m : meteors_) m->Draw();
 	// Bossの剣描画
 	if (sword_) sword_->Draw();
 
@@ -538,7 +539,7 @@ void BossTestScene::CheckCollisions() {
 
 	// -------------------- 弾とボス部位の当たり判定 -------------------- //
 	{
-		auto &bullets = player_->GetBullets();
+		auto& bullets = player_->GetBullets();
 		auto body = boss_->GetBody();
 		auto left = boss_->GetLeftArm();
 		auto right = boss_->GetRightArm();
@@ -547,8 +548,8 @@ void BossTestScene::CheckCollisions() {
 			bool hit = false;
 
 			// 判定対象（パーツごと）
-			std::vector<Object3d *> parts = { body, left, right };
-			for (auto *part : parts) {
+			std::vector<Object3d*> parts = { left, right, body };
+			for (auto* part : parts) {
 				// 
 				const Vector3 partPos = part->GetWorldPosition();
 				const float   d = MyMath::CalculateDistance((*it)->GetTranslate(), partPos);
@@ -590,7 +591,7 @@ void BossTestScene::CheckCollisions() {
 
 	// 各腕との当たり判定
 	struct ArmData {
-		Object3d *object;
+		Object3d* object;
 		std::string name;
 	};
 
@@ -599,7 +600,7 @@ void BossTestScene::CheckCollisions() {
 		{ boss_->GetRightArm(), "RightArm" }
 	};
 
-	for (const auto &arm : arms) {
+	for (const auto& arm : arms) {
 		Vector3 armPos = arm.object->GetWorldPosition();
 		float armRadius = arm.object->GetRadius();
 
@@ -631,7 +632,7 @@ void BossTestScene::CheckCollisions() {
 	{
 		Vector3 ppos = player_->GetTranslate();
 		float   pr = player_->GetRadius();
-		for (auto &m : meteors_) {
+		for (auto& m : meteors_) {
 			if (!m->IsAlive()) continue;
 			Vector3 mpos = m->GetObject()->GetWorldPosition();
 			float   mr = m->GetRadius();
@@ -665,7 +666,7 @@ void BossTestScene::CheckCollisions() {
 	// -------------------- プレイヤー弾 vs 剣 -------------------- //
 
 	if (sword_ && sword_->IsAlive()) {
-		auto &bullets = player_->GetBullets();
+		auto& bullets = player_->GetBullets();
 		for (auto it = bullets.begin(); it != bullets.end();) {
 			const Vector3 bpos = (*it)->GetTranslate();
 			const float   br = (*it)->GetRadius();
@@ -695,22 +696,61 @@ void BossTestScene::CheckCollisions() {
 				}
 			}
 		}
+	}
 
-		// -------------------- プレイヤー vs 剣 -------------------- //
+	// -------------------- プレイヤー vs 剣 -------------------- //
 
-		if (sword_ && sword_->IsAlive() && !sword_->IsBroken()) {
-			Vector3 ppos = player_->GetTranslate();
-			float   pr = player_->GetRadius();
-			if (MyMath::CalculateDistance(ppos, sword_->GetPos()) < (pr + sword_->GetRadius())) {
-				if (!player_->GetInvincible()) {
-					player_->Damage(1);
-					player_->SetInvincible(true);
-					camera_->StartShake(CameraShakeType::Large);
+	if (sword_ && sword_->IsAlive() && !sword_->IsBroken()) {
+		Vector3 ppos = player_->GetTranslate();
+		float   pr = player_->GetRadius();
+		if (MyMath::CalculateDistance(ppos, sword_->GetPos()) < (pr + sword_->GetRadius())) {
+			if (!player_->GetInvincible()) {
+				player_->Damage(1);
+				player_->SetInvincible(true);
+				camera_->StartShake(CameraShakeType::Large);
+			}
+			// ヒット後は剣を消す
+			// （斬り抜け演出したいなら alive 継続でもOK）
+			// ここでは消す：
+			sword_->OnHitByBullet(); // 強制破壊扱い
+		}
+	}
+
+	// -------------------- プレイヤー弾 vs メテオ -------------------- //
+	{
+		auto& bullets = player_->GetBullets();
+		for (auto it = bullets.begin(); it != bullets.end();)
+		{
+			bool hitMeteor = false;
+
+			for (auto& m : meteors_) {
+				if (!m->IsAlive()) { continue; }
+
+				const Vector3 bpos = (*it)->GetTranslate();
+				const float   br = (*it)->GetRadius();
+
+				const Vector3 mpos = m->GetObject()->GetWorldPosition();
+				const float   mr = m->GetRadius();
+
+				const float dist = MyMath::CalculateDistance(bpos, mpos);
+				if (dist < (br + mr)) {
+
+					// 命中エフェクト（位置は弾の位置でOK）
+					const Vector3 hitPos = bpos;
+					if (emitter_) {
+						emitter_->SetTranslate(hitPos);
+						emitter_->Update();
+					}
+					// メテオを爆発させて消す
+					m->Explode();
+					// 弾も削除
+					it = bullets.erase(it);
+					hitMeteor = true;
+					break;
 				}
-				// ヒット後は剣を消す
-				// （斬り抜け演出したいなら alive 継続でもOK）
-				// ここでは消す：
-				sword_->OnHitByBullet(); // 強制破壊扱い
+			}
+			if (!hitMeteor) {
+				++it;
 			}
 		}
 	}
@@ -831,7 +871,7 @@ void BossTestScene::UpdateMeteorMode(float dt) {
 			float speed = 0.25f + 0.012f * dist;      // dist=120 → speed=1.69 くらい
 
 			// 空きスロットに生成
-			for (auto &m : meteors_) {
+			for (auto& m : meteors_) {
 				if (!m->IsAlive()) {
 					m->SetScale({ 1.5f, 1.5f, 1.5f });
 					m->SetGravity(0.0f);
@@ -875,7 +915,7 @@ void BossTestScene::EndMeteorMode() {
 	meteorPhase_ = MeteorPhase::kIdle;
 	camLerp_ = 0.0f;
 
-	for (auto &m : meteors_) {
+	for (auto& m : meteors_) {
 		if (m->IsAlive()) m->Explode();
 	}
 
@@ -907,7 +947,7 @@ void BossTestScene::UpdateArmTargetMarker() {
 	Matrix4x4 proj = camera_->GetProjectionMatrix();
 	Matrix4x4 vp = MyMath::Multiply(view, proj);
 
-	auto projectToScreen = [&](const Vector3 &worldPos, Vector2 &outScreen) -> bool {
+	auto projectToScreen = [&](const Vector3& worldPos, Vector2& outScreen) -> bool {
 
 		// wチェック（0だと Transform 内 assert になるので弾く）
 		float w =
@@ -930,7 +970,7 @@ void BossTestScene::UpdateArmTargetMarker() {
 		return true;
 		};
 
-	auto hide = [](std::unique_ptr<Sprite> &o, std::unique_ptr<Sprite> &i) {
+	auto hide = [](std::unique_ptr<Sprite>& o, std::unique_ptr<Sprite>& i) {
 		if (!o || !i) return;
 		o->SetColor({ 1,1,1,0 });
 		i->SetColor({ 1,1,1,0 });

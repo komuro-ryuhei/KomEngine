@@ -171,7 +171,7 @@ void BossEnemy::Update() {
 	leftArm_->SetRotate(leftArmRot_);
 
 
-	object3d_->SetRadius(2.0f * object3d_->GetScale().x);
+	object3d_->SetRadius(1.5f * object3d_->GetScale().x);
 	leftArm_->SetRadius(1.0f * leftArm_->GetScale().x);
 	rightArm_->SetRadius(1.0f * rightArm_->GetScale().x);
 }

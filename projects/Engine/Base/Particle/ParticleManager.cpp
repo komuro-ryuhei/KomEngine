@@ -136,6 +136,8 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 			group.particles.push_back(MakeRandomParticle(randomEngine, position));
 		} else if (name == "hit") {
 			group.particles.push_back(MakeNewParticle(randomEngine, position));
+		} else if (name == "muzzle") {
+			group.particles.push_back(MakeMuzzleFlashParticle(randomEngine, position));
 		} else if (name == "dust") {
 			group.particles.push_back(MakeDustParticle(randomEngine, position));
 		} else if (name == "ring") {
@@ -208,18 +210,52 @@ Particle ParticleManager::MakeRandomParticle(std::mt19937& randomEngine, const V
 
 Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate) {
 
-	std::uniform_real_distribution<float> distScale(0.4f, 1.5f);
-	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+	// --- 乱数設定（弱めに調整） ---
+	std::uniform_real_distribution<float> distDir(-0.5f, 0.5f);     // 方向の散らばり小さく
+	std::uniform_real_distribution<float> distSpeed(0.15f, 0.35f); // ★速度小さめ
+	std::uniform_real_distribution<float> distLife(0.10f, 0.20f);  // ★かなり短命
+	std::uniform_real_distribution<float> distScale(0.08f, 0.16f); // 粒を小さめに
+	std::uniform_real_distribution<float> distColor(0.85f, 1.0f);  // 黄色～オレンジ
 
-	//
 	Particle particle;
-	particle.transform.scale = { 0.05f, distScale(randomEngine), 1.0f };
-	particle.transform.rotate = { 0.0f, 0.0f, distRotate(randomEngine) };
+
+	// --- 方向（狭い範囲に調整） ---
+	Vector3 dir{
+		distDir(randomEngine),
+		distDir(randomEngine) * 0.2f,  // 上下の散らばりもっと小さく
+		distDir(randomEngine)
+	};
+
+	// 方向ゼロ防止
+	if (dir.x == 0 && dir.y == 0 && dir.z == 0) {
+		dir = { 0.0f, 0.0f, 1.0f };
+	}
+	dir = MyMath::Normalize(dir);
+
+	float speed = distSpeed(randomEngine);
+
+	// --- 初期位置 ---
 	particle.transform.translate = translate;
-	particle.velocity = { 0.0f, 0.0f, 0.0f };
-	particle.color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	particle.lifeTime = 1.0f;
+
+	// --- 大きさ ---
+	float sc = distScale(randomEngine);
+	particle.transform.scale = { sc, sc, 1.0f };
+
+	// --- 色（火花色） ---
+	float g = distColor(randomEngine);
+	particle.color = { 1.0f, g, 0.2f, 1.0f };
+
+	// --- 速度（弱め） ---
+	particle.velocity = {
+		dir.x * speed,
+		dir.y * speed,
+		dir.z * speed
+	};
+
+	// --- 寿命（短命でシュッと消える） ---
+	particle.lifeTime = distLife(randomEngine);
 	particle.currentTime = 0.0f;
+
 	return particle;
 }
 
@@ -248,6 +284,37 @@ Particle ParticleManager::MakeDustParticle(std::mt19937 &randomEngine, const Vec
 
 	// 砂っぽい薄い色
 	p.color = { 0.6f, 0.55f, 0.45f, 1.0f };
+
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+Particle ParticleManager::MakeMuzzleFlashParticle(std::mt19937& randomEngine, const Vector3& translate) {
+
+	std::uniform_real_distribution<float> distScale(0.4f, 0.7f); // 大きめのフラッシュ
+	std::uniform_real_distribution<float> distRot(-3.14f, 3.14f);
+	std::uniform_real_distribution<float> distLife(0.05f, 0.12f);
+	std::uniform_real_distribution<float> distColor(0.8f, 1.0f);
+
+	Particle p;
+
+	// 発射位置
+	p.transform.translate = translate;
+
+	// 回転ランダム（ビルボードなので Z 回転だけで十分）
+	p.transform.rotate = { 0.0f, 0.0f, distRot(randomEngine) };
+
+	float sc = distScale(randomEngine);
+	p.transform.scale = { sc, sc, 1.0f };
+
+	// 明るい黄色〜白
+	float g = distColor(randomEngine);
+	p.color = { 1.0f, g, 0.2f, 1.0f };
+
+	// マズルフラッシュは移動しない（その場に広がる）
+	p.velocity = { 0.0f, 0.0f, 0.0f };
 
 	p.lifeTime = distLife(randomEngine);
 	p.currentTime = 0.0f;

@@ -95,6 +95,9 @@ public:
 	Particle MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate);
 	// 埃っぽいパーティクル
 	Particle MakeDustParticle(std::mt19937 &randomEngine, const Vector3 &translate);
+	// マズルフラッシュのパーティクル
+	Particle MakeMuzzleFlashParticle(std::mt19937& randomEngine, const Vector3& translate);
+
 	// 白いリングのエフェクト
 	Particle MakeRingParticle(std::mt19937& randomEngine, const Vector3& translate);
 	// シリンダーのエフェクト

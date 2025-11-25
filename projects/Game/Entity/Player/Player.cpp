@@ -63,6 +63,11 @@ void Player::Init(Camera* camera) {
 	// 初期位置を画面中央へ
 	reticleSprite_->SetAnchorPoint({ 0.5f, 0.5f });
 	reticleSprite_->SetPosition({ 1280.0f * 0.5f, 720.0f * 0.5f });
+
+	// マズルフラッシュ用エミッターの初期化
+	muzzleEmitter_ = std::make_unique<ParticleEmitter>();
+	// 名前 "muzzle"、初期座標はとりあえず原点、1回に出す粒の数はお好みで（ここでは12）
+	muzzleEmitter_->Init("muzzle", { 0.0f, 0.0f, 0.0f }, 12);
 }
 
 void Player::Update() {
@@ -141,7 +146,7 @@ void Player::Attack() {
 	}
 
 	// --- 右クリック：単発 --- //
-	if (System::GetInput()->TriggerMouse(0)) {
+	if (System::GetInput()->TriggerMouse(1)) {
 		SpawnBullet();
 	}
 
@@ -170,6 +175,17 @@ void Player::RotateY90() {
 
 void Player::SpawnBullet() {
 
+	Vector3 muzzlePos = transform_.translate;
+	if (hasGunMuzzlePos_) {
+		muzzlePos = gunMuzzlePos_;
+	}
+
+	// ★ シーンと同様：座標セットして Update() で Emit させる
+	if (muzzleEmitter_) {
+		muzzleEmitter_->SetTranslate(muzzlePos);
+		muzzleEmitter_->Update();  // Update の中で Emit() が呼ばれる
+	}
+
 	// 弾の見た目（Object3d）を新規作成
 	Object3d* bulletObject = new Object3d();
 	bulletObject->Init(BlendType::BLEND_NONE);
@@ -179,23 +195,21 @@ void Player::SpawnBullet() {
 	auto newBullet = std::make_unique<PlayerBullet>();
 	newBullet->Init(camera_, bulletObject);
 
-	// ★ ここを変更：銃口位置が来ていればそこから撃つ
+	// ★ 元に戻す：プレイヤー（カメラ追従中）の位置から発射
 	Vector3 spawnPos = transform_.translate;
-	if (hasGunMuzzlePos_) {
-		spawnPos = gunMuzzlePos_;
-	}
 	newBullet->SetTranlate(spawnPos);
 
 	Vector3 direction;
 
 	if (reticleSprite_) {
-		// （ここは今のまま：レティクルから方向を求める）
+		// レティクル方向をレイで計算（ここは今のまま）
 		Matrix4x4 viewMatrix = camera_->GetViewMatrix();
 		Matrix4x4 projMatrix = camera_->GetProjectionMatrix();
 		Matrix4x4 vpMatrix = MyMath::Multiply(viewMatrix, projMatrix);
 		Matrix4x4 invVPMatrix = MyMath::Inverse4x4(vpMatrix);
 
-		Matrix4x4 viewportMatrix = MyMath::MakeViewportMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f);
+		Matrix4x4 viewportMatrix =
+			MyMath::MakeViewportMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f);
 		Matrix4x4 invViewportMatrix = MyMath::Inverse4x4(viewportMatrix);
 
 		Vector2 spritePos = reticleSprite_->GetCenterPosition();
@@ -215,8 +229,10 @@ void Player::SpawnBullet() {
 
 	MyMath::Normalize(direction);
 	newBullet->SetDirection(direction);
+
 	bulletObjects_.emplace_back(std::move(newBullet));
 }
+
 
 void Player::UpdateReticleSprite() {
 
