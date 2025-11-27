@@ -265,6 +265,7 @@
     <ClCompile Include="KnockoutCameraController.cpp" />
     <ClCompile Include="Game\Scene\GameOverScene.cpp" />
     <ClCompile Include="ResultImage.cpp" />
+    <ClCompile Include="BossMeteorController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -413,6 +414,7 @@
     <ClInclude Include="KnockoutCameraController.h" />
     <ClInclude Include="Game\Scene\GameOverScene.h" />
     <ClInclude Include="ResultImage.h" />
+    <ClInclude Include="BossMeteorController.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

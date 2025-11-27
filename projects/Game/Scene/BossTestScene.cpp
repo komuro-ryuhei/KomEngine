@@ -111,6 +111,13 @@ void BossTestScene::Init() {
 		meteors_.push_back(std::move(m));
 	}
 
+	// --- ここでコントローラ初期化 ---
+	meteorController_ = std::make_unique<BossMeteorController>();
+	meteorController_->Init();
+	meteorController_->SetCamera(camera_.get());
+	meteorController_->SetPlayer(player_.get());
+	meteorController_->SetBoss(boss_.get());
+
 	// ボスの剣
 	sword_ = std::make_unique<BossSword>();
 	sword_->Init(camera_.get());
@@ -146,38 +153,12 @@ void BossTestScene::Update() {
 
 	const float dt = 1.0f / 60.0f;
 
-	// デバッグ用トグル（Mキーで開始）
-	if (System::TriggerKey(DIK_M)) {
-		if (meteorPhase_ == MeteorPhase::kIdle) StartMeteorMode();
-		else if (meteorPhase_ != MeteorPhase::kIdle) EndMeteorMode();
-	}
-
-	// ボスからのリクエストでメテオ開始
-	if (meteorPhase_ == MeteorPhase::kIdle && boss_ && boss_->ConsumeMeteorRequest()) {
-		StartMeteorMode();
-	}
-
-	// メテオ中は自動追従を一時停止して、こちらの制御に任せる
-	if (meteorPhase_ == MeteorPhase::kIdle && isCameraFollowPlayer_) {
-		camera_->SetTranslate(player_->GetTransform().translate);
-		camera_->SetRotate(player_->GetTransform().rotate);
-	} else if (meteorPhase_ != MeteorPhase::kIdle) {
-		UpdateMeteorMode(dt);  // カメラ補間とメテオ処理
-	}
+	UpdateMeteorControl(dt);
 
 	// 剣攻撃トリガー
 	if (System::TriggerKey(DIK_J) && !swordAttack_) {
 		swordAttack_ = true;
 		swordPhaseT_ = 0.f;
-	}
-
-	Vector3 playerPos = player_->GetTransform().translate;
-	Vector3 playerRot = player_->GetTransform().rotate;
-
-	// フラグがtrueだと追従（※メテオ中はしない）
-	if (meteorPhase_ == MeteorPhase::kIdle && isCameraFollowPlayer_) {
-		camera_->SetTranslate(playerPos);
-		camera_->SetRotate(playerRot);
 	}
 
 	// ノックアウトカメラの開始（Kキー）
@@ -243,7 +224,7 @@ void BossTestScene::Update() {
 
 	if (!koActive_
 		&& phase_ == Phase::kMain           // フェード中は動かさない
-		&& meteorPhase_ == MeteorPhase::kIdle
+		&& (!meteorController_ || !meteorController_->IsActive())  
 		&& !swordCamActive_
 		&& isCameraFollowPlayer_) {         // プレイヤー追従中だけ
 
@@ -796,137 +777,37 @@ void BossTestScene::UpdateGun() {
 	}
 }
 
-void BossTestScene::StartMeteorMode() {
-	meteorPhase_ = MeteorPhase::kIntro;
-	meteorModeTimer_ = 0.0f;
-	spawnTimer_ = 0.0f;
+void BossTestScene::UpdateMeteorControl(float dt)
+{
+	// デバッグ用トグル（Mキーで開始／強制終了）
+	if (System::TriggerKey(DIK_M) && meteorController_) {
+		if (!meteorController_->IsActive()) {
+			meteorController_->Start();
+		} else {
+			meteorController_->ForceEnd();
+		}
+	}
 
-	// 現在のカメラ状態を保存
-	savedCamPos_ = camera_->GetTranaslate();
-	savedCamRot_ = camera_->GetRotate();
-}
+	// ボスからのリクエストでメテオ開始
+	if (meteorController_
+		&& !meteorController_->IsActive()
+		&& boss_
+		&& boss_->ConsumeMeteorRequest()) {
+		meteorController_->Start();
+	}
 
-void BossTestScene::UpdateMeteorMode(float dt) {
+	// メテオ中はカメラ＆メテオはコントローラに任せる
+	if (meteorController_ && meteorController_->IsActive()) {
+		meteorController_->Update(dt);
+	}
+
+	// ↓ メテオ中じゃないときだけ、従来どおりプレイヤー追従カメラ
 	Vector3 playerPos = player_->GetTransform().translate;
+	Vector3 playerRot = player_->GetTransform().rotate;
 
-	switch (meteorPhase_) {
-	case MeteorPhase::kIntro: {
-		meteorModeTimer_ += dt;
-		camLerp_ = std::min(1.0f, meteorModeTimer_ / camIntroTime_);
-
-		// 目標カメラ：プレイヤー位置 + 少し上、ピッチだけ上向きに
-		Vector3 targetPos = playerPos + targetCamPosOffset_;
-		Vector3 targetRot = savedCamRot_;
-		targetRot.x = targetPitchUp_;
-
-		// 補間
-		camera_->SetTranslate(MyMath::Lerp(savedCamPos_, targetPos, camLerp_));
-		camera_->SetRotate(MyMath::Lerp(savedCamRot_, targetRot, camLerp_));
-
-		if (camLerp_ >= 1.0f) {
-			meteorPhase_ = MeteorPhase::kShower;
-			meteorModeTimer_ = 0.0f;
-		}
-		break;
-	}
-
-	case MeteorPhase::kShower: {
-
-		meteorModeTimer_ += dt;
-		spawnTimer_ += dt;
-
-		// カメラはプレイヤー位置を追いながら“上向き固定”
-		camera_->SetTranslate(playerPos + targetCamPosOffset_);
-		Vector3 rot = camera_->GetRotate();
-		rot.x = targetPitchUp_;
-		camera_->SetRotate(rot);
-
-		// スポーン
-		if (spawnTimer_ >= spawnInterval_) {
-			spawnTimer_ = 0.0f;
-
-			// --- カメラ姿勢 ---
-			Vector3 camPos = camera_->GetTranaslate();
-			Vector3 camRot = camera_->GetRotate(); // rot.x = pitch, rot.y = yaw
-
-			// --- カメラ基底ベクトル ---
-			float cp = std::cos(camRot.x), sp = std::sin(camRot.x);
-			float cy = std::cos(camRot.y), sy = std::sin(camRot.y);
-
-			// 前方（rot=0 で +Z）
-			Vector3 forward = { sy * cp, -sp, cy * cp };
-			Vector3 right = { cy, 0.0f, -sy };
-			Vector3 up = { 0.0f, 1.0f, 0.0f };
-
-			// ---- 発生位置：前方かなり遠く（地平線付近）----
-			float dist = MyMath::Rand(110.0f, 160.0f); // ★遠く
-			float spreadX = MyMath::Rand(-8.0f, 8.0f);    // 左右
-			float spreadUp = MyMath::Rand(8.0f, 18.0f);   // 少し上
-
-			Vector3 start = camPos + forward * dist + right * spreadX + up * spreadUp;
-
-			// ---- ターゲット：カメラの “すぐ手前”（= forward の少し内側）----
-			// これで進行方向はほぼ -forward、画面奥→手前へ突っ込んでくる
-			Vector3 target = camPos + forward * 6.0f + up * (-2.0f);
-
-			// 距離に応じて速度を上げる（遠いほど速い）
-			float speed = 0.25f + 0.012f * dist;      // dist=120 → speed=1.69 くらい
-
-			// 空きスロットに生成
-			for (auto& m : meteors_) {
-				if (!m->IsAlive()) {
-					m->SetScale({ 1.5f, 1.5f, 1.5f });
-					m->SetGravity(0.0f);
-					m->Spawn(start, target, speed);
-					break;
-				}
-			}
-		}
-
-		// 終了判定
-		if (meteorModeTimer_ >= meteorModeDuration_) {
-			meteorPhase_ = MeteorPhase::kOutro;
-			meteorModeTimer_ = 0.0f;
-		}
-		break;
-	}
-
-	case MeteorPhase::kOutro: {
-		meteorModeTimer_ += dt;
-		camLerp_ = std::min(1.0f, meteorModeTimer_ / camOutroTime_);
-
-		// 目標は保存していた通常カメラ
-		Vector3 curPos = camera_->GetTranaslate();
-		Vector3 curRot = camera_->GetRotate();
-
-		camera_->SetTranslate(MyMath::Lerp(curPos, savedCamPos_, camLerp_));
-		camera_->SetRotate(MyMath::Lerp(curRot, savedCamRot_, camLerp_));
-
-		if (camLerp_ >= 1.0f) {
-			EndMeteorMode();
-		}
-		break;
-	}
-
-	case MeteorPhase::kIdle: default: break;
-	}
-}
-
-void BossTestScene::EndMeteorMode() {
-
-	meteorPhase_ = MeteorPhase::kIdle;
-	camLerp_ = 0.0f;
-
-	for (auto& m : meteors_) {
-		if (m->IsAlive()) m->Explode();
-	}
-
-	camera_->SetTranslate(savedCamPos_);
-	camera_->SetRotate(savedCamRot_);
-
-	// ★ ボスに「メテオ終わったよ」と伝える
-	if (boss_) {
-		boss_->OnMeteorFinished();
+	if ((!meteorController_ || !meteorController_->IsActive()) && isCameraFollowPlayer_) {
+		camera_->SetTranslate(playerPos);
+		camera_->SetRotate(playerRot);
 	}
 }
 
