@@ -47,17 +47,46 @@ void BossMeteorController::ForceEnd() {
     EndInternal();
 }
 
+void BossMeteorController::LoadParamsFromJson(const std::string& path)
+{
+    std::ifstream file(path);
+    if (file.fail()) {
+        // ファイルが無ければデフォルトのまま開始
+        return;
+    }
+
+    nlohmann::json j;
+    file >> j;
+
+    if (j.contains("meteorAttack")) {
+        params_.LoadJSON(j["meteorAttack"]);
+    }
+}
+
+void BossMeteorController::SaveParamsToJson(const std::string& path)
+{
+    nlohmann::json j;
+
+    // meteorAttack の JSON を構築
+    nlohmann::json meteorJson;
+    params_.SaveJSON(meteorJson);
+    j["meteorAttack"] = meteorJson;
+
+    std::ofstream ofs(path);
+    ofs << j.dump(4); // 4はインデント
+}
+
 void BossMeteorController::UpdateIntro(float dt) {
 
     Vector3 playerPos = player_->GetTransform().translate;
 
     meteorModeTimer_ += dt;
-    camLerp_ = std::min(1.0f, meteorModeTimer_ / camIntroTime_);
+    camLerp_ = std::min(1.0f, meteorModeTimer_ / params_.camIntroTime);
 
     // 目標カメラ：プレイヤー位置 + 少し上、ピッチだけ上向きに
-    Vector3 targetPos = playerPos + targetCamPosOffset_;
+    Vector3 targetPos = playerPos + params_.camOffset;
     Vector3 targetRot = savedCamRot_;
-    targetRot.x = targetPitchUp_;
+    targetRot.x = params_.pitchUp;
 
     // 補間
     camera_->SetTranslate(MyMath::Lerp(savedCamPos_, targetPos, camLerp_));
@@ -79,13 +108,13 @@ void BossMeteorController::UpdateShower(float dt) {
     spawnTimer_ += dt;
 
     // カメラはプレイヤー位置を追いながら“上向き固定”
-    camera_->SetTranslate(playerPos + targetCamPosOffset_);
+    camera_->SetTranslate(playerPos + params_.camOffset);
     Vector3 rot = camera_->GetRotate();
-    rot.x = targetPitchUp_;
+    rot.x = params_.pitchUp;
     camera_->SetRotate(rot);
 
     // スポーン（元 UpdateMeteorMode の Shower 部分）
-    if (spawnTimer_ >= spawnInterval_) {
+    if (spawnTimer_ >= params_.spawnInterval) {
         spawnTimer_ = 0.0f;
 
         // --- カメラ姿勢 ---
@@ -126,7 +155,7 @@ void BossMeteorController::UpdateShower(float dt) {
     }
 
     // 終了判定
-    if (meteorModeTimer_ >= meteorModeDuration_) {
+    if (meteorModeTimer_ >= params_.duration) {
         phase_ = Phase::kOutro;
         meteorModeTimer_ = 0.0f;
     }
@@ -135,7 +164,7 @@ void BossMeteorController::UpdateShower(float dt) {
 void BossMeteorController::UpdateOutro(float dt) {
 
     meteorModeTimer_ += dt;
-    camLerp_ = std::min(1.0f, meteorModeTimer_ / camOutroTime_);
+    camLerp_ = std::min(1.0f, meteorModeTimer_ / params_.camOutroTime);
 
     // 目標は保存していた通常カメラ
     Vector3 curPos = camera_->GetTranaslate();

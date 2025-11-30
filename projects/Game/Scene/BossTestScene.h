@@ -19,7 +19,16 @@
 #include "BossMeteorController.h"
 
 class BossTestScene : public IScene {
+
 public:
+
+	enum class BossAttackType {
+		Meteor,
+		Sword,
+		Arms,
+	};
+
+	BossAttackType currentAttackType_ = BossAttackType::Meteor;
 
 	BossTestScene() = default;
 	~BossTestScene() = default;

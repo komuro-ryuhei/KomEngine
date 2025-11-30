@@ -1,0 +1,14 @@
+{
+    "meteorAttack": {
+        "camIntroTime": 0.6000000238418579,
+        "camOffset": [
+            0.0,
+            2.0,
+            0.0
+        ],
+        "camOutroTime": 0.6000000238418579,
+        "duration": 24.600000381469727,
+        "pitchUp": -0.44999998807907104,
+        "spawnInterval": 0.699999988079071
+    }
+}

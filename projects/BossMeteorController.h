@@ -2,6 +2,7 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include "externals/nlohmann/json.hpp"
 
 #include "Engine/lib/Math/MyMath.h"
 
@@ -10,20 +11,63 @@ class Player;
 class BossEnemy;
 class BossMeteor;
 
+struct MeteorAttackParams {
+    float duration = 8.0f;
+    float spawnInterval = 0.7f;
+    float camIntroTime = 0.6f;
+    float camOutroTime = 0.6f;
+    Vector3 camOffset = { 0.0f, 2.0f, 0.0f };
+    float pitchUp = -0.45f;
+
+    // ================================
+    // JSON から読み込む
+    // ================================
+    void LoadJSON(const nlohmann::json& j) {
+        if (j.contains("duration"))      duration = j["duration"];
+        if (j.contains("spawnInterval")) spawnInterval = j["spawnInterval"];
+        if (j.contains("camIntroTime"))  camIntroTime = j["camIntroTime"];
+        if (j.contains("camOutroTime"))  camOutroTime = j["camOutroTime"];
+
+        if (j.contains("camOffset") && j["camOffset"].is_array()) {
+            camOffset.x = j["camOffset"][0];
+            camOffset.y = j["camOffset"][1];
+            camOffset.z = j["camOffset"][2];
+        }
+
+        if (j.contains("pitchUp")) pitchUp = j["pitchUp"];
+    }
+
+    // ================================
+    // JSON へ保存する
+    // ================================
+    void SaveJSON(nlohmann::json& j) const {
+        j["duration"] = duration;
+        j["spawnInterval"] = spawnInterval;
+        j["camIntroTime"] = camIntroTime;
+        j["camOutroTime"] = camOutroTime;
+        j["camOffset"] = { camOffset.x, camOffset.y, camOffset.z };
+        j["pitchUp"] = pitchUp;
+    }
+
+    void ResetDefault() {
+        duration = 8.0f;
+        spawnInterval = 0.7f;
+        camIntroTime = 0.6f;
+        camOutroTime = 0.6f;
+        camOffset = { 0.0f, 2.0f, 0.0f };
+        pitchUp = -0.45f;
+    }
+};
+
 /// ボスのメテオ耐久フェーズ全体を制御するクラス
 class BossMeteorController {
+
 public:
     BossMeteorController() = default;
     ~BossMeteorController() = default;
 
     // 変数の初期化だけ行う
     void Init();
-
-    // 依存オブジェクトをシーンから渡す
-    void SetCamera(Camera* cam) { camera_ = cam; }
-    void SetPlayer(Player* player) { player_ = player; }
-    void SetBoss(BossEnemy* boss) { boss_ = boss; }
-    void SetMeteors(std::vector<std::unique_ptr<BossMeteor>>* meteors) { meteors_ = meteors; }
 
     // メテオモード開始
     void Start();
@@ -36,6 +80,23 @@ public:
 
     // 状態確認
     bool IsActive() const { return phase_ != Phase::kIdle; }
+
+public:
+
+    MeteorAttackParams& GetParams() { return params_; }
+    const MeteorAttackParams& GetParams() const { return params_; }
+
+    // 依存オブジェクトをシーンから渡す
+    void SetCamera(Camera* cam) { camera_ = cam; }
+    void SetPlayer(Player* player) { player_ = player; }
+    void SetBoss(BossEnemy* boss) { boss_ = boss; }
+    void SetMeteors(std::vector<std::unique_ptr<BossMeteor>>* meteors) { meteors_ = meteors; }
+
+public:
+
+    void LoadParamsFromJson(const std::string& path);
+
+    void SaveParamsToJson(const std::string& path);
 
 private:
     enum class Phase { kIdle, kIntro, kShower, kOutro };
@@ -58,17 +119,13 @@ private:
     // カメラ保存＆補間
     Vector3 savedCamPos_{};
     Vector3 savedCamRot_{};
-    Vector3 targetCamPosOffset_{ 0.0f, 2.0f, 0.0f }; // プレイヤー位置から少し上
-    float   targetPitchUp_ = -0.45f;                 // 上向き(マイナスX回転)
     float   camLerp_ = 0.0f;
-    float   camIntroTime_ = 0.6f;
-    float   camOutroTime_ = 0.6f;
 
     // 進行管理
     float meteorModeTimer_ = 0.0f;
-    float meteorModeDuration_ = 8.0f;    // 耐久時間
 
     // メテオスポーン
-    float spawnInterval_ = 0.7f;
     float spawnTimer_ = 0.0f;
+
+    MeteorAttackParams params_;
 };

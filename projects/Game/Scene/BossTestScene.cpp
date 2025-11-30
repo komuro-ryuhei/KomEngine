@@ -118,6 +118,9 @@ void BossTestScene::Init() {
 	meteorController_->SetPlayer(player_.get());
 	meteorController_->SetBoss(boss_.get());
 
+	// JSON読み込み
+	meteorController_->LoadParamsFromJson("Resources/json/bossAttacks.json");
+
 	// ボスの剣
 	sword_ = std::make_unique<BossSword>();
 	sword_->Init(camera_.get());
@@ -470,6 +473,55 @@ void BossTestScene::Update() {
 	boss_->ImGuiDebug();
 
 	ImGui::Checkbox("isCameraFollowPlayer", &isCameraFollowPlayer_);
+
+	// ==== ここから攻撃エディタ ==== //
+
+	static const char* attackNames[] = { "Meteor", "Sword", "Arms" };
+	int currentIndex = static_cast<int>(currentAttackType_);
+	if (ImGui::Combo("Attack", &currentIndex, attackNames, IM_ARRAYSIZE(attackNames))) {
+		currentAttackType_ = static_cast<BossAttackType>(currentIndex);
+	}
+
+	ImGui::Separator();
+
+	switch (currentAttackType_) {
+	case BossAttackType::Meteor:
+
+		// メテオ攻撃パラメータ
+		if (meteorController_) {
+
+			auto& p = meteorController_->GetParams();
+
+			ImGui::Text("Meteor Attack Params");
+			ImGui::DragFloat("Duration", &p.duration, 0.1f, 0.0f, 60.0f);
+			ImGui::DragFloat("SpawnInterval", &p.spawnInterval, 0.01f, 0.05f, 5.0f);
+			ImGui::DragFloat("CamIntroTime", &p.camIntroTime, 0.01f, 0.0f, 5.0f);
+			ImGui::DragFloat("CamOutroTime", &p.camOutroTime, 0.01f, 0.0f, 5.0f);
+			ImGui::DragFloat3("CamOffset", &p.camOffset.x, 0.1f);
+			ImGui::DragFloat("PitchUp", &p.pitchUp, 0.01f, -1.57f, 0.0f);
+
+			ImGui::Separator();
+
+			// デフォルトに戻すボタン
+			if (ImGui::Button("Reset to Default")) {
+				p.ResetDefault();
+			}
+
+			// 保存ボタン
+			if (ImGui::Button("Save Meteor Params")) {
+				meteorController_->SaveParamsToJson("Resources/json/bossAttacks.json");
+			}
+		}
+		break;
+
+	case BossAttackType::Sword:
+		// ここに剣攻撃のスピード/長さなどのパラメータ ImGui を後で追加
+		break;
+
+	case BossAttackType::Arms:
+		// 腕攻撃関連のクールタイム・速度などを後で追加
+		break;
+	}
 
 	ImGui::End();
 
