@@ -24,7 +24,7 @@ void ImGuiManager::Init(WinApp* winApp) {
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
-		const char* fontPath = "Resources/fonts/NotoSansJP-Regular.otf";
+		const char* fontPath = "Resources/fonts/Noto_Sans_JP/NotoSansJP-VariableFont_wght.ttf";
 		float fontSize = 20.0f;
 
 		ImFontConfig config;

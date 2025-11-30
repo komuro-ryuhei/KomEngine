@@ -5,7 +5,7 @@ class Camera;
 class BossEnemy;
 
 /// 腕攻撃時の「カメラを腕の方向に少しだけ向ける」演出を管理する
-class BossArmCameraController {
+class BossArmController {
 
 public:
 
@@ -20,8 +20,8 @@ public:
         }
     };
 
-    BossArmCameraController() = default;
-    ~BossArmCameraController() = default;
+    BossArmController() = default;
+    ~BossArmController() = default;
 
     void Init(Camera* cam, BossEnemy* boss) {
         camera_ = cam;

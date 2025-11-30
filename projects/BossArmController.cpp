@@ -1,8 +1,8 @@
-#include "BossArmCameraController.h"
+#include "BossArmController.h"
 #include "Engine/Base/Camera/Camera.h"
 #include "Game/Entity/Enemy/BossEnemy.h"
 
-void BossArmCameraController::StartArmCamera() {
+void BossArmController::StartArmCamera() {
 
     if (!camera_ || !boss_) return;
 
@@ -26,7 +26,7 @@ void BossArmCameraController::StartArmCamera() {
     targetRot_ = MyMath::Lerp(savedRot_, fullLook, params_.lookWeight);
 }
 
-void BossArmCameraController::UpdateIntro(float dt) {
+void BossArmController::UpdateIntro(float dt) {
 
     if (!camera_) return;
 
@@ -35,7 +35,7 @@ void BossArmCameraController::UpdateIntro(float dt) {
     camera_->SetRotate(MyMath::Lerp(savedRot_, targetRot_, t));
 }
 
-void BossArmCameraController::UpdateOutro(float dt) {
+void BossArmController::UpdateOutro(float dt) {
 
     if (!camera_) return;
 
@@ -49,7 +49,7 @@ void BossArmCameraController::UpdateOutro(float dt) {
     }
 }
 
-void BossArmCameraController::Update(float dt, bool canControlCamera) {
+void BossArmController::Update(float dt, bool canControlCamera) {
 
     if (!camera_ || !boss_) return;
 

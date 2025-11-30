@@ -3,6 +3,8 @@
 // Scene
 #include "Game/Scene/IScene.h"
 #include "Game/Scene/SceneManager.h"
+#include "Engine/Base/Particle/ParticleManager.h"
+#include "Engine/Base/Particle/ParticleEmitter.h"
 
 // Entity
 #include "Engine/Base/3d/Skybox/Skybox.h"
@@ -11,12 +13,12 @@
 #include "Game/Entity/Enemy/BossEnemy.h"
 #include "Game/Entity/Enemy/BossMeteor.h"
 #include "Game/Entity/Enemy/BossSword.h"
-#include "Engine/Base/Particle/ParticleManager.h"
-#include "Engine/Base/Particle/ParticleEmitter.h"
+
 #include "Fade.h"
 #include "KnockoutCameraController.h"
 #include "ResultImage.h"
 #include "BossMeteorController.h"
+#include "BossArmController.h"
 
 class BossTestScene : public IScene {
 
@@ -111,6 +113,9 @@ private:
 	// メテオ攻撃の制御はコントローラに委譲
 	std::unique_ptr<BossMeteorController> meteorController_;
 
+	// 腕攻撃コントローラ（カメラ演出含む）
+	std::unique_ptr<BossArmController> armController_;
+
 	// 剣
 	std::unique_ptr<BossSword> sword_;
 	bool swordAttack_ = false;
@@ -128,18 +133,6 @@ private:
 	bool    swordPendingSweep_ = false;
 	Vector3 swordCenter_{}, swordRight_{}, swordForward_{};
 	float   swordHalfLen_ = 10.0f, swordToward_ = 2.0f, swordDuration_ = 0.5f;
-
-	// -----  ----- //
-	// 腕攻撃フォーカス用カメラ
-	bool   armCamActive_ = false;
-	float  armCamT_ = 0.0f;
-	float  armCamIntroTime_ = 0.15f; // 寄る速さ
-	float  armCamOutroTime_ = 0.20f; // 戻る速さ
-
-	Vector3 armCamSavedPos_{};
-	Vector3 armCamSavedRot_{};
-	Vector3 armCamTargetPos_{};
-	Vector3 armCamTargetRot_{};
 
 	KnockoutCameraController ko_;
 	bool koActive_ = false;

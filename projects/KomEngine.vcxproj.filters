@@ -266,7 +266,7 @@
     <ClCompile Include="Game\Scene\GameOverScene.cpp" />
     <ClCompile Include="ResultImage.cpp" />
     <ClCompile Include="BossMeteorController.cpp" />
-    <ClCompile Include="BossArmCameraController.cpp" />
+    <ClCompile Include="BossArmController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -416,7 +416,7 @@
     <ClInclude Include="Game\Scene\GameOverScene.h" />
     <ClInclude Include="ResultImage.h" />
     <ClInclude Include="BossMeteorController.h" />
-    <ClInclude Include="BossArmCameraController.h" />
+    <ClInclude Include="BossArmController.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

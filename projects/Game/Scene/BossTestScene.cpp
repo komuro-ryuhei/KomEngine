@@ -117,9 +117,14 @@ void BossTestScene::Init() {
 	meteorController_->SetCamera(camera_.get());
 	meteorController_->SetPlayer(player_.get());
 	meteorController_->SetBoss(boss_.get());
+	meteorController_->SetMeteors(&meteors_);
 
 	// JSON読み込み
 	meteorController_->LoadParamsFromJson("Resources/json/bossAttacks.json");
+
+	// 腕コントローラ初期化
+	armController_ = std::make_unique<BossArmController>();
+	armController_->Init(camera_.get(), boss_.get());
 
 	// ボスの剣
 	sword_ = std::make_unique<BossSword>();
@@ -225,59 +230,16 @@ void BossTestScene::Update() {
 		}
 	}
 
-	if (!koActive_
+	// 腕攻撃がこのフレームでカメラを触っていいかどうか
+	bool canArmCam =
+		!koActive_
 		&& phase_ == Phase::kMain           // フェード中は動かさない
-		&& (!meteorController_ || !meteorController_->IsActive())  
-		&& !swordCamActive_
-		&& isCameraFollowPlayer_) {         // プレイヤー追従中だけ
+		&& (!meteorController_ || !meteorController_->IsActive())  // メテオ中は触らない
+		&& !swordCamActive_                 // 剣カメラ中も触らない
+		&& isCameraFollowPlayer_;           // プレイヤー追従中だけ
 
-		// 伸ばし始めた瞬間に一回だけ開始
-		if (!armCamActive_ && boss_->IsExtending()) {
-
-			armCamActive_ = true;
-			armCamT_ = 0.0f;
-
-			// 元の向き保存
-			armCamSavedRot_ = camera_->GetRotate();
-
-			// 腕方向の目標回転を計算
-			Vector3 camPos = camera_->GetTranaslate();
-			Vector3 armPos = boss_->GetCurrentArmWorldPos();
-			Vector3 to = MyMath::Normalize(armPos - camPos);
-
-			float pitch = -std::asin(to.y);
-			float yaw = std::atan2(to.x, to.z);
-
-			Vector3 fullLook = { pitch, yaw, 0.0f };
-
-			// ガッツリ向けると違和感出るので、少しだけ腕方向を混ぜる
-			const float lookWeight = 0.35f; // 0.2〜0.5くらいで好み調整
-			armCamTargetRot_ = MyMath::Lerp(armCamSavedRot_, fullLook, lookWeight);
-		}
-
-		if (armCamActive_
-			&& !koActive_
-			&& phase_ == Phase::kMain
-			&& isCameraFollowPlayer_) {
-
-			if (boss_->IsExtending()) {
-
-				// 腕が伸びている間：腕方向へ「じわっ」と向ける
-				armCamT_ += dt / armCamIntroTime_;
-				float t = MyMath::Clamp01(armCamT_);
-				camera_->SetRotate(MyMath::Lerp(armCamSavedRot_, armCamTargetRot_, t));
-			} else {
-				// 腕が戻り始めたら：元の向きへ戻す
-				armCamT_ += dt / armCamOutroTime_;
-				float t = MyMath::Clamp01(armCamT_);
-				camera_->SetRotate(MyMath::Lerp(armCamTargetRot_, armCamSavedRot_, t));
-
-				if (t >= 1.0f) {
-					armCamActive_ = false;
-					armCamT_ = 0.0f;
-				}
-			}
-		}
+	if (armController_) {
+		armController_->Update(dt, canArmCam);
 	}
 
 	// ターゲットシェイク時間更新
