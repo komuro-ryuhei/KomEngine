@@ -21,6 +21,26 @@ void ImGuiManager::Init(WinApp* winApp) {
 	// ImGuiのスタイルを設定
 	ImGui::StyleColorsDark();
 
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		const char* fontPath = "Resources/fonts/NotoSansJP-Regular.otf";
+		float fontSize = 20.0f;
+
+		ImFontConfig config;
+		config.MergeMode = false;
+		config.PixelSnapH = true;
+
+		static const ImWchar japaneseRange[] = {
+			0x0020, 0x00FF,
+			0x3000, 0x30FF,
+			0x4E00, 0x9FAF,
+			0,
+		};
+
+		io.Fonts->AddFontFromFileTTF(fontPath, fontSize, &config, japaneseRange);
+	}
+
 	// Win32用の初期化
 	ImGui_ImplWin32_Init(winApp_->GetHwnd());
 

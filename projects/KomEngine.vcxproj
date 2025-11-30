@@ -108,6 +108,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BossArmCameraController.cpp" />
     <ClCompile Include="BossMeteorController.cpp" />
     <ClCompile Include="Game\Scene\GameOverScene.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossSword.cpp" />
@@ -163,6 +164,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="ResultImage.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BossArmCameraController.h" />
     <ClInclude Include="BossMeteorController.h" />
     <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
     <ClInclude Include="Game\Scene\GameOverScene.h" />
