@@ -1,4 +1,9 @@
 {
+    "armAttack": {
+        "introTime": 0.15000000596046448,
+        "lookWeight": 0.3499999940395355,
+        "outroTime": 0.20000000298023224
+    },
     "meteorAttack": {
         "camIntroTime": 0.6000000238418579,
         "camOffset": [
@@ -9,6 +14,6 @@
         "camOutroTime": 0.6000000238418579,
         "duration": 8.0,
         "pitchUp": -0.44999998807907104,
-        "spawnInterval": 0.699999988079071
+        "spawnInterval": 0.800000011920929
     }
 }

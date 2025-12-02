@@ -12,6 +12,8 @@ class BossEnemy;
 class BossMeteor;
 
 struct MeteorAttackParams {
+
+    // デフォルト値
     float duration = 8.0f;
     float spawnInterval = 0.7f;
     float camIntroTime = 0.6f;
@@ -41,12 +43,17 @@ struct MeteorAttackParams {
     // JSON へ保存する
     // ================================
     void SaveJSON(nlohmann::json& j) const {
-        j["duration"] = duration;
-        j["spawnInterval"] = spawnInterval;
-        j["camIntroTime"] = camIntroTime;
-        j["camOutroTime"] = camOutroTime;
-        j["camOffset"] = { camOffset.x, camOffset.y, camOffset.z };
-        j["pitchUp"] = pitchUp;
+
+        auto R = [](float v) {
+            return std::round(v * 1000.0f) / 1000.0f; // 小数3桁に丸め
+            };
+
+        j["duration"] = R(duration);
+        j["spawnInterval"] = R(spawnInterval);
+        j["camIntroTime"] = R(camIntroTime);
+        j["camOutroTime"] = R(camOutroTime);
+        j["camOffset"] = { R(camOffset.x), R(camOffset.y), R(camOffset.z) };
+        j["pitchUp"] = R(pitchUp);
     }
 
     void ResetDefault() {

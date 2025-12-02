@@ -118,13 +118,14 @@ void BossTestScene::Init() {
 	meteorController_->SetPlayer(player_.get());
 	meteorController_->SetBoss(boss_.get());
 	meteorController_->SetMeteors(&meteors_);
-
 	// JSON読み込み
 	meteorController_->LoadParamsFromJson("Resources/json/bossAttacks.json");
 
 	// 腕コントローラ初期化
 	armController_ = std::make_unique<BossArmController>();
 	armController_->Init(camera_.get(), boss_.get());
+	// JSON読み込み
+	armController_->LoadParamsFromJson("Resources/json/bossAttacks.json");
 
 	// ボスの剣
 	sword_ = std::make_unique<BossSword>();
@@ -426,19 +427,19 @@ void BossTestScene::Update() {
 
 #ifdef USE_IMGUI
 
-	ImGui::Begin("BossTestScene");
-
 	glassObject_->ImGuiDebug("glass");
 	camera_->ImGuiDebug();
 	player_->ImGuiDebug();
 	gun_->ImGuiDebug("gun");
 	boss_->ImGuiDebug();
 
+	ImGui::Begin("BossTestScene");
+
 	ImGui::Checkbox("isCameraFollowPlayer", &isCameraFollowPlayer_);
 
 	// ==== ここから攻撃エディタ ==== //
 
-	static const char* attackNames[] = { "Meteor", "Sword", "Arms" };
+	static const char* attackNames[] = { "Arms", "Meteor", "Sword" };
 	int currentIndex = static_cast<int>(currentAttackType_);
 	if (ImGui::Combo("Attack", &currentIndex, attackNames, IM_ARRAYSIZE(attackNames))) {
 		currentAttackType_ = static_cast<BossAttackType>(currentIndex);
@@ -447,6 +448,31 @@ void BossTestScene::Update() {
 	ImGui::Separator();
 
 	switch (currentAttackType_) {
+	case BossAttackType::Arms:
+
+		// 腕攻撃パラメータ
+		if (armController_) {
+			auto& p = armController_->GetParams();
+
+			ImGui::Text("Arm Attack Camera Params");
+			ImGui::DragFloat("IntroTime", &p.introTime, 0.01f, 0.0f, 2.0f);
+			ImGui::DragFloat("OutroTime", &p.outroTime, 0.01f, 0.0f, 2.0f);
+			ImGui::DragFloat("LookWeight", &p.lookWeight, 0.01f, 0.0f, 1.0f);
+
+			ImGui::Separator();
+
+			// デフォルトに戻す
+			if (ImGui::Button("Reset Arm Params")) {
+				p.ResetDefault();
+			}
+
+			// JSON 保存
+			if (ImGui::Button("Save Arm Params")) {
+				armController_->SaveParamsToJson("Resources/json/bossAttacks.json");
+			}
+		}
+		break;
+
 	case BossAttackType::Meteor:
 
 		// メテオ攻撃パラメータ
@@ -455,12 +481,12 @@ void BossTestScene::Update() {
 			auto& p = meteorController_->GetParams();
 
 			ImGui::Text("Meteor Attack Params");
-			ImGui::DragFloat("Duration", &p.duration, 0.1f, 0.0f, 60.0f);
-			ImGui::DragFloat("SpawnInterval", &p.spawnInterval, 0.01f, 0.05f, 5.0f);
-			ImGui::DragFloat("CamIntroTime", &p.camIntroTime, 0.01f, 0.0f, 5.0f);
-			ImGui::DragFloat("CamOutroTime", &p.camOutroTime, 0.01f, 0.0f, 5.0f);
-			ImGui::DragFloat3("CamOffset", &p.camOffset.x, 0.1f);
-			ImGui::DragFloat("PitchUp", &p.pitchUp, 0.01f, -1.57f, 0.0f);
+			ImGui::DragFloat("メテオ持続時間(Duration)", &p.duration, 0.1f, 0.0f, 60.0f);
+			ImGui::DragFloat("メテオ出現間隔(SpawnInterval)", &p.spawnInterval, 0.01f, 0.05f, 5.0f);
+			ImGui::DragFloat("カメラ移動時間(開始側)", &p.camIntroTime, 0.01f, 0.0f, 5.0f);
+			ImGui::DragFloat("カメラ移動時間(終了側)", &p.camOutroTime, 0.01f, 0.0f, 5.0f);
+			ImGui::DragFloat3("カメラ位置オフセット", &p.camOffset.x, 0.1f);
+			ImGui::DragFloat("メテオ視点の上向き角度", &p.pitchUp, 0.01f, -1.57f, 0.0f);
 
 			ImGui::Separator();
 
@@ -477,11 +503,8 @@ void BossTestScene::Update() {
 		break;
 
 	case BossAttackType::Sword:
-		// ここに剣攻撃のスピード/長さなどのパラメータ ImGui を後で追加
-		break;
 
-	case BossAttackType::Arms:
-		// 腕攻撃関連のクールタイム・速度などを後で追加
+		// 剣攻撃パラメータ
 		break;
 	}
 

@@ -67,13 +67,27 @@ void BossMeteorController::SaveParamsToJson(const std::string& path)
 {
     nlohmann::json j;
 
+    // 既存ファイルがあれば読み込んでから上書き
+    {
+        std::ifstream ifs(path);
+        if (!ifs.fail()) {
+            try {
+                ifs >> j;
+            } catch (...) {
+                j = nlohmann::json::object();
+            }
+        } else {
+            j = nlohmann::json::object();
+        }
+    }
+
     // meteorAttack の JSON を構築
     nlohmann::json meteorJson;
     params_.SaveJSON(meteorJson);
     j["meteorAttack"] = meteorJson;
 
     std::ofstream ofs(path);
-    ofs << j.dump(4); // 4はインデント
+    ofs << std::setprecision(3) << j.dump(4); // 4はインデント
 }
 
 void BossMeteorController::UpdateIntro(float dt) {

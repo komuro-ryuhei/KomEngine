@@ -45,8 +45,6 @@ void Camera::ImGuiDebug() {
 	ImGui::SliderAngle("rotateY", &transform_.rotate.y);
 	ImGui::SliderAngle("rotateZ", &transform_.rotate.z);
 	ImGui::DragFloat3("transform", &transform_.translate.x, 0.01f);
-	ImGui::Text("Base Pos: (%.2f, %.2f, %.2f)", basePos_.x, basePos_.y, basePos_.z);
-	ImGui::Text("Shake Offset: (%.2f, %.2f, %.2f)", shakeInfo_.shakeOffset_.x, shakeInfo_.shakeOffset_.y, shakeInfo_.shakeOffset_.z);
 	ImGui::Checkbox("Is Shaking", &shakeInfo_.isShaking_);
 	ImGui::DragFloat("Shake Strength", &shakeInfo_.shakeStrength_, 0.01f);
 	ImGui::DragFloat("Shake Duration", &shakeInfo_.shakeDuration_, 0.01f);

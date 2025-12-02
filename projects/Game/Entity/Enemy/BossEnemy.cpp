@@ -191,7 +191,7 @@ void BossEnemy::ImGuiDebug() {
 	// 
 	ImGui::Begin("BossEnemy");
 
-	object3d_->ImGuiDebug("Boss");
+	// object3d_->ImGuiDebug("Boss");
 
 	ImGui::DragInt("R_HitCount", &rightArmHitCount_);
 	ImGui::DragInt("L_HitCount", &leftArmHitCount_);

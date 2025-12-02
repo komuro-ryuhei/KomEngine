@@ -72,3 +72,50 @@ void BossArmController::Update(float dt, bool canControlCamera) {
         UpdateOutro(dt);
     }
 }
+
+void BossArmController::LoadParamsFromJson(const std::string& path)
+{
+    std::ifstream file(path);
+    if (file.fail()) {
+        // ファイルが無ければデフォルトのまま
+        return;
+    }
+
+    nlohmann::json j;
+    try {
+        file >> j;
+    } catch (...) {
+        return;
+    }
+
+    if (j.contains("armAttack")) {
+        params_.LoadJSON(j["armAttack"]);
+    }
+}
+
+void BossArmController::SaveParamsToJson(const std::string& path)
+{
+    nlohmann::json j;
+
+    // 既存ファイルがあれば読み込んでから上書き
+    {
+        std::ifstream ifs(path);
+        if (!ifs.fail()) {
+            try {
+                ifs >> j;
+            } catch (...) {
+                j = nlohmann::json::object();
+            }
+        } else {
+            j = nlohmann::json::object();
+        }
+    }
+
+    // armAttack の JSON を構築
+    nlohmann::json armJson;
+    params_.SaveJSON(armJson);
+    j["armAttack"] = armJson;
+
+    std::ofstream ofs(path);
+    ofs << std::setprecision(3) << j.dump(4);
+}
