@@ -36,6 +36,12 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 		assert(vsBlob != nullptr);
 		psBlob = compiler_->CompileShader(L"./Resources/shaders/Skybox.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
+	} else if (objectType == "line") {
+		// line 用 Shader をコンパイル
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Line.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(vsBlob != nullptr);
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/Line.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(psBlob != nullptr);
 	} else if (objectType == "posteffect_none") {
 		// offscreen用Shaderをコンパイルする
 		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
@@ -114,10 +120,10 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 		assert(vsBlob != nullptr);
 		psBlob = compiler_->CompileShader(L"./Resources/shaders/ColorInversion.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
-	} 
+	}
 }
 
-void PipelineManager::CreatePSO(const std::string &objectType)
+void PipelineManager::CreatePSO(const std::string& objectType)
 {
 	HRESULT hr = S_OK;
 
@@ -155,6 +161,13 @@ void PipelineManager::CreatePSO(const std::string &objectType)
 	} else {
 		// 通常3D(Object3D, Particle 等)：エンジン既定のDepth設定
 		graphicsPipelineStateDesc.DepthStencilState = System::GetDxCommon()->GetDepthStencilDesc();
+	}
+
+	// トポロジ設定：line だけ LINE、それ以外は TRIANGLE
+	if (objectType == "line") {
+		graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+	} else {
+		graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	}
 
 	// PSO生成（全分岐共通）

@@ -53,6 +53,10 @@ void BossTestScene::Init() {
 	skybox_->Init("./Resources/images/test.dds");
 	skybox_->SetDefaultCamera(camera_.get());
 
+	// デバッグライン
+	debugLine_.Init(2048, BlendType::BLEND_ALPHA);
+	debugLine_.SetCamera(camera_.get());
+
 	// 地面
 	glassObject_ = std::make_unique<Object3d>();
 	glassObject_->Init(BlendType::BLEND_NONE);
@@ -259,6 +263,12 @@ void BossTestScene::Update() {
 	skybox_->Update();
 	// 地面オブジェクトの更新
 	glassObject_->Update();
+
+	// ★ ライン側でカメラ行列更新
+	debugLine_.Update();
+
+	// ここから AddLine だけ書けばいい
+	LineTarget();
 
 	// Playerの銃の更新
 	UpdateGun();
@@ -544,6 +554,10 @@ void BossTestScene::Draw() {
 	rightTargetOuter_->Draw();
 	rightTargetInner_->Draw();
 
+	// デバッグライン
+	debugLine_.Draw();
+
+	// パーティクル描画
 	ParticleManager::GetInstance()->Draw();
 
 	result_->Draw();
@@ -950,6 +964,32 @@ void BossTestScene::UpdateArmTargetMarker() {
 			rightTargetInner_->SetPosition(screen);
 			rightTargetOuter_->SetColor({ 1,1,1,1 });
 			rightTargetInner_->SetColor({ 1,1,1,1 });
+		}
+	}
+}
+
+void BossTestScene::LineTarget() {
+
+	// ★ 両腕と胴体を結ぶラインを追加
+	if (boss_) {
+		Object3d* body = boss_->GetBody();
+		Object3d* leftArm = boss_->GetLeftArm();
+		Object3d* rightArm = boss_->GetRightArm();
+
+		if (body) {
+			const Vector3 bodyPos = body->GetWorldPosition();
+
+			// 左腕 ↔ 胴体（赤）
+			if (leftArm) {
+				Vector3 leftPos = leftArm->GetWorldPosition();
+				debugLine_.AddLine(leftPos, bodyPos, { 1.0f, 0.1f, 0.1f, 1.0f });
+			}
+
+			// 右腕 ↔ 胴体（青）
+			if (rightArm) {
+				Vector3 rightPos = rightArm->GetWorldPosition();
+				debugLine_.AddLine(rightPos, bodyPos, { 0.2f, 0.4f, 1.0f, 1.0f });
+			}
 		}
 	}
 }

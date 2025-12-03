@@ -267,6 +267,7 @@
     <ClCompile Include="ResultImage.cpp" />
     <ClCompile Include="BossMeteorController.cpp" />
     <ClCompile Include="BossArmController.cpp" />
+    <ClCompile Include="LineRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -417,6 +418,7 @@
     <ClInclude Include="ResultImage.h" />
     <ClInclude Include="BossMeteorController.h" />
     <ClInclude Include="BossArmController.h" />
+    <ClInclude Include="LineRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

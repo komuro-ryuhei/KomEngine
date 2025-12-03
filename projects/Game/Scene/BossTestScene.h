@@ -5,6 +5,7 @@
 #include "Game/Scene/SceneManager.h"
 #include "Engine/Base/Particle/ParticleManager.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
+#include "LineRenderer.h"
 
 // Entity
 #include "Engine/Base/3d/Skybox/Skybox.h"
@@ -52,6 +53,9 @@ private:
 
 	// Skybox
 	std::unique_ptr<Skybox> skybox_ = nullptr;
+
+	// デバッグ用ライン描画
+	LineRenderer debugLine_;
 
 	// Player
 	std::unique_ptr<Player> player_ = nullptr;
@@ -159,4 +163,7 @@ private:
 
 	// メテオ関連の制御（入力・ボスリクエスト・カメラ追従のON/OFF）
 	void UpdateMeteorControl(float dt);
+
+	// 
+	void LineTarget();
 };
