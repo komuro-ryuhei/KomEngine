@@ -171,9 +171,12 @@ void BossEnemy::Update() {
 	leftArm_->SetRotate(leftArmRot_);
 
 
-	object3d_->SetRadius(1.5f * object3d_->GetScale().x);
-	leftArm_->SetRadius(1.0f * leftArm_->GetScale().x);
-	rightArm_->SetRadius(1.0f * rightArm_->GetScale().x);
+	// 胴体はBodyRadiusを使う
+	object3d_->SetRadius(bodyRadius_);
+
+	// 腕はそれぞれ専用の半径を使う
+	leftArm_->SetRadius(leftArmRadius_* leftArm_->GetScale().x);
+	rightArm_->SetRadius(rightArmRadius_* rightArm_->GetScale().x);
 }
 
 void BossEnemy::Draw() {
@@ -200,6 +203,12 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::DragFloat3("rightArmRot", &rightArmRot_.x, 0.01f);
 	ImGui::DragFloat3("leftArmPos", &leftArmPos_.x, 0.01f);
 	ImGui::DragFloat3("leftArmRot", &leftArmRot_.x, 0.01f);
+
+	ImGui::Separator();
+	ImGui::Text("Collision Radius");
+	ImGui::DragFloat("BodyRadius", &bodyRadius_, 0.01f, 0.0f, 100.0f);
+	ImGui::DragFloat("LeftArmRadius", &leftArmRadius_, 0.01f, 0.0f, 100.0f);
+	ImGui::DragFloat("RightArmRadius", &rightArmRadius_, 0.01f, 0.0f, 100.0f);
 
 	ImGui::DragInt("HP", &hp_);
 

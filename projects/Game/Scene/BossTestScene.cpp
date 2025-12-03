@@ -286,7 +286,7 @@ void BossTestScene::Update() {
 	result_->Update();
 
 	// 当たり判定の確認
-	CheckCollisions();
+	CheckCollisionsAABB();
 
 	// 狙う弱点マーカーの更新
 	UpdateArmTargetMarker();
@@ -790,6 +790,75 @@ void BossTestScene::CheckCollisions() {
 	}
 }
 
+void BossTestScene::CheckCollisionsAABB() {
+
+	// -------------------- 弾 と ボス部位 の当たり判定 -------------------- //
+
+	auto& bullets = player_->GetBullets();
+
+	Object3d* body = boss_->GetBody();
+	Object3d* left = boss_->GetLeftArm();
+	Object3d* right = boss_->GetRightArm();
+
+	for (auto it = bullets.begin(); it != bullets.end();) {
+
+		bool hit = false;
+
+		// 当たり判定対象のパーツ
+		std::vector<Object3d*> parts = { left, right, body };
+
+		for (auto* part : parts) {
+
+			if (!part) continue;
+
+			// ------- AABB の作成（radius ベース） -------
+			Vector3 bulletPos = (*it)->GetTranslate();
+			float   bulletR = (*it)->GetRadius();
+
+			Vector3 partPos = part->GetWorldPosition();
+			float   partR = part->GetRadius();
+
+			AABB bulletBox = MakeAABBFromSphere(bulletPos, bulletR);
+			AABB partBox = MakeAABBFromSphere(partPos, partR);
+
+			// ------- 当たり判定 --------
+			if (IntersectAABB(bulletBox, partBox))
+			{
+				// 命中位置（弾の位置）
+				Vector3 hitPos = bulletPos;
+
+				// パーティクル演出
+				emitter_->SetTranslate(hitPos);
+				emitter_->Update();
+
+				// どの部位に当たったかの処理
+				if (part == left) {
+					boss_->AddHitLeftArm();
+					leftTargetShakeTime_ = targetShakeDuration_;
+				} else if (part == right) {
+					boss_->AddHitRightArm();
+					rightTargetShakeTime_ = targetShakeDuration_;
+				} else {
+					boss_->Damage(1);
+				}
+
+				// 弾を消す
+				it = bullets.erase(it);
+				hit = true;
+				break;
+			}
+		}
+
+		if (!hit) {
+			++it;
+		}
+	}
+
+	// ※ この下の「自機 vs ボス」などはまだ Sphere 判定のまま
+	//    順番に AABB 化していけばOK
+}
+
+
 void BossTestScene::UpdateGun() {
 
 	if (!gun_ || !camera_) return;
@@ -989,6 +1058,34 @@ void BossTestScene::LineTarget() {
 			if (rightArm) {
 				Vector3 rightPos = rightArm->GetWorldPosition();
 				debugLine_.AddLine(rightPos, bodyPos, { 0.2f, 0.4f, 1.0f, 1.0f });
+			}
+
+			// ===== ここから AABB 可視化 =====
+
+			// 胴体の AABB（黄色）
+			{
+				float r = body->GetRadius();
+				AABB box = MakeAABBFromSphere(bodyPos, r);
+				Vector4 c = { 1.0f, 1.0f, 0.0f, 1.0f };
+				AddAABBLines(debugLine_, box, c);
+			}
+
+			// 左腕の AABB（シアン）
+			if (leftArm) {
+				Vector3 pos = leftArm->GetWorldPosition();
+				float   r = leftArm->GetRadius();
+				AABB box = MakeAABBFromSphere(pos, r);
+				Vector4 c = { 0.0f, 1.0f, 1.0f, 1.0f };
+				AddAABBLines(debugLine_, box, c);
+			}
+
+			// 右腕の AABB（マゼンタ）
+			if (rightArm) {
+				Vector3 pos = rightArm->GetWorldPosition();
+				float   r = rightArm->GetRadius();
+				AABB box = MakeAABBFromSphere(pos, r);
+				Vector4 c = { 1.0f, 0.0f, 1.0f, 1.0f };
+				AddAABBLines(debugLine_, box, c);
 			}
 		}
 	}

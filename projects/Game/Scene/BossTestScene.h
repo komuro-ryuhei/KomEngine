@@ -31,6 +31,66 @@ public:
 		Sword,
 	};
 
+	struct AABB
+	{
+		Vector3 min;
+		Vector3 max;
+	};
+
+	inline AABB MakeAABBFromSphere(const Vector3& center, float radius)
+	{
+		Vector3 h{ radius, radius, radius };
+		AABB box;
+		box.min = center - h;
+		box.max = center + h;
+		return box;
+	}
+
+	// AABB を LineRenderer で描画するヘルパー
+	inline void AddAABBLines(LineRenderer& line, const AABB& box, const Vector4& color)
+	{
+		const Vector3& mn = box.min;
+		const Vector3& mx = box.max;
+
+		// 8頂点
+		Vector3 v000{ mn.x, mn.y, mn.z };
+		Vector3 v100{ mx.x, mn.y, mn.z };
+		Vector3 v010{ mn.x, mx.y, mn.z };
+		Vector3 v110{ mx.x, mx.y, mn.z };
+
+		Vector3 v001{ mn.x, mn.y, mx.z };
+		Vector3 v101{ mx.x, mn.y, mx.z };
+		Vector3 v011{ mn.x, mx.y, mx.z };
+		Vector3 v111{ mx.x, mx.y, mx.z };
+
+		// 下側の四角
+		line.AddLine(v000, v100, color);
+		line.AddLine(v100, v110, color);
+		line.AddLine(v110, v010, color);
+		line.AddLine(v010, v000, color);
+
+		// 上側の四角
+		line.AddLine(v001, v101, color);
+		line.AddLine(v101, v111, color);
+		line.AddLine(v111, v011, color);
+		line.AddLine(v011, v001, color);
+
+		// 縦の4本
+		line.AddLine(v000, v001, color);
+		line.AddLine(v100, v101, color);
+		line.AddLine(v110, v111, color);
+		line.AddLine(v010, v011, color);
+	}
+
+	// AABB同士の交差
+	inline bool IntersectAABB(const AABB& a, const AABB& b)
+	{
+		if (a.max.x < b.min.x || a.min.x > b.max.x) return false;
+		if (a.max.y < b.min.y || a.min.y > b.max.y) return false;
+		if (a.max.z < b.min.z || a.min.z > b.max.z) return false;
+		return true;
+	}
+
 	BossAttackType currentAttackType_ = BossAttackType::Meteor;
 
 	BossTestScene() = default;
@@ -105,6 +165,7 @@ private:
 
 	// 当たり判定
 	void CheckCollisions();
+	void CheckCollisionsAABB();
 
 	// PostEffectの変更関数
 	void ChangePostEffect();

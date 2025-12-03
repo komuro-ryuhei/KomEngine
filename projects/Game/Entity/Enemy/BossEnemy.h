@@ -118,8 +118,11 @@ private:
 	Camera* camera_ = nullptr;
 	// SRT
 	Transform transform_;
+
 	// 半径
-	float radius_ = 4.0f;
+	float bodyRadius_ = 2.2f; // 胴体用
+	float leftArmRadius_ = 1.0f; // 左腕用
+	float rightArmRadius_ = 1.0f; // 右腕用
 
 	Player* player_ = nullptr;
 
