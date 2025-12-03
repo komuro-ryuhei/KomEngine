@@ -10,15 +10,18 @@
 #include "Engine/Base/2d/Sprite/Sprite.h"
 #include "Game/Entity/Player/PlayerBullet.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
+#include "ICollisionObject.h"
 
 // C++
 #include <algorithm>
 #include <vector>
 
-class Player {
+class Player : public ICollisionObject {
 
 public:
-	~Player();
+
+	Player() = default;
+	~Player() = default;
 
 	void Init(Camera* camera);
 
@@ -27,6 +30,14 @@ public:
 	void Draw();
 
 	void ImGuiDebug();
+
+public:
+
+	// ----------------------- ICollisionObjectの実装 ----------------------- //
+	Vector3 GetCollisionPosition() const override;
+	float   GetCollisionRadius() const override;
+	CollisionLayer GetCollisionLayer() const override;
+	void OnCollision(ICollisionObject* other) override;
 
 public:
 	float GetRadius() const;

@@ -206,13 +206,13 @@ void BossEnemy::ImGuiDebug() {
 
 	ImGui::Separator();
 	ImGui::Text("Collision Radius");
-	ImGui::DragFloat("BodyRadius", &bodyRadius_, 0.01f, 0.0f, 100.0f);
-	ImGui::DragFloat("LeftArmRadius", &leftArmRadius_, 0.01f, 0.0f, 100.0f);
-	ImGui::DragFloat("RightArmRadius", &rightArmRadius_, 0.01f, 0.0f, 100.0f);
+	ImGui::DragFloat("半径 (胴体)", &bodyRadius_, 0.01f, 0.0f, 100.0f);
+	ImGui::DragFloat("半径 (左腕)", &leftArmRadius_, 0.01f, 0.0f, 100.0f);
+	ImGui::DragFloat("半径 (右腕)", &rightArmRadius_, 0.01f, 0.0f, 100.0f);
 
 	ImGui::DragInt("HP", &hp_);
 
-	ImGui::Checkbox("isAttack", &isAttack_);
+	ImGui::Checkbox("攻撃中", &isAttack_);
 	ImGui::End();
 
 #endif
@@ -550,4 +550,38 @@ Vector3 BossEnemy::GetCurrentArmWorldPos() const {
 	// フォールバック（左腕基準）
 	if (leftArm_) return leftArm_->GetWorldPosition();
 	return transform_.translate + leftArmPos_;
+}
+
+Vector3 BossEnemy::GetCollisionPosition() const {
+
+	// 
+	if (object3d_) return object3d_->GetWorldPosition();
+	return transform_.translate;
+}
+
+float BossEnemy::GetCollisionRadius() const {
+
+	// 
+	return bodyRadius_;   // 胴体の大きさ
+}
+
+CollisionLayer BossEnemy::GetCollisionLayer() const {
+
+	// 
+	return CollisionLayer::Enemy;
+}
+
+void BossEnemy::OnCollision(ICollisionObject* other) {
+
+	// 
+	switch (other->GetCollisionLayer())
+	{
+	case CollisionLayer::PlayerBullet:
+		Damage(1);
+		break;
+
+	case CollisionLayer::Player:
+		// プレイヤーにぶつかった処理
+		break;
+	}
 }

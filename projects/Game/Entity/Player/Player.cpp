@@ -140,7 +140,7 @@ void Player::ImGuiDebug() {
 
 void Player::Attack() {
 
-	// ★ 追加：撃てない状態なら何もしない
+	// 撃てない状態なら何もしない
 	if (!canShoot_) {
 		return;
 	}
@@ -253,4 +253,36 @@ void Player::UpdateReticleSprite() {
 
 	reticleSprite_->SetPosition(reticlePos);
 	reticleSprite_->Update();
+}
+
+Vector3 Player::GetCollisionPosition() const
+{
+	return GetTranslate();  // 現状は中心＝Translate
+}
+
+float Player::GetCollisionRadius() const
+{
+	return GetRadius();     // Object3d の radius
+}
+
+CollisionLayer Player::GetCollisionLayer() const
+{
+	return CollisionLayer::Player;
+}
+
+void Player::OnCollision(ICollisionObject* other)
+{
+	switch (other->GetCollisionLayer())
+	{
+	case CollisionLayer::Enemy:
+	case CollisionLayer::EnemyBullet:
+		if (!GetInvincible()) {
+			Damage(1);
+			SetInvincible(true);
+		}
+		break;
+
+	default:
+		break;
+	}
 }

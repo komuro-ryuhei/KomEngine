@@ -5,7 +5,7 @@
 class Player;
 class Camera;
 
-class BossEnemy {
+class BossEnemy : public ICollisionObject {
 
 private:
 
@@ -28,6 +28,14 @@ public:
 	void Draw();
 
 	void ImGuiDebug();
+
+public:
+
+	// ----------------------- ICollisionObjectの実装 ----------------------- //
+	Vector3 GetCollisionPosition() const override;
+	float   GetCollisionRadius() const override;
+	CollisionLayer GetCollisionLayer() const override;
+	void OnCollision(ICollisionObject* other) override;
 
 public:
 
