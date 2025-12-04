@@ -160,6 +160,17 @@ void BossTestScene::Init() {
 
 	result_ = std::make_unique<ResultImage>();
 	result_->Init();
+
+	// ---- CollisionManager 設定 ----
+	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::Enemy);
+	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyBullet);
+	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::Enemy);
+
+	// AddComponent 的な登録
+	collisionManager_.Register(player_.get());
+	collisionManager_.Register(boss_.get());
+
+	player_->SetCollisionManager(&collisionManager_);
 }
 
 void BossTestScene::Update() {
@@ -285,8 +296,11 @@ void BossTestScene::Update() {
 	// リザルトスプライトの更新
 	result_->Update();
 
+	// 当たり判定（今後はこれに集約していく）
+	collisionManager_.Update();
+
 	// 当たり判定の確認
-	CheckCollisionsAABB();
+	// CheckCollisionsAABB();
 
 	// 狙う弱点マーカーの更新
 	UpdateArmTargetMarker();

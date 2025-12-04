@@ -20,6 +20,7 @@
 #include "ResultImage.h"
 #include "BossMeteorController.h"
 #include "BossArmController.h"
+#include "CollisionManager.h"
 
 class BossTestScene : public IScene {
 
@@ -139,6 +140,9 @@ private:
 
 	// Particle・Effect
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;
+
+	// 当たり判定管理
+	CollisionManager collisionManager_;
 
 private:
 

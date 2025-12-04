@@ -7,8 +7,9 @@
 #include "Engine/lib/Input/Input.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "struct.h"
+#include "ICollisionObject.h"
 
-class PlayerBullet {
+class PlayerBullet : public ICollisionObject {
 
 public:
 	void Init(Camera* camera, Object3d* object3d);
@@ -24,6 +25,12 @@ public:
 	void SetTranlate(Vector3 translate);
 	void SetDirection(const Vector3& direction);
 	bool IsAlive() const;
+
+	// ----------------------- ICollisionObjectの実装 ----------------------- //
+	Vector3 GetCollisionPosition() const override;
+	float   GetCollisionRadius() const override;
+	CollisionLayer GetCollisionLayer() const override;
+	void OnCollision(ICollisionObject* other) override;
 
 private:
 	Camera* camera_ = nullptr;

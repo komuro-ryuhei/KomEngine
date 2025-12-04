@@ -124,7 +124,7 @@ void BossEnemy::Update() {
 						camera_->StartShake(CameraShakeType::Large);
 						landingShakeDone_ = true;
 					}
-					// ★ 着地時に砂ぼこりパーティクル発生
+					// 撃破後の着地時に砂ぼこりパーティクル発生
 					ParticleManager::GetInstance()->Emit("dust", transform_.translate, 80);
 				}
 
@@ -573,12 +573,23 @@ CollisionLayer BossEnemy::GetCollisionLayer() const {
 
 void BossEnemy::OnCollision(ICollisionObject* other) {
 
-	// 
-	switch (other->GetCollisionLayer())
-	{
+	switch (other->GetCollisionLayer()) {
+
+		// プレイヤー弾に当たった処理
 	case CollisionLayer::PlayerBullet:
+	{
+		// ダメージ
 		Damage(1);
+
+		// ★ 弾の衝突位置を取得（PlayerBullet側の GetCollisionPosition）
+		if (other) {
+			Vector3 hitPos = other->GetCollisionPosition();
+
+			// "hit" パーティクルを生成
+			ParticleManager::GetInstance()->Emit("hit", hitPos, 10);
+		}
 		break;
+	}
 
 	case CollisionLayer::Player:
 		// プレイヤーにぶつかった処理

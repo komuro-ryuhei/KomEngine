@@ -6,6 +6,8 @@
 
 #endif
 
+#include "Engine/Base/Particle/ParticleManager.h"
+
 float PlayerBullet::GetRadius() const { return radius_; }
 
 void PlayerBullet::Init(Camera *camera, Object3d *object3d) {
@@ -77,3 +79,42 @@ void PlayerBullet::SetTranlate(Vector3 translate) {
 void PlayerBullet::SetDirection(const Vector3 &direction) { direction_ = direction; }
 
 bool PlayerBullet::IsAlive() const { return isAlive_; }
+
+// ================= ICollisionObject の実装 ================= //
+
+Vector3 PlayerBullet::GetCollisionPosition() const
+{
+	// 弾の中心＝現在のワールド座標
+	// Object3d を使ってもいいけど、今は transform を真とする
+	return transform_.translate;
+}
+
+float PlayerBullet::GetCollisionRadius() const
+{
+	// 既存の radius_ をそのまま利用
+	return radius_;
+}
+
+CollisionLayer PlayerBullet::GetCollisionLayer() const
+{
+	// プレイヤーの弾として扱う
+	return CollisionLayer::PlayerBullet;
+}
+
+void PlayerBullet::OnCollision(ICollisionObject* other)
+{
+	// 何に当たったかで処理を分ける
+	switch (other->GetCollisionLayer()) {
+
+	case CollisionLayer::Enemy:
+
+	case CollisionLayer::Environment:
+		// 敵やステージに当たったら弾は消える
+		// （ボスのダメージ処理は BossEnemy::OnCollision 側でやる想定）
+		isAlive_ = false;
+		break;
+
+	default:
+		break;
+	}
+}

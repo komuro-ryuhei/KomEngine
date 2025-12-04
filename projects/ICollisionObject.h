@@ -2,9 +2,10 @@
 #pragma once
 #include "CollisionTypes.h" // CollisionLayer, AABB など
 
-class ICollisionObject
-{
+class ICollisionObject {
+
 public:
+
     virtual ~ICollisionObject() = default;
 
     // 当たり判定の中心座標

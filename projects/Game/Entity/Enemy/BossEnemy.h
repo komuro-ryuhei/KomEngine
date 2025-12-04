@@ -1,6 +1,7 @@
 #pragma once
 #include "Engine/Base/3d/Object3d/Object3d.h"
 #include "Engine/Base/2d/Sprite/Sprite.h"
+#include "ICollisionObject.h"
 
 class Player;
 class Camera;

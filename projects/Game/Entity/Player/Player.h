@@ -11,6 +11,7 @@
 #include "Game/Entity/Player/PlayerBullet.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "ICollisionObject.h"
+#include "CollisionManager.h"
 
 // C++
 #include <algorithm>
@@ -21,7 +22,7 @@ class Player : public ICollisionObject {
 public:
 
 	Player() = default;
-	~Player() = default;
+	~Player();
 
 	void Init(Camera* camera);
 
@@ -38,6 +39,8 @@ public:
 	float   GetCollisionRadius() const override;
 	CollisionLayer GetCollisionLayer() const override;
 	void OnCollision(ICollisionObject* other) override;
+
+	void SetCollisionManager(CollisionManager* mgr) { collisionManager_ = mgr; }
 
 public:
 	float GetRadius() const;
@@ -80,6 +83,9 @@ private:
 
 	// レティクルのスプライト
 	std::unique_ptr<Sprite> reticleSprite_ = nullptr;
+
+	// 当たり判定管理
+	CollisionManager* collisionManager_ = nullptr;
 
 	// SRT
 	Transform transform_;

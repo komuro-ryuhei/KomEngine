@@ -91,6 +91,11 @@ void Player::Update() {
 		(*it)->Update();
 		(*it)->ImGuiDebug();
 		if (!(*it)->IsAlive()) {
+
+			if (collisionManager_) {
+				collisionManager_->Unregister(it->get());
+			}
+
 			it = bulletObjects_.erase(it);
 		} else {
 			++it;
@@ -230,6 +235,10 @@ void Player::SpawnBullet() {
 	MyMath::Normalize(direction);
 	newBullet->SetDirection(direction);
 
+	if (collisionManager_) {
+		collisionManager_->Register(newBullet.get());
+	}
+
 	bulletObjects_.emplace_back(std::move(newBullet));
 }
 
@@ -272,9 +281,15 @@ CollisionLayer Player::GetCollisionLayer() const
 
 void Player::OnCollision(ICollisionObject* other)
 {
-	switch (other->GetCollisionLayer())
-	{
+	switch (other->GetCollisionLayer()) {
+		// 敵と当たった場合
 	case CollisionLayer::Enemy:
+		if (!GetInvincible()) {
+			Damage(1);
+			SetInvincible(true);
+		}
+		break;
+		// 敵弾と当たった場合
 	case CollisionLayer::EnemyBullet:
 		if (!GetInvincible()) {
 			Damage(1);
