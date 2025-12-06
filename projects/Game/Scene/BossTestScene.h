@@ -32,21 +32,6 @@ public:
 		Sword,
 	};
 
-	struct AABB
-	{
-		Vector3 min;
-		Vector3 max;
-	};
-
-	inline AABB MakeAABBFromSphere(const Vector3& center, float radius)
-	{
-		Vector3 h{ radius, radius, radius };
-		AABB box;
-		box.min = center - h;
-		box.max = center + h;
-		return box;
-	}
-
 	// AABB を LineRenderer で描画するヘルパー
 	inline void AddAABBLines(LineRenderer& line, const AABB& box, const Vector4& color)
 	{
@@ -81,15 +66,6 @@ public:
 		line.AddLine(v100, v101, color);
 		line.AddLine(v110, v111, color);
 		line.AddLine(v010, v011, color);
-	}
-
-	// AABB同士の交差
-	inline bool IntersectAABB(const AABB& a, const AABB& b)
-	{
-		if (a.max.x < b.min.x || a.min.x > b.max.x) return false;
-		if (a.max.y < b.min.y || a.min.y > b.max.y) return false;
-		if (a.max.z < b.min.z || a.min.z > b.max.z) return false;
-		return true;
 	}
 
 	BossAttackType currentAttackType_ = BossAttackType::Meteor;

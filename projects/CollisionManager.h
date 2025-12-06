@@ -17,6 +17,16 @@ public:
 	// 毎フレーム呼ぶ
 	void Update();
 
+	// デバッグ用：各オブジェクトのAABB情報
+	struct DebugAABBInfo
+	{
+		AABB          box;   // AABB（CollisionTypes.h のやつ）
+		CollisionLayer layer; // そのAABBが属しているレイヤー
+	};
+
+	// すべての登録オブジェクトのAABBを out に詰める
+	void CollectDebugAABBs(std::vector<DebugAABBInfo>& out) const;
+
 private:
 
 	bool IsPairEnabled(CollisionLayer a, CollisionLayer b) const;

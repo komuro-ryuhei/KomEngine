@@ -59,6 +59,27 @@ void CollisionManager::Update() {
     }
 }
 
+void CollisionManager::CollectDebugAABBs(std::vector<DebugAABBInfo>& out) const
+{
+    out.clear();
+    out.reserve(objects_.size());
+
+    for (auto* obj : objects_) {
+        if (!obj) {
+            continue;
+        }
+
+        DebugAABBInfo info;
+        info.layer = obj->GetCollisionLayer();
+        info.box = MakeAABBFromSphere(
+            obj->GetCollisionPosition(),
+            obj->GetCollisionRadius()
+        );
+
+        out.push_back(info);
+    }
+}
+
 bool CollisionManager::IsPairEnabled(CollisionLayer a, CollisionLayer b) const {
 
     // 

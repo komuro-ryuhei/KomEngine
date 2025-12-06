@@ -1053,7 +1053,7 @@ void BossTestScene::UpdateArmTargetMarker() {
 
 void BossTestScene::LineTarget() {
 
-	// ★ 両腕と胴体を結ぶラインを追加
+	// ★ 両腕と胴体を結ぶラインを追加（これは今まで通りでOK）
 	if (boss_) {
 		Object3d* body = boss_->GetBody();
 		Object3d* leftArm = boss_->GetLeftArm();
@@ -1073,34 +1073,40 @@ void BossTestScene::LineTarget() {
 				Vector3 rightPos = rightArm->GetWorldPosition();
 				debugLine_.AddLine(rightPos, bodyPos, { 0.2f, 0.4f, 1.0f, 1.0f });
 			}
-
-			// ===== ここから AABB 可視化 =====
-
-			// 胴体の AABB（黄色）
-			{
-				float r = body->GetRadius();
-				AABB box = MakeAABBFromSphere(bodyPos, r);
-				Vector4 c = { 1.0f, 1.0f, 0.0f, 1.0f };
-				AddAABBLines(debugLine_, box, c);
-			}
-
-			// 左腕の AABB（シアン）
-			if (leftArm) {
-				Vector3 pos = leftArm->GetWorldPosition();
-				float   r = leftArm->GetRadius();
-				AABB box = MakeAABBFromSphere(pos, r);
-				Vector4 c = { 0.0f, 1.0f, 1.0f, 1.0f };
-				AddAABBLines(debugLine_, box, c);
-			}
-
-			// 右腕の AABB（マゼンタ）
-			if (rightArm) {
-				Vector3 pos = rightArm->GetWorldPosition();
-				float   r = rightArm->GetRadius();
-				AABB box = MakeAABBFromSphere(pos, r);
-				Vector4 c = { 1.0f, 0.0f, 1.0f, 1.0f };
-				AddAABBLines(debugLine_, box, c);
-			}
 		}
+	}
+
+	// ===== ここから「全部の当たり判定AABB」を描画 =====
+
+	// CollisionManager から AABB 一覧をもらう
+	std::vector<CollisionManager::DebugAABBInfo> infos;
+	collisionManager_.CollectDebugAABBs(infos);
+
+	for (const auto& info : infos) {
+
+		// レイヤーごとに色を変える
+		Vector4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+		switch (info.layer) {
+		case CollisionLayer::Player:
+			color = { 0.0f, 1.0f, 0.0f, 1.0f }; // 緑
+			break;
+		case CollisionLayer::Enemy:
+			color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 赤
+			break;
+		case CollisionLayer::PlayerBullet:
+			color = { 0.0f, 1.0f, 1.0f, 1.0f }; // シアン
+			break;
+		case CollisionLayer::EnemyBullet:
+			color = { 1.0f, 0.0f, 1.0f, 1.0f }; // マゼンタ
+			break;
+		case CollisionLayer::Environment:
+		default:
+			color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 白
+			break;
+		}
+
+		// ★ AABB を線で描画（AddAABBLines は BossTestScene.h のやつ）
+		AddAABBLines(debugLine_, info.box, color);
 	}
 }
