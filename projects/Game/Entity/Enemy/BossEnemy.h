@@ -2,6 +2,7 @@
 #include "Engine/Base/3d/Object3d/Object3d.h"
 #include "Engine/Base/2d/Sprite/Sprite.h"
 #include "ICollisionObject.h"
+#include <vector>
 
 class Player;
 class Camera;
@@ -19,6 +20,16 @@ private:
 
 	AttackPhase attackPhase_ = AttackPhase::SingleLeft;
 	bool meteorRequest_ = false; // 両手攻撃完了後にtrue
+
+	// HPエフェクト用チップ
+	struct HpChip {
+		std::unique_ptr<Sprite> sprite;
+		Vector2 pos;    // 画面上の位置
+		Vector2 vel;    // 速度（ピクセル/秒）
+		float   life = 0.0f; // 残り寿命（秒）
+	};
+
+	std::vector<HpChip> hpChips_;
 
 public:
 
@@ -110,6 +121,10 @@ private:
 	void Attack();
 	void Move();
 	void TitleSceneMove();
+
+	// 減ったぶんからチップを生成
+	void SpawnHpChips(float prevWidth, float newWidth);
+
 
 public:
 	void AddHitToAttackingArm();

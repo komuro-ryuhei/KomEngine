@@ -58,13 +58,42 @@ void BossEnemy::Update() {
 	leftArm_->Update();
 	rightArm_->Update();
 
-	// HPバーの更新
+	// ---------------------------- HPバーの更新更新 ---------------------------- //
+
 	if (hpSprite_) {
 		float hpRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 		hpRatio = std::clamp(hpRatio, 0.0f, 1.0f);
 		Vector2 baseSize = { 700.0f, 50.0f };
 		hpSprite_->SetSize({ baseSize.x * hpRatio, baseSize.y });
 		hpSprite_->Update();
+	}
+
+	// ---------------------------- HPチップの更新 ---------------------------- //
+
+	const float dt = 1.0f / 60.0f;
+	const float gravity = 900.0f;   // 下方向加速度(px/s^2) 好きに調整
+
+	for (auto it = hpChips_.begin(); it != hpChips_.end();) {
+
+		it->life -= dt;
+		if (it->life <= 0.0f) {
+			it = hpChips_.erase(it);
+			continue;
+		}
+
+		// 重力
+		it->vel.y += gravity * dt;
+
+		// 位置更新
+		it->pos.x += it->vel.x * dt;
+		it->pos.y += it->vel.y * dt;
+
+		if (it->sprite) {
+			it->sprite->SetPosition(it->pos);
+			it->sprite->Update();
+		}
+
+		++it;
 	}
 
 	// ---------------------- 撃破後 / 生存中で分岐 ---------------------- //
@@ -453,8 +482,15 @@ void BossEnemy::OnMeteorFinished() {
 
 void BossEnemy::HPDraw() {
 
-	// 
+	// HPバーを描画
 	hpSprite_->Draw();
+
+	// HPチップを描画
+	for (auto& chip : hpChips_) {
+		if (chip.sprite) {
+			chip.sprite->Draw();
+		}
+	}
 }
 
 void BossEnemy::SetRotate(Vector3& rotate) {
@@ -521,7 +557,24 @@ float BossEnemy::GetLeftHandRadius() const {
 void BossEnemy::Damage(int v) {
 
 	if (v <= 0) return;
+
+	// ダメージ前の幅（HPバーは 700px 固定）
+	float prevRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
+	prevRatio = std::clamp(prevRatio, 0.0f, 1.0f);
+	float prevWidth = 700.0f * prevRatio;
+
+	// HPを減らす
 	hp_ = std::max(0, hp_ - v);
+
+	// ダメージ後の幅
+	float newRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
+	newRatio = std::clamp(newRatio, 0.0f, 1.0f);
+	float newWidth = 700.0f * newRatio;
+
+	// 減ったぶんからチップ生成
+	if (hpSprite_ && prevWidth > newWidth) {
+		SpawnHpChips(prevWidth, newWidth);
+	}
 }
 
 Vector3 BossEnemy::GetCurrentArmWorldPos() const {
@@ -594,5 +647,58 @@ void BossEnemy::OnCollision(ICollisionObject* other) {
 	case CollisionLayer::Player:
 		// プレイヤーにぶつかった処理
 		break;
+	}
+}
+
+void BossEnemy::SpawnHpChips(float prevWidth, float newWidth)
+{
+	if (!hpSprite_) return;
+
+	float lost = prevWidth - newWidth;
+	if (lost <= 0.0f) return;
+
+	// 減った幅に応じて個数を決める（25pxで1個くらい）
+	int count = static_cast<int>(lost / 25.0f) + 1;
+	count = std::min(count, 30); // 上限 30 個くらい
+
+	// HPバーの左端（アンカーは左中央）
+	Vector2 basePos = hpSprite_->GetPosition();
+
+	// 出現X範囲：減ったところ (newWidth ~ prevWidth)
+	float xMin = basePos.x + newWidth;
+	float xMax = basePos.x + prevWidth;
+
+	for (int i = 0; i < count; ++i) {
+
+		HpChip chip{};
+
+		chip.sprite = std::make_unique<Sprite>();
+		chip.sprite->Init("./Resources/images/hp.png", BlendType::BLEND_ALPHA);
+		chip.sprite->SetAnchorPoint({ 0.5f, 0.5f });
+
+		// 小さめの四角
+		float w = MyMath::Rand(6.0f, 12.0f);
+		float h = MyMath::Rand(6.0f, 12.0f);
+		chip.sprite->SetSize({ w, h });
+
+		// 緑色に着色（少し明るめ）
+		chip.sprite->SetColor({ 0.2f, 1.0f, 0.2f, 1.0f });
+
+		// 生成位置：減った部分のどこか＋少し上下にランダム
+		float x = MyMath::Rand(xMin, xMax);
+		float y = basePos.y + MyMath::Rand(-4.0f, 4.0f);
+		chip.pos = { x, y };
+
+		// 最初の速度：ちょっと横に散って、少し上に飛んでから落ちる
+		chip.vel.x = MyMath::Rand(-120.0f, 120.0f);   // 横
+		chip.vel.y = MyMath::Rand(-260.0f, -160.0f);  // 上方向(マイナス)
+
+		// 寿命（秒）
+		chip.life = MyMath::Rand(0.5f, 0.9f);
+
+		chip.sprite->SetPosition(chip.pos);
+		chip.sprite->Update();
+
+		hpChips_.push_back(std::move(chip));
 	}
 }
