@@ -53,10 +53,23 @@ void BossEnemy::Init(Camera* camera) {
 
 void BossEnemy::Update() {
 
+	const float dt = 1.0f / 60.0f;
+
 	// 3Dオブジェクト更新
 	object3d_->Update();
 	leftArm_->Update();
 	rightArm_->Update();
+
+	// 被弾シェイクタイマー
+	auto updateShake = [dt](float& t) {
+		if (t > 0.0f) {
+			t -= dt;
+			if (t < 0.0f) t = 0.0f;
+		}
+		};
+	updateShake(bodyHitShakeTime_);
+	updateShake(leftHitShakeTime_);
+	updateShake(rightHitShakeTime_);
 
 	// ---------------------------- HPバーの更新更新 ---------------------------- //
 
@@ -70,7 +83,6 @@ void BossEnemy::Update() {
 
 	// ---------------------------- HPチップの更新 ---------------------------- //
 
-	const float dt = 1.0f / 60.0f;
 	const float gravity = 900.0f;   // 下方向加速度(px/s^2) 好きに調整
 
 	for (auto it = hpChips_.begin(); it != hpChips_.end();) {
@@ -182,30 +194,33 @@ void BossEnemy::Update() {
 	// ---------------------- SRT 反映＆当たり判定用半径 ---------------------- //
 
 	// ★ 落下中だけ見た目にシェイクをかける
-	Vector3 drawPos = transform_.translate;
-	if (hp_ <= 0 && !hasLanded_) {
-		// ちょっと不規則な揺れにするため周波数を変えたsin/cosを足す
-		float sx = std::sin(fallShakeTime_ * 40.0f) * fallShakeAmplitude_;
-		float sz = std::cos(fallShakeTime_ * 55.0f) * fallShakeAmplitude_;
-		drawPos.x += sx;
-		drawPos.z += sz;
-	}
+	//Vector3 drawPos = transform_.translate;
+	//if (hp_ <= 0 && !hasLanded_) {
+	//	// ちょっと不規則な揺れにするため周波数を変えたsin/cosを足す
+	//	float sx = std::sin(fallShakeTime_ * 40.0f) * fallShakeAmplitude_;
+	//	float sz = std::cos(fallShakeTime_ * 55.0f) * fallShakeAmplitude_;
+	//	drawPos.x += sx;
+	//	drawPos.z += sz;
+	//}
 
-	object3d_->SetTranslate(drawPos);
+	// ---------------------- 被弾シェイク ---------------------- //
+	DamageShake();
+
+	/*object3d_->SetTranslate(drawPos);
 	object3d_->SetRotate(transform_.rotate);
 
 	rightArm_->SetTranslate(rightArmPos_);
 	leftArm_->SetTranslate(leftArmPos_);
 	rightArm_->SetRotate(rightArmRot_);
-	leftArm_->SetRotate(leftArmRot_);
+	leftArm_->SetRotate(leftArmRot_);*/
 
 
 	// 胴体はBodyRadiusを使う
 	object3d_->SetRadius(bodyRadius_);
 
 	// 腕はそれぞれ専用の半径を使う
-	leftArm_->SetRadius(leftArmRadius_* leftArm_->GetScale().x);
-	rightArm_->SetRadius(rightArmRadius_* rightArm_->GetScale().x);
+	leftArm_->SetRadius(leftArmRadius_ * leftArm_->GetScale().x);
+	rightArm_->SetRadius(rightArmRadius_ * rightArm_->GetScale().x);
 }
 
 void BossEnemy::Draw() {
@@ -558,6 +573,9 @@ void BossEnemy::Damage(int v) {
 
 	if (v <= 0) return;
 
+	// 被弾シェイク開始
+	StartBodyHitShake();
+
 	// ダメージ前の幅（HPバーは 700px 固定）
 	float prevRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 	prevRatio = std::clamp(prevRatio, 0.0f, 1.0f);
@@ -701,4 +719,48 @@ void BossEnemy::SpawnHpChips(float prevWidth, float newWidth)
 
 		hpChips_.push_back(std::move(chip));
 	}
+}
+
+void BossEnemy::DamageShake() {
+
+	// === 胴体の元の位置（シェイク前） ===
+	Vector3 baseBodyPos = transform_.translate;
+
+	// === シェイク後の位置を計算 ===
+	Vector3 bodyPos = baseBodyPos;
+
+	// 落下シェイク
+	if (hp_ <= 0 && !hasLanded_) {
+		float sx = std::sin(fallShakeTime_ * 40.0f) * fallShakeAmplitude_;
+		float sz = std::cos(fallShakeTime_ * 55.0f) * fallShakeAmplitude_;
+		bodyPos.x += sx;
+		bodyPos.z += sz;
+	}
+
+	// 被弾シェイク
+	if (bodyHitShakeTime_ > 0.0f) {
+		float t = bodyHitShakeTime_ / hitShakeDuration_;
+		float amp = hitShakeAmplitude_ * t;
+
+		bodyPos.x += MyMath::Rand(-amp, amp);
+		bodyPos.y += MyMath::Rand(-amp, amp);
+		bodyPos.z += MyMath::Rand(-amp, amp);
+	}
+
+	// === 胴体のワールド位置を確定 ===
+	object3d_->SetTranslate(bodyPos);
+	object3d_->SetRotate(transform_.rotate);
+
+	// === 胴体のシェイク分の差（offset）を算出 ===
+	Vector3 offset = bodyPos - baseBodyPos;
+
+	// === 腕は「逆方向にオフセット」を与えてキャンセル ===
+
+	// 左腕
+	leftArm_->SetTranslate(leftArmPos_ - offset);
+	leftArm_->SetRotate(leftArmRot_);
+
+	// 右腕
+	rightArm_->SetTranslate(rightArmPos_ - offset);
+	rightArm_->SetRotate(rightArmRot_);
 }

@@ -49,6 +49,11 @@ public:
 	CollisionLayer GetCollisionLayer() const override;
 	void OnCollision(ICollisionObject* other) override;
 
+	// 被弾シェイク開始（部位別）
+	void StartBodyHitShake() { bodyHitShakeTime_ = hitShakeDuration_; }
+	void StartLeftArmHitShake() { leftHitShakeTime_ = hitShakeDuration_; }
+	void StartRightArmHitShake() { rightHitShakeTime_ = hitShakeDuration_; }
+
 public:
 
 	// getter・setter
@@ -124,6 +129,9 @@ private:
 
 	// 減ったぶんからチップを生成
 	void SpawnHpChips(float prevWidth, float newWidth);
+
+	// 
+	void DamageShake();
 
 
 public:
@@ -204,10 +212,18 @@ private:
 	float fallRotateStart_ = 0.0f;    // 開始角度（今の回転を保存）
 	float fallRotateEnd_ = -1.2f;   // 最終角度（ラジアン）＝約 -70 度前に倒す
 
-	// ★ 落下中シェイク用
+	// 落下中シェイク用
 	float fallShakeTime_ = 0.0f;
 	float fallShakeAmplitude_ = 0.25f; // 揺れ幅（XZ方向）
 
 	// 落下後のカメラシェイクフラグ
 	bool landingShakeDone_ = false;
+
+	// 被弾時のシェイク
+	float bodyHitShakeTime_ = 0.0f;
+	float leftHitShakeTime_ = 0.0f;
+	float rightHitShakeTime_ = 0.0f;
+
+	float hitShakeDuration_ = 0.15f;  // 揺れる時間(秒)
+	float hitShakeAmplitude_ = 0.25f;  // 揺れ幅
 };

@@ -510,3 +510,8 @@ float MyMath::DegreeToRadian(float degree) {
 float MyMath::RadianToDegree(float radian) {
 	return radian * (float)(180.0 / M_PI);
 }
+
+// 
+float MyMath::LengthSquare(const Vector3& v) {
+	return v.x * v.x + v.y * v.y + v.z * v.z;
+}

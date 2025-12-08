@@ -115,4 +115,7 @@ public:
 
 	// ラジアンから度数へ
 	static float RadianToDegree(float radian);
+
+	// 長さの平方（距離^2）
+	static float LengthSquare(const Vector3& v);
 };
