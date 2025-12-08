@@ -49,6 +49,15 @@ void BossEnemy::Init(Camera* camera) {
 	hpSprite_->SetAnchorPoint({ 0.0f, 0.5f });
 	hpSprite_->SetSize({ 700.0f,50.0f });
 	hpSprite_->SetPosition({ 200.0f,100.0f });
+
+	bodyCol_.owner = this;
+	bodyCol_.part = PartCollider::Part::Body;
+
+	leftCol_.owner = this;
+	leftCol_.part = PartCollider::Part::LeftArm;
+
+	rightCol_.owner = this;
+	rightCol_.part = PartCollider::Part::RightArm;
 }
 
 void BossEnemy::Update() {
@@ -642,34 +651,71 @@ CollisionLayer BossEnemy::GetCollisionLayer() const {
 	return CollisionLayer::Enemy;
 }
 
-void BossEnemy::OnCollision(ICollisionObject* other) {
-
-	switch (other->GetCollisionLayer()) {
-
-		// プレイヤー弾に当たった処理
-	case CollisionLayer::PlayerBullet:
+void BossEnemy::OnCollision(ICollisionObject* other)
+{
+	// Boss 本体が直接弾に当たった場合の処理（胴体ヒットと同じ）
+	if (other->GetCollisionLayer() == CollisionLayer::PlayerBullet)
 	{
-		// ダメージ
 		Damage(1);
+		StartBodyHitShake();
 
-		// ★ 弾の衝突位置を取得（PlayerBullet側の GetCollisionPosition）
-		if (other) {
-			Vector3 hitPos = other->GetCollisionPosition();
-
-			// "hit" パーティクルを生成
-			ParticleManager::GetInstance()->Emit("hit", hitPos, 10);
-		}
-		break;
+		// ヒットパーティクル
+		Vector3 hitPos = other->GetCollisionPosition();
+		ParticleManager::GetInstance()->Emit("hit", hitPos, 10);
 	}
+}
 
-	case CollisionLayer::Player:
-		// プレイヤーにぶつかった処理
+void BossEnemy::PartCollider::OnCollision(ICollisionObject* other) {
+
+	switch (part) {
+
+	case Part::Body:
+		owner->Damage(1);
+		owner->StartBodyHitShake();
+		break;
+
+	case Part::LeftArm:
+		owner->AddHitLeftArm();
+		owner->StartLeftArmHitShake();
+		break;
+
+	case Part::RightArm:
+		owner->AddHitRightArm();
+		owner->StartRightArmHitShake();
 		break;
 	}
 }
 
-void BossEnemy::SpawnHpChips(float prevWidth, float newWidth)
+Vector3 BossEnemy::PartCollider::GetCollisionPosition() const {
+
+	switch (part)
+	{
+	case Part::Body:
+		return owner->object3d_->GetWorldPosition();
+	case Part::LeftArm:
+		return owner->leftArm_->GetWorldPosition();
+	case Part::RightArm:
+		return owner->rightArm_->GetWorldPosition();
+	}
+	return {};
+}
+
+float BossEnemy::PartCollider::GetCollisionRadius() const
 {
+	switch (part)
+	{
+	case Part::Body:
+		return owner->bodyRadius_;
+	case Part::LeftArm:
+		return owner->leftArmRadius_ * owner->leftArm_->GetScale().x;
+	case Part::RightArm:
+		return owner->rightArmRadius_ * owner->rightArm_->GetScale().x;
+	}
+	return 1.0f;
+}
+
+void BossEnemy::SpawnHpChips(float prevWidth, float newWidth) {
+
 	if (!hpSprite_) return;
 
 	float lost = prevWidth - newWidth;

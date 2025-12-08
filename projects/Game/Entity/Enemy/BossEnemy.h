@@ -2,6 +2,8 @@
 #include "Engine/Base/3d/Object3d/Object3d.h"
 #include "Engine/Base/2d/Sprite/Sprite.h"
 #include "ICollisionObject.h"
+#include "CollisionManager.h"
+
 #include <vector>
 
 class Player;
@@ -30,6 +32,21 @@ private:
 	};
 
 	std::vector<HpChip> hpChips_;
+
+	struct PartCollider : public ICollisionObject
+	{
+		BossEnemy* owner = nullptr;
+		enum class Part { Body, LeftArm, RightArm } part;
+
+		Vector3 GetCollisionPosition() const override;
+		float   GetCollisionRadius() const override;
+		CollisionLayer GetCollisionLayer() const override { return CollisionLayer::Enemy; }
+		void OnCollision(ICollisionObject* other) override;
+	};
+
+	PartCollider bodyCol_;
+	PartCollider leftCol_;
+	PartCollider rightCol_;
 
 public:
 
@@ -71,6 +88,18 @@ public:
 	float GetAttackSpeed() const { return attackSpeed_; }
 
 	void SetInTitleScene(bool isTitleScene) { isInTitleScene_ = isTitleScene; }
+
+	// 当たり判定管理
+	void SetCollisionManager(CollisionManager* mgr)
+	{
+		collisionManager_ = mgr;
+
+		if (collisionManager_) {
+			collisionManager_->Register(&bodyCol_);
+			collisionManager_->Register(&leftCol_);
+			collisionManager_->Register(&rightCol_);
+		}
+	}
 
 	// ----- 部位 ----- //
 	Object3d* GetBody() const { return object3d_.get(); }
@@ -151,6 +180,9 @@ private:
 	// SRT
 	Transform transform_;
 
+	// 当たり判定管理
+	CollisionManager* collisionManager_ = nullptr;
+
 	// 半径
 	float bodyRadius_ = 2.2f; // 胴体用
 	float leftArmRadius_ = 1.0f; // 左腕用
@@ -166,7 +198,7 @@ private:
 
 	// 
 	std::unique_ptr<Sprite> hpSprite_;
- 
+
 	// 攻撃用のタイマーと状態
 	float attackTimer_ = 0.0f;
 	float attackInterval_ = 2.0f; // 2秒周期

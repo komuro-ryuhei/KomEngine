@@ -171,6 +171,7 @@ void BossTestScene::Init() {
 	collisionManager_.Register(boss_.get());
 
 	player_->SetCollisionManager(&collisionManager_);
+	boss_->SetCollisionManager(&collisionManager_);
 }
 
 void BossTestScene::Update() {
