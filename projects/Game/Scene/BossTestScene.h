@@ -143,10 +143,6 @@ private:
 
 private:
 
-	// 当たり判定
-	void CheckCollisions();
-	void CheckCollisionsAABB();
-
 	// PostEffectの変更関数
 	void ChangePostEffect();
 
