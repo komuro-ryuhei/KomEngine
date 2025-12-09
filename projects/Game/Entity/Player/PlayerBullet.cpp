@@ -108,6 +108,8 @@ void PlayerBullet::OnCollision(ICollisionObject* other)
 
 	case CollisionLayer::Enemy:
 
+		isAlive_ = false;
+		break;
 	case CollisionLayer::Environment:
 		// 敵やステージに当たったら弾は消える
 		// （ボスのダメージ処理は BossEnemy::OnCollision 側でやる想定）

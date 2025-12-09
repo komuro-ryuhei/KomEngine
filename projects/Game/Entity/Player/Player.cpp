@@ -242,7 +242,6 @@ void Player::SpawnBullet() {
 	bulletObjects_.emplace_back(std::move(newBullet));
 }
 
-
 void Player::UpdateReticleSprite() {
 
 	// マウスカーソルのスクリーン座標を取得

@@ -524,20 +524,20 @@ void BossEnemy::SetRotate(Vector3& rotate) {
 	rightArm_->SetRotate(rotate);
 }
 
-// 末尾あたりに実装を追加
-
+// ---- 右手 ---- //
 void BossEnemy::SetRightHandScale(const Vector3& s) {
+
 	if (rightArm_) {
 		rightArm_->SetScale(s);
-		// 半径は Scale に応じて毎フレーム Update で設定しているが、
-		// 念のためここでも更新しておくと安全
+		// 
 		rightArm_->SetRadius(1.0f * rightArm_->GetScale().x);
 	}
 }
 
 Vector3 BossEnemy::GetRightHandWorldPos() const {
+
 	if (rightArm_) {
-		// 子オブジェクトなので WorldPosition を取るのが正確
+		// 子オブジェクトなので 正確なワールド位置を取る
 		return rightArm_->GetWorldPosition();
 	}
 	// フォールバック（親＋ローカル）
@@ -545,15 +545,16 @@ Vector3 BossEnemy::GetRightHandWorldPos() const {
 }
 
 float BossEnemy::GetRightHandRadius() const {
+
 	if (rightArm_) {
-		// Update() で「1.0f * scale.x」を SetRadius 済み
+		// 子オブジェクトなので Radius を取るのが正確
 		return rightArm_->GetRadius();
 	}
-	// フォールバック（右手の基準半径=1.0f）
+	// フォールバック
 	return 1.0f;
 }
 
-// ---- 左手（必要なら使って） ----
+// ---- 左手 ---- //
 void BossEnemy::SetLeftHandScale(const Vector3& s) {
 
 	if (leftArm_) {
@@ -585,7 +586,7 @@ void BossEnemy::Damage(int v) {
 	// 被弾シェイク開始
 	StartBodyHitShake();
 
-	// ダメージ前の幅（HPバーは 700px 固定）
+	// ダメージ前の幅
 	float prevRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 	prevRatio = std::clamp(prevRatio, 0.0f, 1.0f);
 	float prevWidth = 700.0f * prevRatio;
@@ -654,14 +655,14 @@ CollisionLayer BossEnemy::GetCollisionLayer() const {
 void BossEnemy::OnCollision(ICollisionObject* other)
 {
 	// Boss 本体が直接弾に当たった場合の処理（胴体ヒットと同じ）
-	if (other->GetCollisionLayer() == CollisionLayer::PlayerBullet)
-	{
-		Damage(1);
-		StartBodyHitShake();
+	if (other->GetCollisionLayer() == CollisionLayer::PlayerBullet) {
 
-		// ヒットパーティクル
-		Vector3 hitPos = other->GetCollisionPosition();
-		ParticleManager::GetInstance()->Emit("hit", hitPos, 10);
+		//Damage(1);
+		//StartBodyHitShake();
+
+		//// ヒットパーティクル
+		//Vector3 hitPos = other->GetCollisionPosition();
+		//ParticleManager::GetInstance()->Emit("hit", hitPos, 10);
 	}
 }
 
@@ -688,8 +689,8 @@ void BossEnemy::PartCollider::OnCollision(ICollisionObject* other) {
 
 Vector3 BossEnemy::PartCollider::GetCollisionPosition() const {
 
-	switch (part)
-	{
+	switch (part) {
+
 	case Part::Body:
 		return owner->object3d_->GetWorldPosition();
 	case Part::LeftArm:
@@ -702,8 +703,8 @@ Vector3 BossEnemy::PartCollider::GetCollisionPosition() const {
 
 float BossEnemy::PartCollider::GetCollisionRadius() const
 {
-	switch (part)
-	{
+	switch (part) {
+
 	case Part::Body:
 		return owner->bodyRadius_;
 	case Part::LeftArm:
@@ -772,10 +773,10 @@ void BossEnemy::DamageShake() {
 	// === 胴体の元の位置（シェイク前） ===
 	Vector3 baseBodyPos = transform_.translate;
 
-	// === シェイク後の位置を計算 ===
+	// === シェイク後の胴体位置を計算 ===
 	Vector3 bodyPos = baseBodyPos;
 
-	// 落下シェイク
+	// 落下シェイク（撃破演出）
 	if (hp_ <= 0 && !hasLanded_) {
 		float sx = std::sin(fallShakeTime_ * 40.0f) * fallShakeAmplitude_;
 		float sz = std::cos(fallShakeTime_ * 55.0f) * fallShakeAmplitude_;
@@ -783,7 +784,7 @@ void BossEnemy::DamageShake() {
 		bodyPos.z += sz;
 	}
 
-	// 被弾シェイク
+	// 胴体 被弾シェイク
 	if (bodyHitShakeTime_ > 0.0f) {
 		float t = bodyHitShakeTime_ / hitShakeDuration_;
 		float amp = hitShakeAmplitude_ * t;
@@ -793,20 +794,48 @@ void BossEnemy::DamageShake() {
 		bodyPos.z += MyMath::Rand(-amp, amp);
 	}
 
-	// === 胴体のワールド位置を確定 ===
+	// 胴体の最終位置反映
 	object3d_->SetTranslate(bodyPos);
 	object3d_->SetRotate(transform_.rotate);
 
-	// === 胴体のシェイク分の差（offset）を算出 ===
+	// === 胴体シェイク分の offset ===
 	Vector3 offset = bodyPos - baseBodyPos;
 
-	// === 腕は「逆方向にオフセット」を与えてキャンセル ===
+	// =================================================================
+	//  ★ 左腕のシェイク処理を追加
+	// =================================================================
+	Vector3 leftPos = leftArmPos_;
 
-	// 左腕
-	leftArm_->SetTranslate(leftArmPos_ - offset);
+	if (leftHitShakeTime_ > 0.0f) {
+		float t = leftHitShakeTime_ / hitShakeDuration_;
+		float amp = hitShakeAmplitude_ * t;
+
+		leftPos.x += MyMath::Rand(-amp, amp);
+		leftPos.y += MyMath::Rand(-amp, amp);
+		leftPos.z += MyMath::Rand(-amp, amp);
+	}
+
+	leftPos = leftPos - offset;
+
+	leftArm_->SetTranslate(leftPos);
 	leftArm_->SetRotate(leftArmRot_);
 
-	// 右腕
-	rightArm_->SetTranslate(rightArmPos_ - offset);
+	// =================================================================
+	//  ★ 右腕のシェイク処理を追加
+	// =================================================================
+	Vector3 rightPos = rightArmPos_;
+
+	if (rightHitShakeTime_ > 0.0f) {
+		float t = rightHitShakeTime_ / hitShakeDuration_;
+		float amp = hitShakeAmplitude_ * t;
+
+		rightPos.x += MyMath::Rand(-amp, amp);
+		rightPos.y += MyMath::Rand(-amp, amp);
+		rightPos.z += MyMath::Rand(-amp, amp);
+	}
+
+	rightPos = rightPos - offset;
+
+	rightArm_->SetTranslate(rightPos);
 	rightArm_->SetRotate(rightArmRot_);
 }
