@@ -1,7 +1,8 @@
 // BossMeteor.h
 #pragma once
 #include "Engine/Base/3d/Object3d/Object3d.h"
-#include "ICollisionObject.h"    
+#include "ICollisionObject.h"
+#include "Game/Entity/Player/Player.h"
 
 class Camera;
 class Player;
@@ -55,6 +56,7 @@ private:
 	void OnHitGround();
 
 private:
+
 	// 描画
 	Camera* camera_ = nullptr;
 	std::unique_ptr<Object3d> object3d_ = nullptr;

@@ -666,8 +666,8 @@ CollisionLayer BossEnemy::GetCollisionLayer() const {
 	return CollisionLayer::Enemy;
 }
 
-void BossEnemy::OnCollision(ICollisionObject* other)
-{
+void BossEnemy::OnCollision(ICollisionObject* other) {
+
 	// Boss 本体が直接弾に当たった場合の処理（胴体ヒットと同じ）
 	if (other->GetCollisionLayer() == CollisionLayer::PlayerBullet) {
 

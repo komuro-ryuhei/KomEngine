@@ -315,7 +315,6 @@ void BossTestScene::Update() {
 	rightTargetOuter_->Update();
 	rightTargetInner_->Update();
 
-
 	// パーティクルの更新処理
 	ParticleManager::GetInstance()->Update();
 

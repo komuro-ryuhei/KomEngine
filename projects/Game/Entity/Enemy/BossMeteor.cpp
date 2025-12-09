@@ -141,16 +141,20 @@ float BossMeteor::GetCollisionRadius() const {
 
 void BossMeteor::OnCollision(ICollisionObject* other) {
 
-	if (!isAlive_) {
-		return;
-	}
+	if (!isAlive_) return;
 
-	CollisionLayer layer = other->GetCollisionLayer();
+	if (other->GetCollisionLayer() == CollisionLayer::Player) {
 
-	// プレイヤー or プレイヤー弾に当たったら爆発させて消す
-	if (layer == CollisionLayer::Player ||
-		layer == CollisionLayer::PlayerBullet) {
+		auto* player = dynamic_cast<Player*>(other);
+		if (player && !player->IsInvincible()) {
 
+			player->Damage(1);
+			player->SetInvincible(true);
+
+			Explode();   // メテオを消す
+		}
+	} else if (other->GetCollisionLayer() == CollisionLayer::PlayerBullet) {
+		// 消滅
 		Explode();
 	}
 }

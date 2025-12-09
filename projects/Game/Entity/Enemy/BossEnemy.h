@@ -232,7 +232,7 @@ private:
 	bool pushEnter_ = true;
 
 	// HP
-	int maxHp_ = 10;
+	int maxHp_ = 20;
 	int hp_ = maxHp_;
 
 	// 両手攻撃用：左右個別に伸縮管理
