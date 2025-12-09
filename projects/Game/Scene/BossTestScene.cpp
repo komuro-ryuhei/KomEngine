@@ -187,6 +187,9 @@ void BossTestScene::Update() {
 
 	UpdateMeteorControl(dt);
 
+	// プレイヤー死亡処理
+	UpdatePlayerDeath(dt);
+
 	// 剣攻撃トリガー
 	if (System::TriggerKey(DIK_J) && !swordAttack_) {
 		swordAttack_ = true;
@@ -399,13 +402,13 @@ void BossTestScene::Update() {
 
 	case Phase::kMain:
 
-		// ★ ボスが死んでいて、着地済みならタイマー進行
+		// ボスが死んでいて、着地済みならタイマー進行
 		if (boss_
 			&& boss_->GetHP() <= 0
 			&& boss_->HasLanded()
 			&& endReason_ == EndReason::None) {
 
-			// ★ 撃破後はプレイヤーの射撃を無効化
+			// 撃破後はプレイヤーの射撃を無効化
 			if (player_) {
 				player_->SetCanShoot(false);
 			}
@@ -424,7 +427,7 @@ void BossTestScene::Update() {
 			bossDeathTimer_ = 0.0f;
 		}
 
-		// ★ ResultImage がスライド完了したら SPACE でフェードアウト開始
+		// ResultImage がスライド完了したら SPACE でフェードアウト開始
 		if (result_ && result_->IsSlideFinished()) {
 			if (System::TriggerKey(DIK_SPACE) || System::TriggerKey(DIK_RETURN)) {
 
@@ -573,7 +576,7 @@ void BossTestScene::Draw() {
 	rightTargetInner_->Draw();
 
 	// デバッグライン
-	debugLine_.Draw();
+	// debugLine_.Draw();
 
 	// パーティクル描画
 	ParticleManager::GetInstance()->Draw();
@@ -586,6 +589,64 @@ void BossTestScene::Draw() {
 }
 
 void BossTestScene::Finalize() {}
+
+void BossTestScene::StartKnockout(int fallSide) {
+
+	// すでにノックアウト中なら何もしない
+	if (koActive_) {
+		return;
+	}
+
+	KnockoutCameraController::Params p;
+	p.fallSide = fallSide;
+
+	// ノックアウトカメラ開始
+	ko_.Start(camera_.get(), 0.0f, p);
+	koActive_ = true;
+
+	// プレイヤー追従カメラを止める
+	isCameraFollowPlayer_ = false;
+
+	// シーン終了理由を「プレイヤー死亡」にしておく
+	if (endReason_ == EndReason::None) {
+		endReason_ = EndReason::PlayerDeath;
+	}
+}
+
+void BossTestScene::UpdatePlayerDeath(float dt) {
+
+	// --- ノックアウト開始トリガー ---
+
+	// デバッグ用：Kキーで強制ノックアウト
+	if (System::TriggerKey(DIK_K)) {
+		StartKnockout(+1); // +1 or -1 で倒れる向き指定
+	}
+
+	// HP0 で自動ノックアウト
+	if (player_ && player_->GetHP() <= 0 && !koActive_) {
+		StartKnockout(+1);
+	}
+
+	// --- ノックアウトカメラの更新 ---
+
+	if (koActive_) {
+		ko_.Update(dt, camera_.get());
+
+		if (ko_.IsDone()) {
+			koActive_ = false;
+
+			// フェードアウト開始（プレイヤー死亡扱い）
+			if (fade_ && phase_ == Phase::kMain) {
+				fade_->Start(Fade::Status::FadeOut, 0.6f);
+				phase_ = Phase::kFadeOut;
+
+				if (endReason_ == EndReason::None) {
+					endReason_ = EndReason::PlayerDeath;
+				}
+			}
+		}
+	}
+}
 
 void BossTestScene::UpdateGun() {
 

@@ -31,7 +31,14 @@ int Player::GetHP() const { return hp_; }
 
 bool Player::GetInvincible() const { return isInvincible_; }
 
-void Player::Damage(int amount) { hp_ -= amount; }
+void Player::Damage(int amount) {
+
+	hp_ -= amount;
+
+	if (camera_) {
+		camera_->StartShake(CameraShakeType::Large);
+	}
+}
 
 bool Player::IsLowHP(int hp) const { return hp_ <= hp; }
 
@@ -284,7 +291,7 @@ void Player::OnCollision(ICollisionObject* other)
 		// 敵と当たった場合
 	case CollisionLayer::Enemy:
 		if (!GetInvincible()) {
-			Damage(1);
+			 Damage(1);
 			SetInvincible(true);
 		}
 		break;

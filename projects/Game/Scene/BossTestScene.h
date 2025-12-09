@@ -146,6 +146,12 @@ private:
 	// PostEffectの変更関数
 	void ChangePostEffect();
 
+	// プレイヤー死亡処理
+	void UpdatePlayerDeath(float dt);
+
+	// ノックアウト開始ヘルパー
+	void StartKnockout(int fallSide);
+
 private:
 
 	// メテオ
