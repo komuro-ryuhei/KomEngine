@@ -34,6 +34,21 @@ public:
 	/// </summary>
 	void Draw();
 
+	// 色を変更する
+	void SetColor(const Vector4& color) {
+		if (materialData) {
+			materialData->color = color;
+		}
+	}
+
+	// 色を取得する
+	Vector4 GetColor() const {
+		if (materialData) {
+			return materialData->color;
+		}
+		return { 1.0f, 1.0f, 1.0f, 1.0f };
+	}
+
 public: // メンバ関数
 	Model() = default;
 	~Model() = default;

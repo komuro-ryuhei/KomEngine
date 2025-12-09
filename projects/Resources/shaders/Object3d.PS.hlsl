@@ -45,6 +45,7 @@ struct ObjectParams
 {
     bool useEnvironmentMap;
     float3 _padding;
+    float4 color;
 };
 
 ConstantBuffer<Material> gMaterial : register(b0);
@@ -139,6 +140,9 @@ PixelShaderOutput main(VertexShaderOutput input)
     {
         output.color = gMaterial.color * textureColor;
     }
+    
+    // オブジェクトごとの色を反映
+    output.color *= objectParam.color;
     
     if (objectParam.useEnvironmentMap)
     {

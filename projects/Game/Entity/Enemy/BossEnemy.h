@@ -71,6 +71,11 @@ public:
 	void StartLeftArmHitShake() { leftHitShakeTime_ = hitShakeDuration_; }
 	void StartRightArmHitShake() { rightHitShakeTime_ = hitShakeDuration_; }
 
+	// 被弾フラッシュ開始（部位別）
+	void StartBodyHitFlash() { bodyHitFlashTime_ = hitFlashDuration_; }
+	void StartLeftHitFlash() { leftHitFlashTime_ = hitFlashDuration_; }
+	void StartRightHitFlash() { rightHitFlashTime_ = hitFlashDuration_; }
+
 public:
 
 	// getter・setter
@@ -258,4 +263,11 @@ private:
 
 	float hitShakeDuration_ = 0.15f;  // 揺れる時間(秒)
 	float hitShakeAmplitude_ = 0.25f;  // 揺れ幅
+
+	// 被弾時のフラッシュ（部位ごと）
+	float bodyHitFlashTime_ = 0.0f;
+	float leftHitFlashTime_ = 0.0f;
+	float rightHitFlashTime_ = 0.0f;
+
+	float hitFlashDuration_ = 0.1f; // フラッシュ時間
 };

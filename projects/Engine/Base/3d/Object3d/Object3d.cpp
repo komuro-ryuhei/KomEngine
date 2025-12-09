@@ -25,6 +25,8 @@ void Object3d::Init(BlendType type) {
 	objectParamResource_ = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(ObjectParams));
 	objectParamResource_->Map(0, nullptr, reinterpret_cast<void**>(&objectParamData_));
 	objectParamData_->useEnvironmentMap = false;
+	// デフォルトの色は白
+	objectParamData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	transform_ = {
 		{1.0f, 1.0f, 1.0f},
@@ -172,6 +174,19 @@ void Object3d::SetTransform(const Transform& transform) {
 	transform_.scale = transform.scale;
 	transform_.rotate = transform.rotate;
 	transform_.translate = transform.translate;
+}
+
+void Object3d::SetColor(const Vector4& color) {
+	if (objectParamData_) {
+		objectParamData_->color = color;
+	}
+}
+
+Vector4 Object3d::GetColor() const {
+	if (objectParamData_) {
+		return objectParamData_->color;
+	}
+	return { 1.0f, 1.0f, 1.0f, 1.0f };
 }
 
 Vector3 Object3d::GetScale() const { return transform_.scale; }

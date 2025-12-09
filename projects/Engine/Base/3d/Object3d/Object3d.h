@@ -58,6 +58,7 @@ public: // メンバ関数
 	void SetRotate(const Vector3& rotate); // 回転のセット
 	void SetTransform(const Transform& transform); // トランスフォームのセット
 	void SetRadius(float radius) { radius_ = radius; } // 半径のセット
+	void SetColor(const Vector4& color); // 色のセット
 
 	// ------------------- getter ------------------- //
 
@@ -67,6 +68,7 @@ public: // メンバ関数
 	float GetRadius() const; // 半径の取得
 	Vector3 GetWorldPosition() const; // ワールド座標の取得
 	Camera* GetDefaultCamera() const; // デフォルトカメラの取得
+	Vector4 GetColor() const; // 色の取得
 
 	// 親子関係の追加
 	void SetParent(Object3d* parent);
@@ -102,6 +104,7 @@ private:
 	struct ObjectParams {
 		bool useEnvironmentMap;
 		Vector3 padding_;
+		Vector4 color;
 	};
 	ComPtr<ID3D12Resource> environmentTexture_ = nullptr;
 	D3D12_GPU_DESCRIPTOR_HANDLE  environmentGpuHandle_{};

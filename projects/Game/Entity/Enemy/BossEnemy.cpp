@@ -80,6 +80,17 @@ void BossEnemy::Update() {
 	updateShake(leftHitShakeTime_);
 	updateShake(rightHitShakeTime_);
 
+	// 被弾フラッシュタイマー
+	auto updateFlash = [dt](float& t) {
+		if (t > 0.0f) {
+			t -= dt;
+			if (t < 0.0f) t = 0.0f;
+		}
+		};
+	updateFlash(bodyHitFlashTime_);
+	updateFlash(leftHitFlashTime_);
+	updateFlash(rightHitFlashTime_);
+
 	// ---------------------------- HPバーの更新更新 ---------------------------- //
 
 	if (hpSprite_) {
@@ -586,6 +597,9 @@ void BossEnemy::Damage(int v) {
 	// 被弾シェイク開始
 	StartBodyHitShake();
 
+	// 胴体フラッシュ開始
+	StartBodyHitFlash();
+
 	// ダメージ前の幅
 	float prevRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 	prevRatio = std::clamp(prevRatio, 0.0f, 1.0f);
@@ -673,16 +687,19 @@ void BossEnemy::PartCollider::OnCollision(ICollisionObject* other) {
 	case Part::Body:
 		owner->Damage(1);
 		owner->StartBodyHitShake();
+		owner->StartBodyHitFlash();
 		break;
 
 	case Part::LeftArm:
 		owner->AddHitLeftArm();
 		owner->StartLeftArmHitShake();
+		owner->StartLeftHitFlash();
 		break;
 
 	case Part::RightArm:
 		owner->AddHitRightArm();
 		owner->StartRightArmHitShake();
+		owner->StartRightHitFlash();
 		break;
 	}
 }
@@ -802,7 +819,7 @@ void BossEnemy::DamageShake() {
 	Vector3 offset = bodyPos - baseBodyPos;
 
 	// =================================================================
-	//  ★ 左腕のシェイク処理を追加
+	// 左腕のシェイク処理を追加
 	// =================================================================
 	Vector3 leftPos = leftArmPos_;
 
@@ -821,7 +838,7 @@ void BossEnemy::DamageShake() {
 	leftArm_->SetRotate(leftArmRot_);
 
 	// =================================================================
-	//  ★ 右腕のシェイク処理を追加
+	// 右腕のシェイク処理を追加
 	// =================================================================
 	Vector3 rightPos = rightArmPos_;
 
@@ -838,4 +855,37 @@ void BossEnemy::DamageShake() {
 
 	rightArm_->SetTranslate(rightPos);
 	rightArm_->SetRotate(rightArmRot_);
+
+	// ==============================
+	// 部位ごとのフラッシュ色を反映
+	// ==============================
+	Vector4 baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	Vector4 flashColor = { 1.0f, 0.2f, 0.2f, 1.0f };
+
+	// 胴体
+	Vector4 bodyColor = baseColor;
+	if (bodyHitFlashTime_ > 0.0f) {
+		bodyColor = flashColor;
+	}
+	if (object3d_) {
+		object3d_->SetColor(bodyColor);
+	}
+
+	// 左腕
+	Vector4 leftColor = baseColor;
+	if (leftHitFlashTime_ > 0.0f) {
+		leftColor = flashColor;
+	}
+	if (leftArm_) {
+		leftArm_->SetColor(leftColor);
+	}
+
+	// 右腕
+	Vector4 rightColor = baseColor;
+	if (rightHitFlashTime_ > 0.0f) {
+		rightColor = flashColor;
+	}
+	if (rightArm_) {
+		rightArm_->SetColor(rightColor);
+	}
 }
