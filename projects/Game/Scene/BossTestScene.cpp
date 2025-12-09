@@ -115,6 +115,12 @@ void BossTestScene::Init() {
 		meteors_.push_back(std::move(m));
 	}
 
+	// メテオを CollisionManager に登録
+	for (auto& m : meteors_) {
+		collisionManager_.Register(m.get());
+	}
+
+
 	// --- ここでコントローラ初期化 ---
 	meteorController_ = std::make_unique<BossMeteorController>();
 	meteorController_->Init();
@@ -165,6 +171,7 @@ void BossTestScene::Init() {
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::Enemy);
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyBullet);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::Enemy);
+	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyBullet);
 
 	// AddComponent 的な登録
 	collisionManager_.Register(player_.get());

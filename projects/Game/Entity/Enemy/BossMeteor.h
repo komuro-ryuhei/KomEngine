@@ -1,13 +1,16 @@
 // BossMeteor.h
 #pragma once
 #include "Engine/Base/3d/Object3d/Object3d.h"
+#include "ICollisionObject.h"    
 
 class Camera;
 class Player;
 
 // ボスが落とす隕石。スポーン→落下（重力）→着弾で爆発→消滅 という最小機能。
-class BossMeteor {
+class BossMeteor : public ICollisionObject {
+
 public:
+
 	BossMeteor() = default;
 	~BossMeteor() = default;
 
@@ -40,7 +43,14 @@ public:
 	void SetScale(const Vector3& s) { if (object3d_) { object3d_->SetScale(s); object3d_->SetRadius(radius_ * s.x); } }
 	void SetGravity(float g) { gravity_ = g; accel_ = { 0.0f, -gravity_, 0.0f }; }
 
+	// ----------------------- ICollisionObjectの実装 ----------------------- //
+	Vector3 GetCollisionPosition() const override;
+	float   GetCollisionRadius() const override;
+	CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyBullet; }
+	void OnCollision(ICollisionObject* other) override;
+
 private:
+
 	void ApplyPhysics();
 	void OnHitGround();
 

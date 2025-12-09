@@ -116,3 +116,41 @@ void BossMeteor::ImGuiDebug() {
 	ImGui::End();
 #endif
 }
+
+Vector3 BossMeteor::GetCollisionPosition() const {
+
+	// Object3d があれば正確なワールド座標を返す
+	if (object3d_) {
+		return object3d_->GetWorldPosition();
+	}
+	return transform_.translate;
+}
+
+float BossMeteor::GetCollisionRadius() const {
+
+	// 死んでいるメテオは判定 0 にして無効化
+	if (!isAlive_) {
+		return 0.0f;
+	}
+
+	if (object3d_) {
+		return object3d_->GetRadius();
+	}
+	return radius_;
+}
+
+void BossMeteor::OnCollision(ICollisionObject* other) {
+
+	if (!isAlive_) {
+		return;
+	}
+
+	CollisionLayer layer = other->GetCollisionLayer();
+
+	// プレイヤー or プレイヤー弾に当たったら爆発させて消す
+	if (layer == CollisionLayer::Player ||
+		layer == CollisionLayer::PlayerBullet) {
+
+		Explode();
+	}
+}
