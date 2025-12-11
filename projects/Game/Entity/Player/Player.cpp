@@ -36,7 +36,7 @@ void Player::Damage(int amount) {
 	hp_ -= amount;
 
 	if (camera_) {
-		camera_->StartShake(CameraShakeType::Large);
+		camera_->StartShake(CameraShakeType::Small);
 	}
 }
 
