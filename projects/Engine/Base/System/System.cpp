@@ -29,25 +29,19 @@
 /*==================================================================================*/
 // システム全体の初期化
 
-// DeltaTime
-static const float deltaTime_ = 1.0f / 60.0f;
+namespace {
+	constexpr float kDeltaTime_ = 1.0f / 60.0f;
 
-// WindowsAPI
-std::unique_ptr<WinApp> winApp_ = nullptr;
-// DirectXCommon
-std::unique_ptr<DirectXCommon> dxCommon_ = nullptr;
-// Input
-std::unique_ptr<Input> input_ = nullptr;
-// Mesh
-std::unique_ptr<Light> light_ = nullptr;
-// SrvManager
-std::unique_ptr<SrvManager> srvManager_ = nullptr;
-// ImGuiManager
-std::unique_ptr<ImGuiManager> imguiManager_ = nullptr;
-// OffscreenRendering
-std::unique_ptr<OffscreenRendering> offscreenRendering_ = nullptr;
+	std::unique_ptr<WinApp> winApp_;
+	std::unique_ptr<DirectXCommon> dxCommon_;
+	std::unique_ptr<Input> input_;
+	std::unique_ptr<Light> light_;
+	std::unique_ptr<SrvManager> srvManager_;
+	std::unique_ptr<ImGuiManager> imguiManager_;
+	std::unique_ptr<OffscreenRendering> offscreenRendering_;
+}
 
-float System::GetDeltaTime() { return deltaTime_; }
+float System::GetDeltaTime() { return kDeltaTime_; }
 
 DirectXCommon* System::GetDxCommon() { return dxCommon_.get(); }
 
