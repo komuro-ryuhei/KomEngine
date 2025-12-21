@@ -79,14 +79,16 @@ void Player::Init(Camera* camera) {
 
 void Player::Update() {
 
+	const float dt = System::GetDeltaTime();
+
 	// 連射タイマーを減算
-	autofireTimer_ = std::max(0.0f, autofireTimer_ - 1.0f / 60.0f);
+	autofireTimer_ = std::max(0.0f, autofireTimer_ - dt);
 
 	Attack();
 
 	// 無敵タイマー処理
 	if (isInvincible_) {
-		invincibleTimer_ -= 1.0f / 60.0f; // 毎フレーム減少
+		invincibleTimer_ -= dt; // 毎フレーム減少
 		if (invincibleTimer_ <= 0.0f) {
 			isInvincible_ = false;
 			invincibleTimer_ = 0.0f;

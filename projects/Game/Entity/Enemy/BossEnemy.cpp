@@ -62,7 +62,7 @@ void BossEnemy::Init(Camera* camera) {
 
 void BossEnemy::Update() {
 
-	const float dt = 1.0f / 60.0f;
+	const float dt = System::GetDeltaTime();
 
 	// 3Dオブジェクト更新
 	object3d_->Update();
@@ -148,7 +148,7 @@ void BossEnemy::Update() {
 
 		if (!hasLanded_) {
 
-			fallShakeTime_ += 1.0f / 60.0f;
+			fallShakeTime_ += dt;
 
 			// ---- 落下 ----
 			fallVelY_ += gravityY_;

@@ -81,6 +81,7 @@ public:
 	/// <summary>
 	/// getter・setter
 	/// </summary>
+	static float GetDeltaTime(); // デルタタイムの取得
 	static DirectXCommon* GetDxCommon(); // DxCommonの取得
 	static Input* GetInput(); // Inputの取得
 	static SrvManager* GetSrvManager(); // SrvManagerの取得

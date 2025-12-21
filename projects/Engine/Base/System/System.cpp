@@ -29,6 +29,9 @@
 /*==================================================================================*/
 // システム全体の初期化
 
+// DeltaTime
+static const float deltaTime_ = 1.0f / 60.0f;
+
 // WindowsAPI
 std::unique_ptr<WinApp> winApp_ = nullptr;
 // DirectXCommon
@@ -43,6 +46,8 @@ std::unique_ptr<SrvManager> srvManager_ = nullptr;
 std::unique_ptr<ImGuiManager> imguiManager_ = nullptr;
 // OffscreenRendering
 std::unique_ptr<OffscreenRendering> offscreenRendering_ = nullptr;
+
+float System::GetDeltaTime() { return deltaTime_; }
 
 DirectXCommon* System::GetDxCommon() { return dxCommon_.get(); }
 
