@@ -81,6 +81,7 @@ public:
 	// getter・setter
 	float GetRadius() const;
 	Transform GetTransform() const;
+	Vector3 GetTranslate() const;
 	bool GetIsmoveRight() const { return isMoveRight_; }
 
 	void SetRotate(Vector3& rotate);
@@ -178,6 +179,9 @@ public:
 
 	void HPDraw();
 
+	// 戦闘有効化・無効化
+	void SetCombatEnabled(bool enabled) { combatEnabled_ = enabled; }
+	bool IsCombatEnabled() const { return combatEnabled_; }
 
 private:
 	// カメラ
@@ -270,4 +274,7 @@ private:
 	float rightHitFlashTime_ = 0.0f;
 
 	float hitFlashDuration_ = 0.1f; // フラッシュ時間
+
+	// 戦闘有効化・無効化
+	bool combatEnabled_ = true;
 };

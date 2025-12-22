@@ -84,7 +84,9 @@ void Player::Update() {
 	// 連射タイマーを減算
 	autofireTimer_ = std::max(0.0f, autofireTimer_ - dt);
 
-	Attack();
+	if (controlEnabled_) {
+		Attack();
+	}
 
 	// 無敵タイマー処理
 	if (isInvincible_) {
@@ -111,7 +113,12 @@ void Player::Update() {
 		}
 	}
 
-	object3d_->Update();
+	if (!controlEnabled_) {
+		// Intro中は弾も更新しない（発射もされない）
+		object3d_->Update();
+		return;
+	}
+
 	object3d_->SetTranslate(transform_.translate);
 	object3d_->SetRotate(transform_.rotate);
 

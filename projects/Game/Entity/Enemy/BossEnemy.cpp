@@ -199,7 +199,7 @@ void BossEnemy::Update() {
 		}
 
 		// 攻撃
-		if (isAttack_) {
+		if (combatEnabled_ && isAttack_) {
 			Attack();
 		}
 
@@ -527,6 +527,8 @@ void BossEnemy::HPDraw() {
 		}
 	}
 }
+
+Vector3 BossEnemy::GetTranslate() const { return transform_.translate; }
 
 void BossEnemy::SetRotate(Vector3& rotate) {
 	transform_.rotate = rotate;

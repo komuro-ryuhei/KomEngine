@@ -104,6 +104,7 @@ private:
 
 	// Boss
 	std::unique_ptr<BossEnemy> boss_ = nullptr;
+	Vector3 bossSpawnPos_{};
 
 	// リザルトのスプライト
 	std::unique_ptr<ResultImage> result_ = nullptr;
@@ -120,6 +121,11 @@ private:
 	// 当たり判定管理
 	CollisionManager collisionManager_;
 
+	// Play開始時の基準
+	Vector3 playCameraPos_;
+	Vector3 playCameraRot_;
+	Vector3 bossPlayPos_;
+
 private:
 
 	// 現在選択中のポストエフェクト
@@ -132,6 +138,9 @@ private:
 	std::unique_ptr<Fade> fade_ = nullptr;
 	enum class Phase { kFadeIn, kMain, kFadeOut };
 	Phase phase_ = Phase::kFadeIn;
+
+	enum class GameFlowState { Intro, Play };
+	GameFlowState flowState_ = GameFlowState::Intro;
 
 	// シーン終了理由
 	enum class EndReason {
@@ -186,15 +195,47 @@ private:
 
 	bool lowHpVfxOn_ = false;
 
-	// ★ ボス撃破後 → 着地してからの待ち時間用
+	// ボス撃破後 → 着地してからの待ち時間用
 	float bossDeathTimer_ = 0.0f;
 
 	// ターゲットシェイク
 	float leftTargetShakeTime_ = 0.0f;
 	float rightTargetShakeTime_ = 0.0f;
-	const float targetShakeDuration_ = 0.15f;   // 揺れる時間(秒)
-	const float targetShakeAmplitude_ = 12.0f;   // 揺れ幅(ピクセル)
+	const float targetShakeDuration_ = 0.15f;  // 揺れる時間(秒)
+	const float targetShakeAmplitude_ = 12.0f; // 揺れ幅(ピクセル)
 
+	// 出現時演出用タイムライン
+	float introTimer_ = 0.0f;
+
+	// 演出パラメータ（あとでjson化してOK）
+	float introCamLookUpTime_ = 0.6f;   // 上を見る時間
+	float introFallStartDelay_ = 0.2f;  // 少し溜めて落とす
+	float introFollowStrength_ = 6.0f;  // カメラ追従強さ
+	float bossStartHeight_ = 40.0f;     // 出現高度
+	float bossGroundY_ = 0.0f;          // 地面
+	float bossFallSpeed_ = 30.0f;       // 落下速度（演出用）
+
+	enum class IntroPhase { CamIn, Falling, CamOut };
+	IntroPhase introPhase_ = IntroPhase::CamIn;
+
+	Vector3 introSavedCamPos_{};
+	Vector3 introSavedCamRot_{};
+	float   introCamLerp_ = 0.0f;
+
+	// 着地シェイク
+	float landingShakeTime_ = 0.35f;
+	float landingShakePower_ = 0.35f;
+	bool landingTriggered_ = false;
+
+	bool collisionEnabled_ = false;
+
+private:
+	void InitIntro();
+	void UpdateIntro(float dt);
+	void BeginPlay();
+
+	// カメラ演出用（あなたの既存のVP/カメラ制御に合わせて中身を差し替え）
+	void SetCameraLookAt(const Vector3& eye, const Vector3& target);
 
 private:
 
@@ -209,4 +250,6 @@ private:
 
 	// 
 	void LineTarget();
+
+	Vector3 CalcLookAtRotation(const Vector3& camPos, const Vector3& targetPos);
 };

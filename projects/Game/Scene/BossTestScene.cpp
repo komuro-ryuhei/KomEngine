@@ -88,6 +88,7 @@ void BossTestScene::Init() {
 	boss_ = std::make_unique<BossEnemy>();
 	boss_->Init(camera_.get());
 	boss_->SetTranslate({ 0.0f, 0.0f, 20.0f });
+	bossSpawnPos_ = boss_->GetTranslate();
 	boss_->SetPlayer(player_.get());
 
 	auto makeTarget = [](std::unique_ptr<Sprite>& outer, std::unique_ptr<Sprite>& inner)
@@ -179,11 +180,39 @@ void BossTestScene::Init() {
 
 	player_->SetCollisionManager(&collisionManager_);
 	boss_->SetCollisionManager(&collisionManager_);
+
+	// Playで使う正規の位置を保存
+	playCameraPos_ = camera_->GetTranaslate();
+	playCameraRot_ = camera_->GetRotate();
+
+	bossPlayPos_ = boss_->GetTranslate();
+	
 }
 
 void BossTestScene::Update() {
 
 	const float dt = System::GetDeltaTime();
+
+	if (phase_ == Phase::kFadeIn) {
+		fade_->Update();
+		if (fade_->IsFinished()) {
+			fade_->Stop();
+			phase_ = Phase::kMain;
+			// ★ フェードが終わった瞬間に Intro を開始
+			InitIntro();
+		}
+		return;
+	}
+
+	if (flowState_ == GameFlowState::Intro) {
+		UpdateIntro(dt);
+
+		// 見た目の更新だけはやっておく（最低限）
+		camera_->Update();
+		skybox_->Update();
+		boss_->Update();   // combatEnabled_ が false なら攻撃しない
+		return;
+	}
 
 	UpdateMeteorControl(dt);
 
@@ -307,8 +336,10 @@ void BossTestScene::Update() {
 	// リザルトスプライトの更新
 	result_->Update();
 
-	// 当たり判定（今後はこれに集約していく）
-	collisionManager_.Update();
+	// 当たり判定
+	if (collisionEnabled_) {
+		collisionManager_.Update();
+	}
 
 	// 狙う弱点マーカーの更新
 	UpdateArmTargetMarker();
@@ -555,7 +586,7 @@ void BossTestScene::Draw() {
 	// -------------------- ゲームオブジェクトシーンの描画 -------------------- //
 
 	// Playerの銃描画
-	gun_->Draw();
+	// gun_->Draw();
 
 	// Bossの描画
 	boss_->Draw();
@@ -718,6 +749,24 @@ void BossTestScene::UpdateMeteorControl(float dt)
 		camera_->SetTranslate(playerPos);
 		camera_->SetRotate(playerRot);
 	}
+}
+
+void BossTestScene::InitIntro() {
+
+	// ゲームフロー状態を Intro に
+	flowState_ = GameFlowState::Intro;
+
+	// ゲーム処理停止
+	collisionEnabled_ = false;
+	player_->SetControlEnabled(false);
+	boss_->SetCombatEnabled(false);
+
+	// ★ ボスを Play位置の真上へ
+	Vector3 pos = bossPlayPos_;
+	pos.y += bossStartHeight_;
+	boss_->SetTranslate(pos);
+
+	landingTriggered_ = false;
 }
 
 void BossTestScene::UpdateArmTargetMarker() {
@@ -884,4 +933,104 @@ void BossTestScene::LineTarget() {
 		// ★ AABB を線で描画（AddAABBLines は BossTestScene.h のやつ）
 		AddAABBLines(debugLine_, info.box, color);
 	}
+}
+
+Vector3 BossTestScene::CalcLookAtRotation(const Vector3& camPos,const Vector3& targetPos) {
+
+	Vector3 dir = targetPos - camPos;
+	dir = MyMath::Normalize(dir);
+
+	Vector3 rot{};
+	rot.x = std::atan2(-dir.y, std::sqrt(dir.x * dir.x + dir.z * dir.z)); // pitch
+	rot.y = std::atan2(dir.x, dir.z);                                     // yaw
+	rot.z = 0.0f;
+	return rot;
+}
+
+void BossTestScene::UpdateIntro(float dt)
+{
+	// メテオのパラメータをそのまま流用（同じ感じにしたいならこれが一番）
+	const auto& mp = meteorController_->GetParams();
+	Vector3 playerPos = player_->GetTransform().translate;
+
+	// メテオと同じ「目標カメラ」
+	Vector3 targetPos = playerPos + mp.camOffset;
+	Vector3 targetRot = introSavedCamRot_;
+	targetRot.x = mp.pitchUp; // 上向き角
+
+	switch (introPhase_) {
+	case IntroPhase::CamIn: {
+
+		introCamLerp_ = std::min(1.0f, introCamLerp_ + dt / mp.camIntroTime);
+		camera_->SetTranslate(MyMath::Lerp(introSavedCamPos_, targetPos, introCamLerp_));
+		camera_->SetRotate(MyMath::Lerp(introSavedCamRot_, targetRot, introCamLerp_));
+
+		if (introCamLerp_ >= 1.0f) {
+			introPhase_ = IntroPhase::Falling;
+		}
+		break;
+	}
+
+	case IntroPhase::Falling: {
+
+		// カメラ位置は今まで通り（メテオ式）
+		camera_->SetTranslate(targetPos);
+
+		// --- ボス落下 ---
+		Vector3 bossPos = boss_->GetTranslate();
+		bossPos.y -= bossFallSpeed_ * dt;
+
+		if (bossPos.y <= bossPlayPos_.y) {
+			bossPos.y = bossPlayPos_.y;
+
+			if (!landingTriggered_) {
+				landingTriggered_ = true;
+				camera_->StartShake(CameraShakeType::Large);
+			}
+		}
+		boss_->SetTranslate(bossPos);
+
+		// --- ★ここが「変える場所」 ---
+		const Vector3 camPos = camera_->GetTranaslate();
+		Vector3 dir = bossPos - camPos;
+		dir = MyMath::Normalize(dir);
+
+		Vector3 lookRot{};
+		lookRot.x = std::atan2(-dir.y, std::sqrt(dir.x * dir.x + dir.z * dir.z));
+		lookRot.y = std::atan2(dir.x, dir.z);
+		lookRot.z = 0.0f;
+
+		Vector3 curRot = camera_->GetRotate();
+		camera_->SetRotate(MyMath::Lerp(curRot, lookRot, 0.15f));
+
+		break;
+	}
+
+	case IntroPhase::CamOut:{
+
+		// メテオのOutroと同じ：元のカメラへ戻す
+		introCamLerp_ = std::min(1.0f, introCamLerp_ + dt / mp.camOutroTime);
+
+		Vector3 curPos = camera_->GetTranaslate();
+		Vector3 curRot = camera_->GetRotate();
+
+		camera_->SetTranslate(playCameraPos_);
+		camera_->SetRotate(playCameraRot_);
+
+		if (introCamLerp_ >= 1.0f) {
+			BeginPlay();
+		}
+		break;
+	}
+	}
+}
+
+void BossTestScene::BeginPlay() {
+
+	// 
+	flowState_ = GameFlowState::Play;
+
+	collisionEnabled_ = true;
+	player_->SetControlEnabled(true);
+	boss_->SetCombatEnabled(true);
 }

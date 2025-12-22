@@ -73,6 +73,10 @@ public:
 	void RailMove();
 	void RotateY90();
 
+	// コントロール有効化・無効化
+	void SetControlEnabled(bool enabled) { controlEnabled_ = enabled; }
+	bool IsControlEnabled() const { return controlEnabled_; }
+
 private:
 	// カメラ
 	Camera* camera_ = nullptr;
@@ -115,4 +119,7 @@ private:
 	bool    hasGunMuzzlePos_ = false;
 
 	std::unique_ptr<ParticleEmitter> muzzleEmitter_ = nullptr;
+
+	// コントロール有効フラグ
+	bool controlEnabled_ = true;
 };
