@@ -198,7 +198,7 @@ void BossTestScene::Update() {
 		if (fade_->IsFinished()) {
 			fade_->Stop();
 			phase_ = Phase::kMain;
-			// ★ フェードが終わった瞬間に Intro を開始
+			// フェードが終わった瞬間に Intro を開始
 			InitIntro();
 		}
 		return;
@@ -211,6 +211,7 @@ void BossTestScene::Update() {
 		camera_->Update();
 		skybox_->Update();
 		boss_->Update();   // combatEnabled_ が false なら攻撃しない
+		ImGuiDebug();
 		return;
 	}
 
@@ -252,39 +253,6 @@ void BossTestScene::Update() {
 	}
 
 	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
-
-	// ---- 剣フォーカス中はカメラをターゲットに向ける ---- //
-
-	if (swordCamActive_) {
-		Vector3 camPos = camera_->GetTranaslate();
-		Vector3 to = swordAimPoint_ - camPos;
-		Vector3 dir = MyMath::Normalize(to);
-		float pitch = -std::asin(dir.y);
-		float yaw = std::atan2(dir.x, dir.z);
-
-		// イントロ補間（向ける）
-		if (swordPhaseT_ >= 0.41f && (swordCamIntroT_ < 1.0f)) {
-			swordCamIntroT_ += dt / swordCamIntroDur_;
-			float t = MyMath::Clamp01(swordCamIntroT_);
-			camera_->SetRotate(MyMath::Lerp(swordSavedRot_, Vector3{ pitch, yaw, 0.0f }, t));
-
-			// ★ 向き終わった瞬間にスイープ開始（遅延発動）
-			if (t >= 1.0f && swordPendingSweep_ && sword_) {
-				swordPendingSweep_ = false;
-				sword_->SetScale({ 1.6f,1.6f,1.6f });
-				sword_->StartSweep(swordCenter_, swordRight_, swordForward_,
-					swordHalfLen_, swordToward_, swordDuration_);
-			}
-		}
-
-		// アウトロ補間（元に戻す）
-		if (!sword_->IsAlive()) {
-			swordCamOutroT_ += dt / swordCamOutroDur_;
-			float t = MyMath::Clamp01(swordCamOutroT_);
-			camera_->SetRotate(MyMath::Lerp(camera_->GetRotate(), swordSavedRot_, t));
-			if (t >= 1.0f) swordCamActive_ = false;
-		}
-	}
 
 	// 腕攻撃がこのフレームでカメラを触っていいかどうか
 	bool canArmCam =
@@ -366,60 +334,6 @@ void BossTestScene::Update() {
 		}
 	}
 
-	if (swordAttack_) {
-
-		// 右手を縮める
-		if (swordPhaseT_ < 0.4f) {
-			swordPhaseT_ += dt;
-			float t = std::min(1.f, swordPhaseT_ / 0.4f);
-			// 右手のスケールを徐々に0へ（BossEnemy側にsetterが無いなら rightArmScale 直接）
-			boss_->SetRightHandScale(MyMath::Lerp(Vector3{ 1,1,1 }, Vector3{ 0,0,0 }, t));
-		}
-		// 縮みきった直後：スイープ開始
-		else if (swordPhaseT_ < 0.41f) {
-			swordPhaseT_ = 0.41f;
-
-			Vector3 handPos = boss_->GetRightHandWorldPos();
-
-			// カメラ基底
-			Vector3 camPos = camera_->GetTranaslate();
-			Vector3 camRot = camera_->GetRotate();
-			float cp = std::cos(camRot.x), sp = std::sin(camRot.x);
-			float cy = std::cos(camRot.y), sy = std::sin(camRot.y);
-			Vector3 forward = { sy * cp, -sp, cy * cp };
-			Vector3 right = { cy,   0.0f, -sy };
-
-			// 画面中央より少し右、右手の高さ
-			Vector3 center = camPos + forward * 6.0f + right * 3.0f;
-			center.y = handPos.y;
-
-			// 右→左に薙ぎ（right を反転）
-			swordCenter_ = center;
-			swordRight_ = { -right.x,-right.y,-right.z };
-			swordForward_ = forward;
-			swordHalfLen_ = 10.0f;
-			swordToward_ = 2.0f;
-			swordDuration_ = 0.5f;
-
-			// ここで即スイープ開始
-			sword_->SetScale({ 1.6f,1.6f,1.6f });
-			sword_->StartSweep(swordCenter_, swordRight_, swordForward_,
-				swordHalfLen_, swordToward_, swordDuration_);
-
-			// カメラ制御フラグは明示的にオフ
-			swordCamActive_ = false;
-			swordPendingSweep_ = false;
-		}
-
-		// 剣が消えたら右手を戻して終了
-		else if (!sword_->IsAlive()) {
-			swordPhaseT_ += dt;
-			float t = std::min(1.f, (swordPhaseT_ - 0.41f) / 0.3f);
-			boss_->SetRightHandScale(MyMath::Lerp(Vector3{ 0,0,0 }, Vector3{ 1,1,1 }, t));
-			if (t >= 1.f) { swordAttack_ = false; swordPhaseT_ = 0.f; }
-		}
-	}
-
 	// -------------------------------------------------------------------- //
 
 	switch (phase_) {
@@ -486,6 +400,56 @@ void BossTestScene::Update() {
 		}
 		break;
 	}
+
+	ImGuiDebug();
+}
+
+void BossTestScene::Draw() {
+
+	// Skyboxの描画
+	skybox_->Draw();
+	// 地面オブジェクトの描画
+	glassObject_->Draw();
+
+	// -------------------- ゲームオブジェクトシーンの描画 -------------------- //
+
+	// Playerの銃描画
+	// gun_->Draw();
+
+	// Bossの描画
+	boss_->Draw();
+	boss_->HPDraw();
+
+	// Bossのメテオ描画
+	for (auto& m : meteors_) m->Draw();
+	// Bossの剣描画
+	if (sword_) sword_->Draw();
+
+	// Playerは一人称視点なので非描画
+	player_->Draw();
+
+	// 
+	leftTargetOuter_->Draw();
+	leftTargetInner_->Draw();
+	rightTargetOuter_->Draw();
+	rightTargetInner_->Draw();
+
+	// デバッグライン
+	// debugLine_.Draw();
+
+	// パーティクル描画
+	ParticleManager::GetInstance()->Draw();
+
+	result_->Draw();
+
+	// --------------------------------------------------------------------//
+
+	if (fade_) { fade_->Draw(); }
+}
+
+void BossTestScene::Finalize() {}
+
+void BossTestScene::ImGuiDebug() {
 
 #ifdef USE_IMGUI
 
@@ -573,53 +537,7 @@ void BossTestScene::Update() {
 	ImGui::End();
 
 #endif // _DEBUG
-
 }
-
-void BossTestScene::Draw() {
-
-	// Skyboxの描画
-	skybox_->Draw();
-	// 地面オブジェクトの描画
-	glassObject_->Draw();
-
-	// -------------------- ゲームオブジェクトシーンの描画 -------------------- //
-
-	// Playerの銃描画
-	// gun_->Draw();
-
-	// Bossの描画
-	boss_->Draw();
-	boss_->HPDraw();
-
-	// Bossのメテオ描画
-	for (auto& m : meteors_) m->Draw();
-	// Bossの剣描画
-	if (sword_) sword_->Draw();
-
-	// Playerは一人称視点なので非描画
-	player_->Draw();
-
-	// 
-	leftTargetOuter_->Draw();
-	leftTargetInner_->Draw();
-	rightTargetOuter_->Draw();
-	rightTargetInner_->Draw();
-
-	// デバッグライン
-	// debugLine_.Draw();
-
-	// パーティクル描画
-	ParticleManager::GetInstance()->Draw();
-
-	result_->Draw();
-
-	// --------------------------------------------------------------------//
-
-	if (fade_) { fade_->Draw(); }
-}
-
-void BossTestScene::Finalize() {}
 
 void BossTestScene::StartKnockout(int fallSide) {
 
@@ -761,12 +679,22 @@ void BossTestScene::InitIntro() {
 	player_->SetControlEnabled(false);
 	boss_->SetCombatEnabled(false);
 
-	// ★ ボスを Play位置の真上へ
+	// ボスを Play位置の真上へ
 	Vector3 pos = bossPlayPos_;
 	pos.y += bossStartHeight_;
 	boss_->SetTranslate(pos);
 
 	landingTriggered_ = false;
+
+	// ---- イントロ演出の初期値を毎回リセット ---- //
+	introPhase_ = IntroPhase::CamIn;
+	introCamLerp_ = 0.0f;
+	landingTimer_ = 0.0f;
+	landingTriggered_ = false;
+
+	// 現在のカメラ状態を保存（これを基準に CamIn する）
+	introSavedCamPos_ = camera_->GetTranaslate();
+	introSavedCamRot_ = camera_->GetRotate();
 }
 
 void BossTestScene::UpdateArmTargetMarker() {
@@ -983,9 +911,22 @@ void BossTestScene::UpdateIntro(float dt)
 		if (bossPos.y <= bossPlayPos_.y) {
 			bossPos.y = bossPlayPos_.y;
 
+			// 着地した瞬間に1回だけシェイク
 			if (!landingTriggered_) {
 				landingTriggered_ = true;
+				landingTimer_ = 0.0f;
 				camera_->StartShake(CameraShakeType::Large);
+			}
+
+			// 着地後、少し間を置いて CamOut へ
+			landingTimer_ += dt;
+			if (landingTimer_ >= landingWaitTime_) {
+				introPhase_ = IntroPhase::CamOut;
+				introCamLerp_ = 0.0f;
+
+				// CamOut の開始時点（今のカメラ）を保存
+				introSavedCamPos_ = camera_->GetTranaslate();
+				introSavedCamRot_ = camera_->GetRotate();
 			}
 		}
 		boss_->SetTranslate(bossPos);

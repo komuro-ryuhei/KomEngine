@@ -81,6 +81,8 @@ public:
 
 	void Finalize() override;
 
+	void ImGuiDebug();
+
 
 private:
 	// Camera
@@ -226,6 +228,8 @@ private:
 	float landingShakeTime_ = 0.35f;
 	float landingShakePower_ = 0.35f;
 	bool landingTriggered_ = false;
+	float landingTimer_ = 0.0f;
+	float landingWaitTime_ = 0.35f;
 
 	bool collisionEnabled_ = false;
 
