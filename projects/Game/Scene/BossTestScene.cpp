@@ -46,7 +46,7 @@ void BossTestScene::Init() {
 	// カメラ
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
-	camera_->SetTranslate({ 0.0f, 0.0f, -30.0f });
+	// camera_->SetTranslate({ 0.0f, 0.0f, -30.0f });
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
