@@ -79,6 +79,11 @@ public:
 	void StartLeftHitFlash() { leftHitFlashTime_ = hitFlashDuration_; }
 	void StartRightHitFlash() { rightHitFlashTime_ = hitFlashDuration_; }
 
+	// 怒り状態かどうか
+	bool IsEnraged() const { return isEnraged_; }
+	void SetEnraged(bool enraged);
+	int GetMaxHp() const { return maxHp_; }
+
 public:
 
 	// getter・setter
@@ -234,6 +239,18 @@ private:
 	int rightArmHitCount_ = 0;
 	const int maxHitCount_ = 5;
 
+	// 戻り速度（今までの 0.5f / 0.6f を変数化）
+	float armReturnSpeedSingle_ = 0.5f;
+	float armReturnSpeedBoth_ = 0.6f;
+
+	// 通常値（怒り解除しないなら保存目的は「倍率適用の基準」）
+	float baseAttackSpeed_ = 0.1f;
+	float baseArmReturnSpeedSingle_ = 0.5f;
+	float baseArmReturnSpeedBoth_ = 0.6f;
+
+	// 怒り倍率（好きに調整OK）
+	float enragedArmSpeedMul_ = 1.6f;
+
 	// 攻撃用フラグ
 	bool isAttack_ = true;
 
@@ -355,6 +372,9 @@ private:
 	bool missileHitPlayer_ = false; // 当たったらtrue（1回のボレー中）
 	float missileHitDist_ = 0.7f;   // 当たり判定距離（仮。ゲームに合わせて調整）
 	float missileMaxDist_ = 200.0f; // 遠すぎたら消す（仮）
+
+	// 怒りモード
+	bool isEnraged_ = false;
 
 private:
 	void UpdateRetreat(float dt);

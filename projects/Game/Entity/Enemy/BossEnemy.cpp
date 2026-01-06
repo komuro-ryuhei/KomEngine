@@ -61,6 +61,11 @@ void BossEnemy::Init(Camera* camera) {
 
 	rightCol_.owner = this;
 	rightCol_.part = PartCollider::Part::RightArm;
+
+	// --- 怒り用：通常時の基準値を保存 ---
+	baseAttackSpeed_ = attackSpeed_;
+	baseArmReturnSpeedSingle_ = armReturnSpeedSingle_;
+	baseArmReturnSpeedBoth_ = armReturnSpeedBoth_;
 }
 
 void BossEnemy::Update() {
@@ -223,29 +228,8 @@ void BossEnemy::Update() {
 
 	UpdateMissileVolley(dt);
 
-	// ---------------------- SRT 反映＆当たり判定用半径 ---------------------- //
-
-	// ★ 落下中だけ見た目にシェイクをかける
-	//Vector3 drawPos = transform_.translate;
-	//if (hp_ <= 0 && !hasLanded_) {
-	//	// ちょっと不規則な揺れにするため周波数を変えたsin/cosを足す
-	//	float sx = std::sin(fallShakeTime_ * 40.0f) * fallShakeAmplitude_;
-	//	float sz = std::cos(fallShakeTime_ * 55.0f) * fallShakeAmplitude_;
-	//	drawPos.x += sx;
-	//	drawPos.z += sz;
-	//}
-
 	// ---------------------- 被弾シェイク ---------------------- //
 	DamageShake();
-
-	/*object3d_->SetTranslate(drawPos);
-	object3d_->SetRotate(transform_.rotate);
-
-	rightArm_->SetTranslate(rightArmPos_);
-	leftArm_->SetTranslate(leftArmPos_);
-	rightArm_->SetRotate(rightArmRot_);
-	leftArm_->SetRotate(leftArmRot_);*/
-
 
 	// 胴体はBodyRadiusを使う
 	object3d_->SetRadius(bodyRadius_);
@@ -291,6 +275,8 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::DragInt("HP", &hp_);
 
 	ImGui::Checkbox("攻撃中", &isAttack_);
+	ImGui::Checkbox("怒り状態", &isEnraged_);
+
 	ImGui::End();
 
 #endif
@@ -349,7 +335,7 @@ void BossEnemy::Attack() {
 					attackPhase_ = AttackPhase::BothHands;   // 両手攻撃へ
 				}
 			} else {
-				armPos += MyMath::Normalize(toOrigin) * 0.5f;
+				armPos += MyMath::Normalize(toOrigin) * armReturnSpeedSingle_;
 			}
 		}
 
@@ -377,7 +363,7 @@ void BossEnemy::Attack() {
 
 		const float maxLen = 22.0f;    // どこまで伸ばすか（必要なら調整）
 		const float extendSpeed = attackSpeed_;
-		const float returnSpeed = 0.6f;
+		const float returnSpeed = armReturnSpeedBoth_;
 		const float endThreshold = 0.3f;
 
 		// ===== 左腕 =====
@@ -539,6 +525,22 @@ void BossEnemy::HPDraw() {
 		if (chip.sprite) {
 			chip.sprite->Draw();
 		}
+	}
+}
+
+void BossEnemy::SetEnraged(bool enraged) {
+
+	// 同じ状態なら何もしない
+	if (isEnraged_ == enraged) {
+		return;
+	}
+
+	isEnraged_ = enraged;
+
+	if (isEnraged_) {
+		attackSpeed_ = baseAttackSpeed_ * enragedArmSpeedMul_;
+		armReturnSpeedSingle_ = baseArmReturnSpeedSingle_ * enragedArmSpeedMul_;
+		armReturnSpeedBoth_ = baseArmReturnSpeedBoth_ * enragedArmSpeedMul_;
 	}
 }
 

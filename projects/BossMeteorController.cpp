@@ -127,8 +127,18 @@ void BossMeteorController::UpdateShower(float dt) {
     rot.x = params_.pitchUp;
     camera_->SetRotate(rot);
 
+    const bool enraged = (boss_ && boss_->IsEnraged());
+
+    const float spawnInterval =
+        enraged ? (params_.spawnInterval * enragedMeteorIntervalMul_)
+        : params_.spawnInterval;
+
+    const float speedMul =
+        enraged ? enragedMeteorSpeedMul_
+        : 1.0f;
+
     // スポーン（元 UpdateMeteorMode の Shower 部分）
-    if (spawnTimer_ >= params_.spawnInterval) {
+    if (spawnTimer_ >= spawnInterval) {
         spawnTimer_ = 0.0f;
 
         // --- カメラ姿勢 ---
@@ -155,7 +165,7 @@ void BossMeteorController::UpdateShower(float dt) {
         Vector3 target = camPos + forward * 6.0f + up * (-2.0f);
 
         // 距離に応じて速度を上げる（遠いほど速い）
-        float speed = 0.25f + 0.012f * dist;
+        float speed = (0.25f + 0.012f * dist) * speedMul;
 
         // 空きスロットに生成
         for (auto& m : *meteors_) {

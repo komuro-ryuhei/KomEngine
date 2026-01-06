@@ -323,6 +323,17 @@ void BossTestScene::Update() {
 	rightTargetOuter_->Update();
 	rightTargetInner_->Update();
 
+	// ボス怒り状態チェック
+	if (boss_ && !boss_->IsEnraged()) {
+		int hp = boss_->GetHP();
+		int maxHp = boss_->GetMaxHp();
+
+		if (maxHp > 0 && hp <= maxHp / 2) {
+			boss_->SetEnraged(true);
+		}
+	}
+
+
 	// パーティクルの更新処理
 	ParticleManager::GetInstance()->Update();
 

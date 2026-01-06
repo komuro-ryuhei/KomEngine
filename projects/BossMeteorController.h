@@ -134,5 +134,8 @@ private:
     // メテオスポーン
     float spawnTimer_ = 0.0f;
 
+    float enragedMeteorSpeedMul_ = 1.5f;     // 飛ぶ速度
+    float enragedMeteorIntervalMul_ = 0.65f; // 出る間隔（小さいほど頻度UP）
+
     MeteorAttackParams params_;
 };
