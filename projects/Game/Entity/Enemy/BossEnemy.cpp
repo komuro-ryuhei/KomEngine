@@ -335,7 +335,9 @@ void BossEnemy::Attack() {
 					attackPhase_ = AttackPhase::BothHands;   // 両手攻撃へ
 				}
 			} else {
-				armPos += MyMath::Normalize(toOrigin) * armReturnSpeedSingle_;
+				Vector3 dirToOrigin = MyMath::Normalize(toOrigin);
+				float step = std::min(armReturnSpeedSingle_, dist);
+				armPos += dirToOrigin * step;
 			}
 		}
 
@@ -384,7 +386,9 @@ void BossEnemy::Attack() {
 			if (dist < endThreshold) {
 				leftWorldPos = leftBaseWorld;
 			} else {
-				leftWorldPos += MyMath::Normalize(toBase) * returnSpeed;
+				Vector3 dirToBase = MyMath::Normalize(toBase);
+				float step = std::min(returnSpeed, dist);
+				leftWorldPos += dirToBase * step;
 			}
 		}
 
@@ -406,7 +410,9 @@ void BossEnemy::Attack() {
 			if (dist < endThreshold) {
 				rightWorldPos = rightBaseWorld;
 			} else {
-				rightWorldPos += MyMath::Normalize(toBase) * returnSpeed;
+				Vector3 dirToBase = MyMath::Normalize(toBase);
+				float step = std::min(returnSpeed, dist);
+				rightWorldPos += dirToBase * step;
 			}
 		}
 
@@ -496,7 +502,7 @@ bool BossEnemy::ConsumeMeteorRequest() {
 
 void BossEnemy::OnMeteorFinished() {
 
-	// 次は左片手攻撃から再開
+	// 次は左片手攻撃から再開（← この状態を「退避の後にやる」）
 	attackPhase_ = AttackPhase::SingleLeft;
 	isExtending_ = true;
 
@@ -508,11 +514,14 @@ void BossEnemy::OnMeteorFinished() {
 	leftExtending_ = true;
 	rightExtending_ = true;
 
-	// 腕位置を基準に戻しておく（お好みで）
+	// 腕位置を基準に戻しておく
 	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
 	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
 	if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
 	if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
+
+	// 攻撃ループに「離れる攻撃」を挟む
+	StartRetreatAttack();
 }
 
 void BossEnemy::HPDraw() {

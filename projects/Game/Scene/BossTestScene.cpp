@@ -330,6 +330,10 @@ void BossTestScene::Update() {
 
 		if (maxHp > 0 && hp <= maxHp / 2) {
 			boss_->SetEnraged(true);
+
+			if (skybox_) {
+				skybox_->SetColor({ 1.0f, 0.3f, 0.3f, 1.0f });
+			}
 		}
 	}
 

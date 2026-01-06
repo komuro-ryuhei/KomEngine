@@ -7,6 +7,8 @@
 
 void Skybox::SetDefaultCamera(Camera* camera) { defaultCamera_ = camera; }
 
+void Skybox::SetColor(Vector4 color) { materialData->color = color; }
+
 constexpr uint32_t kSkyboxVertexCount = 36;
 
 void Skybox::Init(const std::string& filename) {
