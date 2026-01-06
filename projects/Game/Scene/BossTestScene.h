@@ -26,6 +26,28 @@ class BossTestScene : public IScene {
 
 public:
 
+	bool lowHpVfxOn_ = false;
+
+	// ポストエフェクトのデバッグモード
+	enum class PostEffectDebugMode {
+		Auto = 0,            // 低HP時だけビネット（今までの挙動）
+		None,
+		Grayscale,
+		Vignetting,
+		Smoothing,
+		GaussinanFilter,     // 綴りは PipelineManager に合わせる
+		RadialBlur,
+		Random,
+		Outline,
+		Glitch,
+		Pixel,
+		ChromaticAberration,
+		VHSNoise,
+		ColorInversion,
+	};
+
+	PostEffectDebugMode postEffectDebugMode_ = PostEffectDebugMode::Auto;
+
 	enum class BossAttackType {
 		Arms,
 		Meteor,
@@ -194,8 +216,6 @@ private:
 
 	KnockoutCameraController ko_;
 	bool koActive_ = false;
-
-	bool lowHpVfxOn_ = false;
 
 	// ボス撃破後 → 着地してからの待ち時間用
 	float bossDeathTimer_ = 0.0f;

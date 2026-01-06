@@ -320,19 +320,8 @@ void BossTestScene::Update() {
 	// パーティクルの更新処理
 	ParticleManager::GetInstance()->Update();
 
-	{
-		constexpr int LOW_HP_THRESHOLD = 1; // HP1以下
-		bool nowLow = player_->IsLowHP(LOW_HP_THRESHOLD);
-
-		if (nowLow && !lowHpVfxOn_) {
-			System::GetOffscreenRendering()->SetPostEffect("Vignetting");
-			lowHpVfxOn_ = true;
-		} else if (!nowLow && lowHpVfxOn_) {
-			// 低HPを脱したら元に戻す
-			System::GetOffscreenRendering()->SetPostEffect("none");
-			lowHpVfxOn_ = false;
-		}
-	}
+	// ポストエフェクトの変更
+	ChangePostEffect();
 
 	// -------------------------------------------------------------------- //
 
@@ -463,6 +452,33 @@ void BossTestScene::ImGuiDebug() {
 
 	ImGui::Checkbox("isCameraFollowPlayer", &isCameraFollowPlayer_);
 
+	{
+		const char* postEffectItems[] = {
+			"Auto (Low HP Vignette)", // 0
+			"None",                   // 1
+			"Grayscale",              // 2
+			"Vignetting",             // 3
+			"Smoothing (BoxFilter)",  // 4
+			"Gaussinan Filter",       // 5
+			"Radial Blur",            // 6
+			"Random",                 // 7
+			"Outline",                // 8
+			"Glitch",                 // 9
+			"Pixelation",             // 10
+			"Chromatic Aberration",   // 11
+			"VHS Noise",              // 12
+			"Color Inversion",        // 13
+		};
+
+		int current = static_cast<int>(postEffectDebugMode_);
+		if (ImGui::Combo("Post Effect", &current,
+			postEffectItems, IM_ARRAYSIZE(postEffectItems))) {
+			postEffectDebugMode_ = static_cast<PostEffectDebugMode>(current);
+		}
+	}
+
+	ImGui::Separator();
+
 	// ==== ここから攻撃エディタ ==== //
 
 	static const char* attackNames[] = { "Arms", "Meteor", "Sword" };
@@ -537,6 +553,85 @@ void BossTestScene::ImGuiDebug() {
 	ImGui::End();
 
 #endif // _DEBUG
+}
+
+void BossTestScene::ChangePostEffect() {
+
+	auto* offscreen = System::GetOffscreenRendering();
+	if (!offscreen || !player_) {
+		return;
+	}
+
+	// --- Auto モード：今まで通り「低HPのときだけビネット」 ---
+	if (postEffectDebugMode_ == PostEffectDebugMode::Auto) {
+
+		constexpr int LOW_HP_THRESHOLD = 1; // HP1以下
+		bool nowLow = player_->IsLowHP(LOW_HP_THRESHOLD);
+
+		if (nowLow && !lowHpVfxOn_) {
+			offscreen->SetPostEffect("Vignetting");
+			lowHpVfxOn_ = true;
+		} else if (!nowLow && lowHpVfxOn_) {
+			// 低HPを脱したら元に戻す
+			offscreen->SetPostEffect("none");
+			lowHpVfxOn_ = false;
+		}
+
+		return;
+	}
+
+	// --- 手動モード：ImGui で選んだエフェクトを常に適用 ---
+	const char* effectName = "none";
+
+	switch (postEffectDebugMode_) {
+	case PostEffectDebugMode::None:
+		effectName = "none";
+		break;
+	case PostEffectDebugMode::Grayscale:
+		effectName = "Grayscale";
+		break;
+	case PostEffectDebugMode::Vignetting:
+		effectName = "Vignetting";
+		break;
+	case PostEffectDebugMode::Smoothing:
+		effectName = "Smoothing";
+		break;
+	case PostEffectDebugMode::GaussinanFilter:
+		effectName = "GaussinanFilter";
+		break;
+	case PostEffectDebugMode::RadialBlur:
+		effectName = "RadialBlur";
+		break;
+	case PostEffectDebugMode::Random:
+		effectName = "Random";
+		break;
+	case PostEffectDebugMode::Outline:
+		effectName = "Outline";
+		break;
+	case PostEffectDebugMode::Glitch:
+		effectName = "Glitch";
+		break;
+	case PostEffectDebugMode::Pixel:
+		effectName = "Pixel";
+		break;
+	case PostEffectDebugMode::ChromaticAberration:
+		effectName = "ChromaticAberration";
+		break;
+	case PostEffectDebugMode::VHSNoise:
+		effectName = "VHSNoise";
+		break;
+	case PostEffectDebugMode::ColorInversion:
+		effectName = "ColorInversion";
+		break;
+	default:
+		effectName = "none";
+		break;
+	}
+
+	offscreen->SetPostEffect(effectName);
+
+	// 手動モード中は lowHpVfxOn_ フラグは使わない
+	lowHpVfxOn_ = false;
 }
 
 void BossTestScene::StartKnockout(int fallSide) {
@@ -901,40 +996,50 @@ void BossTestScene::UpdateIntro(float dt)
 
 	case IntroPhase::Falling: {
 
-		// カメラ位置は今まで通り（メテオ式）
-		camera_->SetTranslate(targetPos);
-
 		// --- ボス落下 ---
 		Vector3 bossPos = boss_->GetTranslate();
 		bossPos.y -= bossFallSpeed_ * dt;
 
+		bool landed = false;
 		if (bossPos.y <= bossPlayPos_.y) {
 			bossPos.y = bossPlayPos_.y;
+			landed = true;
+		}
+		boss_->SetTranslate(bossPos);
 
-			// 着地した瞬間に1回だけシェイク
+		// ★★★ ここに書く ★★★
+		if (!landed) {
+			// 着地前：今まで通り（メテオ式）
+			camera_->SetTranslate(targetPos);
+		} else {
+			// 着地後：プレイヤー位置へ寄せる（ズレ防止）
+			Vector3 cur = camera_->GetTranaslate();
+			Vector3 goal = player_->GetTranslate();
+			camera_->SetTranslate(MyMath::Lerp(cur, goal, 0.08f));
+		}
+
+		// --- 着地処理 ---
+		if (landed) {
 			if (!landingTriggered_) {
 				landingTriggered_ = true;
 				landingTimer_ = 0.0f;
 				camera_->StartShake(CameraShakeType::Large);
 			}
 
-			// 着地後、少し間を置いて CamOut へ
 			landingTimer_ += dt;
 			if (landingTimer_ >= landingWaitTime_) {
 				introPhase_ = IntroPhase::CamOut;
 				introCamLerp_ = 0.0f;
 
-				// CamOut の開始時点（今のカメラ）を保存
+				// CamOut の開始点を保存
 				introSavedCamPos_ = camera_->GetTranaslate();
 				introSavedCamRot_ = camera_->GetRotate();
 			}
 		}
-		boss_->SetTranslate(bossPos);
 
-		// --- ★ここが「変える場所」 ---
+		// --- 回転（ボス注視） ---
 		const Vector3 camPos = camera_->GetTranaslate();
-		Vector3 dir = bossPos - camPos;
-		dir = MyMath::Normalize(dir);
+		Vector3 dir = MyMath::Normalize(bossPos - camPos);
 
 		Vector3 lookRot{};
 		lookRot.x = std::atan2(-dir.y, std::sqrt(dir.x * dir.x + dir.z * dir.z));
@@ -946,6 +1051,7 @@ void BossTestScene::UpdateIntro(float dt)
 
 		break;
 	}
+
 
 	case IntroPhase::CamOut:{
 
