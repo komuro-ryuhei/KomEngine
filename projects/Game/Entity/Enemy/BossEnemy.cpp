@@ -43,6 +43,9 @@ void BossEnemy::Init(Camera* camera) {
 	rightArm_->SetTranslate({ 4.0f, 0.0f, 0.0f });
 	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
 
+	baseBodyScale_ = { 2.0f, 2.0f, 2.0f };
+	baseArmScale_ = { 1.0f, 1.0f, 1.0f };
+
 	// 
 	hpSprite_ = std::make_unique<Sprite>();
 	hpSprite_->Init("./Resources/images/hp.png", BlendType::BLEND_NONE);
@@ -198,9 +201,16 @@ void BossEnemy::Update() {
 			pushEnter_ = true;
 		}
 
-		// 攻撃
-		if (combatEnabled_ && isAttack_) {
-			Attack();
+		// 退避中は Boss 自身が動くので先に更新
+		UpdateRetreat(dt);
+
+		// 退避中は腕攻撃は止める（奥で別攻撃する想定）
+		if (IsRetreating()) {
+			// 退避中は通常攻撃をしない
+		} else {
+			if (combatEnabled_ && isAttack_) {
+				Attack();
+			}
 		}
 
 		// TitleScene用移動
@@ -684,6 +694,10 @@ void BossEnemy::OnCollision(ICollisionObject* other) {
 
 void BossEnemy::PartCollider::OnCollision(ICollisionObject* other) {
 
+	if (owner->invulnerable_) {
+		return; // 退避中は被弾・ヒット数加算もしない
+	}
+
 	switch (part) {
 
 	case Part::Body:
@@ -889,5 +903,223 @@ void BossEnemy::DamageShake() {
 	}
 	if (rightArm_) {
 		rightArm_->SetColor(rightColor);
+	}
+}
+
+void BossEnemy::StartRetreatAttack() {
+
+	// すでに退避中なら無視
+	if (retreatPhase_ != RetreatPhase::None) {
+		return;
+	}
+
+	// 死亡中はやらない
+	if (hp_ <= 0) {
+		return;
+	}
+
+	retreatPhase_ = RetreatPhase::MoveOut;
+	retreatT_ = 0.0f;
+
+	retreatStartPos_ = transform_.translate;
+
+	retreatBackPos_ = retreatStartPos_;
+	retreatBackPos_.z += retreatBackZOffset_; // 奥へ（+z想定）
+	retreatBackPos_.y += retreatUpOffset_;    // ちょい上
+
+	invulnerable_ = true;
+
+	// 退避開始時に腕を基準位置に戻す（見た目が安定）
+	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
+	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
+	if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
+	if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
+}
+
+void BossEnemy::UpdateRetreat(float dt) {
+
+	if (retreatPhase_ == RetreatPhase::None) return;
+
+	retreatT_ += dt;
+
+	auto ApplyScaleFactorXZ_Y = [this](float factorXZ, float factorY) {
+
+		// 0.0f を許可したいけど、内部計算の安全のために極小値へクランプ
+		const float kEps = 0.001f;
+		factorXZ = std::max(factorXZ, kEps);
+
+		Vector3 bodyS = {
+			baseBodyScale_.x * factorXZ,
+			baseBodyScale_.y * factorY,
+			baseBodyScale_.z * factorXZ
+		};
+
+		Vector3 armS = {
+			baseArmScale_.x * factorXZ,
+			baseArmScale_.y * factorY,
+			baseArmScale_.z * factorXZ
+		};
+
+		if (object3d_) object3d_->SetScale(bodyS);
+		if (leftArm_)  leftArm_->SetScale(armS);
+		if (rightArm_) rightArm_->SetScale(armS);
+		};
+
+	switch (retreatPhase_) {
+
+	case RetreatPhase::MoveOut:
+	{
+
+		// まず縮むだけ（retreatShrinkTime_）
+		if (retreatT_ < retreatShrinkTime_) {
+
+			float u = (retreatShrinkTime_ <= 0.0f) ? 1.0f : (retreatT_ / retreatShrinkTime_);
+			u = MyMath::Clamp01(u);
+
+			// 横だけ強めに潰す（ワープ感）
+			float eXZ = MyMath::EaseInOutCubic(u);
+			float eY = MyMath::EaseOutCubic(u); // Yは軽く（変化を弱めたいなら EaseOut が無難）
+
+			float factorXZ = MyMath::Lerp(1.0f, retreatMinScaleXZ_, eXZ);
+			float factorY = MyMath::Lerp(1.0f, retreatMinScaleY_, eY);
+
+			ApplyScaleFactorXZ_Y(factorXZ, factorY);
+
+			// 位置は動かさない（ここ重要）
+			transform_.translate = retreatStartPos_;
+			break;
+		}
+
+		// 縮み終わったら移動だけ（retreatMoveTime_）
+		float moveT = retreatT_ - retreatShrinkTime_;
+
+		float u = (retreatMoveTime_ <= 0.0f) ? 1.0f : (moveT / retreatMoveTime_);
+		u = MyMath::Clamp01(u);
+
+		float e = MyMath::EaseInOutCubic(u);
+
+		// スケールは最小固定のまま
+		ApplyScaleFactorXZ_Y(retreatMinScaleXZ_, retreatMinScaleY_);
+
+		// ここで初めて移動
+		transform_.translate = MyMath::Lerp(retreatStartPos_, retreatBackPos_, e);
+
+		if (u >= 1.0f) {
+			retreatPhase_ = RetreatPhase::Stay;
+			retreatT_ = 0.0f;
+
+			// ★ここで奥から攻撃を開始する
+		}
+
+	} break;
+
+
+	case RetreatPhase::Stay: {
+
+		// 奥位置固定
+		transform_.translate = retreatBackPos_;
+
+		if (retreatStayPhase_ == RetreatStayPhase::Unflatten) {
+
+			// 奥で「ペラペラ → 通常」に戻す
+			float u = (retreatUnflattenTime_ <= 0.0f) ? 1.0f : (retreatT_ / retreatUnflattenTime_);
+			u = MyMath::Clamp01(u);
+
+			// 出現感：最初ゆっくり→途中早い→最後ゆっくり
+			float e = MyMath::EaseInOutCubic(u);
+
+			// XZは0→1へ（Yはほぼ固定 or ちょいだけ戻す）
+			float factorXZ = MyMath::Lerp(retreatMinScaleXZ_, 1.0f, e);
+			float factorY = MyMath::Lerp(retreatMinScaleY_, 1.0f, e * 0.5f); // Yは変化少なめ
+
+			ApplyScaleFactorXZ_Y(factorXZ, factorY);
+
+			if (u >= 1.0f) {
+				// 通常に戻し切ったのでホールドへ
+				retreatStayPhase_ = RetreatStayPhase::Hold;
+				retreatT_ = 0.0f;
+
+				// 念のため完全通常
+				ApplyScaleFactorXZ_Y(1.0f, 1.0f);
+			}
+
+		} else { // Hold
+
+			// 通常状態で奥にとどまる（この間に攻撃する）
+			ApplyScaleFactorXZ_Y(1.0f, 1.0f);
+
+			// ★ここで奥からの攻撃を行うのが自然
+			// UpdateBackAttack(dt);
+
+			if (retreatT_ >= retreatHoldTime_) {
+				retreatPhase_ = RetreatPhase::Return;
+				retreatT_ = 0.0f;
+			}
+		}
+	} break;
+
+	case RetreatPhase::Return: {
+
+		// ① まず奥で「普通 → ペラ」へ（ここが無いとパッと0になる）
+		if (retreatT_ < retreatFlattenTime_) {
+
+			float u = (retreatFlattenTime_ <= 0.0f) ? 1.0f : (retreatT_ / retreatFlattenTime_);
+			u = MyMath::Clamp01(u);
+
+			float eXZ = MyMath::EaseInOutCubic(u);
+			float eY = MyMath::EaseOutCubic(u);
+
+			float factorXZ = MyMath::Lerp(1.0f, retreatMinScaleXZ_, eXZ);
+			float factorY = MyMath::Lerp(1.0f, retreatMinScaleY_, eY);
+
+			ApplyScaleFactorXZ_Y(factorXZ, factorY);
+
+			// 位置は奥に固定
+			transform_.translate = retreatBackPos_;
+			break;
+		}
+
+		// ② ペラのまま移動して戻る
+		float moveT = retreatT_ - retreatFlattenTime_;
+		if (moveT < retreatMoveTime_) {
+
+			float u = (retreatMoveTime_ <= 0.0f) ? 1.0f : (moveT / retreatMoveTime_);
+			u = MyMath::Clamp01(u);
+
+			float e = MyMath::EaseInOutCubic(u);
+
+			ApplyScaleFactorXZ_Y(retreatMinScaleXZ_, retreatMinScaleY_);
+			transform_.translate = MyMath::Lerp(retreatBackPos_, retreatStartPos_, e);
+			break;
+		}
+
+		// ③ 手前に戻ったら「ペラ → 普通」へ
+		float growT = moveT - retreatMoveTime_;
+
+		float u = (retreatGrowTime_ <= 0.0f) ? 1.0f : (growT / retreatGrowTime_);
+		u = MyMath::Clamp01(u);
+
+		float eXZ = MyMath::EaseInOutCubic(u);
+		float eY = MyMath::EaseOutCubic(u);
+
+		float factorXZ = MyMath::Lerp(retreatMinScaleXZ_, 1.0f, eXZ);
+		float factorY = MyMath::Lerp(retreatMinScaleY_, 1.0f, eY * 0.5f); // Yは変化少なめ
+
+		ApplyScaleFactorXZ_Y(factorXZ, factorY);
+		transform_.translate = retreatStartPos_;
+
+		if (u >= 1.0f) {
+			retreatPhase_ = RetreatPhase::None;
+			retreatT_ = 0.0f;
+			invulnerable_ = false;
+
+			ApplyScaleFactorXZ_Y(1.0f, 1.0f);
+			transform_.translate = retreatStartPos_;
+		}
+
+	} break;
+
+	default:
+		break;
 	}
 }

@@ -515,3 +515,24 @@ float MyMath::RadianToDegree(float radian) {
 float MyMath::LengthSquare(const Vector3& v) {
 	return v.x * v.x + v.y * v.y + v.z * v.z;
 }
+
+float MyMath::EaseOutCubic(float t) {
+	t = Clamp01(t);
+	float a = 1.0f - t;
+	return 1.0f - a * a * a;
+}
+
+float MyMath::EaseInCubic(float t) {
+	t = Clamp01(t);
+	return t * t * t;
+}
+
+float MyMath::EaseInOutCubic(float t) {
+	t = Clamp01(t);
+	if (t < 0.5f) {
+		return 4.0f * t * t * t;
+	} else {
+		float a = -2.0f * t + 2.0f;
+		return 1.0f - (a * a * a) / 2.0f;
+	}
+}

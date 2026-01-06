@@ -252,6 +252,10 @@ void BossTestScene::Update() {
 		}
 	}
 
+	if (System::GetInput()->PushKey(DIK_R)) {
+		boss_->StartRetreatAttack();
+	}
+
 	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
 
 	// 腕攻撃がこのフレームでカメラを触っていいかどうか
@@ -754,13 +758,49 @@ void BossTestScene::UpdateMeteorControl(float dt)
 		meteorController_->Update(dt);
 	}
 
-	// ↓ メテオ中じゃないときだけ、従来どおりプレイヤー追従カメラ
+	// メテオ中じゃないときだけ、従来どおりプレイヤー追従カメラ
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 playerRot = player_->GetTransform().rotate;
 
+	// --- 退避攻撃で奥にいる間は、カメラの向きをボスへ ---
+	if (boss_ && boss_->WantsCameraFocus()) {
+
+		const Vector3 camPos = camera_->GetTranaslate();
+		const Vector3 target = boss_->GetCameraFocusPos();
+
+		// 既にある関数を使う
+		Vector3 lookRot = CalcLookAtRotation(camPos, target);
+
+		// ガクッと変えたくないなら lerp（0.15f は好み）
+		Vector3 curRot = camera_->GetRotate();
+		camera_->SetRotate(MyMath::Lerp(curRot, lookRot, 0.15f));
+	}
+
+	const bool focusBoss =
+		(boss_ && boss_->WantsCameraFocus());
+
 	if ((!meteorController_ || !meteorController_->IsActive()) && isCameraFollowPlayer_) {
+
+		// 位置は従来通りプレイヤー追従
 		camera_->SetTranslate(playerPos);
-		camera_->SetRotate(playerRot);
+
+		// フォーカス中は playerRot で上書きしない（これが重要）
+		if (!focusBoss) {
+			camera_->SetRotate(playerRot);
+		}
+	}
+
+	// フォーカス中は「最後に」ボス方向へ回転を上書きする
+	if (focusBoss) {
+
+		const Vector3 camPos = camera_->GetTranaslate();
+		const Vector3 target = boss_->GetCameraFocusPos();
+
+		Vector3 lookRot = CalcLookAtRotation(camPos, target);
+
+		// スムーズに向ける（0.15f は好み）
+		Vector3 curRot = camera_->GetRotate();
+		camera_->SetRotate(MyMath::Lerp(curRot, lookRot, 0.15f));
 	}
 }
 

@@ -156,6 +156,11 @@ public:
 	// 最大ヒット数（ターゲット消す条件に使う）
 	int GetMaxHitCount() const { return maxHitCount_; }
 
+	// 退避→奥から攻撃→復帰（退避中は無敵）
+	void StartRetreatAttack();
+	bool IsRetreating() const { return retreatPhase_ != RetreatPhase::None; }
+	bool IsInvulnerable() const { return invulnerable_; }
+
 private:
 
 	void Attack();
@@ -182,6 +187,12 @@ public:
 	// 戦闘有効化・無効化
 	void SetCombatEnabled(bool enabled) { combatEnabled_ = enabled; }
 	bool IsCombatEnabled() const { return combatEnabled_; }
+
+	// カメラをボスへ向けたいか（奥にいる間だけ true）
+	bool WantsCameraFocus() const { return retreatPhase_ == RetreatPhase::Stay; }
+
+	// カメラが注視すべき座標（奥へ移動した先）
+	Vector3 GetCameraFocusPos() const { return retreatBackPos_; }
 
 private:
 	// カメラ
@@ -277,4 +288,49 @@ private:
 
 	// 戦闘有効化・無効化
 	bool combatEnabled_ = true;
+
+	// -------------------- 退避攻撃（奥へ行く攻撃） -------------------- // 
+	enum class RetreatPhase { None, MoveOut, Stay, Return };
+	RetreatPhase retreatPhase_ = RetreatPhase::None;
+
+	bool invulnerable_ = false;
+
+	float retreatT_ = 0.0f;
+	float retreatOutTime_ = 0.35f;
+	float retreatStayTime_ = 1.20f;
+	float retreatReturnTime_ = 0.40f;
+
+	float retreatBackZOffset_ = 30.0f;
+	float retreatUpOffset_ = 8.0f;
+
+	float retreatMinScaleFactor_ = 0.15f;
+
+	float retreatShrinkTime_ = 0.20f;  // 縮むだけの時間
+	float retreatMoveTime_ = 0.25f;  // 移動だけの時間（奥へ/戻り共通にしてもOK）
+	float retreatGrowTime_ = 0.20f;  // 戻すだけの時間
+	float retreatFlattenTime_ = 0.20f; // 戻る前にペラ化する時間
+
+	float retreatMinScaleXZ_ = 0.0f;  // 横(XZ)の最小倍率
+	float retreatMinScaleY_ = 0.9f;  // 縦(Y)はあまり変えない（0.85〜1.0推奨）
+
+
+	Vector3 retreatStartPos_{};
+	Vector3 retreatBackPos_{};
+
+	Vector3 baseBodyScale_{ 2.0f,2.0f,2.0f };
+	Vector3 baseArmScale_{ 1.0f,1.0f,1.0f };
+
+	// Stay中の段階
+	enum class RetreatStayPhase { Unflatten, Hold };
+	RetreatStayPhase retreatStayPhase_ = RetreatStayPhase::Unflatten;
+
+	// 奥でペラ→通常へ戻す時間
+	float retreatUnflattenTime_ = 0.25f;
+
+	// 通常状態で奥に留まる時間（数秒）
+	float retreatHoldTime_ = 2.0f;   // 好きな秒数にしてOK
+
+private:
+	void UpdateRetreat(float dt);
+
 };
