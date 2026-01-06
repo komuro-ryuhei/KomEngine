@@ -176,6 +176,9 @@ private:
 
 private:
 
+	// カメラ更新関数
+	void UpdateCamera(float dt);
+
 	// PostEffectの変更関数
 	void ChangePostEffect();
 
@@ -252,6 +255,18 @@ private:
 	float landingWaitTime_ = 0.35f;
 
 	bool collisionEnabled_ = false;
+
+	enum class CameraMode { FollowPlayer, FocusBoss, ReturnToPlayer };
+	CameraMode cameraMode_ = CameraMode::FollowPlayer;
+
+	float cameraPosLerp_ = 0.10f;
+	float cameraRotLerp_ = 0.15f;
+
+	Vector3 camFocusPos_{};
+
+	bool wasFocusBoss_ = false;
+	bool isReturning_ = false;        // フォーカス解除後の復帰中
+	float returnEndDist_ = 0.05f;     // 復帰完了判定（距離）
 
 private:
 	void InitIntro();

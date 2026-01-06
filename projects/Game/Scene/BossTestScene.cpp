@@ -186,7 +186,7 @@ void BossTestScene::Init() {
 	playCameraRot_ = camera_->GetRotate();
 
 	bossPlayPos_ = boss_->GetTranslate();
-	
+
 }
 
 void BossTestScene::Update() {
@@ -216,6 +216,8 @@ void BossTestScene::Update() {
 	}
 
 	UpdateMeteorControl(dt);
+
+	UpdateCamera(dt);
 
 	// プレイヤー死亡処理
 	UpdatePlayerDeath(dt);
@@ -559,6 +561,52 @@ void BossTestScene::ImGuiDebug() {
 #endif // _DEBUG
 }
 
+void BossTestScene::UpdateCamera(float dt) {
+
+	// メテオ中はカメラを触らない
+	if (meteorController_ && meteorController_->IsActive()) {
+		return;
+	}
+
+	const bool focusBoss = (boss_ && boss_->WantsCameraFocus());
+
+	// フォーカス中だけ player 追従を切る
+	isCameraFollowPlayer_ = !focusBoss;
+
+	// =========================
+	// 目標カメラ位置を決める
+	// =========================
+	Vector3 targetCamPos = camera_->GetTranaslate();
+
+	if (isCameraFollowPlayer_) {
+		// 通常：プレイヤー追従
+		targetCamPos = player_->GetTransform().translate;
+	}
+
+	// 現在位置 → 目標位置へ Lerp
+	Vector3 curCamPos = camera_->GetTranaslate();
+	Vector3 newCamPos = MyMath::Lerp(curCamPos, targetCamPos, cameraPosLerp_);
+	camera_->SetTranslate(newCamPos);
+
+	// =========================
+	// 目標カメラ回転を決める
+	// =========================
+	Vector3 targetRot = camera_->GetRotate();
+
+	if (focusBoss) {
+		// ボスを向く
+		targetRot = CalcLookAtRotation(newCamPos, boss_->GetCameraFocusPos());
+	} else if (isCameraFollowPlayer_) {
+		// 通常はプレイヤー向き
+		targetRot = player_->GetTransform().rotate;
+	}
+
+	// 現在回転 → 目標回転へ Lerp
+	Vector3 curRot = camera_->GetRotate();
+	Vector3 newRot = MyMath::Lerp(curRot, targetRot, cameraRotLerp_);
+	camera_->SetRotate(newRot);
+}
+
 void BossTestScene::ChangePostEffect() {
 
 	auto* offscreen = System::GetOffscreenRendering();
@@ -761,47 +809,6 @@ void BossTestScene::UpdateMeteorControl(float dt)
 	// メテオ中じゃないときだけ、従来どおりプレイヤー追従カメラ
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 playerRot = player_->GetTransform().rotate;
-
-	// --- 退避攻撃で奥にいる間は、カメラの向きをボスへ ---
-	if (boss_ && boss_->WantsCameraFocus()) {
-
-		const Vector3 camPos = camera_->GetTranaslate();
-		const Vector3 target = boss_->GetCameraFocusPos();
-
-		// 既にある関数を使う
-		Vector3 lookRot = CalcLookAtRotation(camPos, target);
-
-		// ガクッと変えたくないなら lerp（0.15f は好み）
-		Vector3 curRot = camera_->GetRotate();
-		camera_->SetRotate(MyMath::Lerp(curRot, lookRot, 0.15f));
-	}
-
-	const bool focusBoss =
-		(boss_ && boss_->WantsCameraFocus());
-
-	if ((!meteorController_ || !meteorController_->IsActive()) && isCameraFollowPlayer_) {
-
-		// 位置は従来通りプレイヤー追従
-		camera_->SetTranslate(playerPos);
-
-		// フォーカス中は playerRot で上書きしない（これが重要）
-		if (!focusBoss) {
-			camera_->SetRotate(playerRot);
-		}
-	}
-
-	// フォーカス中は「最後に」ボス方向へ回転を上書きする
-	if (focusBoss) {
-
-		const Vector3 camPos = camera_->GetTranaslate();
-		const Vector3 target = boss_->GetCameraFocusPos();
-
-		Vector3 lookRot = CalcLookAtRotation(camPos, target);
-
-		// スムーズに向ける（0.15f は好み）
-		Vector3 curRot = camera_->GetRotate();
-		camera_->SetRotate(MyMath::Lerp(curRot, lookRot, 0.15f));
-	}
 }
 
 void BossTestScene::InitIntro() {
@@ -998,7 +1005,7 @@ void BossTestScene::LineTarget() {
 	}
 }
 
-Vector3 BossTestScene::CalcLookAtRotation(const Vector3& camPos,const Vector3& targetPos) {
+Vector3 BossTestScene::CalcLookAtRotation(const Vector3& camPos, const Vector3& targetPos) {
 
 	Vector3 dir = targetPos - camPos;
 	dir = MyMath::Normalize(dir);
@@ -1022,7 +1029,8 @@ void BossTestScene::UpdateIntro(float dt)
 	targetRot.x = mp.pitchUp; // 上向き角
 
 	switch (introPhase_) {
-	case IntroPhase::CamIn: {
+	case IntroPhase::CamIn:
+	{
 
 		introCamLerp_ = std::min(1.0f, introCamLerp_ + dt / mp.camIntroTime);
 		camera_->SetTranslate(MyMath::Lerp(introSavedCamPos_, targetPos, introCamLerp_));
@@ -1034,7 +1042,8 @@ void BossTestScene::UpdateIntro(float dt)
 		break;
 	}
 
-	case IntroPhase::Falling: {
+	case IntroPhase::Falling:
+	{
 
 		// --- ボス落下 ---
 		Vector3 bossPos = boss_->GetTranslate();
@@ -1093,7 +1102,8 @@ void BossTestScene::UpdateIntro(float dt)
 	}
 
 
-	case IntroPhase::CamOut:{
+	case IntroPhase::CamOut:
+	{
 
 		// メテオのOutroと同じ：元のカメラへ戻す
 		introCamLerp_ = std::min(1.0f, introCamLerp_ + dt / mp.camOutroTime);
