@@ -221,6 +221,8 @@ void BossEnemy::Update() {
 		}
 	}
 
+	UpdateMissileVolley(dt);
+
 	// ---------------------- SRT 反映＆当たり判定用半径 ---------------------- //
 
 	// ★ 落下中だけ見た目にシェイクをかける
@@ -259,6 +261,8 @@ void BossEnemy::Draw() {
 	object3d_->Draw();
 	leftArm_->Draw();
 	rightArm_->Draw();
+
+	DrawMissileVolley();
 }
 
 void BossEnemy::ImGuiDebug() {
@@ -934,6 +938,8 @@ void BossEnemy::StartRetreatAttack() {
 	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
 	if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
 	if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
+
+	missileStartedThisRetreat_ = false;
 }
 
 void BossEnemy::UpdateRetreat(float dt) {
@@ -1035,23 +1041,27 @@ void BossEnemy::UpdateRetreat(float dt) {
 			ApplyScaleFactorXZ_Y(factorXZ, factorY);
 
 			if (u >= 1.0f) {
-				// 通常に戻し切ったのでホールドへ
 				retreatStayPhase_ = RetreatStayPhase::Hold;
 				retreatT_ = 0.0f;
 
 				// 念のため完全通常
 				ApplyScaleFactorXZ_Y(1.0f, 1.0f);
+
+				// ★奥に到達＆通常に戻った“直後”にミサイル開始（この退避中に1回だけ）
+				if (!missileStartedThisRetreat_) {
+					StartMissileVolley();
+					missileStartedThisRetreat_ = true;
+				}
 			}
 
 		} else { // Hold
 
-			// 通常状態で奥にとどまる（この間に攻撃する）
+			// 奥で攻撃中（Hold）
 			ApplyScaleFactorXZ_Y(1.0f, 1.0f);
+			transform_.translate = retreatBackPos_;
 
-			// ★ここで奥からの攻撃を行うのが自然
-			// UpdateBackAttack(dt);
-
-			if (retreatT_ >= retreatHoldTime_) {
+			// ミサイルが終わったら戻る（全滅 or 命中）
+			if (missileStartedThisRetreat_ && missilePhase_ == MissilePhase::None) {
 				retreatPhase_ = RetreatPhase::Return;
 				retreatT_ = 0.0f;
 			}
@@ -1121,5 +1131,175 @@ void BossEnemy::UpdateRetreat(float dt) {
 
 	default:
 		break;
+	}
+}
+
+void BossEnemy::StartMissileVolley(){
+
+	missileHitPlayer_ = false;
+
+	if (missilePhase_ != MissilePhase::None) return;
+	if (!camera_ || !player_) return;
+
+	missilePhase_ = MissilePhase::Telegraph;
+	missileT_ = 0.0f;
+
+	for (auto& m : missiles_) {
+		m.launched = false;
+
+		m.obj = std::make_unique<Object3d>();
+		m.obj->Init(BlendType::BLEND_NONE);
+		m.obj->SetModel("sphere.obj");
+		m.obj->SetDefaultCamera(camera_);
+		m.obj->SetScale({ 1.0f, 1.0f, 1.0f });
+
+		m.bullet = std::make_unique<EnemyBullet>();
+		m.bullet->Init(camera_, m.obj.get());
+		m.bullet->SetDirection({ 0.0f, 0.0f, 0.0f }); // 予告中は動かない
+		m.bullet->SetSpeed(0.0f);
+
+		if (collisionManager_) {
+			collisionManager_->Register(m.bullet.get());
+		}
+	}
+}
+
+void BossEnemy::UpdateMissileVolley(float dt) {
+
+	if (missilePhase_ == MissilePhase::None) return;
+
+	missileT_ += dt;
+
+	const Vector3 bossPos = transform_.translate;
+
+	// 予告：上半円に配置して“表示だけ”
+	if (missilePhase_ == MissilePhase::Telegraph) {
+
+		for (int i = 0; i < 4; ++i) {
+			float t = (float)i / 3.0f;       // 0, 1/3, 2/3, 1
+			float rad = t * 3.14159265f;     // 0..π
+
+			// 半円を X-Y 平面に（必要なら X-Z にしてもOK）
+			Vector3 offset{};
+			offset.x = std::cos(rad) * missileRadius_;
+			offset.y = std::sin(rad) * missileRadius_ + missileHeight_;
+			offset.z = 0.0f;
+
+			Vector3 p = bossPos + offset;
+
+			missiles_[i].bullet->SetTranlate(p);
+			missiles_[i].bullet->SetDirection({ 0,0,0 });
+			missiles_[i].bullet->SetSpeed(0.0f);
+
+			missiles_[i].bullet->Update();
+		}
+
+		if (missileT_ >= missileTelegraphTime_) {
+			// 発射へ
+			missilePhase_ = MissilePhase::Launch;
+			missileT_ = 0.0f;
+
+			// 発射方向をセット
+			const Vector3 playerPos = player_->GetTransform().translate;
+
+			for (auto& m : missiles_) {
+				Vector3 from = m.bullet->GetTranslate();
+				Vector3 dir = playerPos - from;
+				dir = MyMath::Normalize(dir);
+
+				m.bullet->SetDirection(dir);
+				m.bullet->SetSpeed(missileSpeed_);
+				m.launched = true;
+			}
+		}
+		return;
+	}
+
+	// 発射：EnemyBullet の Update() に任せる（追尾にしたいならここでdir更新）
+	if (missilePhase_ == MissilePhase::Launch) {
+
+		int aliveCount = 0;
+		const Vector3 playerPos = player_->GetTransform().translate;
+
+		for (auto& m : missiles_) {
+			if (!m.bullet) { continue; }
+
+			m.bullet->Update();
+
+			if (m.bullet->IsDead()) {
+
+				// Playerに当たったか
+				if (m.bullet->DidHitPlayer()) {
+					missileHitPlayer_ = true;
+				}
+
+				if (collisionManager_ && m.bullet) {
+					collisionManager_->Unregister(m.bullet.get());
+				}
+				m.bullet.reset();
+				m.obj.reset();
+				m.launched = false;
+				continue;
+			}
+
+			++aliveCount;
+
+			const Vector3 p = m.bullet->GetTranslate();
+
+			// --- 命中判定（簡易：距離） ---
+			Vector3 d{ playerPos.x - p.x, playerPos.y - p.y, playerPos.z - p.z };
+			const float dist2 = d.x * d.x + d.y * d.y + d.z * d.z;
+
+			if (dist2 <= missileHitDist_ * missileHitDist_) {
+				missileHitPlayer_ = true;
+
+				// 命中したらこの弾は消す（演出上）
+				if (collisionManager_ && m.bullet) {
+					collisionManager_->Unregister(m.bullet.get());
+				}
+				m.bullet.reset();
+				m.obj.reset();
+				--aliveCount; // 消したのでaliveを調整
+				break;        // 1発当たったら即終了でOKなら break
+			}
+
+			// --- 遠すぎたら消す（全滅条件に寄与）---
+			// ※「プレイヤーから遠い」でもいいし、「ボスから遠い」でもOK
+			const float max2 = missileMaxDist_ * missileMaxDist_;
+			if (dist2 >= max2) {
+				if (collisionManager_ && m.bullet) {
+					collisionManager_->Unregister(m.bullet.get());
+				}
+				m.bullet.reset();
+				m.obj.reset();
+				--aliveCount;
+			}
+		}
+
+		// ★終了条件：命中 or 全滅
+		if (missileHitPlayer_ || aliveCount <= 0) {
+			missilePhase_ = MissilePhase::None;
+
+			// 念のため全部解放
+			for (auto& m : missiles_) {
+				if (collisionManager_ && m.bullet) {
+					collisionManager_->Unregister(m.bullet.get());
+				}
+				m.bullet.reset();
+				m.obj.reset();
+				m.launched = false;
+			}
+		}
+	}
+}
+
+void BossEnemy::DrawMissileVolley() {
+
+	if (missilePhase_ == MissilePhase::None) return;
+
+	for (auto& m : missiles_) {
+		if (m.bullet) {
+			m.bullet->Draw();
+		}
 	}
 }

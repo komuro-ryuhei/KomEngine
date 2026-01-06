@@ -3,8 +3,11 @@
 #include "Engine/Base/2d/Sprite/Sprite.h"
 #include "ICollisionObject.h"
 #include "CollisionManager.h"
+#include "Game/Entity/Enemy/EnemyBullet.h"
 
 #include <vector>
+#include <array>
+#include <memory>
 
 class Player;
 class Camera;
@@ -330,7 +333,35 @@ private:
 	// 通常状態で奥に留まる時間（数秒）
 	float retreatHoldTime_ = 2.0f;   // 好きな秒数にしてOK
 
+	bool missileStartedThisRetreat_ = false;
+
+	struct MissileSlot {
+		std::unique_ptr<Object3d> obj;
+		std::unique_ptr<EnemyBullet> bullet;
+		bool launched = false;
+	};
+
+	enum class MissilePhase { None, Telegraph, Launch };
+
+	std::array<MissileSlot, 4> missiles_;
+	MissilePhase missilePhase_ = MissilePhase::None;
+	float missileT_ = 0.0f;
+
+	float missileTelegraphTime_ = 1.0f; // 予告表示
+	float missileRadius_ = 2.5f;        // 半円の半径
+	float missileHeight_ = 2.0f;        // ボス上方向オフセット
+	float missileSpeed_ = 0.2f;        // 発射速度（EnemyBulletのspeed_に入れる）
+
+	bool missileHitPlayer_ = false; // 当たったらtrue（1回のボレー中）
+	float missileHitDist_ = 0.7f;   // 当たり判定距離（仮。ゲームに合わせて調整）
+	float missileMaxDist_ = 200.0f; // 遠すぎたら消す（仮）
+
 private:
 	void UpdateRetreat(float dt);
+
+	// ミサイル攻撃関数
+	void StartMissileVolley();          // 予告開始
+	void UpdateMissileVolley(float dt); // 毎フレーム更新
+	void DrawMissileVolley();           // 描画
 
 };
