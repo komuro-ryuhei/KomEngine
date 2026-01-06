@@ -470,6 +470,7 @@ Matrix4x4 MyMath::Transpose4x4(const Matrix4x4& matrix) {
 }
 
 float MyMath::CalculateDistance(const Vector3& a, const Vector3& b) {
+
 	float dx = a.x - b.x;
 	float dy = a.y - b.y;
 	float dz = a.z - b.z;
@@ -489,6 +490,7 @@ Vector3 MyMath::Lerp(const Vector3& a, const Vector3& b, float t) {
 
 // 0-1 クランプ（任意）
 float MyMath::Clamp01(float t) {
+
 	if (t < 0.0f) return 0.0f;
 	if (t > 1.0f) return 1.0f;
 	return t;
@@ -496,6 +498,7 @@ float MyMath::Clamp01(float t) {
 
 // 区間乱数 [min, max]
 float MyMath::Rand(float min, float max) {
+
 	static thread_local std::mt19937 rng{ std::random_device{}() };
 	std::uniform_real_distribution<float> dist(min, max);
 	return dist(rng);
@@ -517,17 +520,20 @@ float MyMath::LengthSquare(const Vector3& v) {
 }
 
 float MyMath::EaseOutCubic(float t) {
+
 	t = Clamp01(t);
 	float a = 1.0f - t;
 	return 1.0f - a * a * a;
 }
 
 float MyMath::EaseInCubic(float t) {
+
 	t = Clamp01(t);
 	return t * t * t;
 }
 
 float MyMath::EaseInOutCubic(float t) {
+
 	t = Clamp01(t);
 	if (t < 0.5f) {
 		return 4.0f * t * t * t;
