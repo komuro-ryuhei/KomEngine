@@ -121,26 +121,20 @@ void BossTestScene::Init() {
 		collisionManager_.Register(m.get());
 	}
 
+	// ボスの攻撃管理
+	attackManager_ = std::make_unique<BossAttackManager>();
 
-	// --- ここでコントローラ初期化 ---
-	meteorController_ = std::make_unique<BossMeteorController>();
-	meteorController_->Init();
-	meteorController_->SetCamera(camera_.get());
-	meteorController_->SetPlayer(player_.get());
-	meteorController_->SetBoss(boss_.get());
-	meteorController_->SetMeteors(&meteors_);
-	// JSON読み込み
-	meteorController_->LoadParamsFromJson("Resources/json/bossAttacks.json");
+	BossAttackManager::InitDesc init{};
+	init.camera = camera_.get();
+	init.player = player_.get();
+	init.boss = boss_.get();
+	init.meteors = &meteors_;
 
-	// 腕コントローラ初期化
-	armController_ = std::make_unique<BossArmController>();
-	armController_->Init(camera_.get(), boss_.get());
-	// JSON読み込み
-	armController_->LoadParamsFromJson("Resources/json/bossAttacks.json");
+	attackManager_->Init(init);
 
-	// ボスの剣
-	sword_ = std::make_unique<BossSword>();
-	sword_->Init(camera_.get());
+	// jsonの読み込み
+	attackManager_->GetMeteor()->LoadParamsFromJson("Resources/json/bossAttacks.json");
+	attackManager_->GetArm()->LoadParamsFromJson("Resources/json/bossAttacks.json");
 
 	// パーティクル
 	auto* pm = ParticleManager::GetInstance();
@@ -215,18 +209,12 @@ void BossTestScene::Update() {
 		return;
 	}
 
-	UpdateMeteorControl(dt);
+	UpdateMeteorControl();
 
 	UpdateCamera(dt);
 
 	// プレイヤー死亡処理
 	UpdatePlayerDeath(dt);
-
-	// 剣攻撃トリガー
-	if (System::TriggerKey(DIK_J) && !swordAttack_) {
-		swordAttack_ = true;
-		swordPhaseT_ = 0.f;
-	}
 
 	// ノックアウトカメラの開始（Kキー）
 	if (System::TriggerKey(DIK_K)) {
@@ -260,17 +248,15 @@ void BossTestScene::Update() {
 
 	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
 
-	// 腕攻撃がこのフレームでカメラを触っていいかどうか
-	bool canArmCam =
-		!koActive_
-		&& phase_ == Phase::kMain           // フェード中は動かさない
-		&& (!meteorController_ || !meteorController_->IsActive())  // メテオ中は触らない
-		&& !swordCamActive_                 // 剣カメラ中も触らない
-		&& isCameraFollowPlayer_;           // プレイヤー追従中だけ
+	BossAttackManager::UpdateFlags f{};
+	f.koActive = koActive_;
+	f.isMainPhase = (phase_ == Phase::kMain);
+	f.isCameraFollowPlayer = isCameraFollowPlayer_;
 
-	if (armController_) {
-		armController_->Update(dt, canArmCam);
+	if (attackManager_) {
+		attackManager_->Update(dt, f);
 	}
+
 
 	// ターゲットシェイク時間更新
 	if (leftTargetShakeTime_ > 0.0f) {
@@ -289,7 +275,7 @@ void BossTestScene::Update() {
 	// 地面オブジェクトの更新
 	glassObject_->Update();
 
-	// ★ ライン側でカメラ行列更新
+	// ライン側でカメラ行列更新
 	debugLine_.Update();
 
 	// ここから AddLine だけ書けばいい
@@ -304,8 +290,6 @@ void BossTestScene::Update() {
 	boss_->Update();
 	// ボスのメテオ攻撃用
 	for (auto& m : meteors_) m->Update();
-	// ボスの剣
-	if (sword_) sword_->Update();
 
 	// リザルトスプライトの更新
 	result_->Update();
@@ -403,7 +387,7 @@ void BossTestScene::Update() {
 			Fade::SetDefaultOpenModeSlash(false);
 
 			if (endReason_ == EndReason::BossDeath) {
-				sceneManager_->ChangeScene("TITLE");   // ★復活
+				sceneManager_->ChangeScene("TITLE");
 			} else if (endReason_ == EndReason::PlayerDeath) {
 				sceneManager_->ChangeScene("GAMEOVER");
 			}
@@ -432,8 +416,6 @@ void BossTestScene::Draw() {
 
 	// Bossのメテオ描画
 	for (auto& m : meteors_) m->Draw();
-	// Bossの剣描画
-	if (sword_) sword_->Draw();
 
 	// Playerは一人称視点なので非描画
 	player_->Draw();
@@ -500,88 +482,12 @@ void BossTestScene::ImGuiDebug() {
 
 	ImGui::Separator();
 
-	// ==== ここから攻撃エディタ ==== //
-
-	static const char* attackNames[] = { "Arms", "Meteor", "Sword" };
-	int currentIndex = static_cast<int>(currentAttackType_);
-	if (ImGui::Combo("Attack", &currentIndex, attackNames, IM_ARRAYSIZE(attackNames))) {
-		currentAttackType_ = static_cast<BossAttackType>(currentIndex);
-	}
-
-	ImGui::Separator();
-
-	switch (currentAttackType_) {
-	case BossAttackType::Arms:
-
-		// 腕攻撃パラメータ
-		if (armController_) {
-			auto& p = armController_->GetParams();
-
-			ImGui::Text("Arm Attack Camera Params");
-			ImGui::DragFloat("IntroTime", &p.introTime, 0.01f, 0.0f, 2.0f);
-			ImGui::DragFloat("OutroTime", &p.outroTime, 0.01f, 0.0f, 2.0f);
-			ImGui::DragFloat("LookWeight", &p.lookWeight, 0.01f, 0.0f, 1.0f);
-
-			ImGui::Separator();
-
-			// デフォルトに戻す
-			if (ImGui::Button("Reset Arm Params")) {
-				p.ResetDefault();
-			}
-
-			// JSON 保存
-			if (ImGui::Button("Save Arm Params")) {
-				armController_->SaveParamsToJson("Resources/json/bossAttacks.json");
-			}
-		}
-		break;
-
-	case BossAttackType::Meteor:
-
-		// メテオ攻撃パラメータ
-		if (meteorController_) {
-
-			auto& p = meteorController_->GetParams();
-
-			ImGui::Text("Meteor Attack Params");
-			ImGui::DragFloat("メテオ持続時間(Duration)", &p.duration, 0.1f, 0.0f, 60.0f);
-			ImGui::DragFloat("メテオ出現間隔(SpawnInterval)", &p.spawnInterval, 0.01f, 0.05f, 5.0f);
-			ImGui::DragFloat("カメラ移動時間(開始側)", &p.camIntroTime, 0.01f, 0.0f, 5.0f);
-			ImGui::DragFloat("カメラ移動時間(終了側)", &p.camOutroTime, 0.01f, 0.0f, 5.0f);
-			ImGui::DragFloat3("カメラ位置オフセット", &p.camOffset.x, 0.1f);
-			ImGui::DragFloat("メテオ視点の上向き角度", &p.pitchUp, 0.01f, -1.57f, 0.0f);
-
-			ImGui::Separator();
-
-			// デフォルトに戻すボタン
-			if (ImGui::Button("Reset to Default")) {
-				p.ResetDefault();
-			}
-
-			// 保存ボタン
-			if (ImGui::Button("Save Meteor Params")) {
-				meteorController_->SaveParamsToJson("Resources/json/bossAttacks.json");
-			}
-		}
-		break;
-
-	case BossAttackType::Sword:
-
-		// 剣攻撃パラメータ
-		break;
-	}
-
 	ImGui::End();
 
 #endif // _DEBUG
 }
 
 void BossTestScene::UpdateCamera(float dt) {
-
-	// メテオ中はカメラを触らない
-	if (meteorController_ && meteorController_->IsActive()) {
-		return;
-	}
 
 	const bool focusBoss = (boss_ && boss_->WantsCameraFocus());
 
@@ -789,7 +695,7 @@ void BossTestScene::UpdateGun() {
 
 	gun_->Update();
 
-	// ★ 追加：銃の先端（今はモデルの原点）をプレイヤーに渡す
+	// 銃の先端（今はモデルの原点）をプレイヤーに渡す
 	if (player_) {
 		// もし本当に「銃の先」にしたければ forward に少し足す
 		Vector3 muzzle = gun_->GetWorldPosition() + forward * 1.0f; // 1.0f は好みで調整
@@ -797,33 +703,24 @@ void BossTestScene::UpdateGun() {
 	}
 }
 
-void BossTestScene::UpdateMeteorControl(float dt)
-{
-	// デバッグ用トグル（Mキーで開始／強制終了）
-	if (System::TriggerKey(DIK_M) && meteorController_) {
-		if (!meteorController_->IsActive()) {
-			meteorController_->Start();
-		} else {
-			meteorController_->ForceEnd();
+void BossTestScene::UpdateMeteorControl() {
+
+	if (!attackManager_) return;
+
+	// デバッグ：MでON/OFF
+	if (System::TriggerKey(DIK_M)) {
+		if (!attackManager_->IsMeteorActive()) attackManager_->StartMeteor();
+		else attackManager_->ForceEndMeteor();
+	}
+
+	// ---- ここから下は「判断」だけ ----
+
+	// メテオ中にフェーズが変わった/KO/死亡 なら強制終了
+	if (attackManager_->IsMeteorActive()) {
+		if (koActive_ || phase_ != Phase::kMain /*|| boss_->IsDead()*/) {
+			attackManager_->ForceEndMeteor();
 		}
 	}
-
-	// ボスからのリクエストでメテオ開始
-	if (meteorController_
-		&& !meteorController_->IsActive()
-		&& boss_
-		&& boss_->ConsumeMeteorRequest()) {
-		meteorController_->Start();
-	}
-
-	// メテオ中はカメラ＆メテオはコントローラに任せる
-	if (meteorController_ && meteorController_->IsActive()) {
-		meteorController_->Update(dt);
-	}
-
-	// メテオ中じゃないときだけ、従来どおりプレイヤー追従カメラ
-	Vector3 playerPos = player_->GetTransform().translate;
-	Vector3 playerRot = player_->GetTransform().rotate;
 }
 
 void BossTestScene::InitIntro() {
@@ -866,7 +763,6 @@ void BossTestScene::UpdateArmTargetMarker() {
 	const bool isLeftAttack = boss_->IsLeftArmAttacking();      // 片手(左)
 	const bool isRightAttack = boss_->IsRightArmAttacking();     // 片手(右)
 	const bool isBothAttack = boss_->IsBothHandsAttacking();    // 両手
-	// WaitMeteor 中などはどれにも当てはまらない
 
 	// ViewProj
 	Matrix4x4 view = camera_->GetViewMatrix();
@@ -962,7 +858,7 @@ void BossTestScene::UpdateArmTargetMarker() {
 
 void BossTestScene::LineTarget() {
 
-	// ★ 両腕と胴体を結ぶラインを追加（これは今まで通りでOK）
+	// 両腕と胴体を結ぶラインを追加（これは今まで通りでOK）
 	if (boss_) {
 		Object3d* body = boss_->GetBody();
 		Object3d* leftArm = boss_->GetLeftArm();
@@ -1015,7 +911,7 @@ void BossTestScene::LineTarget() {
 			break;
 		}
 
-		// ★ AABB を線で描画（AddAABBLines は BossTestScene.h のやつ）
+		// AABB を線で描画（AddAABBLines は BossTestScene.h のやつ）
 		AddAABBLines(debugLine_, info.box, color);
 	}
 }
@@ -1035,7 +931,7 @@ Vector3 BossTestScene::CalcLookAtRotation(const Vector3& camPos, const Vector3& 
 void BossTestScene::UpdateIntro(float dt)
 {
 	// メテオのパラメータをそのまま流用（同じ感じにしたいならこれが一番）
-	const auto& mp = meteorController_->GetParams();
+	const auto& mp = attackManager_->GetMeteor()->GetParams();
 	Vector3 playerPos = player_->GetTransform().translate;
 
 	// メテオと同じ「目標カメラ」
@@ -1071,7 +967,7 @@ void BossTestScene::UpdateIntro(float dt)
 		}
 		boss_->SetTranslate(bossPos);
 
-		// ★★★ ここに書く ★★★
+		// 
 		if (!landed) {
 			// 着地前：今まで通り（メテオ式）
 			camera_->SetTranslate(targetPos);
@@ -1117,8 +1013,7 @@ void BossTestScene::UpdateIntro(float dt)
 	}
 
 
-	case IntroPhase::CamOut:
-	{
+	case IntroPhase::CamOut: {
 
 		// メテオのOutroと同じ：元のカメラへ戻す
 		introCamLerp_ = std::min(1.0f, introCamLerp_ + dt / mp.camOutroTime);

@@ -1,0 +1,78 @@
+#pragma once
+#include <memory>
+#include <vector>
+
+class Camera;
+class Player;
+class BossEnemy;
+class BossMeteor;
+class BossMeteorController;
+class BossArmController;
+
+class BossAttackManager {
+
+public:
+
+	enum class BossAttackPhase {
+		RightHand,
+		LeftHand,
+		BothHands,
+		Meteor
+	};
+
+	// 初期化用構造体
+	struct InitDesc {
+		Camera* camera = nullptr;
+		Player* player = nullptr;
+		BossEnemy* boss = nullptr;
+		std::vector<std::unique_ptr<BossMeteor>>* meteors = nullptr;
+	};
+
+	// BossTestScene側で毎フレーム渡せるフラグ
+	struct UpdateFlags {
+		bool koActive = false;
+		bool isMainPhase = true;
+		bool swordCamActive = false;
+		bool isCameraFollowPlayer = true;
+	};
+
+public:
+
+	BossAttackManager() = default;
+	~BossAttackManager() = default;
+
+	void Init(const InitDesc& desc);
+
+	// 毎フレーム呼ぶ
+	void Update(float dt, const UpdateFlags& flags);
+
+	// 現在の攻撃が終了したときに呼ぶ
+	void OnCurrentAttackFinished();
+
+	// メテオ操作（デバッグ・演出開始用）
+	void StartMeteor();
+	void ForceEndMeteor();
+
+	bool IsMeteorActive() const;
+	bool IsAnyAttackActive() const;
+
+public:
+
+	// getter,setter
+	BossMeteorController* GetMeteor() { return meteor_.get(); }
+	BossArmController* GetArm() { return arm_.get(); }
+
+private:
+
+	bool CanArmControlCamera(const UpdateFlags& flags) const;
+
+private:
+
+	InitDesc desc_{};
+
+	std::unique_ptr<BossMeteorController> meteor_;
+	std::unique_ptr<BossArmController> arm_;
+
+
+	bool prevArmActive_ = false;
+};

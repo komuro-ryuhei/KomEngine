@@ -984,8 +984,7 @@ void BossEnemy::UpdateRetreat(float dt) {
 
 	switch (retreatPhase_) {
 
-	case RetreatPhase::MoveOut:
-	{
+	case RetreatPhase::MoveOut:{
 
 		// まず縮むだけ（retreatShrinkTime_）
 		if (retreatT_ < retreatShrinkTime_) {

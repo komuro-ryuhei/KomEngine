@@ -190,6 +190,9 @@ public:
 	bool ConsumeMeteorRequest(); // trueを返したタイミングでフラグを消費
 	void OnMeteorFinished();     // メテオ終了後に呼ぶ
 
+	// 流星攻撃を開始すべきか
+	bool ShouldStartMeteor() const;
+
 	void HPDraw();
 
 	// 戦闘有効化・無効化

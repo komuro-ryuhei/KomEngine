@@ -269,6 +269,7 @@
     <ClCompile Include="BossArmController.cpp" />
     <ClCompile Include="LineRenderer.cpp" />
     <ClCompile Include="CollisionManager.cpp" />
+    <ClCompile Include="BossAttackManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -423,6 +424,7 @@
     <ClInclude Include="ICollisionObject.h" />
     <ClInclude Include="CollisionTypes.h" />
     <ClInclude Include="CollisionManager.h" />
+    <ClInclude Include="BossAttackManager.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

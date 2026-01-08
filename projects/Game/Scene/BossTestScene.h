@@ -22,6 +22,8 @@
 #include "BossArmController.h"
 #include "CollisionManager.h"
 
+#include "BossAttackManager.h"
+
 class BossTestScene : public IScene {
 
 public:
@@ -145,6 +147,9 @@ private:
 	// 当たり判定管理
 	CollisionManager collisionManager_;
 
+	// 攻撃管理
+	std::unique_ptr<BossAttackManager> attackManager_;
+
 	// Play開始時の基準
 	Vector3 playCameraPos_;
 	Vector3 playCameraRot_;
@@ -193,29 +198,11 @@ private:
 	// メテオ
 	std::vector<std::unique_ptr<BossMeteor>> meteors_;
 
-	// メテオ攻撃の制御はコントローラに委譲
-	std::unique_ptr<BossMeteorController> meteorController_;
+	//// メテオ攻撃の制御はコントローラに委譲
+	//std::unique_ptr<BossMeteorController> meteorController_;
 
-	// 腕攻撃コントローラ（カメラ演出含む）
-	std::unique_ptr<BossArmController> armController_;
-
-	// 剣
-	std::unique_ptr<BossSword> sword_;
-	bool swordAttack_ = false;
-	float swordPhaseT_ = 0.f;
-
-	// ---- 剣カメラフォーカス制御 ----
-	bool  swordCamActive_ = false;
-	float swordCamIntroT_ = 0.0f;
-	float swordCamOutroT_ = 0.0f;
-	float swordCamIntroDur_ = 0.25f;
-	float swordCamOutroDur_ = 0.25f;
-	Vector3 swordSavedPos_{}, swordSavedRot_{};
-	Vector3 swordAimPoint_{};
-	// ---- 剣スイープの遅延開始用 ----
-	bool    swordPendingSweep_ = false;
-	Vector3 swordCenter_{}, swordRight_{}, swordForward_{};
-	float   swordHalfLen_ = 10.0f, swordToward_ = 2.0f, swordDuration_ = 0.5f;
+	//// 腕攻撃コントローラ（カメラ演出含む）
+	//std::unique_ptr<BossArmController> armController_;
 
 	KnockoutCameraController ko_;
 	bool koActive_ = false;
@@ -285,7 +272,7 @@ private:
 	void UpdateGun();
 
 	// メテオ関連の制御（入力・ボスリクエスト・カメラ追従のON/OFF）
-	void UpdateMeteorControl(float dt);
+	void UpdateMeteorControl();
 
 	// 
 	void LineTarget();
