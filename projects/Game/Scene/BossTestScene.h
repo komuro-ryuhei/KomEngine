@@ -9,6 +9,7 @@
 
 // Entity
 #include "Engine/Base/3d/Skybox/Skybox.h"
+#include "Engine/Base/2d/Sprite/Sprite.h"
 #include "Game/Entity/Player/Player.h"
 #include "Game/Entity/Enemy/Enemy.h"
 #include "Game/Entity/Enemy/BossEnemy.h"
@@ -131,6 +132,9 @@ private:
 	// Boss
 	std::unique_ptr<BossEnemy> boss_ = nullptr;
 	Vector3 bossSpawnPos_{};
+
+	// 操作方法スプライト
+	std::unique_ptr<Sprite> controlGuideSprite_ = nullptr;
 
 	// リザルトのスプライト
 	std::unique_ptr<ResultImage> result_ = nullptr;

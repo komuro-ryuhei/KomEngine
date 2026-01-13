@@ -31,6 +31,7 @@ void BossTestScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/hp.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/blackBG.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/gameClear.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/controlsGuide.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -136,6 +137,12 @@ void BossTestScene::Init() {
 	attackManager_->GetMeteor()->LoadParamsFromJson("Resources/json/bossAttacks.json");
 	attackManager_->GetArm()->LoadParamsFromJson("Resources/json/bossAttacks.json");
 
+	// 
+	controlGuideSprite_ = std::make_unique<Sprite>();
+	controlGuideSprite_->Init("./Resources/images/controlsGuide.png", BlendType::BLEND_ALPHA);
+	controlGuideSprite_->SetSize({ 400.0f, 280.0f });
+	controlGuideSprite_->SetPosition({ 900.0f, 420.0f });
+
 	// パーティクル
 	auto* pm = ParticleManager::GetInstance();
 	pm->Init(camera_.get(), BlendType::BLEND_ADD);
@@ -180,7 +187,6 @@ void BossTestScene::Init() {
 	playCameraRot_ = camera_->GetRotate();
 
 	bossPlayPos_ = boss_->GetTranslate();
-
 }
 
 void BossTestScene::Update() {
@@ -290,6 +296,9 @@ void BossTestScene::Update() {
 	boss_->Update();
 	// ボスのメテオ攻撃用
 	for (auto& m : meteors_) m->Update();
+
+	// 
+	controlGuideSprite_->Update();
 
 	// リザルトスプライトの更新
 	result_->Update();
@@ -421,6 +430,9 @@ void BossTestScene::Draw() {
 	player_->Draw();
 
 	// 
+	controlGuideSprite_->Draw();
+
+	// 
 	leftTargetOuter_->Draw();
 	leftTargetInner_->Draw();
 	rightTargetOuter_->Draw();
@@ -450,6 +462,8 @@ void BossTestScene::ImGuiDebug() {
 	player_->ImGuiDebug();
 	gun_->ImGuiDebug("gun");
 	boss_->ImGuiDebug();
+
+	controlGuideSprite_->ImGuiDebug();
 
 	ImGui::Begin("BossTestScene");
 
