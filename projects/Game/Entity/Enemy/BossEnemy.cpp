@@ -923,15 +923,8 @@ void BossEnemy::DamageShake() {
 
 void BossEnemy::StartRetreatAttack() {
 
-	// すでに退避中なら無視
-	if (retreatPhase_ != RetreatPhase::None) {
-		return;
-	}
-
-	// 死亡中はやらない
-	if (hp_ <= 0) {
-		return;
-	}
+	if (retreatPhase_ != RetreatPhase::None) return;
+	if (hp_ <= 0) return;
 
 	retreatPhase_ = RetreatPhase::MoveOut;
 	retreatT_ = 0.0f;
@@ -939,12 +932,15 @@ void BossEnemy::StartRetreatAttack() {
 	retreatStartPos_ = transform_.translate;
 
 	retreatBackPos_ = retreatStartPos_;
-	retreatBackPos_.z += retreatBackZOffset_; // 奥へ（+z想定）
-	retreatBackPos_.y += retreatUpOffset_;    // ちょい上
+	retreatBackPos_.z += retreatBackZOffset_;
+	retreatBackPos_.y += retreatUpOffset_;
 
 	invulnerable_ = true;
 
-	// 退避開始時に腕を基準位置に戻す（見た目が安定）
+	// Stay内部状態を毎回リセット
+	retreatStayPhase_ = RetreatStayPhase::Unflatten;
+
+	// 退避開始時に腕を基準位置に戻す
 	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
 	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
 	if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
@@ -984,7 +980,8 @@ void BossEnemy::UpdateRetreat(float dt) {
 
 	switch (retreatPhase_) {
 
-	case RetreatPhase::MoveOut:{
+	case RetreatPhase::MoveOut:
+	{
 
 		// まず縮むだけ（retreatShrinkTime_）
 		if (retreatT_ < retreatShrinkTime_) {
@@ -1030,7 +1027,8 @@ void BossEnemy::UpdateRetreat(float dt) {
 	} break;
 
 
-	case RetreatPhase::Stay: {
+	case RetreatPhase::Stay:
+	{
 
 		// 奥位置固定
 		transform_.translate = retreatBackPos_;
@@ -1078,7 +1076,8 @@ void BossEnemy::UpdateRetreat(float dt) {
 		}
 	} break;
 
-	case RetreatPhase::Return: {
+	case RetreatPhase::Return:
+	{
 
 		// ① まず奥で「普通 → ペラ」へ（ここが無いとパッと0になる）
 		if (retreatT_ < retreatFlattenTime_) {
@@ -1144,7 +1143,7 @@ void BossEnemy::UpdateRetreat(float dt) {
 	}
 }
 
-void BossEnemy::StartMissileVolley(){
+void BossEnemy::StartMissileVolley() {
 
 	missileHitPlayer_ = false;
 

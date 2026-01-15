@@ -237,7 +237,7 @@ void BossTestScene::Update() {
 		if (ko_.IsDone()) {
 			koActive_ = false;
 
-			// フェードアウト開始（まだ何も決まってなければプレイヤー死亡扱い）
+			// フェードアウト開始
 			if (fade_ && phase_ == Phase::kMain) {
 				fade_->Start(Fade::Status::FadeOut, 0.6f);
 				phase_ = Phase::kFadeOut;
@@ -726,15 +726,6 @@ void BossTestScene::UpdateMeteorControl() {
 		if (!attackManager_->IsMeteorActive()) attackManager_->StartMeteor();
 		else attackManager_->ForceEndMeteor();
 	}
-
-	// ---- ここから下は「判断」だけ ----
-
-	// メテオ中にフェーズが変わった/KO/死亡 なら強制終了
-	if (attackManager_->IsMeteorActive()) {
-		if (koActive_ || phase_ != Phase::kMain /*|| boss_->IsDead()*/) {
-			attackManager_->ForceEndMeteor();
-		}
-	}
 }
 
 void BossTestScene::InitIntro() {
@@ -815,6 +806,10 @@ void BossTestScene::UpdateArmTargetMarker() {
 	// まず全部消しておく
 	hide(leftTargetOuter_, leftTargetInner_);
 	hide(rightTargetOuter_, rightTargetInner_);
+
+	if (boss_->IsRetreating()) {
+		return;
+	}
 
 	// ---- 左手ターゲット表示条件 ----
 	bool showLeft =

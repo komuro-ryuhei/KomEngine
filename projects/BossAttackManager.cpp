@@ -1,6 +1,7 @@
 #include "BossAttackManager.h"
 #include "BossMeteorController.h"
 #include "BossArmController.h"
+#include "Game/Entity/Enemy/BossEnemy.h"
 
 #include <cassert>
 
@@ -32,35 +33,43 @@ bool BossAttackManager::CanArmControlCamera(const UpdateFlags& flags) const {
 
 void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 
-	// 前フレームの状態
-	const bool wasArmActive = (arm_ && arm_->IsActive());
+	const bool wasMeteorActive = (meteor_ && meteor_->IsActive());
 
-	// 腕更新（ここでActiveが変わる）
+	// 腕更新
 	if (arm_) {
 		arm_->Update(dt, CanArmControlCamera(flags));
 	}
 
-	const bool isArmActive = (arm_ && arm_->IsActive());
-
-	// 腕が「終わった瞬間」(true→false) にメテオ開始
-	const bool armJustFinished = (wasArmActive && !isArmActive);
-
-	if (armJustFinished) {
-		// メテオを開始してよい条件（最低限）
-		const bool canStartMeteor =
-			!flags.koActive &&
-			flags.isMainPhase &&
-			!(meteor_ && meteor_->IsActive());
-
-		if (canStartMeteor) {
-			meteor_->Start();
+	// メテオ中にKO/フェーズ外なら強制終了
+	if (meteor_ && meteor_->IsActive()) {
+		if (flags.koActive || !flags.isMainPhase) {
+			meteor_->ForceEnd();
 		}
+	}
+
+	// ===== メテオ開始条件 =====
+	const bool canStartMeteor =
+		!flags.koActive &&
+		flags.isMainPhase &&
+		!(meteor_ && meteor_->IsActive());
+
+	if (canStartMeteor && desc_.boss && desc_.boss->ConsumeMeteorRequest()) {
+		meteor_->Start();
 	}
 
 	// メテオ更新
 	if (meteor_ && meteor_->IsActive()) {
 		meteor_->Update(dt);
 	}
+
+	// メテオが終わった瞬間にBossへ通知（ForceEndでもここで拾える）
+	const bool isMeteorActive = (meteor_ && meteor_->IsActive());
+	if (wasMeteorActive && !isMeteorActive && desc_.boss) {
+		desc_.boss->OnMeteorFinished();
+	}
+}
+
+void BossAttackManager::OnCurrentAttackFinished() {
 }
 
 void BossAttackManager::StartMeteor() {
