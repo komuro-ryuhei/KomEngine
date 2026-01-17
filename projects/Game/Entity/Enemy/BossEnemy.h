@@ -79,6 +79,10 @@ public:
 	void StartLeftHitFlash() { leftHitFlashTime_ = hitFlashDuration_; }
 	void StartRightHitFlash() { rightHitFlashTime_ = hitFlashDuration_; }
 
+	// チャージビーム（発射物）
+	void StartChargeBeamShot(bool useLeftArm);
+	bool IsChargeBeamShotActive() const;
+
 	// 怒り状態かどうか
 	bool IsEnraged() const { return isEnraged_; }
 	void SetEnraged(bool enraged);
@@ -152,6 +156,10 @@ public:
 	int GetLeftHitCount() const { return leftArmHitCount_; }
 	int GetRightHitCount() const { return rightArmHitCount_; }
 
+	// 腕が破壊されているかどうか
+	bool IsLeftArmBroken() const { return leftArmHitCount_ >= maxHitCount_; }
+	bool IsRightArmBroken() const { return rightArmHitCount_ >= maxHitCount_; }
+
 public:
 
 	void AddHitLeftArm() { ++leftArmHitCount_; }
@@ -192,6 +200,19 @@ public:
 
 	// 流星攻撃を開始すべきか
 	bool ShouldStartMeteor() const;
+
+	// チャージビーム要求
+	void RequestChargeAttack(bool targetLeft);
+	bool ConsumeChargeRequest();
+
+	// チャージ中か
+	bool IsChargeActive() const { return chargeActive_; }
+	bool IsChargeTargetLeft() const { return chargeTargetLeft_; }
+	void SetChargeActive(bool a) { chargeActive_ = a; }
+	void SetChargeTargetLeft(bool l) { chargeTargetLeft_ = l; }
+
+	// チャージ攻撃終了通知
+	void OnChargeAttackFinished();
 
 	void HPDraw();
 
@@ -370,16 +391,32 @@ private:
 	float missileTelegraphTime_ = 1.0f; // 予告表示
 	float missileRadius_ = 2.5f;        // 半円の半径
 	float missileHeight_ = 2.0f;        // ボス上方向オフセット
-	float missileSpeed_ = 0.2f;        // 発射速度（EnemyBulletのspeed_に入れる）
+	float missileSpeed_ = 0.2f;         // 発射速度
 
 	bool missileHitPlayer_ = false; // 当たったらtrue（1回のボレー中）
 	float missileHitDist_ = 0.7f;   // 当たり判定距離（仮。ゲームに合わせて調整）
 	float missileMaxDist_ = 200.0f; // 遠すぎたら消す（仮）
 
+	// チャージビーム発射物
+	struct ChargeBeamShot {
+		std::unique_ptr<Object3d> obj;
+		std::unique_ptr<EnemyBullet> bullet;
+	};
+
+	ChargeBeamShot chargeShot_{};
+	float chargeShotLife_ = 0.0f;
+	float chargeShotMaxLife_ = 1.2f;
+
+	// チャージ攻撃要求
+	bool chargeRequest_ = false;
+	bool chargeActive_ = false;
+	bool chargeTargetLeft_ = false;
+
 	// 怒りモード
 	bool isEnraged_ = false;
 
 private:
+
 	void UpdateRetreat(float dt);
 
 	// ミサイル攻撃関数
@@ -387,4 +424,6 @@ private:
 	void UpdateMissileVolley(float dt); // 毎フレーム更新
 	void DrawMissileVolley();           // 描画
 
+	// チャージビーム
+	void UpdateChargeBeamShot(float dt);
 };

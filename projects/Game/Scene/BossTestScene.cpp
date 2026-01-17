@@ -248,8 +248,19 @@ void BossTestScene::Update() {
 		}
 	}
 
+	// デバッグ：離脱攻撃要求
 	if (System::GetInput()->PushKey(DIK_R)) {
 		boss_->StartRetreatAttack();
+	}
+
+	// デバッグ：チャージビーム要求
+	if (System::GetInput()->PushKey(DIK_C)) {
+		// まだ壊れていない側を優先
+		bool targetLeft = !boss_->IsLeftArmBroken();
+		if (boss_->IsLeftArmBroken() && !boss_->IsRightArmBroken()) {
+			targetLeft = false;
+		}
+		boss_->RequestChargeAttack(targetLeft);
 	}
 
 	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
@@ -811,12 +822,15 @@ void BossTestScene::UpdateArmTargetMarker() {
 		return;
 	}
 
-	// ---- 左手ターゲット表示条件 ----
-	bool showLeft =
-		// 左片手攻撃中 か
-		(isLeftAttack && leftHits < maxHits) ||
-		// 両手攻撃中で、左が規定未満
-		(isBothAttack && leftHits < maxHits);
+	// ---- 左手ターゲット表示条件 ---- //
+	bool showLeft = false;
+	if (boss_->IsChargeActive()) {
+		showLeft = boss_->IsChargeTargetLeft() && (leftHits < maxHits);
+	} else {
+		showLeft =
+			(isLeftAttack && leftHits < maxHits) ||
+			(isBothAttack && leftHits < maxHits);
+	}
 
 	if (showLeft) {
 		Vector2 screen;
@@ -837,12 +851,21 @@ void BossTestScene::UpdateArmTargetMarker() {
 			leftTargetOuter_->SetColor({ 1,1,1,1 });
 			leftTargetInner_->SetColor({ 1,1,1,1 });
 		}
+	} else {
+		// 表示しない時は透明にして残像を消す
+		leftTargetOuter_->SetColor({ 1, 1, 1, 0 });
+		leftTargetInner_->SetColor({ 1, 1, 1, 0 });
 	}
 
-	// ---- 右手ターゲット表示条件 ----
-	bool showRight =
-		(isRightAttack && rightHits < maxHits) ||
-		(isBothAttack && rightHits < maxHits);
+	// ---- 右手ターゲット表示条件 ---- //	
+	bool showRight = false;
+	if (boss_->IsChargeActive()) {
+		showRight = !boss_->IsChargeTargetLeft() && (rightHits < maxHits);
+	} else {
+		showRight =
+			(isRightAttack && rightHits < maxHits) ||
+			(isBothAttack && rightHits < maxHits);
+	}
 
 	if (showRight) {
 		Vector2 screen;
@@ -862,6 +885,10 @@ void BossTestScene::UpdateArmTargetMarker() {
 			rightTargetOuter_->SetColor({ 1,1,1,1 });
 			rightTargetInner_->SetColor({ 1,1,1,1 });
 		}
+	} else {
+		// 表示しない時は透明にして残像を消す
+		rightTargetOuter_->SetColor({ 1, 1, 1, 0 });
+		rightTargetInner_->SetColor({ 1, 1, 1, 0 });
 	}
 }
 

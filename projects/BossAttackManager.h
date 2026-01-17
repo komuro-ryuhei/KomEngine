@@ -2,6 +2,8 @@
 #include <memory>
 #include <vector>
 
+#include "ChargeAttackController.h"
+
 class Camera;
 class Player;
 class BossEnemy;
@@ -39,7 +41,7 @@ public:
 public:
 
 	BossAttackManager() = default;
-	~BossAttackManager() = default;
+	~BossAttackManager();
 
 	void Init(const InitDesc& desc);
 
@@ -54,6 +56,7 @@ public:
 	void ForceEndMeteor();
 
 	bool IsMeteorActive() const;
+	bool IsChargeActive() const;
 	bool IsAnyAttackActive() const;
 
 public:
@@ -61,6 +64,7 @@ public:
 	// getter,setter
 	BossMeteorController* GetMeteor() { return meteor_.get(); }
 	BossArmController* GetArm() { return arm_.get(); }
+	ChargeAttackController* GetCharge() { return charge_.get(); }
 
 private:
 
@@ -72,7 +76,7 @@ private:
 
 	std::unique_ptr<BossMeteorController> meteor_;
 	std::unique_ptr<BossArmController> arm_;
-
+	std::unique_ptr<ChargeAttackController> charge_;
 
 	bool prevArmActive_ = false;
 };

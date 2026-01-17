@@ -1,9 +1,12 @@
 #include "BossAttackManager.h"
 #include "BossMeteorController.h"
 #include "BossArmController.h"
+
 #include "Game/Entity/Enemy/BossEnemy.h"
 
 #include <cassert>
+
+BossAttackManager::~BossAttackManager() = default;
 
 void BossAttackManager::Init(const InitDesc& desc) {
 
@@ -18,6 +21,12 @@ void BossAttackManager::Init(const InitDesc& desc) {
 
 	arm_ = std::make_unique<BossArmController>();
 	arm_->Init(desc_.camera, desc_.boss);
+
+	charge_ = std::make_unique<ChargeAttackController>();
+	charge_->Init();
+	charge_->SetCamera(desc_.camera);
+	charge_->SetPlayer(desc_.player);
+	charge_->SetBoss(desc_.boss);
 }
 
 bool BossAttackManager::CanArmControlCamera(const UpdateFlags& flags) const {
@@ -27,6 +36,7 @@ bool BossAttackManager::CanArmControlCamera(const UpdateFlags& flags) const {
 		!flags.koActive
 		&& flags.isMainPhase
 		&& !IsMeteorActive()
+		&& !IsChargeActive()
 		&& !flags.swordCamActive
 		&& flags.isCameraFollowPlayer;
 }
@@ -34,6 +44,7 @@ bool BossAttackManager::CanArmControlCamera(const UpdateFlags& flags) const {
 void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 
 	const bool wasMeteorActive = (meteor_ && meteor_->IsActive());
+	const bool wasChargeActive = (charge_ && charge_->IsActive());
 
 	// 腕更新
 	if (arm_) {
@@ -57,15 +68,37 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		meteor_->Start();
 	}
 
+	// ===== チャージビーム開始条件 =====
+	const bool canStartCharge =
+		!flags.koActive &&
+		flags.isMainPhase &&
+		!(charge_ && charge_->IsActive()) &&
+		!(meteor_ && meteor_->IsActive());
+
+	if (canStartCharge && desc_.boss && desc_.boss->ConsumeChargeRequest()) {
+		charge_->Start();
+	}
+
 	// メテオ更新
 	if (meteor_ && meteor_->IsActive()) {
 		meteor_->Update(dt);
+	}
+
+	// チャージ更新
+	if (charge_ && charge_->IsActive()) {
+		charge_->Update(dt);
 	}
 
 	// メテオが終わった瞬間にBossへ通知（ForceEndでもここで拾える）
 	const bool isMeteorActive = (meteor_ && meteor_->IsActive());
 	if (wasMeteorActive && !isMeteorActive && desc_.boss) {
 		desc_.boss->OnMeteorFinished();
+	}
+
+	// チャージが終わった瞬間にBossへ通知
+	const bool isChargeActive = (charge_ && charge_->IsActive());
+	if (wasChargeActive && !isChargeActive && desc_.boss) {
+		desc_.boss->OnChargeAttackFinished();
 	}
 }
 
@@ -92,6 +125,10 @@ bool BossAttackManager::IsMeteorActive() const {
 	return meteor_ && meteor_->IsActive();
 }
 
+bool BossAttackManager::IsChargeActive() const {
+	return charge_ && charge_->IsActive();
+}
+
 bool BossAttackManager::IsAnyAttackActive() const {
-	return IsMeteorActive() || (arm_ && arm_->IsActive());
+	return IsMeteorActive() || IsChargeActive() || (arm_ && arm_->IsActive());
 }

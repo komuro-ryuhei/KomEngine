@@ -227,6 +227,8 @@ void BossEnemy::Update() {
 	}
 
 	UpdateMissileVolley(dt);
+	UpdateMissileVolley(dt);
+	UpdateChargeBeamShot(dt);
 
 	// ---------------------- 被弾シェイク ---------------------- //
 	DamageShake();
@@ -247,6 +249,8 @@ void BossEnemy::Draw() {
 	rightArm_->Draw();
 
 	DrawMissileVolley();
+	// チャージビーム弾
+	if (chargeShot_.obj) { chargeShot_.obj->Draw(); }
 }
 
 void BossEnemy::ImGuiDebug() {
@@ -1310,5 +1314,93 @@ void BossEnemy::DrawMissileVolley() {
 		if (m.bullet) {
 			m.bullet->Draw();
 		}
+	}
+}
+
+void BossEnemy::RequestChargeAttack(bool targetLeft) {
+
+	chargeRequest_ = true;
+	chargeTargetLeft_ = targetLeft;
+}
+
+bool BossEnemy::ConsumeChargeRequest() {
+
+	if (chargeRequest_) {
+		chargeRequest_ = false;
+		return true;
+	}
+	return false;
+
+}
+
+void BossEnemy::OnChargeAttackFinished() {
+
+	// チャージ状態フラグを戻す
+	chargeActive_ = false;
+}
+
+bool BossEnemy::IsChargeBeamShotActive() const {
+
+	// 発射中か
+	return chargeShot_.bullet != nullptr;
+}
+
+void BossEnemy::StartChargeBeamShot(bool useLeftArm) {
+
+	// 既に発射中なら上書きしない
+	if (chargeShot_.bullet) { return; }
+	if (!camera_ || !player_) { return; }
+	// 生成位置：対象腕の先端付近
+	Vector3 spawnPos = useLeftArm ? GetLeftHandWorldPos() : GetRightHandWorldPos();
+	Vector3 playerPos = player_->GetTransform().translate;
+
+	// 見た目（球） ※将来は細長いメッシュやラインに差し替え
+	chargeShot_.obj = std::make_unique<Object3d>();
+	chargeShot_.obj->Init(BlendType::BLEND_NONE);
+	chargeShot_.obj->SetModel("sphere.obj");
+	chargeShot_.obj->SetDefaultCamera(camera_);
+	chargeShot_.obj->SetScale({ 1.6f, 1.6f, 1.6f });
+	chargeShot_.obj->SetTranslate(spawnPos);
+
+	chargeShot_.bullet = std::make_unique<EnemyBullet>();
+	chargeShot_.bullet->Init(camera_, chargeShot_.obj.get());
+
+	Vector3 dir = MyMath::Normalize(playerPos - spawnPos);
+	chargeShot_.bullet->SetDirection(dir);
+	chargeShot_.bullet->SetSpeed(28.0f); // 速め（即着弾っぽく）
+
+	if (collisionManager_) {
+		collisionManager_->Register(chargeShot_.bullet.get());
+
+	}
+	chargeShotLife_ = 0.0f;
+}
+
+void BossEnemy::UpdateChargeBeamShot(float dt) {
+
+	if (!chargeShot_.bullet) { return; }
+
+	chargeShotLife_ += dt;
+
+	chargeShot_.bullet->Update();
+
+	// 寿命 or 命中で終了
+	bool end = false;
+	if (chargeShot_.bullet->IsDead()) {
+		end = true;
+	}
+	if (chargeShot_.bullet->DidHitPlayer()) {
+		end = true;
+	}
+	if (chargeShotLife_ >= chargeShotMaxLife_) {
+		end = true;
+	}
+
+	if (end) {
+		if (collisionManager_ && chargeShot_.bullet) {
+			collisionManager_->Unregister(chargeShot_.bullet.get());
+		}
+		chargeShot_.bullet.reset();
+		chargeShot_.obj.reset();
 	}
 }
