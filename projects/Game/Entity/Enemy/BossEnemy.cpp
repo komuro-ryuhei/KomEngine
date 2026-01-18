@@ -72,6 +72,8 @@ void BossEnemy::Update() {
 
 	const float dt = System::GetDeltaTime();
 
+	UpdateChargeCrossPose(dt);
+
 	// 3Dオブジェクト更新
 	object3d_->Update();
 	leftArm_->Update();
@@ -213,7 +215,7 @@ void BossEnemy::Update() {
 		if (IsRetreating()) {
 			// 退避中は通常攻撃をしない
 		} else {
-			if (combatEnabled_ && isAttack_) {
+			if (combatEnabled_ && isAttack_ && !chargeActive_) {
 				Attack();
 			}
 		}
@@ -1359,7 +1361,7 @@ void BossEnemy::StartChargeBeamShot(bool useLeftArm) {
 	chargeShot_.obj->Init(BlendType::BLEND_NONE);
 	chargeShot_.obj->SetModel("sphere.obj");
 	chargeShot_.obj->SetDefaultCamera(camera_);
-	chargeShot_.obj->SetScale({ 1.6f, 1.6f, 1.6f });
+	chargeShot_.obj->SetScale({ 1.6f, 1.6f, 20.0f });
 	chargeShot_.obj->SetTranslate(spawnPos);
 
 	chargeShot_.bullet = std::make_unique<EnemyBullet>();
@@ -1403,4 +1405,50 @@ void BossEnemy::UpdateChargeBeamShot(float dt) {
 		chargeShot_.bullet.reset();
 		chargeShot_.obj.reset();
 	}
+}
+
+void BossEnemy::UpdateChargeCrossPose(float dt) {
+
+	// チャージしていないなら、保存していた姿勢を戻して終了
+	if (!chargeActive_) {
+		if (chargePoseSaved_) {
+			// チャージ開始時の姿勢に戻す
+			leftArmPos_ = chargeSavedLeftArmPos_;
+			rightArmPos_ = chargeSavedRightArmPos_;
+			if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
+			if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
+			chargePoseSaved_ = false;
+			chargePoseLerp_ = 0.0f;
+		}
+		return;
+	}
+
+	// 初回だけ現在姿勢を保存
+	if (!chargePoseSaved_) {
+		chargePoseSaved_ = true;
+		chargeSavedLeftArmPos_ = leftArmPos_;
+		chargeSavedRightArmPos_ = rightArmPos_;
+		chargePoseLerp_ = 0.0f;
+	}
+
+	// 胴体の前でクロス（左右のXを入れ替える）
+	const Vector3 leftTarget{ -0.5f, 0.5f, -chargeCrossZOffset_ };
+	const Vector3 rightTarget{ +0.5f, 0.5f, -(chargeCrossZOffset_) };
+
+	chargePoseLerp_ += dt * chargePoseInSpeed_;
+	if (chargePoseLerp_ > 1.0f) { chargePoseLerp_ = 1.0f; }
+
+	auto lerp3 = [](const Vector3& a, const Vector3& b, float t) {
+		return Vector3{
+			a.x + (b.x - a.x) * t,
+			a.y + (b.y - a.y) * t,
+			a.z + (b.z - a.z) * t,
+		};
+		};
+
+	leftArmPos_ = lerp3(chargeSavedLeftArmPos_, leftTarget, chargePoseLerp_);
+	rightArmPos_ = lerp3(chargeSavedRightArmPos_, rightTarget, chargePoseLerp_);
+
+	if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
+	if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
 }

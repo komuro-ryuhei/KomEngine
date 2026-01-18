@@ -412,6 +412,15 @@ private:
 	bool chargeActive_ = false;
 	bool chargeTargetLeft_ = false;
 
+	// チャージ中の「腕クロス」演出
+	bool chargePoseSaved_ = false;
+	Vector3 chargeSavedLeftArmPos_{};
+	Vector3 chargeSavedRightArmPos_{};
+	float chargePoseLerp_ = 0.0f;       // 0..1
+	float chargePoseInSpeed_ = 6.0f;    // 入り（大きいほど速い）
+	float chargePoseOutSpeed_ = 8.0f;   // 戻り
+	float chargeCrossZOffset_ = 2.5f;;  // 腕の重なり用Zずらし
+
 	// 怒りモード
 	bool isEnraged_ = false;
 
@@ -426,4 +435,5 @@ private:
 
 	// チャージビーム
 	void UpdateChargeBeamShot(float dt);
+	void UpdateChargeCrossPose(float dt);
 };

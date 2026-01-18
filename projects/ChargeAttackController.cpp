@@ -2,6 +2,7 @@
 #include "Game/Entity/Enemy/BossEnemy.h"
 
 void ChargeAttackController::Init() {
+
 	active_ = false;
 	state_ = State::None;
 	t_ = 0.0f;
@@ -13,16 +14,35 @@ void ChargeAttackController::Start() {
 	if (active_) return;
 	if (!boss_) return;
 
-	// Boss側に「どっちを狙わせたいか」は RequestChargeAttack で入っている想定
-	targetLeft_ = boss_->IsChargeTargetLeft();
+	// Request側で決めたターゲット（左/右）
+	bool wantLeft = boss_->IsChargeTargetLeft();
+
+	// 既に壊れている腕を選んでいたら入れ替える
+	const bool leftBroken = boss_->IsLeftArmBroken();
+	const bool rightBroken = boss_->IsRightArmBroken();
+
+	if (wantLeft && leftBroken && !rightBroken) {
+		wantLeft = false;
+	} else if (!wantLeft && rightBroken && !leftBroken) {
+		wantLeft = true;
+	}
+
+	// 両腕とも壊れているならチャージ攻撃は成立しない
+	if (leftBroken && rightBroken) {
+		// マーカーを消す
+		boss_->SetChargeActive(false);
+		return;
+	}
+
+	targetLeft_ = wantLeft;
 
 	active_ = true;
 	state_ = State::ChargeStart;
 	t_ = 0.0f;
 
 	// マーカー表示用
-	boss_->SetChargeActive(true);
 	boss_->SetChargeTargetLeft(targetLeft_);
+	boss_->SetChargeActive(true);
 }
 
 void ChargeAttackController::ForceEnd() {
@@ -73,7 +93,7 @@ void ChargeAttackController::Update(float dt) {
 	break;
 
 	case State::Fire:
-		// FireShot() 内で遷移させる
+		// 
 		break;
 
 	case State::WaitShotEnd:
@@ -93,12 +113,14 @@ void ChargeAttackController::Update(float dt) {
 }
 
 void ChargeAttackController::BeginCharge() {
+
 	state_ = State::Charging;
 	t_ = 0.0f;
 }
 
 void ChargeAttackController::InterruptCharge() {
-	// 失敗じゃなく「プレイヤー成功」なので発射しない
+
+	// 
 	if (boss_) {
 		boss_->SetChargeActive(false);
 	}
@@ -106,22 +128,23 @@ void ChargeAttackController::InterruptCharge() {
 }
 
 void ChargeAttackController::FireShot() {
+
 	state_ = State::Fire;
 
-	// 発射（Boss側で弾生成）
+	// 発射
 	boss_->StartChargeBeamShot(targetLeft_);
 
-	// 発射後は弾が消えるまで待つ（当たり or 寿命）
+	// 発射後は弾が消えるまで待つ
 	state_ = State::WaitShotEnd;
 	t_ = 0.0f;
 
-	// 発射が終わったらマーカーは消してOK（狙わせフェーズは終わり）
+	// 発射が終わったらマーカーは消す
 	boss_->SetChargeActive(false);
 }
 
 void ChargeAttackController::Finish() {
+
 	active_ = false;
 	state_ = State::None;
 	t_ = 0.0f;
 }
-\

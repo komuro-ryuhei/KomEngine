@@ -253,14 +253,18 @@ void BossTestScene::Update() {
 		boss_->StartRetreatAttack();
 	}
 
-	// デバッグ：チャージビーム要求
+	// デバッグ：チャージ攻撃要求
 	if (System::GetInput()->PushKey(DIK_C)) {
-		// まだ壊れていない側を優先
-		bool targetLeft = !boss_->IsLeftArmBroken();
-		if (boss_->IsLeftArmBroken() && !boss_->IsRightArmBroken()) {
-			targetLeft = false;
+
+		// 既にチャージ攻撃が動いているなら要求しない
+		if (!boss_->IsChargeActive()) {
+
+			bool targetLeft = !boss_->IsLeftArmBroken();
+			if (boss_->IsLeftArmBroken() && !boss_->IsRightArmBroken()) {
+				targetLeft = false;
+			}
+			boss_->RequestChargeAttack(targetLeft);
 		}
-		boss_->RequestChargeAttack(targetLeft);
 	}
 
 	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
