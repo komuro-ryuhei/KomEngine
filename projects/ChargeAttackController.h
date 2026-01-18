@@ -62,5 +62,5 @@ private:
 
 	// パラメータ
 	float telegraphTime_ = 0.35f;
-	float chargeTime_ = 1.80f;
+	float chargeTime_ = 3.0f;
 };

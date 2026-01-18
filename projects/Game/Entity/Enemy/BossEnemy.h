@@ -405,7 +405,12 @@ private:
 
 	ChargeBeamShot chargeShot_{};
 	float chargeShotLife_ = 0.0f;
-	float chargeShotMaxLife_ = 1.2f;
+	float chargeShotMaxLife_ = 3.0f;
+	float chargeShotMinLife_ = 3.0f;
+
+	// チャージビームのスケール(開始前と開始後)
+	Vector3 chargeBeamStartScale_{ 0.5f, 0.5f, 10.0f };
+	Vector3 chargeBeamEndScale_{ 0.05f, 0.05f, 2.0f };
 
 	// チャージ攻撃要求
 	bool chargeRequest_ = false;
@@ -416,13 +421,15 @@ private:
 	bool chargePoseSaved_ = false;
 	Vector3 chargeSavedLeftArmPos_{};
 	Vector3 chargeSavedRightArmPos_{};
-	float chargePoseLerp_ = 0.0f;       // 0..1
+	float chargePoseLerp_ = 0.0f;
 	float chargePoseInSpeed_ = 6.0f;    // 入り（大きいほど速い）
 	float chargePoseOutSpeed_ = 8.0f;   // 戻り
 	float chargeCrossZOffset_ = 2.5f;;  // 腕の重なり用Zずらし
 
 	// 怒りモード
 	bool isEnraged_ = false;
+
+	bool chargeShotHitOnce_ = false;
 
 private:
 

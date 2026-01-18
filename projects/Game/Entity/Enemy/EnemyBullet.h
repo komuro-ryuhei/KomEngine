@@ -25,6 +25,7 @@ public:
 	Vector3 GetTranslate() const;
 	void SetTranlate(Vector3 translate);
 	void SetDirection(const Vector3& direction);
+	void SetDestroyOnPlayerHit(bool enable) { destroyOnPlayerHit_ = enable; }
 
 	void SetSpeed(float speed);
 
@@ -52,4 +53,7 @@ private:
 
 	bool isDead_ = false;
 	bool hitPlayer_ = false;
+
+	// プレイヤーに当たったら消えるかどうか
+	bool destroyOnPlayerHit_ = true;
 };

@@ -14,10 +14,12 @@ void EnemyBullet::Init(Camera* camera, Object3d* object3d) {
 	object3d_->Init(BlendType::BLEND_NONE);
 	object3d_->SetDefaultCamera(camera_);
 
-	object3d_->SetScale({ 0.1f, 0.1f, 0.1f });
-
 	isDead_ = false;
 	hitPlayer_ = false;
+
+	transform_.translate = object3d_->GetTranslate();
+	object3d_->SetTranslate(transform_.translate);
+
 }
 
 void EnemyBullet::Update() {
@@ -54,6 +56,7 @@ void EnemyBullet::ImGuiDebug() {
 
 void EnemyBullet::OnCollision(ICollisionObject* other) {
 
+	if (isDead_) return;
 	if (!other) { return; }
 
 	const auto layer = other->GetCollisionLayer();
@@ -61,7 +64,9 @@ void EnemyBullet::OnCollision(ICollisionObject* other) {
 	// Player or PlayerBullet に当たったら消す
 	if (layer == CollisionLayer::Player) {
 		hitPlayer_ = true;
-		isDead_ = true;
+		if (destroyOnPlayerHit_) {
+			isDead_ = true;
+		}
 	} else if (layer == CollisionLayer::PlayerBullet) {
 		isDead_ = true;
 	}

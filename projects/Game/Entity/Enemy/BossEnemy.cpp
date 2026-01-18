@@ -1170,6 +1170,7 @@ void BossEnemy::StartMissileVolley() {
 
 		m.bullet = std::make_unique<EnemyBullet>();
 		m.bullet->Init(camera_, m.obj.get());
+		m.bullet->SetTranlate(transform_.translate);
 		m.bullet->SetDirection({ 0.0f, 0.0f, 0.0f }); // 予告中は動かない
 		m.bullet->SetSpeed(0.0f);
 
@@ -1356,26 +1357,31 @@ void BossEnemy::StartChargeBeamShot(bool useLeftArm) {
 	Vector3 spawnPos = useLeftArm ? GetLeftHandWorldPos() : GetRightHandWorldPos();
 	Vector3 playerPos = player_->GetTransform().translate;
 
-	// 見た目（球） ※将来は細長いメッシュやラインに差し替え
+	// 見た目（球）
 	chargeShot_.obj = std::make_unique<Object3d>();
 	chargeShot_.obj->Init(BlendType::BLEND_NONE);
 	chargeShot_.obj->SetModel("sphere.obj");
 	chargeShot_.obj->SetDefaultCamera(camera_);
-	chargeShot_.obj->SetScale({ 1.6f, 1.6f, 20.0f });
 	chargeShot_.obj->SetTranslate(spawnPos);
 
 	chargeShot_.bullet = std::make_unique<EnemyBullet>();
 	chargeShot_.bullet->Init(camera_, chargeShot_.obj.get());
+	chargeShot_.bullet->SetDestroyOnPlayerHit(false);
+	chargeShot_.bullet->SetTranlate(spawnPos);
+
+	chargeShot_.obj->SetScale(chargeBeamStartScale_);
 
 	Vector3 dir = MyMath::Normalize(playerPos - spawnPos);
 	chargeShot_.bullet->SetDirection(dir);
-	chargeShot_.bullet->SetSpeed(28.0f); // 速め（即着弾っぽく）
+	chargeShot_.bullet->SetSpeed(1.0f); // 速め
 
 	if (collisionManager_) {
 		collisionManager_->Register(chargeShot_.bullet.get());
 
 	}
 	chargeShotLife_ = 0.0f;
+
+	chargeShotHitOnce_ = false;
 }
 
 void BossEnemy::UpdateChargeBeamShot(float dt) {
@@ -1384,18 +1390,55 @@ void BossEnemy::UpdateChargeBeamShot(float dt) {
 
 	chargeShotLife_ += dt;
 
+	if (chargeShot_.obj) {
+
+		float t = chargeShotLife_ / chargeShotMaxLife_;
+		t = std::clamp(t, 0.0f, 1.0f);
+
+		// 1→0に減る係数（ゆっくり縮む感じ）
+		float k = 1.0f - t;
+		float ease = k * k;
+
+		Vector3 start = chargeBeamStartScale_;
+		Vector3 end = chargeBeamEndScale_;
+
+		Vector3 s;
+		s.x = end.x + (start.x - end.x) * ease;
+		s.y = end.y + (start.y - end.y) * ease;
+		s.z = end.z + (start.z - end.z) * ease;
+
+		chargeShot_.obj->SetScale(s);
+	}
+
 	chargeShot_.bullet->Update();
 
-	// 寿命 or 命中で終了
+	// 
+	if (!chargeShotHitOnce_ && chargeShot_.bullet->DidHitPlayer()) {
+		chargeShotHitOnce_ = true;
+
+		// 以後は当たり判定しない（ビームは残す）
+		if (collisionManager_) {
+			collisionManager_->Unregister(chargeShot_.bullet.get());
+		}
+	}
+
 	bool end = false;
-	if (chargeShot_.bullet->IsDead()) {
-		end = true;
-	}
-	if (chargeShot_.bullet->DidHitPlayer()) {
-		end = true;
-	}
-	if (chargeShotLife_ >= chargeShotMaxLife_) {
-		end = true;
+
+	// 発射から一定秒数は絶対に消さない
+	if (chargeShotLife_ >= chargeShotMinLife_) {
+
+		// ヒットで消すのはやめる(今後変更の可能性あり)
+		// if (chargeShot_.bullet->DidHitPlayer()) { end = true; }
+
+		// 
+		/*if (chargeShot_.bullet->IsDead()) {
+			end = true;
+		}*/
+
+		// 最大寿命で終了
+		if (chargeShotLife_ >= chargeShotMaxLife_) {
+			end = true;
+		}
 	}
 
 	if (end) {
