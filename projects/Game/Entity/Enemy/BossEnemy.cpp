@@ -74,6 +74,8 @@ void BossEnemy::Update() {
 
 	UpdateChargeCrossPose(dt);
 
+	ChargeEffect(dt);
+
 	// 3Dオブジェクト更新
 	object3d_->Update();
 	leftArm_->Update();
@@ -1494,4 +1496,40 @@ void BossEnemy::UpdateChargeCrossPose(float dt) {
 
 	if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
 	if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
+}
+
+void BossEnemy::ChargeEffect(float dt) {
+
+	if (chargeActive_) {
+
+		// ★ 手の位置（ワールド）から、中央（両手の中間）を作る
+		Vector3 leftW = GetLeftHandWorldPos();
+		Vector3 rightW = GetRightHandWorldPos();
+
+		Vector3 fxPos = (leftW + rightW) * 0.5f;
+
+		// 少し手前/上に寄せたいならここで調整
+		// fxPos.y += 0.3f;
+
+		auto* pm = ParticleManager::GetInstance();
+
+		const bool hasCore = pm->Exists("charge_core");
+		const bool hasPulse = pm->Exists("charge_pulse");
+
+		chargeFxCoreTimer_ += dt;
+		if (chargeFxCoreTimer_ >= 0.035f) {
+			chargeFxCoreTimer_ = 0.0f;
+			if (hasCore) pm->Emit("charge_core", fxPos, 6);
+		}
+
+		chargeFxPulseTimer_ += dt;
+		if (chargeFxPulseTimer_ >= 0.18f) {
+			chargeFxPulseTimer_ = 0.0f;
+			if (hasPulse) pm->Emit("charge_pulse", fxPos, 1);
+		}
+
+	} else {
+		chargeFxCoreTimer_ = 0.0f;
+		chargeFxPulseTimer_ = 0.0f;
+	}
 }

@@ -431,6 +431,15 @@ private:
 
 	bool chargeShotHitOnce_ = false;
 
+	// チャージ中のエフェクト（中心に溜める感じ）
+	float chargeFxRingTimer_ = 0.0f;
+	float chargeFxCylinderTimer_ = 0.0f;
+	float chargeFxRibbonTimer_ = 0.0f;
+	Vector3 chargeFxOffset_{ 0.0f, 2.0f, 0.0f }; // 胴体中心の少し上あたり
+
+	float chargeFxCoreTimer_ = 0.0f;
+	float chargeFxPulseTimer_ = 0.0f;
+
 private:
 
 	void UpdateRetreat(float dt);
@@ -443,4 +452,7 @@ private:
 	// チャージビーム
 	void UpdateChargeBeamShot(float dt);
 	void UpdateChargeCrossPose(float dt);
+
+	// 
+	void ChargeEffect(float dt);
 };

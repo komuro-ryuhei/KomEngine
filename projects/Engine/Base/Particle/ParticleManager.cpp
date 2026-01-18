@@ -39,6 +39,9 @@ void ParticleManager::Update() {
 
 	UpdateSpiralEmitter();
 
+	// 今の実装は固定60fps進行なので、それを変えない
+	const float dt = 1.0f / 60.0f;
+
 	for (auto& [name, group] : particleGroups) {
 
 		size_t numInstance = 0;
@@ -47,16 +50,53 @@ void ParticleManager::Update() {
 			Particle& particle = *it;
 
 			// 時間経過
-			particle.currentTime += 1.0f / 60.0f;
+			particle.currentTime += dt;
 			if (particle.currentTime >= particle.lifeTime) {
-				it = group.particles.erase(it); // 寿命が尽きたパーティクルを削除
+				it = group.particles.erase(it);
 				continue;
 			}
 
+			// 寿命比
+			float t = particle.currentTime / particle.lifeTime;  // 0 -> 1
+			t = std::clamp(t, 0.0f, 1.0f);
+
 			// アルファ値を寿命に応じて減衰
-			float lifeRatio = 1.0f - (particle.currentTime / particle.lifeTime);
+			float lifeRatio = 1.0f - t;
 			lifeRatio = std::clamp(lifeRatio, 0.0f, 1.0f);
 			particle.color.w = lifeRatio;
+
+			// -----------------------------
+			// ★ チャージ専用の見た目調整
+			// -----------------------------
+			if (name == "charge_core") {
+				// 少し回転（エネルギー感）
+				particle.transform.rotate.z += 0.25f;
+
+				// 寿命で小さくなる（最後は消える前に極小に）
+				float sc = 0.30f * (1.0f - t);
+				sc = std::max(sc, 0.05f);
+				particle.transform.scale.x = sc;
+				particle.transform.scale.y = sc;
+
+				// 軽く上昇を弱めて、中心に吸い込まれる印象を維持（任意）
+				particle.velocity.y *= 0.985f;
+			} else if (name == "charge_pulse") {
+				// リングが広がる + 脈動（sin）
+				float pulse = 1.0f + 0.08f * std::sin(t * 12.0f); // 12は脈動回数
+				float sc = (0.55f + 1.35f * t) * pulse;
+
+				particle.transform.scale.x = sc;
+				particle.transform.scale.y = sc;
+
+				// ちょい回転
+				particle.transform.rotate.z += 0.10f;
+
+				// 色は寿命の後半で少し薄く（alphaとは別で、白→青寄りに）
+				// ※不要なら消してOK
+				particle.color.x = 0.75f;
+				particle.color.y = 0.90f;
+				particle.color.z = 1.00f;
+			}
 
 			// 速度による移動
 			particle.transform.translate.x += particle.velocity.x;
@@ -66,15 +106,24 @@ void ParticleManager::Update() {
 			// GPUバッファの最大数 (kInstanceNum) を超えないようにする
 			if (numInstance < group.kInstanceNum) {
 
-				Matrix4x4 worldMatrix = MyMath::MakeAffineMatrix(particle.transform.scale, particle.transform.rotate, particle.transform.translate);
+				Matrix4x4 worldMatrix =
+					MyMath::MakeAffineMatrix(
+						particle.transform.scale,
+						particle.transform.rotate,
+						particle.transform.translate
+					);
+
 				group.instancingData[numInstance].World = worldMatrix;
-				group.instancingData[numInstance].WVP = MyMath::Multiply(MyMath::Multiply(worldMatrix, viewMatrix), projectionMatrix);
+				group.instancingData[numInstance].WVP =
+					MyMath::Multiply(MyMath::Multiply(worldMatrix, viewMatrix), projectionMatrix);
+
 				group.instancingData[numInstance].color = Vector4(particle.color);
 				++numInstance;
 			}
 
 			++it;
 		}
+
 		group.instanceCount = static_cast<uint32_t>(numInstance);
 	}
 }
@@ -156,6 +205,10 @@ void ParticleManager::Emit(const std::string name, const Vector3& position, uint
 			group.particles.push_back(MakeRingParticle(randomEngine, position));
 			group.particles.push_back(MakeMoonLightParticle(position, true));
 			group.particles.push_back(MakeMoonLightParticle(position, false));
+		} else if (name == "charge_core") {
+			group.particles.push_back(MakeChargeCoreParticle(randomEngine, position));
+		} else if (name == "charge_pulse") {
+			group.particles.push_back(MakeChargePulseRingParticle(randomEngine, position));
 		} else if (name == "ribbon") {
 			spiralEmitter.position = position;
 			spiralEmitter.count = 0;
@@ -634,4 +687,69 @@ void ParticleManager::UpdateSpiralEmitter() {
 
 bool ParticleManager::Exists(const std::string& name) const {
 	return particleGroups.find(name) != particleGroups.end();
+}
+
+Particle ParticleManager::MakeChargeCoreParticle(std::mt19937& randomEngine, const Vector3& center) {
+
+	// 円周上から中心へ吸い込まれる粒（チャージ感）
+	std::uniform_real_distribution<float> distAngle(0.0f, 2.0f * std::numbers::pi_v<float>);
+	std::uniform_real_distribution<float> distRadius(1.2f, 2.2f);
+	std::uniform_real_distribution<float> distSpeed(0.08f, 0.16f);
+	std::uniform_real_distribution<float> distLife(0.28f, 0.45f);
+	std::uniform_real_distribution<float> distUp(0.002f, 0.008f);
+
+	const float a = distAngle(randomEngine);
+	const float r = distRadius(randomEngine);
+
+	// 中心の周りにばら撒く
+	Vector3 offset{ std::cos(a) * r, 0.0f, std::sin(a) * r };
+
+	Particle p;
+	p.transform.translate = center + offset;
+
+	// ビルボード想定なので Z回転だけで十分
+	p.transform.rotate = { 0.0f, 0.0f, a };
+
+	// 小さめの粒
+	p.transform.scale = { 0.25f, 0.25f, 1.0f };
+
+	// 速度：中心へ向かう（XZ）
+	Vector3 dir = MyMath::Normalize(Vector3{ -offset.x, 0.0f, -offset.z });
+	float spd = distSpeed(randomEngine);
+
+	p.velocity = { dir.x * spd, distUp(randomEngine), dir.z * spd };
+
+	// 青白いチャージ色
+	p.color = { 0.65f, 0.90f, 1.00f, 1.0f };
+
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+Particle ParticleManager::MakeChargePulseRingParticle(std::mt19937& randomEngine, const Vector3& center) {
+
+	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+	std::uniform_real_distribution<float> distLife(0.30f, 0.45f);
+
+	Particle p;
+	p.transform.translate = center;
+
+	// リングは回転だけランダム
+	p.transform.rotate = { 0.0f, 0.0f, distRotate(randomEngine) };
+
+	// 初期サイズ（Updateで拡大させる想定）
+	p.transform.scale = { 0.60f, 0.60f, 1.0f };
+
+	// その場に留める
+	p.velocity = { 0.0f, 0.0f, 0.0f };
+
+	// 少し青寄りの白
+	p.color = { 0.75f, 0.90f, 1.00f, 1.0f };
+
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
 }

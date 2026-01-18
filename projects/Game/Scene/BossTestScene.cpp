@@ -156,7 +156,8 @@ void BossTestScene::Init() {
 	pm->CreateParticleGeoup("dust", "./Resources/images/circle.png", "a");
 	pm->CreateParticleGeoup("muzzle", circle2, "a");
 	pm->CreateParticleGeoup("trail", "./Resources/images/circle.png", "a");
-
+	pm->CreateParticleGeoup("charge_core", "./Resources/images/circle2.png", "a");
+	pm->CreateParticleGeoup("charge_pulse", ring, "ring");
 
 	// グループが既にあれば作らない
 	if (!pm->Exists("hit")) {
@@ -968,8 +969,8 @@ Vector3 BossTestScene::CalcLookAtRotation(const Vector3& camPos, const Vector3& 
 	return rot;
 }
 
-void BossTestScene::UpdateIntro(float dt)
-{
+void BossTestScene::UpdateIntro(float dt) {
+
 	// メテオのパラメータをそのまま流用（同じ感じにしたいならこれが一番）
 	const auto& mp = attackManager_->GetMeteor()->GetParams();
 	Vector3 playerPos = player_->GetTransform().translate;
@@ -1053,7 +1054,8 @@ void BossTestScene::UpdateIntro(float dt)
 	}
 
 
-	case IntroPhase::CamOut: {
+	case IntroPhase::CamOut:
+	{
 
 		// メテオのOutroと同じ：元のカメラへ戻す
 		introCamLerp_ = std::min(1.0f, introCamLerp_ + dt / mp.camOutroTime);

@@ -113,6 +113,11 @@ public:
 	// 渦巻くエフェクト
 	Particle MakeSpiralParticle(const Vector3& translate, float angleOffset);
 
+	// 敵のチャージ中の「中心に吸い込まれる」パーティクル
+	Particle MakeChargeCoreParticle(std::mt19937& randomEngine, const Vector3& center);
+	// 敵のチャージ中の「脈動リング」
+	Particle MakeChargePulseRingParticle(std::mt19937& randomEngine, const Vector3& center);
+
 	/// <summary>
 	/// 存在確認
 	/// </summary>
