@@ -204,7 +204,7 @@ void BossEnemy::Update() {
 			}
 		}
 	} else {
-		// ★ 生きている間の従来処理
+		// 生きている間の従来処理
 
 		if (System::GetInput()->PushKey(DIK_SPACE)) {
 			pushEnter_ = true;

@@ -268,6 +268,10 @@ void BossTestScene::Update() {
 		}
 	}
 
+	if (System::GetInput()->PushKey(DIK_T)) {
+		boss_->SetAttack(false);
+	}
+
 	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
 
 	BossAttackManager::UpdateFlags f{};
