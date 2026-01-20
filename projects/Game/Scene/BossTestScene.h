@@ -210,6 +210,8 @@ private:
 
 	KnockoutCameraController ko_;
 	bool koActive_ = false;
+	// ノックアウト演出が終わった後も、フェードアウトまでカメラを固定する
+	bool koFrozen_ = false;
 
 	// ボス撃破後 → 着地してからの待ち時間用
 	float bossDeathTimer_ = 0.0f;

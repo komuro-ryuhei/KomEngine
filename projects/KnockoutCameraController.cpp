@@ -10,6 +10,7 @@ void KnockoutCameraController::Start(Camera* cam, float groundY, const Params& p
 }
 
 void KnockoutCameraController::Update(float dt, Camera* cam) {
+
     if (!IsActive()) return;
     t_ += dt;
 
@@ -19,7 +20,7 @@ void KnockoutCameraController::Update(float dt, Camera* cam) {
     switch (phase_) {
     case Phase::Shock: {
         float a = std::clamp(t_ / params_.shockDur, 0.0f, 1.0f);
-        // 瞬間ロール（衝撃）→0に戻す
+        // 瞬間ロール（衝撃）→ 0に戻す
         rot.z += params_.fallSide * MyMath::DegreeToRadian(3.0f) * (1.0f - a);
         cam->SetRotate(rot);
         if (t_ >= params_.shockDur) { phase_ = Phase::Knees; t_ = 0.0f; }
@@ -46,7 +47,7 @@ void KnockoutCameraController::Update(float dt, Camera* cam) {
 
     case Phase::Land: {
         float a = std::clamp(t_ / params_.landDur, 0.0f, 1.0f);
-        float bounce = std::sin(a * 3.141592f); // 0→π
+        float bounce = std::sin(a * 3.141592f); // 0 → π
         rot.x = MyMath::DegreeToRadian(60.0f) + bounce * MyMath::DegreeToRadian(12.0f); // 軽いバウンド
         cam->SetRotate(rot);
         if (t_ >= params_.landDur) { phase_ = Phase::Blackout; t_ = 0.0f; }

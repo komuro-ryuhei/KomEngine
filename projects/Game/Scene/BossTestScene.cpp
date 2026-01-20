@@ -218,36 +218,27 @@ void BossTestScene::Update() {
 
 	UpdateMeteorControl();
 
-	UpdateCamera(dt);
-
 	// プレイヤー死亡処理
 	UpdatePlayerDeath(dt);
 
-	// ノックアウトカメラの開始（Kキー）
-	if (System::TriggerKey(DIK_K)) {
-		if (!koActive_) {
-			KnockoutCameraController::Params p; p.fallSide = +1;
-			ko_.Start(camera_.get(), 0.0f, p);
-			koActive_ = true; isCameraFollowPlayer_ = false;
-		}
-	}
+	UpdateCamera(dt);
 
 	// ノックアウトカメラの更新
-	if (koActive_) {
-		ko_.Update(dt, camera_.get());
-		if (ko_.IsDone()) {
-			koActive_ = false;
+	//if (koActive_) {
+	//	ko_.Update(dt, camera_.get());
+	//	if (ko_.IsDone()) {
+	//		koActive_ = false;
 
-			// フェードアウト開始
-			if (fade_ && phase_ == Phase::kMain) {
-				fade_->Start(Fade::Status::FadeOut, 0.6f);
-				phase_ = Phase::kFadeOut;
-				if (endReason_ == EndReason::None) {
-					endReason_ = EndReason::PlayerDeath;
-				}
-			}
-		}
-	}
+	//		// フェードアウト開始
+	//		if (fade_ && phase_ == Phase::kMain) {
+	//			fade_->Start(Fade::Status::FadeOut, 0.6f);
+	//			phase_ = Phase::kFadeOut;
+	//			if (endReason_ == EndReason::None) {
+	//				endReason_ = EndReason::PlayerDeath;
+	//			}
+	//		}
+	//	}
+	//}
 
 	// デバッグ：離脱攻撃要求
 	if (System::GetInput()->PushKey(DIK_R)) {
@@ -523,6 +514,10 @@ void BossTestScene::ImGuiDebug() {
 
 void BossTestScene::UpdateCamera(float dt) {
 
+	if (koActive_) {
+		return;
+	}
+
 	const bool focusBoss = (boss_ && boss_->WantsCameraFocus());
 
 	// フォーカス中だけ player 追従を切る
@@ -654,6 +649,7 @@ void BossTestScene::StartKnockout(int fallSide) {
 	// ノックアウトカメラ開始
 	ko_.Start(camera_.get(), 0.0f, p);
 	koActive_ = true;
+	koFrozen_ = false;
 
 	// プレイヤー追従カメラを止める
 	isCameraFollowPlayer_ = false;
@@ -679,18 +675,15 @@ void BossTestScene::UpdatePlayerDeath(float dt) {
 	}
 
 	// --- ノックアウトカメラの更新 ---
-
-	if (koActive_) {
+	if (koActive_ && !koFrozen_) {
 		ko_.Update(dt, camera_.get());
 
 		if (ko_.IsDone()) {
-			koActive_ = false;
+			koFrozen_ = true; // ← ここがポイント
 
-			// フェードアウト開始（プレイヤー死亡扱い）
 			if (fade_ && phase_ == Phase::kMain) {
 				fade_->Start(Fade::Status::FadeOut, 0.6f);
 				phase_ = Phase::kFadeOut;
-
 				if (endReason_ == EndReason::None) {
 					endReason_ = EndReason::PlayerDeath;
 				}
