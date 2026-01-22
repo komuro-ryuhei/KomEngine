@@ -121,11 +121,29 @@ void BossMeteorController::UpdateShower(float dt) {
     meteorModeTimer_ += dt;
     spawnTimer_ += dt;
 
-    // カメラはプレイヤー位置を追いながら“上向き固定”
-    camera_->SetTranslate(playerPos + params_.camOffset);
-    Vector3 rot = camera_->GetRotate();
-    rot.x = params_.pitchUp;
-    camera_->SetRotate(rot);
+    //==================================================
+    // カメラ：プレイヤー追従 + 上向き(pitchUp)を補間
+    //==================================================
+    {
+        // 目標位置（プレイヤー + オフセット）
+        const Vector3 targetPos = playerPos + params_.camOffset;
+
+        // 現在位置
+        const Vector3 curPos = camera_->GetTranaslate();
+
+        // dtに依存しにくい指数追従（値を大きくすると追従が速くなる）
+        const float posFollow = 1.0f - static_cast<float>(std::exp(-dt * 10.0f));
+
+        camera_->SetTranslate(MyMath::Lerp(curPos, targetPos, posFollow));
+
+        // 回転も同様に補間（pitchだけ強制的に上向き目標へ）
+        Vector3 curRot = camera_->GetRotate();
+        Vector3 targetRot = curRot;
+        targetRot.x = params_.pitchUp;
+
+        const float rotFollow = 1.0f - static_cast<float>(std::exp(-dt * 12.0f));
+        camera_->SetRotate(MyMath::Lerp(curRot, targetRot, rotFollow));
+    }
 
     const bool enraged = (boss_ && boss_->IsEnraged());
 
@@ -137,7 +155,9 @@ void BossMeteorController::UpdateShower(float dt) {
         enraged ? enragedMeteorSpeedMul_
         : 1.0f;
 
+    //==================================================
     // スポーン（元 UpdateMeteorMode の Shower 部分）
+    //==================================================
     if (spawnTimer_ >= spawnInterval) {
         spawnTimer_ = 0.0f;
 
@@ -178,7 +198,9 @@ void BossMeteorController::UpdateShower(float dt) {
         }
     }
 
+    //==================================================
     // 終了判定
+    //==================================================
     if (meteorModeTimer_ >= params_.duration) {
         phase_ = Phase::kOutro;
         meteorModeTimer_ = 0.0f;

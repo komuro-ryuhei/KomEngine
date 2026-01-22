@@ -78,6 +78,7 @@ public:
 	bool IsControlEnabled() const { return controlEnabled_; }
 
 private:
+
 	// カメラ
 	Camera* camera_ = nullptr;
 	// モデル

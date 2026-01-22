@@ -361,6 +361,11 @@ void BossTestScene::Update() {
 
 	case Phase::kMain:
 
+		if (System::PushKey(DIK_T)) {
+			fade_->Start(Fade::Status::FadeOut, 0.6f);
+			phase_ = Phase::kFadeOut;
+		}
+
 		// ボスが死んでいて、着地済みならタイマー進行
 		if (boss_
 			&& boss_->GetHP() <= 0
@@ -515,6 +520,10 @@ void BossTestScene::ImGuiDebug() {
 void BossTestScene::UpdateCamera(float dt) {
 
 	if (koActive_) {
+		return;
+	}
+
+	if (attackManager_ && attackManager_->GetMeteor() && attackManager_->GetMeteor()->IsActive()) {
 		return;
 	}
 
