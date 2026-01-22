@@ -137,5 +137,14 @@ private:
     float enragedMeteorSpeedMul_ = 1.5f;     // 飛ぶ速度
     float enragedMeteorIntervalMul_ = 0.65f; // 出る間隔（小さいほど頻度UP）
 
+    // Shower カメラ演出用
+    bool    showerCamInited_ = false;
+    float   showerCamT_ = 0.0f;
+    Vector3 showerCamStartPos_{};
+    Vector3 showerCamStartRot_{};
+
+    // 
+    float showerCamBlendTime_ = 0.6f;
+
     MeteorAttackParams params_;
 };

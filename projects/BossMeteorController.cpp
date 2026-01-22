@@ -23,7 +23,7 @@ void BossMeteorController::Start() {
     meteorModeTimer_ = 0.0f;
     spawnTimer_ = 0.0f;
 
-    // 現在のカメラ状態を保存（元 StartMeteorMode と同じ）
+    // 現在のカメラ状態を保存
     savedCamPos_ = camera_->GetTranaslate();
     savedCamRot_ = camera_->GetRotate();
 }
@@ -109,6 +109,8 @@ void BossMeteorController::UpdateIntro(float dt) {
     if (camLerp_ >= 1.0f) {
         phase_ = Phase::kShower;
         meteorModeTimer_ = 0.0f;
+        showerCamInited_ = false;
+        showerCamT_ = 0.0f;
     }
 }
 
@@ -134,15 +136,52 @@ void BossMeteorController::UpdateShower(float dt) {
         // dtに依存しにくい指数追従（値を大きくすると追従が速くなる）
         const float posFollow = 1.0f - static_cast<float>(std::exp(-dt * 10.0f));
 
-        camera_->SetTranslate(MyMath::Lerp(curPos, targetPos, posFollow));
+        //==================================================
+ // カメラ：Shower開始演出（補間）→ その後は追従
+ //==================================================
+        {
+            const Vector3 targetPos = playerPos + params_.camOffset;
 
-        // 回転も同様に補間（pitchだけ強制的に上向き目標へ）
-        Vector3 curRot = camera_->GetRotate();
-        Vector3 targetRot = curRot;
-        targetRot.x = params_.pitchUp;
+            if (!showerCamInited_) {
+                showerCamInited_ = true;
+                showerCamT_ = 0.0f;
+                showerCamStartPos_ = camera_->GetTranaslate();
+                showerCamStartRot_ = camera_->GetRotate();
+            }
 
-        const float rotFollow = 1.0f - static_cast<float>(std::exp(-dt * 12.0f));
-        camera_->SetRotate(MyMath::Lerp(curRot, targetRot, rotFollow));
+            // 演出補間（一定時間かけて移動）
+            showerCamT_ += dt;
+            float t = showerCamBlendTime_ > 0.0f ? (showerCamT_ / showerCamBlendTime_) : 1.0f;
+            t = std::clamp(t, 0.0f, 1.0f);
+
+            // SmoothStep（ヌルっと）
+            float ease = t * t * (3.0f - 2.0f * t);
+
+            // 目標回転（pitchだけ上向きへ）
+            Vector3 targetRot = showerCamStartRot_;
+            targetRot.x = params_.pitchUp;
+
+            // 演出中：開始→目標へ
+            if (t < 1.0f) {
+                camera_->SetTranslate(MyMath::Lerp(showerCamStartPos_, targetPos, ease));
+                camera_->SetRotate(MyMath::Lerp(showerCamStartRot_, targetRot, ease));
+            }
+            // 演出後：追従（ここは「遅め」にすると動いてる感が残る）
+            else {
+                const Vector3 curPos = camera_->GetTranaslate();
+                const Vector3 curRot = camera_->GetRotate();
+
+                // 追従を遅めに（動いてる感UP）
+                const float posFollow = 1.0f - static_cast<float>(std::exp(-dt * 2.5f));
+                const float rotFollow = 1.0f - static_cast<float>(std::exp(-dt * 3.0f));
+
+                camera_->SetTranslate(MyMath::Lerp(curPos, targetPos, posFollow));
+
+                Vector3 followTargetRot = curRot;
+                followTargetRot.x = params_.pitchUp;
+                camera_->SetRotate(MyMath::Lerp(curRot, followTargetRot, rotFollow));
+            }
+        }
     }
 
     const bool enraged = (boss_ && boss_->IsEnraged());
