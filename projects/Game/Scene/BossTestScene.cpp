@@ -35,6 +35,7 @@ void BossTestScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/toTitle.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/returnGame.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/pause.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/toPause.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -145,6 +146,13 @@ void BossTestScene::Init() {
 	controlGuideSprite_->Init("./Resources/images/controlsGuide.png", BlendType::BLEND_ALPHA);
 	controlGuideSprite_->SetSize({ 400.0f, 280.0f });
 	controlGuideSprite_->SetPosition({ 900.0f, 420.0f });
+
+	// 
+	toPauseSpr_ = std::make_unique<Sprite>();
+	toPauseSpr_->Init("./Resources/images/toPause.png", BlendType::BLEND_ALPHA);
+	toPauseSpr_->SetSize({ 320.0f, 64.0f });
+	toPauseSpr_->SetAnchorPoint({ 0.5f, 0.5f });
+	toPauseSpr_->SetPosition({ 1100.0f, 100.0f });
 
 	// パーティクル
 	auto* pm = ParticleManager::GetInstance();
@@ -358,6 +366,8 @@ void BossTestScene::Update() {
 	// 
 	controlGuideSprite_->Update();
 
+	toPauseSpr_->Update();
+
 	// リザルトスプライトの更新
 	result_->Update();
 
@@ -494,6 +504,8 @@ void BossTestScene::Draw() {
 
 	// 
 	controlGuideSprite_->Draw();
+
+	toPauseSpr_->Draw();
 
 	// 
 	leftTargetOuter_->Draw();

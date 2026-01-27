@@ -138,6 +138,8 @@ private:
 
 	// 操作方法スプライト
 	std::unique_ptr<Sprite> controlGuideSprite_ = nullptr;
+	// 
+	std::unique_ptr<Sprite> toPauseSpr_;
 
 	// リザルトのスプライト
 	std::unique_ptr<ResultImage> result_ = nullptr;
