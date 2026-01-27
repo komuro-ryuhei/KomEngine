@@ -63,6 +63,9 @@ public: // メンバ関数
 	/// </summary>
 	LONG  GetWheelDelta() const;
 
+	// マウスカーソルの現在位置（クライアント座標）
+	POINT GetMousePosition() const;
+
 	/// <summary>
 	/// マウスを中央に固定する
 	/// </summary>

@@ -49,13 +49,13 @@ void TitleScene::Init() {
 	skybox_->Init("./Resources/images/test.dds");
 	skybox_->SetDefaultCamera(camera_.get());
 
-	// --- フェード初期化（画面サイズは 1280x720）--- //
+	// --- フェード初期化 --- //
 	fade_ = std::make_unique<Fade>();
 	fade_->Initialize(1280, 720);
 	if (Fade::GetDefaultOpenModeSlash()) {
 		fade_->StartSlashOpen(0.6f, 60.0f, true);
 	} else {
-		fade_->Start(Fade::Status::FadeIn, 0.6f);  // 普通の黒フェードで明転
+		fade_->Start(Fade::Status::FadeIn, 0.6f); // 普通の黒フェードで明転
 	}
 
 	// boss
@@ -65,12 +65,12 @@ void TitleScene::Init() {
 	boss_->SetAttack(false);
 	boss_->SetInTitleScene(true);
 	boss_->InitTitleScenePos();
+
+	// マウスカーソルを中央に固定を解除
+	System::GetInput()->SetMouseCenterLock(false);
 }
 
 void TitleScene::Update() {
-
-	// Sprite描画前処理
-	// sprite_->PreDraw();
 
 	// camera
 	camera_->Update();

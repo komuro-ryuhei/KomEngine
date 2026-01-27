@@ -75,6 +75,9 @@ public:
 	void SetTextureLeftTop(const Vector2& textureLeftTop); // テクスチャ左上座標
 	void SetTextureSize(const Vector2& textureSize); // テクスチャ切り出しサイズ
 
+	// マウスとスプライトの当たり判定
+	bool HitTest(const Vector2& mousePos) const;
+
 private:
 	// テクスチャサイズをイメージに合わせる
 	void AdjustTextureSize();

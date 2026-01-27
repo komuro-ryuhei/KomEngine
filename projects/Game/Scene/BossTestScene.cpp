@@ -32,6 +32,9 @@ void BossTestScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/blackBG.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/gameClear.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/controlsGuide.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/toTitle.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/returnGame.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/pause.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -188,6 +191,10 @@ void BossTestScene::Init() {
 	playCameraRot_ = camera_->GetRotate();
 
 	bossPlayPos_ = boss_->GetTranslate();
+
+	// ポーズメニュー
+	pauseMenu_ = std::make_unique<PauseMenu>();
+	pauseMenu_->Init();
 }
 
 void BossTestScene::Update() {
@@ -215,6 +222,46 @@ void BossTestScene::Update() {
 		ImGuiDebug();
 		return;
 	}
+
+	// ---------------- Pause (Play中だけ) ---------------- //
+	const bool canPause =
+		(phase_ == Phase::kMain) &&
+		(flowState_ == GameFlowState::Play) &&
+		!(result_ && result_->IsSlideFinished());
+
+	// Pキーでポーズメニューの表示
+	if (canPause && System::TriggerKey(DIK_P) && pauseMenu_) {
+		pauseMenu_->Toggle();
+	}
+
+	if (pauseMenu_->IsPaused()) {
+		System::GetInput()->SetMouseCenterLock(false);
+	}
+
+	if (pauseMenu_ && pauseMenu_->IsPaused()) {
+
+		const auto r = pauseMenu_->Update(dt);
+
+		if (r == PauseMenu::Result::Resume) {
+			pauseMenu_->SetPaused(false);
+		} else if (r == PauseMenu::Result::GoTitle) {
+
+			// ポーズ解除（重要：FadeOut更新へ到達させるため）
+			pauseMenu_->SetPaused(false);
+			System::GetInput()->SetMouseCenterLock(true); // 普段ロックしてるなら戻す（任意）
+
+			// フェードアウト開始
+			fade_->Start(Fade::Status::FadeOut, 0.6f);
+			phase_ = Phase::kFadeOut;
+			endReason_ = EndReason::GoTitle;
+
+			return; // ここで抜けるのはOK（次フレームはpausedじゃないのでFadeOut進む）
+		}
+
+		ImGuiDebug(); // ポーズ中もデバッグは出す
+		return;
+	}
+	// ---------------------------------------------------
 
 	UpdateMeteorControl();
 
@@ -411,7 +458,7 @@ void BossTestScene::Update() {
 		if (fade_->IsFinished()) {
 			Fade::SetDefaultOpenModeSlash(false);
 
-			if (endReason_ == EndReason::BossDeath) {
+			if (endReason_ == EndReason::BossDeath || endReason_ == EndReason::GoTitle) {
 				sceneManager_->ChangeScene("TITLE");
 			} else if (endReason_ == EndReason::PlayerDeath) {
 				sceneManager_->ChangeScene("GAMEOVER");
@@ -460,7 +507,13 @@ void BossTestScene::Draw() {
 	// パーティクル描画
 	ParticleManager::GetInstance()->Draw();
 
+	// リザルト
 	result_->Draw();
+
+	// ポーズメニュー
+	if (pauseMenu_ && pauseMenu_->IsPaused()) {
+		pauseMenu_->Draw();
+	}
 
 	// --------------------------------------------------------------------//
 

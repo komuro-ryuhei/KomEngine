@@ -10,6 +10,8 @@ Input* Input::GetInstance() {
 
 void Input::Initialize(WinApp* winApp) {
 
+	winApp_ = winApp;
+
 	HRESULT hr;
 
 	// DirectInputのインスタンス生成
@@ -103,6 +105,18 @@ POINT Input::GetMouseDelta() const {
 LONG Input::GetWheelDelta() const {
 
 	return (LONG)mouseState_.lZ;
+}
+
+POINT Input::GetMousePosition() const {
+
+	POINT p{};
+	GetCursorPos(&p);
+
+	if (winApp_) {
+		ScreenToClient(winApp_->GetHwnd(), &p); // クライアント座標へ変換
+	}
+
+	return p;
 }
 
 void Input::SetMouseCenterLock(bool enable) {

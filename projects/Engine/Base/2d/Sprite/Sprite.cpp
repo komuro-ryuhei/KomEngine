@@ -35,6 +35,18 @@ void Sprite::SetTextureLeftTop(const Vector2& textureLeftTop) { textureLeftTop_ 
 
 void Sprite::SetTextureSize(const Vector2& textureSize) { textureSize_ = textureSize; }
 
+bool Sprite::HitTest(const Vector2& mousePos) const {
+
+	// position_ は「アンカー基準位置」
+	const float left = position_.x - size_.x * anchorPoint_.x;
+	const float top = position_.y - size_.y * anchorPoint_.y;
+	const float right = left + size_.x;
+	const float bottom = top + size_.y;
+
+	return (mousePos.x >= left && mousePos.x <= right &&
+		mousePos.y >= top && mousePos.y <= bottom);
+}
+
 void Sprite::Init(const std::string& textureFilePath, BlendType type) {
 
 	textureFilePath_ = textureFilePath;

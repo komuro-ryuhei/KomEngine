@@ -165,6 +165,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Game\Entity\Player\Player.cpp" />
     <ClCompile Include="Game\Entity\Player\PlayerBullet.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
+    <ClCompile Include="PauseMenu.cpp" />
     <ClCompile Include="ResultImage.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -227,6 +228,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="ICollisionObject.h" />
     <ClInclude Include="KnockoutCameraController.h" />
     <ClInclude Include="LineRenderer.h" />
+    <ClInclude Include="PauseMenu.h" />
     <ClInclude Include="ResultImage.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="Game\Scene\TitleScene.h" />

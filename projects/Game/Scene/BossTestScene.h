@@ -7,9 +7,11 @@
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "LineRenderer.h"
 
-// Entity
+// Object
 #include "Engine/Base/3d/Skybox/Skybox.h"
 #include "Engine/Base/2d/Sprite/Sprite.h"
+
+// Entity
 #include "Game/Entity/Player/Player.h"
 #include "Game/Entity/Enemy/Enemy.h"
 #include "Game/Entity/Enemy/BossEnemy.h"
@@ -22,6 +24,7 @@
 #include "BossMeteorController.h"
 #include "BossArmController.h"
 #include "CollisionManager.h"
+#include "PauseMenu.h"
 
 #include "BossAttackManager.h"
 
@@ -178,8 +181,9 @@ private:
 	// シーン終了理由
 	enum class EndReason {
 		None,
-		PlayerDeath,
 		BossDeath,
+		PlayerDeath,
+		GoTitle,
 	};
 	EndReason endReason_ = EndReason::None;
 
@@ -260,6 +264,9 @@ private:
 	bool wasFocusBoss_ = false;
 	bool isReturning_ = false;        // フォーカス解除後の復帰中
 	float returnEndDist_ = 0.05f;     // 復帰完了判定（距離）
+
+	// ポーズ用
+	std::unique_ptr<PauseMenu> pauseMenu_;
 
 private:
 	void InitIntro();

@@ -271,6 +271,7 @@
     <ClCompile Include="CollisionManager.cpp" />
     <ClCompile Include="BossAttackManager.cpp" />
     <ClCompile Include="ChargeAttackController.cpp" />
+    <ClCompile Include="PauseMenu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -427,6 +428,7 @@
     <ClInclude Include="CollisionManager.h" />
     <ClInclude Include="BossAttackManager.h" />
     <ClInclude Include="ChargeAttackController.h" />
+    <ClInclude Include="PauseMenu.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />
