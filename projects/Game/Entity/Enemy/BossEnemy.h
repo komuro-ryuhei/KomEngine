@@ -20,7 +20,7 @@ private:
 		SingleLeft,   // 左腕のみ
 		SingleRight,  // 右腕のみ
 		BothHands,    // 両手同時
-		WaitMeteor,   // 流星攻撃中（腕は攻撃しない）
+		WaitMeteor,   // 流星攻撃中
 	};
 
 	AttackPhase attackPhase_ = AttackPhase::SingleLeft;
@@ -204,6 +204,12 @@ public:
 	// チャージビーム要求
 	void RequestChargeAttack(bool targetLeft);
 	bool ConsumeChargeRequest();
+
+	// 
+	bool pendingChargeAfterRetreat_ = false;
+	bool pendingMeteorAfterCharge_ = false;
+	bool nextChargeTargetLeft_ = true; // 次回チャージで狙う腕
+
 
 	// チャージ中か
 	bool IsChargeActive() const { return chargeActive_; }

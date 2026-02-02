@@ -73,7 +73,8 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		!flags.koActive &&
 		flags.isMainPhase &&
 		!(charge_ && charge_->IsActive()) &&
-		!(meteor_ && meteor_->IsActive());
+		!(meteor_ && meteor_->IsActive()) &&
+		!(desc_.boss && desc_.boss->IsRetreating());
 
 	if (canStartCharge && desc_.boss && desc_.boss->ConsumeChargeRequest()) {
 		charge_->Start();

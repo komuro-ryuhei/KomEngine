@@ -450,7 +450,10 @@ void BossEnemy::Attack() {
 			rightExtending_ = true;
 
 			attackPhase_ = AttackPhase::WaitMeteor;
-			meteorRequest_ = true;
+			pendingChargeAfterRetreat_ = true;
+			pendingMeteorAfterCharge_ = true;
+
+			StartRetreatAttack();
 		}
 
 		break;
@@ -528,8 +531,8 @@ void BossEnemy::OnMeteorFinished() {
 	if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
 	if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
 
-	// 攻撃ループに「離れる攻撃」を挟む
-	StartRetreatAttack();
+	pendingChargeAfterRetreat_ = false;
+	pendingMeteorAfterCharge_ = false;
 }
 
 void BossEnemy::HPDraw() {
@@ -1029,7 +1032,12 @@ void BossEnemy::UpdateRetreat(float dt) {
 			retreatPhase_ = RetreatPhase::Stay;
 			retreatT_ = 0.0f;
 
-			// ★ここで奥から攻撃を開始する
+			if (pendingChargeAfterRetreat_) {
+				pendingChargeAfterRetreat_ = false;
+
+				RequestChargeAttack(nextChargeTargetLeft_);
+				nextChargeTargetLeft_ = !nextChargeTargetLeft_;
+			}
 		}
 
 	} break;
@@ -1340,8 +1348,13 @@ bool BossEnemy::ConsumeChargeRequest() {
 
 void BossEnemy::OnChargeAttackFinished() {
 
-	// チャージ状態フラグを戻す
 	chargeActive_ = false;
+
+	if (pendingMeteorAfterCharge_) {
+		pendingMeteorAfterCharge_ = false;
+		meteorRequest_ = true;
+		attackPhase_ = AttackPhase::WaitMeteor;
+	}
 }
 
 bool BossEnemy::IsChargeBeamShotActive() const {
