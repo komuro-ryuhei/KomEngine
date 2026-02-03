@@ -195,7 +195,6 @@ private:
 	// 
 	void DamageShake();
 
-
 public:
 	void AddHitToAttackingArm();
 	void InitTitleScenePos();

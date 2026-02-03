@@ -21,14 +21,14 @@ public:
             lookWeight = 0.35f;
         }
 
-        // ★ JSON から読み込む
+        // JSON から読み込む
         void LoadJSON(const nlohmann::json& j) {
             if (j.contains("introTime"))  introTime = j["introTime"];
             if (j.contains("outroTime"))  outroTime = j["outroTime"];
             if (j.contains("lookWeight")) lookWeight = j["lookWeight"];
         }
 
-        // ★ JSON へ書き出す
+        // JSON へ書き出す
         void SaveJSON(nlohmann::json& j) const {
 
             auto R = [](float v) {
@@ -62,7 +62,7 @@ public:
 
 public:
 
-    // ★ JSON 読み込み / 保存
+    // JSON 読み込み / 保存
     void LoadParamsFromJson(const std::string& path);
     void SaveParamsToJson(const std::string& path);
 
@@ -78,7 +78,7 @@ private:
     BossEnemy* boss_ = nullptr;
 
     bool   active_ = false;
-    float  t_ = 0.0f;   // 0→1 の補間用
+    float  t_ = 0.0f; // 0→1 の補間用
     Vector3 savedRot_{};
     Vector3 targetRot_{};
 
