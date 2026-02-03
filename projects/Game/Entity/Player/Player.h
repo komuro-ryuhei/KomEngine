@@ -100,7 +100,7 @@ private:
 	// 半径
 	float radius_ = 1.0f;
 	// HP
-	int hp_ = 50;
+	int hp_ = 5;
 	// 弾有効フラグ
 	bool isBulletActive_ = false;
 

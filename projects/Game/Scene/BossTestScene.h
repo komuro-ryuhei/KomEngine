@@ -28,6 +28,8 @@
 
 #include "Game/GamePlay/Enemy/BossAttackManager.h"
 
+#include <vector>
+
 class BossTestScene : public IScene {
 
 public:
@@ -269,6 +271,13 @@ private:
 
 	// ポーズ用
 	std::unique_ptr<PauseMenu> pauseMenu_;
+
+	// PlayerのHPのUI表示（後にクラス分け予定）
+	std::vector<std::unique_ptr<Sprite>> hpHearts_;
+	int playerMaxHp_ = 5;                 // 現状プレイヤーHPは 5
+	Vector2 hpStartPos_{ 20.0f, 700.0f }; // 左下
+	float hpHeartInterval_ = 52.0f;       // ハートの間隔
+	Vector2 hpHeartSize_{ 64.0f, 64.0f }; // ハートのサイズ
 
 private:
 	void InitIntro();

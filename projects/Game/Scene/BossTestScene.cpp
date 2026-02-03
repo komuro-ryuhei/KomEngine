@@ -36,6 +36,7 @@ void BossTestScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/returnGame.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/pause.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/toPause.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/heart.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -82,6 +83,18 @@ void BossTestScene::Init() {
 	// Player
 	player_ = std::make_unique<Player>();
 	player_->Init(camera_.get());
+
+	// HPハート
+	hpHearts_.clear();
+	hpHearts_.reserve(playerMaxHp_);
+	for (int i = 0; i < playerMaxHp_; ++i) {
+		auto sp = std::make_unique<Sprite>();
+		sp->Init("./Resources/images/heart.png", BlendType::BLEND_ALPHA);
+		sp->SetSize(hpHeartSize_);
+		sp->SetAnchorPoint({ 0.0f, 1.0f }); // 左下アンカー
+		sp->SetPosition({ hpStartPos_.x + hpHeartInterval_ * i, hpStartPos_.y });
+		hpHearts_.push_back(std::move(sp));
+	}
 
 	// Playerが持つ銃
 	gun_ = std::make_unique<Object3d>();
@@ -357,6 +370,10 @@ void BossTestScene::Update() {
 	UpdateGun();
 	// Playerの更新()
 	player_->Update();
+	// PlayerのHP表示更新
+	for (auto& h : hpHearts_) {
+		if (h) { h->Update(); }
+	}
 
 	// ボス
 	boss_->Update();
@@ -501,6 +518,14 @@ void BossTestScene::Draw() {
 
 	// Playerは一人称視点なので非描画
 	player_->Draw();
+
+	// HPハート描画
+	if (player_) {
+		const int hp = std::clamp(player_->GetHP(), 0, playerMaxHp_);
+		for (int i = 0; i < hp && i < static_cast<int>(hpHearts_.size()); ++i) {
+			hpHearts_[i]->Draw();
+		}
+	}
 
 	// 
 	controlGuideSprite_->Draw();
