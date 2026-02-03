@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include <random>
+#include <algorithm>
 
 #include "ChargeAttackController.h"
 
@@ -15,11 +17,10 @@ class BossAttackManager {
 
 public:
 
-	enum class BossAttackPhase {
-		RightHand,
-		LeftHand,
-		BothHands,
-		Meteor
+	enum class BossAttackBlock {
+		ArmCombo,
+		Charge,
+		Meteor,
 	};
 
 	// 初期化用構造体
@@ -78,5 +79,24 @@ private:
 	std::unique_ptr<BossArmController> arm_;
 	std::unique_ptr<ChargeAttackController> charge_;
 
+	// 前フレームの腕攻撃アクティブ状態
 	bool prevArmActive_ = false;
+
+	// 攻撃ブロック管理
+	std::vector<BossAttackBlock> blockQueue_;
+	size_t blockIndex_ = 0;
+	BossAttackBlock currentBlock_ = BossAttackBlock::ArmCombo;
+
+	std::mt19937 rng_{};
+	bool queueInited_ = false;
+
+	// 次のブロック順を作る（ここでランダム化）
+	void RebuildBlockQueue();
+
+	// 現在ブロックがアクティブか
+	bool IsBlockActive(BossAttackBlock b) const;
+
+	// ブロック開始
+	void StartBlock(BossAttackBlock b);
+
 };

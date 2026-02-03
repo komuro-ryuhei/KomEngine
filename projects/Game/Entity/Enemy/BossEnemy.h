@@ -17,10 +17,11 @@ class BossEnemy : public ICollisionObject {
 private:
 
 	enum class AttackPhase {
-		SingleLeft,   // 左腕のみ
-		SingleRight,  // 右腕のみ
-		BothHands,    // 両手同時
-		WaitMeteor,   // 流星攻撃中
+		None,
+		SingleLeft,
+		SingleRight,
+		BothHands,
+		WaitMeteor,
 	};
 
 	AttackPhase attackPhase_ = AttackPhase::SingleLeft;
@@ -177,6 +178,11 @@ public:
 	bool IsRetreating() const { return retreatPhase_ != RetreatPhase::None; }
 	bool IsInvulnerable() const { return invulnerable_; }
 
+	// 腕コンボ（右→左→両手）の開始/完了
+	void StartArmCombo();
+	bool ConsumeArmComboFinished();
+	bool IsArmComboActive() const { return armComboActive_; }
+
 private:
 
 	void Attack();
@@ -292,6 +298,9 @@ private:
 	Vector3 leftArmPos_;
 	Vector3 rightArmRot_;
 	Vector3 leftArmRot_;
+
+	bool armComboActive_ = false;
+	bool armComboFinished_ = false;
 
 	bool isMoveRight_ = false;
 	bool pushEnter_ = true;

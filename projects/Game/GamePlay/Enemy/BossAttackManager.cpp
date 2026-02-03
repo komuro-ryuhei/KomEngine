@@ -27,6 +27,11 @@ void BossAttackManager::Init(const InitDesc& desc) {
 	charge_->SetCamera(desc_.camera);
 	charge_->SetPlayer(desc_.player);
 	charge_->SetBoss(desc_.boss);
+
+	// 乱数初期化
+	std::random_device rd;
+	rng_ = std::mt19937(rd());
+	queueInited_ = false;
 }
 
 bool BossAttackManager::CanArmControlCamera(const UpdateFlags& flags) const {
@@ -101,6 +106,40 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	if (wasChargeActive && !isChargeActive && desc_.boss) {
 		desc_.boss->OnChargeAttackFinished();
 	}
+
+	// ================== ブロック順制御（ランダム） ================== //
+	if (!queueInited_) {
+		RebuildBlockQueue();
+		StartBlock(blockQueue_[blockIndex_++]); // 最初のブロック開始
+	}
+
+	// 現在のブロックが終わったら次へ
+	bool finished = false;
+	switch (currentBlock_) {
+	case BossAttackBlock::ArmCombo:
+		finished = (desc_.boss && desc_.boss->ConsumeArmComboFinished());
+		break;
+	case BossAttackBlock::Charge:
+		finished = (charge_ && !charge_->IsActive());
+		break;
+	case BossAttackBlock::Meteor:
+		finished = (meteor_ && !meteor_->IsActive());
+		break;
+	default:
+		break;
+	}
+
+	if (finished) {
+
+		// 1周のキューを消化しきったら作り直してまたランダム
+		if (blockIndex_ >= blockQueue_.size()) {
+			RebuildBlockQueue();
+		}
+
+		// 次ブロック開始
+		StartBlock(blockQueue_[blockIndex_++]);
+	}
+	// =============================================================== //
 }
 
 void BossAttackManager::OnCurrentAttackFinished() {
@@ -119,6 +158,61 @@ void BossAttackManager::ForceEndMeteor() {
 	if (!meteor_) return;
 	if (meteor_->IsActive()) {
 		meteor_->ForceEnd();
+	}
+}
+
+void BossAttackManager::RebuildBlockQueue() {
+
+	blockQueue_.clear();
+	blockIndex_ = 0;
+
+	// まずは「腕塊 + チャージ + メテオ」を1周分としてシャッフル
+	blockQueue_.push_back(BossAttackBlock::ArmCombo);
+	blockQueue_.push_back(BossAttackBlock::Charge);
+	blockQueue_.push_back(BossAttackBlock::Meteor);
+
+	// ランダム化（ブロック順だけ）
+	std::shuffle(blockQueue_.begin(), blockQueue_.end(), rng_);
+
+	queueInited_ = true;
+}
+
+bool BossAttackManager::IsBlockActive(BossAttackBlock b) const {
+
+	switch (b) {
+	case BossAttackBlock::ArmCombo:
+		return desc_.boss && desc_.boss->IsArmComboActive();
+	case BossAttackBlock::Charge:
+		return charge_ && charge_->IsActive();
+	case BossAttackBlock::Meteor:
+		return meteor_ && meteor_->IsActive();
+	default:
+		return false;
+	}
+}
+
+void BossAttackManager::StartBlock(BossAttackBlock b) {
+
+	currentBlock_ = b;
+
+	switch (b) {
+	case BossAttackBlock::ArmCombo:
+		if (desc_.boss) {
+			desc_.boss->StartArmCombo();
+		}
+		break;
+	case BossAttackBlock::Charge:
+		if (charge_ && !charge_->IsActive()) {
+			charge_->Start();
+		}
+		break;
+	case BossAttackBlock::Meteor:
+		if (meteor_ && !meteor_->IsActive()) {
+			meteor_->Start();
+		}
+		break;
+	default:
+		break;
 	}
 }
 

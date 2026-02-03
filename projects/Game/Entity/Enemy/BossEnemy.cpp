@@ -294,6 +294,10 @@ void BossEnemy::Attack() {
 
 	if (!player_) return;
 
+	if (!armComboActive_) {
+		return;
+	}
+
 	switch (attackPhase_) {
 
 		// ================== 左右片手攻撃 ================== //
@@ -336,11 +340,11 @@ void BossEnemy::Attack() {
 				hitCount = 0;
 				isExtending_ = true;
 
-				// 次フェーズへ
-				if (attackPhase_ == AttackPhase::SingleLeft) {
-					attackPhase_ = AttackPhase::SingleRight; // 次は右
+				// 次フェーズへ（右→左→両手）
+				if (attackPhase_ == AttackPhase::SingleRight) {
+					attackPhase_ = AttackPhase::SingleLeft;  // 次は左
 				} else {
-					attackPhase_ = AttackPhase::BothHands;   // 両手攻撃へ
+					attackPhase_ = AttackPhase::BothHands;   // 次は両手
 				}
 			} else {
 				Vector3 dirToOrigin = MyMath::Normalize(toOrigin);
@@ -453,9 +457,15 @@ void BossEnemy::Attack() {
 			pendingChargeAfterRetreat_ = true;
 			pendingMeteorAfterCharge_ = true;
 
+			// 腕コンボ完了
+			armComboActive_ = false;
+			armComboFinished_ = true;
+
+			// Managerが次を決めるので、ここでは何もしない状態に戻す
+			attackPhase_ = AttackPhase::None;
+
 			StartRetreatAttack();
 		}
-
 		break;
 	}
 
@@ -500,6 +510,36 @@ void BossEnemy::InitTitleScenePos() {
 	leftArmPos_ = { 0.19f,0.0f,-12.0f };
 	// leftArmPos_ = { 5.9f,0.0f,-12.0f };
 	leftArmRot_ = { 0.0f,1.56f,0.0f };
+}
+
+void BossEnemy::StartArmCombo() {
+
+	// すでに実行中なら無視
+	if (armComboActive_) return;
+
+	armComboActive_ = true;
+	armComboFinished_ = false;
+
+	// コンボ開始は「右→左→両手」
+	attackPhase_ = AttackPhase::SingleRight;
+
+	// 片手用
+	isExtending_ = true;
+
+	// 両手用
+	leftExtending_ = true;
+	rightExtending_ = true;
+
+	// ヒット数リセット
+	leftArmHitCount_ = 0;
+	rightArmHitCount_ = 0;
+}
+
+bool BossEnemy::ConsumeArmComboFinished() {
+
+	if (!armComboFinished_) return false;
+	armComboFinished_ = false;
+	return true;
 }
 
 bool BossEnemy::ConsumeMeteorRequest() {
