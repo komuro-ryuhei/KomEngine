@@ -7,7 +7,7 @@
 #include "Engine/lib/Input/Input.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "struct.h"
-#include "ICollisionObject.h"
+#include "Engine/Base/Collision/ICollisionObject.h"
 
 class PlayerBullet : public ICollisionObject {
 

@@ -14,7 +14,7 @@
 #include "Game/Scene/SceneManager.h"
 #include "Game/Entity/Enemy/BossEnemy.h"
 #include "Engine/Base/3d/Skybox/Skybox.h"
-#include "Fade.h"
+#include "Game/UI/Fade.h"
 
 class TitleScene : public IScene {
 

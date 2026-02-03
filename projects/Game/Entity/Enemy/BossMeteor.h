@@ -1,7 +1,7 @@
 // BossMeteor.h
 #pragma once
 #include "Engine/Base/3d/Object3d/Object3d.h"
-#include "ICollisionObject.h"
+#include "Engine/Base/Collision/ICollisionObject.h"
 #include "Game/Entity/Player/Player.h"
 
 class Camera;

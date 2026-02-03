@@ -7,7 +7,7 @@
 #include "Engine/Base/Camera/Camera.h"
 #include "Engine/Base/3d/Object3d/Object3d.h"
 #include "Engine/Base/2d/Sprite/Sprite.h"
-#include "Fade.h" 
+#include "Game/UI/Fade.h" 
 
 /// <summary>
 /// ゲームオーバーシーン

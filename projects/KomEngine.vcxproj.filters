@@ -259,19 +259,19 @@
     <ClCompile Include="Engine\Base\WinApp\WinApp.cpp">
       <Filter>Engine\Base\WinApp</Filter>
     </ClCompile>
-    <ClCompile Include="Fade.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossMeteor.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossSword.cpp" />
-    <ClCompile Include="KnockoutCameraController.cpp" />
     <ClCompile Include="Game\Scene\GameOverScene.cpp" />
-    <ClCompile Include="ResultImage.cpp" />
-    <ClCompile Include="BossMeteorController.cpp" />
-    <ClCompile Include="BossArmController.cpp" />
-    <ClCompile Include="LineRenderer.cpp" />
-    <ClCompile Include="CollisionManager.cpp" />
-    <ClCompile Include="BossAttackManager.cpp" />
-    <ClCompile Include="ChargeAttackController.cpp" />
-    <ClCompile Include="PauseMenu.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossArmController.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossAttackManager.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossMeteorController.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\ChargeAttackController.cpp" />
+    <ClCompile Include="Game\UI\Fade.cpp" />
+    <ClCompile Include="Game\UI\PauseMenu.cpp" />
+    <ClCompile Include="Game\UI\ResultImage.cpp" />
+    <ClCompile Include="Engine\Base\Debug\LineRenderer.cpp" />
+    <ClCompile Include="Engine\Base\Collision\CollisionManager.cpp" />
+    <ClCompile Include="Game\Camera\KnockoutCameraController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -413,22 +413,22 @@
     <ClInclude Include="Engine\lib\Vector\Vector.h">
       <Filter>lib\Vector</Filter>
     </ClInclude>
-    <ClInclude Include="Fade.h" />
     <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
     <ClInclude Include="Game\Entity\Enemy\BossSword.h" />
     <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
-    <ClInclude Include="KnockoutCameraController.h" />
     <ClInclude Include="Game\Scene\GameOverScene.h" />
-    <ClInclude Include="ResultImage.h" />
-    <ClInclude Include="BossMeteorController.h" />
-    <ClInclude Include="BossArmController.h" />
-    <ClInclude Include="LineRenderer.h" />
-    <ClInclude Include="ICollisionObject.h" />
-    <ClInclude Include="CollisionTypes.h" />
-    <ClInclude Include="CollisionManager.h" />
-    <ClInclude Include="BossAttackManager.h" />
-    <ClInclude Include="ChargeAttackController.h" />
-    <ClInclude Include="PauseMenu.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossArmController.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossAttackManager.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossMeteorController.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\ChargeAttackController.h" />
+    <ClInclude Include="Game\UI\Fade.h" />
+    <ClInclude Include="Game\UI\PauseMenu.h" />
+    <ClInclude Include="Game\UI\ResultImage.h" />
+    <ClInclude Include="Engine\Base\Debug\LineRenderer.h" />
+    <ClInclude Include="Engine\Base\Collision\CollisionManager.h" />
+    <ClInclude Include="Engine\Base\Collision\CollisionTypes.h" />
+    <ClInclude Include="Engine\Base\Collision\ICollisionObject.h" />
+    <ClInclude Include="Game\Camera\KnockoutCameraController.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

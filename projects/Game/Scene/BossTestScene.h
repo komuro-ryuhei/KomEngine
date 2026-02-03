@@ -5,7 +5,7 @@
 #include "Game/Scene/SceneManager.h"
 #include "Engine/Base/Particle/ParticleManager.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
-#include "LineRenderer.h"
+#include "Engine/Base/Debug/LineRenderer.h"
 
 // Object
 #include "Engine/Base/3d/Skybox/Skybox.h"
@@ -18,15 +18,15 @@
 #include "Game/Entity/Enemy/BossMeteor.h"
 #include "Game/Entity/Enemy/BossSword.h"
 
-#include "Fade.h"
-#include "KnockoutCameraController.h"
-#include "ResultImage.h"
-#include "BossMeteorController.h"
-#include "BossArmController.h"
-#include "CollisionManager.h"
-#include "PauseMenu.h"
+#include "Game/UI/Fade.h"
+#include "Game/Camera/KnockoutCameraController.h"
+#include "Game/UI/ResultImage.h"
+#include "Game/GamePlay/Enemy/BossMeteorController.h"
+#include "Game/GamePlay/Enemy/BossArmController.h"
+#include "Engine/Base/Collision/CollisionManager.h"
+#include "Game/UI/PauseMenu.h"
 
-#include "BossAttackManager.h"
+#include "Game/GamePlay/Enemy/BossAttackManager.h"
 
 class BossTestScene : public IScene {
 

@@ -7,7 +7,7 @@
 #include "Engine/lib/Input/Input.h"
 #include "struct.h"
 
-#include "ICollisionObject.h"
+#include "Engine/Base/Collision/ICollisionObject.h"
 
 class EnemyBullet : public ICollisionObject {
 

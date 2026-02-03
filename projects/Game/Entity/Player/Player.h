@@ -10,8 +10,8 @@
 #include "Engine/Base/2d/Sprite/Sprite.h"
 #include "Game/Entity/Player/PlayerBullet.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
-#include "ICollisionObject.h"
-#include "CollisionManager.h"
+#include "Engine/Base/Collision/ICollisionObject.h"
+#include "Engine/Base/Collision/CollisionManager.h"
 
 // C++
 #include <algorithm>
