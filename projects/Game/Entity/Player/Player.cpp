@@ -307,8 +307,8 @@ void Player::OnCollision(ICollisionObject* other)
 		// 敵弾と当たった場合
 	case CollisionLayer::EnemyBullet:
 		if (!GetInvincible()) {
-			/*Damage(1);
-			SetInvincible(true);*/
+			// Damage(1);
+			// SetInvincible(true);
 		}
 		break;
 

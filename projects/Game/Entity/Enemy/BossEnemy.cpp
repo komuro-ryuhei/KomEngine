@@ -1111,7 +1111,7 @@ void BossEnemy::UpdateRetreat(float dt) {
 				// 念のため完全通常
 				ApplyScaleFactorXZ_Y(1.0f, 1.0f);
 
-				// ★奥に到達＆通常に戻った“直後”にミサイル開始（この退避中に1回だけ）
+				// 奥に到達＆通常に戻った“直後”にミサイル開始（この退避中に1回だけ）
 				if (!missileStartedThisRetreat_) {
 					StartMissileVolley();
 					missileStartedThisRetreat_ = true;

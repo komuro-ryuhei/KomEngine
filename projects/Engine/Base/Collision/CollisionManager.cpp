@@ -51,7 +51,7 @@ void CollisionManager::Update() {
 
             if (IntersectAABB(boxA, boxB))
             {
-                // お互いに「当たったよ」と通知
+                // 互いに当たったと通知
                 a->OnCollision(b);
                 b->OnCollision(a);
             }
