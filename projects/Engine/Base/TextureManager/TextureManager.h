@@ -4,11 +4,14 @@
 #include <externals/DirectXTex/DirectXTex.h>
 #include <string>
 #include <unordered_map>
+#include <filesystem>
 
 // MyClass
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/Base/SrvManager/SrvManager.h"
 #include "Engine/lib/ComPtr/ComPtr.h"
+
+namespace fs = std::filesystem;
 
 /// <summary>
 /// テクスチャ管理クラス
@@ -93,4 +96,9 @@ private:
 	// std::vector<TextureData> textureDatas;
 
 	std::unordered_map<std::string, TextureData> textureDatas;
+
+	/// <summary>
+	/// 
+	/// </summary>
+	static std::string PreferDDSPath(const std::string& requestPath);
 };
