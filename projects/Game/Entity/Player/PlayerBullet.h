@@ -20,10 +20,16 @@ public:
 
 	void ImGuiDebug();
 
-	float GetRadius() const;
-	Vector3 GetTranslate() const;
 	void SetTranlate(Vector3 translate);
 	void SetDirection(const Vector3& direction);
+	void SetSpeed(float s) { speed_ = s; }
+	void SetRadius(float r) { radius_ = r; }
+	void SetScale(const Vector3 & s);
+	void SetDamage(int d) { damage_ = d; }
+
+	float GetRadius() const;
+	Vector3 GetTranslate() const;
+	int  GetDamage() const { return damage_; }
 	bool IsAlive() const;
 
 	// ----------------------- ICollisionObjectの実装 ----------------------- //
@@ -50,6 +56,7 @@ private:
 	bool  isAlive_ = true;   // 生存フラグ
 	bool pendingKill_ = false;
 
+	int damage_ = 1;
 
 	std::unique_ptr<ParticleEmitter> trailEmitter_ = nullptr;
 };

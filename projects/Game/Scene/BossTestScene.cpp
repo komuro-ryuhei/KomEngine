@@ -182,6 +182,8 @@ void BossTestScene::Init() {
 	pm->CreateParticleGeoup("trail", "./Resources/images/circle.png", "a");
 	pm->CreateParticleGeoup("charge_core", "./Resources/images/circle2.png", "a");
 	pm->CreateParticleGeoup("charge_pulse", ring, "ring");
+	pm->CreateParticleGeoup("charge_core", circle2, "a");
+	pm->CreateParticleGeoup("charge_pulse", ring, "a");
 
 	// グループが既にあれば作らない
 	if (!pm->Exists("hit")) {
@@ -239,7 +241,8 @@ void BossTestScene::Update() {
 		// 見た目の更新だけはやっておく（最低限）
 		camera_->Update();
 		skybox_->Update();
-		boss_->Update();   // combatEnabled_ が false なら攻撃しない
+		player_->Update();
+		boss_->Update(); // combatEnabled_ が false なら攻撃しない
 		ImGuiDebug();
 		return;
 	}

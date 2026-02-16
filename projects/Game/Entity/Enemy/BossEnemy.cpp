@@ -5,6 +5,7 @@
 #endif // USE_IMGUI
 
 #include "Game/Entity/Player/Player.h"
+#include "Game/Entity/Player/PlayerBullet.h"
 #include "Engine/Base/System/System.h"
 #include "Engine/Base/Particle/ParticleManager.h"
 
@@ -744,46 +745,53 @@ CollisionLayer BossEnemy::GetCollisionLayer() const {
 	return CollisionLayer::Enemy;
 }
 
-void BossEnemy::OnCollision(ICollisionObject* other) {
-
-	// Boss 本体が直接弾に当たった場合の処理（胴体ヒットと同じ）
-	if (other->GetCollisionLayer() == CollisionLayer::PlayerBullet) {
-
-		//Damage(1);
-		//StartBodyHitShake();
-
-		//// ヒットパーティクル
-		//Vector3 hitPos = other->GetCollisionPosition();
-		//ParticleManager::GetInstance()->Emit("hit", hitPos, 10);
-	}
-}
-
 void BossEnemy::PartCollider::OnCollision(ICollisionObject* other) {
 
-	if (owner->invulnerable_) {
-		return; // 退避中は被弾・ヒット数加算もしない
-	}
+    if (owner->invulnerable_) {
+        return; // 退避中は無敵
+    }
 
-	switch (part) {
+    // プレイヤー弾以外は無視（事故防止）
+    if (other->GetCollisionLayer() != CollisionLayer::PlayerBullet) {
+        return;
+    }
 
-	case Part::Body:
-		owner->Damage(1);
-		owner->StartBodyHitShake();
-		owner->StartBodyHitFlash();
-		break;
+    // 弾のダメージ取得
+    int dmg = 1;
+    if (auto* pb = dynamic_cast<PlayerBullet*>(other)) {
+        dmg = std::max(1, pb->GetDamage());
+    }
 
-	case Part::LeftArm:
-		owner->AddHitLeftArm();
-		owner->StartLeftArmHitShake();
-		owner->StartLeftHitFlash();
-		break;
+    switch (part) {
 
-	case Part::RightArm:
-		owner->AddHitRightArm();
-		owner->StartRightArmHitShake();
-		owner->StartRightHitFlash();
-		break;
-	}
+    case Part::Body:
+        owner->Damage(dmg);                 // ←固定1→弾のダメージ
+        owner->StartBodyHitShake();
+        owner->StartBodyHitFlash();
+        break;
+
+    case Part::LeftArm:
+        // 腕は「ヒット数」で壊れる仕様なので、dmg分ヒットを加算
+        for (int i = 0; i < dmg; ++i) {
+            owner->AddHitLeftArm();
+        }
+        owner->StartLeftArmHitShake();
+        owner->StartLeftHitFlash();
+        break;
+
+    case Part::RightArm:
+        for (int i = 0; i < dmg; ++i) {
+            owner->AddHitRightArm();
+        }
+        owner->StartRightArmHitShake();
+        owner->StartRightHitFlash();
+        break;
+    }
+}
+
+void BossEnemy::OnCollision(ICollisionObject* other) {
+
+	other;
 }
 
 Vector3 BossEnemy::PartCollider::GetCollisionPosition() const {

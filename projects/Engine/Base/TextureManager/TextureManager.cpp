@@ -54,7 +54,7 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	assert(srvManager_->CanAllocate());
 
 	TextureData textureData;
-	textureData.filePath = actualPath; // ★ここは moveしない（引数constなのでmove意味ない）
+	textureData.filePath = actualPath;
 	std::wstring filePathW = StringUtility::ConvertString(textureData.filePath);
 
 	DirectX::ScratchImage image{};

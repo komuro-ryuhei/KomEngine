@@ -63,11 +63,15 @@ public:
 	void SetGunMuzzlePos(const Vector3& pos) { gunMuzzlePos_ = pos; hasGunMuzzlePos_ = true; }
 
 private:
-	void Attack();
+	void Attack(float dt);
 
-	void SpawnBullet();
+	void SpawnBullet(int damage);
 
 	void UpdateReticleSprite();
+
+	void ChargeEffect(float dt);
+
+	void UpdateGun();
 
 public:
 	void RailMove();
@@ -112,15 +116,62 @@ private:
 	float autofireInterval_ = 0.10f;
 	float autofireTimer_ = 0.0f;
 
-	// 射撃許可フラグ（初期は撃てる）
+	// ----------------------- 射撃拡張：オーバーヒート & チャージ ----------------------- //
+	// 熱量（0〜heatMax_）。heat_が最大に達するとオーバーヒートで射撃不可
+	float heat_ = 0.0f;
+	float heatMax_ = 100.0f;
+	float heatRecover_ = 30.0f; // ここまで冷えたら復帰（heatMax_の30%など）
+
+	float heatCoolPerSec_ = 35.0f;      // 何もしてない時の冷却速度
+	float heatCoolWhileCharge_ = 20.0f; // チャージ中の冷却速度
+
+	float heatCostNormal_ = 12.0f;   // 通常弾1発の熱量
+	float heatCostAutofire_ = 9.0f;  // 連射弾1発の熱量
+	float heatCostCharged_ = 30.0f;  // フルチャージ弾の熱量
+	bool  isOverheated_ = false;
+
+	// チャージショット（Mouse0押し→離した瞬間に発射）
+	bool  isCharging_ = false;
+	float chargeTimer_ = 0.0f;
+	float chargeMinTime_ = 0.25f;  // これ未満は「タップ＝通常弾」
+	float chargeFullTime_ = 1.10f; // ここまで溜めたらフル扱い
+
+	// マウスの前フレーム状態（Release検出用）
+	bool prevMouse0Down_ = false;
+	bool prevMouse1Down_ = false;
+
+	// チャージの最大ダメージ（1〜この値まで増える）
+	int chargeDamageMax_ = 5;
+
+	// このフレームに弾を撃ったか
+	bool firedThisFrame_ = false;
+
+	// 射撃許可フラグ
 	bool canShoot_ = true;
 
 	// 銃の先端のワールド座標
 	Vector3 gunMuzzlePos_{};
-	bool    hasGunMuzzlePos_ = false;
+	bool hasGunMuzzlePos_ = false;
 
 	std::unique_ptr<ParticleEmitter> muzzleEmitter_ = nullptr;
+	// チャージ演出
+	std::unique_ptr<ParticleEmitter> chargeCoreEmitter_ = nullptr;
+	std::unique_ptr<ParticleEmitter> chargePulseEmitter_ = nullptr;
+	float chargeFxCoreTimer_ = 0.0f;
+	float chargeFxPulseTimer_ = 0.0f;
 
 	// コントロール有効フラグ
 	bool controlEnabled_ = true;
+
+	// 手元Gun
+	std::unique_ptr<Object3d> gun_ = nullptr;
+
+	// 手元Gunの見た目調整
+	float gunDist_ = 2.0f;     // カメラ前方距離
+	float gunRight_ = 0.45f;   // 右オフセット
+	float gunDown_ = 0.35f;    // 下オフセット
+	Vector3 gunScale_ = { 0.1f, 0.1f, 0.7f }; // 銃っぽい比率
+	Vector3 gunRotate_ = { 0.0f, 0.0f, 0.0f }; // 銃っぽい比率
+	Vector3 gunTranslate_ = { 0.2f, -0.2f, 1.5f }; // 銃っぽい比率
+	Vector3 gunRotOffset_ = { 0.0f, 0.0f, 0.0f }; // 必要なら傾ける
 };

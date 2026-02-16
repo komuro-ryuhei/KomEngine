@@ -83,6 +83,13 @@ void PlayerBullet::SetTranlate(Vector3 translate) {
 
 void PlayerBullet::SetDirection(const Vector3& direction) { direction_ = direction; }
 
+void PlayerBullet::SetScale(const Vector3& s) {
+	if (object3d_) {
+		object3d_->SetScale(s);
+
+	}
+}
+
 bool PlayerBullet::IsAlive() const { return isAlive_; }
 
 // ================= ICollisionObject の実装 ================= //
@@ -96,7 +103,7 @@ Vector3 PlayerBullet::GetCollisionPosition() const {
 
 float PlayerBullet::GetCollisionRadius() const {
 
-// 既存の radius_ をそのまま利用
+	// 既存の radius_ をそのまま利用
 	return radius_;
 }
 
