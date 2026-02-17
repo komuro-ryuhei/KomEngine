@@ -231,9 +231,10 @@ void BossEnemy::Update() {
 		}
 	}
 
-	UpdateMissileVolley(dt);
-	UpdateMissileVolley(dt);
-	UpdateChargeBeamShot(dt);
+	if (hp_ > 0) {
+		UpdateMissileVolley(dt);
+		UpdateChargeBeamShot(dt);
+	}
 
 	// ---------------------- 被弾シェイク ---------------------- //
 	DamageShake();
@@ -541,6 +542,33 @@ bool BossEnemy::ConsumeArmComboFinished() {
 	if (!armComboFinished_) return false;
 	armComboFinished_ = false;
 	return true;
+}
+
+void BossEnemy::CancelAttacksForMeteor() {
+
+	// 腕コンボ停止
+	armComboActive_ = false;
+	armComboFinished_ = false;
+	attackPhase_ = AttackPhase::None;
+	isExtending_ = true;
+	leftExtending_ = true;
+	rightExtending_ = true;
+
+	// ミサイル停止
+	missilePhase_ = MissilePhase::None;
+	missileT_ = 0.0f;
+	for (auto& m : missiles_) {
+		m.obj.reset();
+		m.bullet.reset();
+		m.launched = false;
+	}
+	missileStartedThisRetreat_ = false;
+
+	// チャージ停止（マーカーも含む）
+	chargeActive_ = false;
+	chargeShotLife_ = 0.0f;
+	chargeShot_.obj.reset();
+	chargeShot_.bullet.reset();
 }
 
 bool BossEnemy::ConsumeMeteorRequest() {
@@ -1292,6 +1320,20 @@ void BossEnemy::UpdateMissileVolley(float dt) {
 	// 発射：EnemyBullet の Update() に任せる（追尾にしたいならここでdir更新）
 	if (missilePhase_ == MissilePhase::Launch) {
 
+		if (missileT_ >= missileLaunchTimeout_) {
+			missilePhase_ = MissilePhase::None;
+
+			for (auto& m : missiles_) {
+				if (collisionManager_ && m.bullet) {
+					collisionManager_->Unregister(m.bullet.get());
+				}
+				m.bullet.reset();
+				m.obj.reset();
+				m.launched = false;
+			}
+			return;
+		}
+
 		int aliveCount = 0;
 		const Vector3 playerPos = player_->GetTransform().translate;
 
@@ -1320,7 +1362,7 @@ void BossEnemy::UpdateMissileVolley(float dt) {
 
 			const Vector3 p = m.bullet->GetTranslate();
 
-			// --- 命中判定（簡易：距離） ---
+			// --- 命中判定（簡易：距離） --- //
 			Vector3 d{ playerPos.x - p.x, playerPos.y - p.y, playerPos.z - p.z };
 			const float dist2 = d.x * d.x + d.y * d.y + d.z * d.z;
 
@@ -1338,7 +1380,6 @@ void BossEnemy::UpdateMissileVolley(float dt) {
 			}
 
 			// --- 遠すぎたら消す（全滅条件に寄与）---
-			// ※「プレイヤーから遠い」でもいいし、「ボスから遠い」でもOK
 			const float max2 = missileMaxDist_ * missileMaxDist_;
 			if (dist2 >= max2) {
 				if (collisionManager_ && m.bullet) {
@@ -1350,7 +1391,7 @@ void BossEnemy::UpdateMissileVolley(float dt) {
 			}
 		}
 
-		// ★終了条件：命中 or 全滅
+		// 終了条件：命中 or 全滅
 		if (missileHitPlayer_ || aliveCount <= 0) {
 			missilePhase_ = MissilePhase::None;
 

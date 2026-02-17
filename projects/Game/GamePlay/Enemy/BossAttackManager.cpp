@@ -63,11 +63,16 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		}
 	}
 
+	const bool armComboActive = (desc_.boss && desc_.boss->IsArmComboActive());
+
 	// ===== メテオ開始条件 =====
 	const bool canStartMeteor =
 		!flags.koActive &&
 		flags.isMainPhase &&
-		!(meteor_ && meteor_->IsActive());
+		!(meteor_ && meteor_->IsActive()) &&
+		!(desc_.boss && desc_.boss->IsRetreating()) &&
+		!(charge_ && charge_->IsActive()) &&
+		!armComboActive;
 
 	if (canStartMeteor && desc_.boss && desc_.boss->ConsumeMeteorRequest()) {
 		meteor_->Start();
@@ -79,7 +84,8 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		flags.isMainPhase &&
 		!(charge_ && charge_->IsActive()) &&
 		!(meteor_ && meteor_->IsActive()) &&
-		!(desc_.boss && desc_.boss->IsRetreating());
+		!(desc_.boss && desc_.boss->IsRetreating()) &&
+		!armComboActive;
 
 	if (canStartCharge && desc_.boss && desc_.boss->ConsumeChargeRequest()) {
 		charge_->Start();
@@ -113,19 +119,22 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		StartBlock(blockQueue_[blockIndex_++]); // 最初のブロック開始
 	}
 
+	// まだ開始できてないブロックは、条件が揃うまで毎フレーム再試行
+	if (queueInited_ && !blockStarted_) {
+		StartBlock(currentBlock_);
+	}
+
 	// 現在のブロックが終わったら次へ
 	bool finished = false;
 	switch (currentBlock_) {
 	case BossAttackBlock::ArmCombo:
-		finished = (desc_.boss && desc_.boss->ConsumeArmComboFinished());
+		finished = blockStarted_ && (desc_.boss && desc_.boss->ConsumeArmComboFinished());
 		break;
 	case BossAttackBlock::Charge:
-		finished = (charge_ && !charge_->IsActive());
+		finished = blockStarted_ && (charge_ && !charge_->IsActive());
 		break;
 	case BossAttackBlock::Meteor:
-		finished = (meteor_ && !meteor_->IsActive());
-		break;
-	default:
+		finished = blockStarted_ && (meteor_ && !meteor_->IsActive());
 		break;
 	}
 
@@ -194,23 +203,42 @@ bool BossAttackManager::IsBlockActive(BossAttackBlock b) const {
 void BossAttackManager::StartBlock(BossAttackBlock b) {
 
 	currentBlock_ = b;
+	blockStarted_ = false;
+
+	if (!desc_.boss) return;
+
+	// 退避中は開始しない
+	if (desc_.boss->IsRetreating()) {
+		return;
+	}
 
 	switch (b) {
+
 	case BossAttackBlock::ArmCombo:
-		if (desc_.boss) {
+		if (!IsMeteorActive() && !IsChargeActive()) {
 			desc_.boss->StartArmCombo();
+			blockStarted_ = true;
 		}
 		break;
+
 	case BossAttackBlock::Charge:
-		if (charge_ && !charge_->IsActive()) {
+		if (!IsMeteorActive() &&
+			charge_ && !charge_->IsActive()) {
+
 			charge_->Start();
+			blockStarted_ = true;
 		}
 		break;
+
 	case BossAttackBlock::Meteor:
-		if (meteor_ && !meteor_->IsActive()) {
+		if (!IsChargeActive() &&
+			meteor_ && !meteor_->IsActive()) {
+
 			meteor_->Start();
+			blockStarted_ = true;
 		}
 		break;
+
 	default:
 		break;
 	}

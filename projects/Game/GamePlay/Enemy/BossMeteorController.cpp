@@ -19,6 +19,10 @@ void BossMeteorController::Start() {
 
     if (!camera_ || !player_) return;
 
+    if (boss_) {
+        boss_->CancelAttacksForMeteor();
+    }
+
     phase_ = Phase::kIntro;
     meteorModeTimer_ = 0.0f;
     spawnTimer_ = 0.0f;

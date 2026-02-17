@@ -346,13 +346,16 @@ void BossTestScene::Update() {
 
 	BossAttackManager::UpdateFlags f{};
 	f.koActive = koActive_;
-	f.isMainPhase = (phase_ == Phase::kMain);
+
+	// ボスが死んだら isMainPhase を false にして 攻撃 を止める
+	const bool bossAlive = (boss_ && boss_->GetHP() > 0);
+	f.isMainPhase = (phase_ == Phase::kMain) && bossAlive && (endReason_ == EndReason::None);
+
 	f.isCameraFollowPlayer = isCameraFollowPlayer_;
 
 	if (attackManager_) {
 		attackManager_->Update(dt, f);
 	}
-
 
 	// ターゲットシェイク時間更新
 	if (leftTargetShakeTime_ > 0.0f) {

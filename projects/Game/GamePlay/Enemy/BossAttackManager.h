@@ -99,4 +99,7 @@ private:
 	// ブロック開始
 	void StartBlock(BossAttackBlock b);
 
+private:
+
+	bool blockStarted_ = false;
 };
