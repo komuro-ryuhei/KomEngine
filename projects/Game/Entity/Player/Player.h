@@ -52,6 +52,7 @@ public:
 
 	void SetInvincible(bool flag);
 	void SetRotate(Vector3& rotate);
+	void SetHeatGaugePos(const Vector2& pos) { heatGaugePos_ = pos; }
 
 	bool IsInvincible() const;
 	void Damage(int amount);
@@ -63,15 +64,24 @@ public:
 	void SetGunMuzzlePos(const Vector3& pos) { gunMuzzlePos_ = pos; hasGunMuzzlePos_ = true; }
 
 private:
+
+	// 攻撃
 	void Attack(float dt);
 
+	// 弾の生成
 	void SpawnBullet(int damage);
 
+	// レティクルのスプライト更新
 	void UpdateReticleSprite();
 
+	// チャージ攻撃のエフェクト更新
 	void ChargeEffect(float dt);
 
+	// 手元の銃の更新
 	void UpdateGun();
+
+	// オーバーヒートゲージの更新
+	void UpdateHeatGauge();
 
 public:
 	void RailMove();
@@ -112,12 +122,11 @@ private:
 	bool isInvincible_ = false;
 	float invincibleTimer_ = 0.0f;
 
-	// 連射制御（左クリック長押し用）
+	// 連射制御
 	float autofireInterval_ = 0.10f;
 	float autofireTimer_ = 0.0f;
 
-	// ----------------------- 射撃拡張：オーバーヒート & チャージ ----------------------- //
-	// 熱量（0〜heatMax_）。heat_が最大に達するとオーバーヒートで射撃不可
+	// ----------------------- オーバーヒート & チャージ ----------------------- //
 	float heat_ = 0.0f;
 	float heatMax_ = 100.0f;
 	float heatRecover_ = 30.0f; // ここまで冷えたら復帰（heatMax_の30%など）
@@ -174,4 +183,11 @@ private:
 	Vector3 gunRotate_ = { 0.0f, 0.0f, 0.0f }; // 銃っぽい比率
 	Vector3 gunTranslate_ = { 0.2f, -0.2f, 1.5f }; // 銃っぽい比率
 	Vector3 gunRotOffset_ = { 0.0f, 0.0f, 0.0f }; // 必要なら傾ける
+
+	// ゲージ用スプライト
+	std::unique_ptr<Sprite> heatGaugeBg_ = nullptr;
+	std::unique_ptr<Sprite> heatGaugeFill_ = nullptr;
+	float heatGaugeMaxWidth_ = 256.0f;
+	float heatGaugeHeight_ = 32.0f;
+	Vector2 heatGaugePos_{ 40.0f, 620.0f };
 };

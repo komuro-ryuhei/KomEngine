@@ -55,6 +55,7 @@ static SpiralEmitter spiralEmitter;
 class ParticleManager {
 
 public:
+
 	static ParticleManager* GetInstance();
 
 	/// <summary>
@@ -124,6 +125,11 @@ public:
 	/// <param name="name"> 名前 </param>
 	bool Exists(const std::string& name) const;
 
+	void SetChargeEffectColor(const Vector4& core, const Vector4& pulse) {
+		chargeCoreColor_ = core;
+		chargePulseColor_ = pulse;
+	}
+
 private:
 	ParticleManager() = default;
 	~ParticleManager() = default;
@@ -147,6 +153,10 @@ private:
 
 	// 
 	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
+
+	// チャージエフェクトの色
+	Vector4 chargeCoreColor_{ 0.65f, 0.90f, 1.00f, 1.0f };
+	Vector4 chargePulseColor_{ 0.75f, 0.90f, 1.00f, 1.0f };
 
 private:
 

@@ -691,7 +691,7 @@ bool ParticleManager::Exists(const std::string& name) const {
 
 Particle ParticleManager::MakeChargeCoreParticle(std::mt19937& randomEngine, const Vector3& center) {
 
-	// 円周上から中心へ吸い込まれる粒（チャージ感）
+	// 円周上から中心へ吸い込まれる粒
 	std::uniform_real_distribution<float> distAngle(0.0f, 2.0f * std::numbers::pi_v<float>);
 	std::uniform_real_distribution<float> distRadius(1.2f, 2.2f);
 	std::uniform_real_distribution<float> distSpeed(0.08f, 0.16f);
@@ -720,7 +720,7 @@ Particle ParticleManager::MakeChargeCoreParticle(std::mt19937& randomEngine, con
 	p.velocity = { dir.x * spd, distUp(randomEngine), dir.z * spd };
 
 	// 青白いチャージ色
-	p.color = { 0.65f, 0.90f, 1.00f, 1.0f };
+	p.color = chargeCoreColor_;
 
 	p.lifeTime = distLife(randomEngine);
 	p.currentTime = 0.0f;
@@ -746,7 +746,7 @@ Particle ParticleManager::MakeChargePulseRingParticle(std::mt19937& randomEngine
 	p.velocity = { 0.0f, 0.0f, 0.0f };
 
 	// 少し青寄りの白
-	p.color = { 0.75f, 0.90f, 1.00f, 1.0f };
+	p.color = chargePulseColor_;
 
 	p.lifeTime = distLife(randomEngine);
 	p.currentTime = 0.0f;

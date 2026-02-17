@@ -5,6 +5,7 @@
 #endif
 
 #include "Engine/Base/System/System.h"
+#include "Engine/Base/Particle/ParticleManager.h"
 
 #include <iostream>
 #include <algorithm>
@@ -90,11 +91,26 @@ void Player::Init(Camera* camera) {
 	chargeCoreEmitter_->Init("charge_core", { 0.0f, 0.0f, 0.0f }, 6);   // 常時キラキラ
 	chargePulseEmitter_ = std::make_unique<ParticleEmitter>();
 	chargePulseEmitter_->Init("charge_pulse", { 0.0f, 0.0f, 0.0f }, 1); // たまにリング
+
+	// オーバーヒートゲージのスプライト
+	heatGaugeBg_ = std::make_unique<Sprite>();
+	heatGaugeBg_->Init("./Resources/images/blackBG.png", BlendType::BLEND_ALPHA);
+	heatGaugeBg_->SetSize({ heatGaugeMaxWidth_, heatGaugeHeight_ });
+	heatGaugeBg_->SetAnchorPoint({ 0.0f, 1.0f });
+	heatGaugeBg_->SetPosition(heatGaugePos_);
+
+	heatGaugeFill_ = std::make_unique<Sprite>();
+	heatGaugeFill_->Init("./Resources/images/gauge.png", BlendType::BLEND_ALPHA);
+	heatGaugeFill_->SetSize({ heatGaugeMaxWidth_, heatGaugeHeight_ });
+	heatGaugeFill_->SetAnchorPoint({ 0.0f, 1.0f });
+	heatGaugeFill_->SetPosition(heatGaugePos_);
 }
 
 void Player::Update() {
 
 	const float dt = System::GetDeltaTime();
+
+	firedThisFrame_ = false;
 
 	// 連射タイマーを減算
 	autofireTimer_ = std::max(0.0f, autofireTimer_ - dt);
@@ -159,6 +175,8 @@ void Player::Update() {
 	object3d_->SetRotate(transform_.rotate);
 
 	UpdateReticleSprite();
+
+	UpdateHeatGauge();
 }
 
 void Player::Draw() {
@@ -173,6 +191,9 @@ void Player::Draw() {
 	/*if (gun_) {
 		gun_->Draw();
 	}*/
+
+	if (heatGaugeBg_) { heatGaugeBg_->Draw(); }
+	if (heatGaugeFill_) { heatGaugeFill_->Draw(); }
 
 	reticleSprite_->Draw();
 
@@ -226,8 +247,8 @@ void Player::Attack(float dt) {
 
 	auto* input = System::GetInput();
 
-	const bool mouse0Down = input->PushMouse(0); // 左クリック想定
-	const bool mouse1Down = input->PushMouse(1); // 右クリック長押し連射（今の仕様踏襲）
+	const bool mouse0Down = input->PushMouse(1); //左左クリック想定
+	const bool mouse1Down = input->PushMouse(0); // 右クリック長押し連射
 
 	// -------- チャージ（Mouse0：押し→離し）--------
 	if (mouse0Down && !prevMouse0Down_) {
@@ -257,8 +278,18 @@ void Player::Attack(float dt) {
 
 	// -------- 連射（Mouse1長押し）--------
 	if (mouse1Down && autofireTimer_ <= 0.0f) {
-		SpawnBullet(1);
-		autofireTimer_ = autofireInterval_;
+
+		const float cost = heatCostAutofire_;
+
+		if (heat_ + cost >= heatMax_) {
+			heat_ = heatMax_;
+			isOverheated_ = true;
+			canShoot_ = false;
+		} else {
+			heat_ += cost;
+			SpawnBullet(1);
+			autofireTimer_ = autofireInterval_;
+		}
 	}
 
 	prevMouse0Down_ = mouse0Down;
@@ -287,10 +318,10 @@ void Player::SpawnBullet(int damage) {
 	// マズルフラッシュ（位置は元のまま）
 	Vector3 muzzlePos = transform_.translate;
 
-	if (muzzleEmitter_) {
+	/*if (muzzleEmitter_) {
 		muzzleEmitter_->SetTranslate(muzzlePos);
 		muzzleEmitter_->Update();
-	}
+	}*/
 
 	// ----------------------------
 	// 弾オブジェクト生成
@@ -374,6 +405,8 @@ void Player::SpawnBullet(int damage) {
 	}
 
 	bulletObjects_.emplace_back(std::move(newBullet));
+
+	firedThisFrame_ = true;
 }
 
 void Player::UpdateGun() {
@@ -422,6 +455,26 @@ void Player::UpdateGun() {
 	gunMuzzlePos_ = gunPos + camFwd * 0.8f + camRight * 0.05f - camUp * 0.02f;
 }
 
+void Player::UpdateHeatGauge() {
+
+	if (!heatGaugeBg_ || !heatGaugeFill_) { return; }
+
+	float remain = 1.0f;
+	if (heatMax_ > 0.0f) {
+		remain = 1.0f - (heat_ / heatMax_);
+	}
+	remain = std::clamp(remain, 0.0f, 1.0f);
+
+	const float w = heatGaugeMaxWidth_ * remain;
+	heatGaugeFill_->SetSize({ w, heatGaugeHeight_ });
+
+	heatGaugeBg_->SetPosition(heatGaugePos_);
+	heatGaugeFill_->SetPosition(heatGaugePos_);
+
+	heatGaugeBg_->Update();
+	heatGaugeFill_->Update();
+}
+
 void Player::UpdateReticleSprite() {
 
 	// マウスカーソルのスクリーン座標を取得
@@ -459,6 +512,38 @@ void Player::ChargeEffect(float dt) {
 		chargeFxPulseTimer_ = 0.0f;
 		return;
 	}
+
+	// 0..1 のチャージ率
+	float tCharge = chargeTimer_ / chargeFullTime_;
+	tCharge = std::clamp(tCharge, 0.0f, 1.0f);
+
+	// 青→黄→赤 のグラデ（2段補間）
+	auto Lerp4 = [](const Vector4& a, const Vector4& b, float t) {
+		return Vector4{
+			a.x + (b.x - a.x) * t,
+			a.y + (b.y - a.y) * t,
+			a.z + (b.z - a.z) * t,
+			a.w + (b.w - a.w) * t
+		};
+		};
+
+	const Vector4 blue{ 0.20f, 0.55f, 1.00f, 1.0f };
+	const Vector4 yellow{ 1.00f, 0.95f, 0.20f, 1.0f };
+	const Vector4 red{ 1.00f, 0.20f, 0.20f, 1.0f };
+
+	Vector4 coreColor;
+	if (tCharge < 0.5f) {
+		coreColor = Lerp4(blue, yellow, tCharge / 0.5f);
+	} else {
+		coreColor = Lerp4(yellow, red, (tCharge - 0.5f) / 0.5f);
+	}
+
+	// pulseは少し薄め/明るめに
+	Vector4 pulseColor = coreColor;
+	pulseColor.w = 0.85f;
+
+	// ParticleManager に反映
+	ParticleManager::GetInstance()->SetChargeEffectColor(coreColor, pulseColor);
 
 	// ----------------------------
 	// カメラ基準で「手元位置」を作る

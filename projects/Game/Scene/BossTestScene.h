@@ -140,6 +140,7 @@ private:
 
 	// 操作方法スプライト
 	std::unique_ptr<Sprite> controlGuideSprite_ = nullptr;
+	std::unique_ptr<Sprite> controlGuideSprite2_ = nullptr;
 	// 
 	std::unique_ptr<Sprite> toPauseSpr_;
 

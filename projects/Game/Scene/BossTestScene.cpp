@@ -37,6 +37,9 @@ void BossTestScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/pause.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/toPause.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/heart.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/gauge.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/mouseLeftClickWithText.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/mouseLightClickWithText.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -156,9 +159,14 @@ void BossTestScene::Init() {
 
 	// 
 	controlGuideSprite_ = std::make_unique<Sprite>();
-	controlGuideSprite_->Init("./Resources/images/controlsGuide.png", BlendType::BLEND_ALPHA);
-	controlGuideSprite_->SetSize({ 400.0f, 280.0f });
-	controlGuideSprite_->SetPosition({ 900.0f, 420.0f });
+	controlGuideSprite_->Init("./Resources/images/mouseLeftClickWithText.png", BlendType::BLEND_ALPHA);
+	controlGuideSprite_->SetSize({ 256.0f, 280.0f });
+	controlGuideSprite_->SetPosition({ 980.0f, 180.0f });
+
+	controlGuideSprite2_ = std::make_unique<Sprite>();
+	controlGuideSprite2_->Init("./Resources/images/mouseLightClickWithText.png", BlendType::BLEND_ALPHA);
+	controlGuideSprite2_->SetSize({ 256.0f, 280.0f });
+	controlGuideSprite2_->SetPosition({ 980.0f, 420.0f });
 
 	// 
 	toPauseSpr_ = std::make_unique<Sprite>();
@@ -385,6 +393,7 @@ void BossTestScene::Update() {
 
 	// 
 	controlGuideSprite_->Update();
+	controlGuideSprite2_->Update();
 
 	toPauseSpr_->Update();
 
@@ -532,6 +541,7 @@ void BossTestScene::Draw() {
 
 	// 
 	controlGuideSprite_->Draw();
+	controlGuideSprite2_->Draw();
 
 	toPauseSpr_->Draw();
 
@@ -573,6 +583,7 @@ void BossTestScene::ImGuiDebug() {
 	boss_->ImGuiDebug();
 
 	controlGuideSprite_->ImGuiDebug();
+	controlGuideSprite2_->ImGuiDebug();
 
 	ImGui::Begin("BossTestScene");
 
