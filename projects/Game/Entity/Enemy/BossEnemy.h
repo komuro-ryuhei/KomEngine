@@ -460,6 +460,9 @@ private:
 
 private:
 
+	// 撃破時に全ての攻撃を止める（腕を引っ込める、ミサイルを消すなど）
+	void StopAllAttacksOnDeath();
+
 	void UpdateRetreat(float dt);
 
 	// ミサイル攻撃関数

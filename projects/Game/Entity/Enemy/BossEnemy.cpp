@@ -146,6 +146,7 @@ void BossEnemy::Update() {
 	if (hp_ <= 0) {
 
 		if (!fallStarted_) {
+			StopAllAttacksOnDeath();
 			fallStarted_ = true;
 			fallVelY_ = 0.0f;
 
@@ -1036,6 +1037,51 @@ void BossEnemy::StartRetreatAttack() {
 	missileStartedThisRetreat_ = false;
 }
 
+void BossEnemy::StopAllAttacksOnDeath() {
+
+	combatEnabled_ = false;
+	isAttack_ = false;
+	attackPhase_ = AttackPhase::None;
+
+	// チャージ状態を止める
+	chargeActive_ = false;
+	chargeRequest_ = false;
+	pendingChargeAfterRetreat_ = false;
+	pendingMeteorAfterCharge_ = false;
+
+	// 腕クロスを即戻し
+	if (chargePoseSaved_) {
+		leftArmPos_ = chargeSavedLeftArmPos_;
+		rightArmPos_ = chargeSavedRightArmPos_;
+		if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
+		if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
+		chargePoseSaved_ = false;
+		chargePoseLerp_ = 0.0f;
+	}
+
+	// ミサイル全消し（hp<=0 だと UpdateMissileVolley が呼ばれず消えないため）
+	missilePhase_ = MissilePhase::None;
+	missileT_ = 0.0f;
+	missileHitPlayer_ = false;
+	for (auto& m : missiles_) {
+		if (collisionManager_ && m.bullet) {
+			collisionManager_->Unregister(m.bullet.get());
+		}
+		m.bullet.reset();
+		m.obj.reset();
+		m.launched = false;
+	}
+
+	// チャージ弾（見た目＋当たり判定）全消し
+	if (collisionManager_ && chargeShot_.bullet) {
+		collisionManager_->Unregister(chargeShot_.bullet.get());
+	}
+	chargeShot_.bullet.reset();
+	chargeShot_.obj.reset();
+	chargeShotLife_ = 0.0f;
+	chargeShotHitOnce_ = false;
+}
+
 void BossEnemy::UpdateRetreat(float dt) {
 
 	if (retreatPhase_ == RetreatPhase::None) return;
@@ -1453,6 +1499,11 @@ bool BossEnemy::IsChargeBeamShotActive() const {
 }
 
 void BossEnemy::StartChargeBeamShot(bool useLeftArm) {
+	
+
+	// 撃破後は生成しない
+	if (hp_ <= 0) { return; }
+	if (!combatEnabled_) { return; }
 
 	// 既に発射中なら上書きしない
 	if (chargeShot_.bullet) { return; }
