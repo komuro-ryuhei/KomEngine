@@ -1661,9 +1661,6 @@ void BossEnemy::ChargeEffect(float dt) {
 
 		Vector3 fxPos = (leftW + rightW) * 0.5f;
 
-		// 少し手前/上に寄せたいならここで調整
-		// fxPos.y += 0.3f;
-
 		auto* pm = ParticleManager::GetInstance();
 
 		const bool hasCore = pm->Exists("charge_core");
