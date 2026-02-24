@@ -272,6 +272,10 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::DragInt("R_HitCount", &rightArmHitCount_);
 	ImGui::DragInt("L_HitCount", &leftArmHitCount_);
 
+	ImGui::DragFloat3("scale", &transform_.scale.x, 0.01f);
+	ImGui::DragFloat3("rotate", &transform_.rotate.x, 0.01f);
+	ImGui::DragFloat3("translate", &transform_.translate.x, 0.01f);
+
 	ImGui::DragFloat3("rightArmPos", &rightArmPos_.x, 0.01f);
 	ImGui::DragFloat3("rightArmRot", &rightArmRot_.x, 0.01f);
 	ImGui::DragFloat3("leftArmPos", &leftArmPos_.x, 0.01f);
@@ -636,7 +640,7 @@ void BossEnemy::SetEnraged(bool enraged) {
 
 Vector3 BossEnemy::GetTranslate() const { return transform_.translate; }
 
-void BossEnemy::SetRotate(Vector3& rotate) {
+void BossEnemy::SetRotate(const Vector3& rotate) {
 	transform_.rotate = rotate;
 	object3d_->SetRotate(rotate);
 	leftArm_->SetRotate(rotate);
@@ -776,46 +780,46 @@ CollisionLayer BossEnemy::GetCollisionLayer() const {
 
 void BossEnemy::PartCollider::OnCollision(ICollisionObject* other) {
 
-    if (owner->invulnerable_) {
-        return; // 退避中は無敵
-    }
+	if (owner->invulnerable_) {
+		return; // 退避中は無敵
+	}
 
-    // プレイヤー弾以外は無視（事故防止）
-    if (other->GetCollisionLayer() != CollisionLayer::PlayerBullet) {
-        return;
-    }
+	// プレイヤー弾以外は無視（事故防止）
+	if (other->GetCollisionLayer() != CollisionLayer::PlayerBullet) {
+		return;
+	}
 
-    // 弾のダメージ取得
-    int dmg = 1;
-    if (auto* pb = dynamic_cast<PlayerBullet*>(other)) {
-        dmg = std::max(1, pb->GetDamage());
-    }
+	// 弾のダメージ取得
+	int dmg = 1;
+	if (auto* pb = dynamic_cast<PlayerBullet*>(other)) {
+		dmg = std::max(1, pb->GetDamage());
+	}
 
-    switch (part) {
+	switch (part) {
 
-    case Part::Body:
-        owner->Damage(dmg);                 // ←固定1→弾のダメージ
-        owner->StartBodyHitShake();
-        owner->StartBodyHitFlash();
-        break;
+	case Part::Body:
+		owner->Damage(dmg);                 // ←固定1→弾のダメージ
+		owner->StartBodyHitShake();
+		owner->StartBodyHitFlash();
+		break;
 
-    case Part::LeftArm:
-        // 腕は「ヒット数」で壊れる仕様なので、dmg分ヒットを加算
-        for (int i = 0; i < dmg; ++i) {
-            owner->AddHitLeftArm();
-        }
-        owner->StartLeftArmHitShake();
-        owner->StartLeftHitFlash();
-        break;
+	case Part::LeftArm:
+		// 腕は「ヒット数」で壊れる仕様なので、dmg分ヒットを加算
+		for (int i = 0; i < dmg; ++i) {
+			owner->AddHitLeftArm();
+		}
+		owner->StartLeftArmHitShake();
+		owner->StartLeftHitFlash();
+		break;
 
-    case Part::RightArm:
-        for (int i = 0; i < dmg; ++i) {
-            owner->AddHitRightArm();
-        }
-        owner->StartRightArmHitShake();
-        owner->StartRightHitFlash();
-        break;
-    }
+	case Part::RightArm:
+		for (int i = 0; i < dmg; ++i) {
+			owner->AddHitRightArm();
+		}
+		owner->StartRightArmHitShake();
+		owner->StartRightHitFlash();
+		break;
+	}
 }
 
 void BossEnemy::OnCollision(ICollisionObject* other) {
@@ -1499,7 +1503,7 @@ bool BossEnemy::IsChargeBeamShotActive() const {
 }
 
 void BossEnemy::StartChargeBeamShot(bool useLeftArm) {
-	
+
 
 	// 撃破後は生成しない
 	if (hp_ <= 0) { return; }

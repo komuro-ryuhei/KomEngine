@@ -16,6 +16,8 @@
 #include "Engine/Base/3d/Skybox/Skybox.h"
 #include "Game/UI/Fade.h"
 
+#include <cmath>
+
 class TitleScene : public IScene {
 
 public:
@@ -37,6 +39,9 @@ private:
 	// Skybox
 	std::unique_ptr<Skybox> skybox_ = nullptr;
 
+	// Player
+	std::unique_ptr<Object3d> player_ = nullptr;
+
 	// Boss
 	std::unique_ptr<BossEnemy> boss_ = nullptr;
 
@@ -49,4 +54,10 @@ private:
 	std::unique_ptr<Fade> fade_ = nullptr;
 	enum class Phase { kFadeIn, kMain, kFadeOut };
 	Phase phase_ = Phase::kFadeIn;
+
+	// PushEnter 点滅
+	float pushBlinkTime_ = 0.0f;
+	float pushBlinkPeriod_ = 1.2f;   // 1周の秒数
+	float pushBlinkMinA_ = 0.2f;     // 最小アルファ
+	float pushBlinkMaxA_ = 1.0f;     // 最大アルファ
 };

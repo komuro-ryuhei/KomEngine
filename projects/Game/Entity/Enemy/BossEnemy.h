@@ -97,7 +97,7 @@ public:
 	Vector3 GetTranslate() const;
 	bool GetIsmoveRight() const { return isMoveRight_; }
 
-	void SetRotate(Vector3& rotate);
+	void SetRotate(const Vector3& rotate);
 	void SetTranslate(Vector3 translate);
 
 	void SetPlayer(Player* player) { player_ = player; }
