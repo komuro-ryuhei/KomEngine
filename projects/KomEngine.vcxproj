@@ -110,6 +110,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BossMissile.cpp" />
     <ClCompile Include="Engine\Base\Collision\CollisionManager.cpp" />
     <ClCompile Include="Engine\Base\Debug\LineRenderer.cpp" />
     <ClCompile Include="Game\Camera\KnockoutCameraController.cpp" />
@@ -171,6 +172,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BossMissile.h" />
     <ClInclude Include="Engine\Base\Collision\CollisionManager.h" />
     <ClInclude Include="Engine\Base\Collision\CollisionTypes.h" />
     <ClInclude Include="Engine\Base\Collision\ICollisionObject.h" />
