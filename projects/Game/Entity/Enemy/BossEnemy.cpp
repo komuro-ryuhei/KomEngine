@@ -1791,21 +1791,43 @@ void BossEnemy::UpdateArmors(float dt) {
 
 	armorTime_ += dt;
 
-	for (auto& a : armors_) {
+	// alive のインデックスを集める
+	std::vector<int> aliveIdx;
+	aliveIdx.reserve(armors_.size());
+	for (int i = 0; i < (int)armors_.size(); ++i) {
+		if (armors_[i].obj && armors_[i].alive) {
+			aliveIdx.push_back(i);
+		}
+	}
 
+	const int n = (int)aliveIdx.size();
+	if (n <= 0) { return; }
+
+	// 全体回転
+	armorGlobalAngle_ += armorOrbitSpeed_ * dt;
+
+	// n 等分
+	const float step = (MyMath::GetPI() * 2.0f) / (float)n;
+
+	for (int order = 0; order < n; ++order) {
+
+		auto& a = armors_[aliveIdx[order]];
 		if (!a.obj) { continue; }
-		if (!a.alive) { continue; }
 
-		a.angle += armorOrbitSpeed_ * dt;
+		const float ang = armorGlobalAngle_ + step * (float)order;
 
-		float y = std::sinf(armorTime_ * armorFloatSpeed_ + a.angle) * armorFloatAmp_;
+		float y = std::sinf(armorTime_ * armorFloatSpeed_ + ang) * armorFloatAmp_;
 
 		Vector3 local{};
-		local.x = std::cosf(a.angle) * armorOrbitRadius_;
+		local.x = std::cosf(ang) * armorOrbitRadius_;
 		local.y = y;
-		local.z = std::sinf(a.angle) * armorOrbitRadius_;
+		local.z = std::sinf(ang) * armorOrbitRadius_;
 
 		a.obj->SetTranslate(local);
+
+		// 
+		a.obj->SetScale(armorScale_);
+
 		a.obj->Update();
 	}
 }

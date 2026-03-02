@@ -276,6 +276,7 @@ private:
 	float armorFloatAmp_ = 0.18f;   // 上下振幅
 	float armorFloatSpeed_ = 1.6f;  // 上下速度
 	float armorTime_ = 0.0f;
+	float armorGlobalAngle_ = 0.0f; // 生存アーマーを等分配置するための全体回転角
 	Vector3 armorScale_ = { 0.3f, 0.3f, 0.3f };
 	bool armorRebuildRequest_ = false;
 
