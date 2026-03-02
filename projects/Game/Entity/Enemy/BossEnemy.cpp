@@ -9,6 +9,13 @@
 #include "Engine/Base/System/System.h"
 #include "Engine/Base/Particle/ParticleManager.h"
 
+#include <cmath>
+
+// モデル
+static const char* kBossCoreModel = "BossEnemyCore.obj";
+static const char* kBossArmorModel = "BossArmor.obj";
+
+
 void BossEnemy::SetTranslate(Vector3 translate) { transform_.translate = translate; }
 
 void BossEnemy::Init(Camera* camera) {
@@ -20,7 +27,7 @@ void BossEnemy::Init(Camera* camera) {
 	object3d_ = std::make_unique<Object3d>();
 	object3d_->Init(BlendType::BLEND_NONE);
 
-	object3d_->SetModel("BossEnemy.obj");
+	object3d_->SetModel(kBossCoreModel);
 	object3d_->SetDefaultCamera(camera_);
 	object3d_->SetScale({ 2.0f, 2.0f, 2.0f });
 
@@ -46,6 +53,12 @@ void BossEnemy::Init(Camera* camera) {
 
 	baseBodyScale_ = { 2.0f, 2.0f, 2.0f };
 	baseArmScale_ = { 1.0f, 1.0f, 1.0f };
+	// 腕は腕攻撃中だけ表示したいので初期は非表示（スケール0 + 半径0にする）
+	leftArmVisible_ = false;
+	rightArmVisible_ = false;
+	leftArm_->SetScale({ 0.0f, 0.0f, 0.0f });
+	rightArm_->SetScale({ 0.0f, 0.0f, 0.0f });
+
 
 	// 
 	hpSprite_ = std::make_unique<Sprite>();
@@ -62,6 +75,16 @@ void BossEnemy::Init(Camera* camera) {
 
 	rightCol_.owner = this;
 	rightCol_.part = PartCollider::Part::RightArm;
+
+
+	// 装甲（周回）を生成
+	InitArmors();
+
+	// 腕は攻撃時のみ表示
+	leftArmVisible_ = false;
+	rightArmVisible_ = false;
+	leftArm_->SetScale({ 0.0f,0.0f,0.0f });
+	rightArm_->SetScale({ 0.0f,0.0f,0.0f });
 
 	// --- 怒り用：通常時の基準値を保存 ---
 	baseAttackSpeed_ = attackSpeed_;
@@ -81,6 +104,9 @@ void BossEnemy::Update() {
 	object3d_->Update();
 	leftArm_->Update();
 	rightArm_->Update();
+
+	// 装甲（周回）更新
+	UpdateArmors(dt);
 
 	// 被弾シェイクタイマー
 	auto updateShake = [dt](float& t) {
@@ -146,7 +172,6 @@ void BossEnemy::Update() {
 	if (hp_ <= 0) {
 
 		if (!fallStarted_) {
-			StopAllAttacksOnDeath();
 			fallStarted_ = true;
 			fallVelY_ = 0.0f;
 
@@ -240,20 +265,40 @@ void BossEnemy::Update() {
 	// ---------------------- 被弾シェイク ---------------------- //
 	DamageShake();
 
+	// ---------------------- 腕の表示制御（腕攻撃中だけ） ---------------------- //
+	bool showLeft = false;
+	bool showRight = false;
+	if (armComboActive_) {
+		switch (attackPhase_) {
+		case AttackPhase::SingleLeft:  showLeft = true; break;
+		case AttackPhase::SingleRight: showRight = true; break;
+		case AttackPhase::BothHands:   showLeft = true; showRight = true; break;
+		default: break;
+		}
+	}
+	leftArmVisible_ = showLeft;
+	rightArmVisible_ = showRight;
+
+	// 表示する腕はスケールを戻し、非表示はスケール0（当たり判定も無効化）
+	leftArm_->SetScale(leftArmVisible_ ? baseArmScale_ : Vector3{ 0.0f, 0.0f, 0.0f });
+	rightArm_->SetScale(rightArmVisible_ ? baseArmScale_ : Vector3{ 0.0f, 0.0f, 0.0f });
+
+
 	// 胴体はBodyRadiusを使う
 	object3d_->SetRadius(bodyRadius_);
 
 	// 腕はそれぞれ専用の半径を使う
-	leftArm_->SetRadius(leftArmRadius_ * leftArm_->GetScale().x);
-	rightArm_->SetRadius(rightArmRadius_ * rightArm_->GetScale().x);
+	leftArm_->SetRadius(leftArmVisible_ ? (leftArmRadius_ * leftArm_->GetScale().x) : 0.0f);
+	rightArm_->SetRadius(rightArmVisible_ ? (rightArmRadius_ * rightArm_->GetScale().x) : 0.0f);
 }
 
 void BossEnemy::Draw() {
 
 	//
 	object3d_->Draw();
-	leftArm_->Draw();
-	rightArm_->Draw();
+	DrawArmors();
+	if (leftArmVisible_) { leftArm_->Draw(); }
+	if (rightArmVisible_) { rightArm_->Draw(); }
 
 	DrawMissileVolley();
 	// チャージビーム弾
@@ -272,10 +317,6 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::DragInt("R_HitCount", &rightArmHitCount_);
 	ImGui::DragInt("L_HitCount", &leftArmHitCount_);
 
-	ImGui::DragFloat3("scale", &transform_.scale.x, 0.01f);
-	ImGui::DragFloat3("rotate", &transform_.rotate.x, 0.01f);
-	ImGui::DragFloat3("translate", &transform_.translate.x, 0.01f);
-
 	ImGui::DragFloat3("rightArmPos", &rightArmPos_.x, 0.01f);
 	ImGui::DragFloat3("rightArmRot", &rightArmRot_.x, 0.01f);
 	ImGui::DragFloat3("leftArmPos", &leftArmPos_.x, 0.01f);
@@ -292,6 +333,62 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::Checkbox("攻撃中", &isAttack_);
 	ImGui::Checkbox("怒り状態", &isEnraged_);
 
+	if (ImGui::Begin("Boss Armor")) {
+
+		ImGui::Text("=== Armor Settings ===");
+
+		// 個数
+		ImGui::SliderInt("Armor Count", &armorInitialCount_, 1, 32);
+
+		// 回転半径
+		ImGui::SliderFloat("Orbit Radius", &armorOrbitRadius_, 0.0f, 20.0f);
+
+		// 回転速度
+		ImGui::SliderFloat("Orbit Speed", &armorOrbitSpeed_, -5.0f, 5.0f);
+
+		// 上下揺れ幅
+		ImGui::SliderFloat("Float Amp", &armorFloatAmp_, 0.0f, 5.0f);
+
+		// 上下揺れ速度
+		ImGui::SliderFloat("Float Speed", &armorFloatSpeed_, 0.0f, 10.0f);
+
+		// スケール
+		float scale[3] = { armorScale_.x, armorScale_.y, armorScale_.z };
+		if (ImGui::DragFloat3("Armor Scale", scale, 0.01f, 0.01f, 5.0f)) {
+			armorScale_.x = scale[0];
+			armorScale_.y = scale[1];
+			armorScale_.z = scale[2];
+		}
+
+		// スケールを適応
+		for (const auto& a : armors_) {
+			a.obj->SetScale(armorScale_);
+		}
+
+		// 作り直し
+		if (ImGui::Button("Rebuild Armors")) {
+			armorRebuildRequest_ = true;
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Reset")) {
+			armorInitialCount_ = 12;
+			armorOrbitRadius_ = 4.8f;
+			armorOrbitSpeed_ = 0.9f;
+			armorFloatAmp_ = 0.18f;
+			armorFloatSpeed_ = 1.6f;
+			armorScale_ = { 0.7f, 0.7f, 0.7f };
+			armorRebuildRequest_ = true;
+		}
+	}
+	ImGui::End();
+
+	// 再構築
+	if (armorRebuildRequest_) {
+		InitArmors();
+		armorRebuildRequest_ = false;
+	}
 	ImGui::End();
 
 #endif
@@ -720,6 +817,9 @@ void BossEnemy::Damage(int v) {
 	// HPを減らす
 	hp_ = std::max(0, hp_ - v);
 
+	// 装甲を1つ破壊（ボスがダメージを受けた時だけ）
+	BreakOneArmor();
+
 	// ダメージ後の幅
 	float newRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 	newRatio = std::clamp(newRatio, 0.0f, 1.0f);
@@ -1039,51 +1139,6 @@ void BossEnemy::StartRetreatAttack() {
 	if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
 
 	missileStartedThisRetreat_ = false;
-}
-
-void BossEnemy::StopAllAttacksOnDeath() {
-
-	combatEnabled_ = false;
-	isAttack_ = false;
-	attackPhase_ = AttackPhase::None;
-
-	// チャージ状態を止める
-	chargeActive_ = false;
-	chargeRequest_ = false;
-	pendingChargeAfterRetreat_ = false;
-	pendingMeteorAfterCharge_ = false;
-
-	// 腕クロスを即戻し
-	if (chargePoseSaved_) {
-		leftArmPos_ = chargeSavedLeftArmPos_;
-		rightArmPos_ = chargeSavedRightArmPos_;
-		if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
-		if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
-		chargePoseSaved_ = false;
-		chargePoseLerp_ = 0.0f;
-	}
-
-	// ミサイル全消し（hp<=0 だと UpdateMissileVolley が呼ばれず消えないため）
-	missilePhase_ = MissilePhase::None;
-	missileT_ = 0.0f;
-	missileHitPlayer_ = false;
-	for (auto& m : missiles_) {
-		if (collisionManager_ && m.bullet) {
-			collisionManager_->Unregister(m.bullet.get());
-		}
-		m.bullet.reset();
-		m.obj.reset();
-		m.launched = false;
-	}
-
-	// チャージ弾（見た目＋当たり判定）全消し
-	if (collisionManager_ && chargeShot_.bullet) {
-		collisionManager_->Unregister(chargeShot_.bullet.get());
-	}
-	chargeShot_.bullet.reset();
-	chargeShot_.obj.reset();
-	chargeShotLife_ = 0.0f;
-	chargeShotHitOnce_ = false;
 }
 
 void BossEnemy::UpdateRetreat(float dt) {
@@ -1504,11 +1559,6 @@ bool BossEnemy::IsChargeBeamShotActive() const {
 
 void BossEnemy::StartChargeBeamShot(bool useLeftArm) {
 
-
-	// 撃破後は生成しない
-	if (hp_ <= 0) { return; }
-	if (!combatEnabled_) { return; }
-
 	// 既に発射中なら上書きしない
 	if (chargeShot_.bullet) { return; }
 	if (!camera_ || !player_) { return; }
@@ -1659,7 +1709,7 @@ void BossEnemy::ChargeEffect(float dt) {
 
 	if (chargeActive_) {
 
-		// ★ 手の位置（ワールド）から、中央（両手の中間）を作る
+		// 手の位置（ワールド）から、中央（両手の中間）を作る
 		Vector3 leftW = GetLeftHandWorldPos();
 		Vector3 rightW = GetRightHandWorldPos();
 
@@ -1685,5 +1735,86 @@ void BossEnemy::ChargeEffect(float dt) {
 	} else {
 		chargeFxCoreTimer_ = 0.0f;
 		chargeFxPulseTimer_ = 0.0f;
+	}
+}
+
+// ----------------------- Armor（装甲） ----------------------- //
+
+int BossEnemy::GetAliveArmorCount() const {
+
+	int c = 0;
+	for (const auto& a : armors_) {
+		if (a.alive) { ++c; }
+	}
+	return c;
+}
+
+void BossEnemy::InitArmors() {
+
+	armors_.clear();
+	armors_.reserve(armorInitialCount_);
+
+	for (int i = 0; i < armorInitialCount_; ++i) {
+		ArmorUnit u{};
+		u.obj = std::make_unique<Object3d>();
+		u.obj->Init(BlendType::BLEND_NONE);
+		u.obj->SetModel(kBossArmorModel);
+		u.obj->SetDefaultCamera(camera_);
+		u.obj->SetParent(object3d_.get());
+
+		// 見た目サイズ
+		u.obj->SetScale(armorScale_);
+
+		float t = (armorInitialCount_ > 0) ? (float)i / (float)armorInitialCount_ : 0.0f;
+		u.angle = MyMath::GetPI() * 2.0f * t;
+
+		armors_.push_back(std::move(u));
+	}
+}
+
+void BossEnemy::BreakOneArmor() {
+
+	// すでに全部壊れてるなら何もしない
+	if (GetAliveArmorCount() <= 0) { return; }
+
+	// 末尾側から壊す（見た目が一定になって分かりやすい）
+	for (int i = (int)armors_.size() - 1; i >= 0; --i) {
+		auto& a = armors_[i];
+		if (a.alive) {
+			a.alive = false;
+			return;
+		}
+	}
+}
+
+void BossEnemy::UpdateArmors(float dt) {
+
+	armorTime_ += dt;
+
+	for (auto& a : armors_) {
+
+		if (!a.obj) { continue; }
+		if (!a.alive) { continue; }
+
+		a.angle += armorOrbitSpeed_ * dt;
+
+		float y = std::sinf(armorTime_ * armorFloatSpeed_ + a.angle) * armorFloatAmp_;
+
+		Vector3 local{};
+		local.x = std::cosf(a.angle) * armorOrbitRadius_;
+		local.y = y;
+		local.z = std::sinf(a.angle) * armorOrbitRadius_;
+
+		a.obj->SetTranslate(local);
+		a.obj->Update();
+	}
+}
+
+void BossEnemy::DrawArmors() {
+
+	for (auto& a : armors_) {
+		if (a.obj && a.alive) {
+			a.obj->Draw();
+		}
 	}
 }

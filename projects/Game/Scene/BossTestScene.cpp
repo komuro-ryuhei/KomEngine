@@ -40,6 +40,8 @@ void BossTestScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/gauge.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/mouseLeftClickWithText.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/mouseLightClickWithText.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossArmor.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossEnemyCore.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -51,6 +53,8 @@ void BossTestScene::Init() {
 	ModelManager::GetInstance()->LoadModel("hand.obj");
 	ModelManager::GetInstance()->LoadModel("BossEnemy.obj");
 	ModelManager::GetInstance()->LoadModel("gun.obj");
+	ModelManager::GetInstance()->LoadModel("BossArmor.obj");
+	ModelManager::GetInstance()->LoadModel("BossEnemyCore.obj");
 
 	// カメラ
 	camera_ = std::make_unique<Camera>();

@@ -261,6 +261,35 @@ private:
 	std::unique_ptr<Object3d> leftArm_;
 	std::unique_ptr<Object3d> rightArm_;
 
+
+	// ----------------------- Armor（周回装甲） ----------------------- //
+	struct ArmorUnit {
+		std::unique_ptr<Object3d> obj;
+		bool alive = true;   // 破壊済みならfalse
+		float angle = 0.0f;  // 周回角度（ラジアン）
+	};
+
+	std::vector<ArmorUnit> armors_;
+	int   armorInitialCount_ = 12;
+	float armorOrbitRadius_ = 3.0f; // 本体中心からの半径
+	float armorOrbitSpeed_ = 0.9f;  // rad/s
+	float armorFloatAmp_ = 0.18f;   // 上下振幅
+	float armorFloatSpeed_ = 1.6f;  // 上下速度
+	float armorTime_ = 0.0f;
+	Vector3 armorScale_ = { 0.3f, 0.3f, 0.3f };
+	bool armorRebuildRequest_ = false;
+
+	void InitArmors();
+	void UpdateArmors(float dt);
+	void DrawArmors();
+	void BreakOneArmor();
+	int  GetAliveArmorCount() const;
+
+	// 腕は腕攻撃時のみ表示（描画・当たり判定を無効化するため）
+	bool leftArmVisible_ = false;
+	bool rightArmVisible_ = false;
+
+
 	// 
 	std::unique_ptr<Sprite> hpSprite_;
 
@@ -449,7 +478,7 @@ private:
 
 	bool chargeShotHitOnce_ = false;
 
-	// チャージ中のエフェクト（中心に溜める感じ）
+	// チャージ中のエフェクト
 	float chargeFxRingTimer_ = 0.0f;
 	float chargeFxCylinderTimer_ = 0.0f;
 	float chargeFxRibbonTimer_ = 0.0f;
@@ -459,9 +488,6 @@ private:
 	float chargeFxPulseTimer_ = 0.0f;
 
 private:
-
-	// 撃破時に全ての攻撃を止める（腕を引っ込める、ミサイルを消すなど）
-	void StopAllAttacksOnDeath();
 
 	void UpdateRetreat(float dt);
 
