@@ -328,7 +328,7 @@ void Player::SpawnBullet(int damage) {
 	// ----------------------------
 	Object3d* bulletObject = new Object3d();
 	bulletObject->Init(BlendType::BLEND_NONE);
-	bulletObject->SetModel("sphere.obj");
+	bulletObject->SetModel("PlayerBullet.obj");
 	bulletObject->SetDefaultCamera(camera_);
 
 	auto newBullet = std::make_unique<PlayerBullet>();
@@ -413,7 +413,7 @@ void Player::UpdateGun() {
 
 	if (!gun_ || !camera_) { return; }
 
-	// viewの逆行列からカメラ座標系（位置/前/右/上）を取得
+	// viewの逆行列からカメラ座標系を取得
 	Matrix4x4 view = camera_->GetViewMatrix();
 	Matrix4x4 invView = MyMath::Inverse4x4(view);
 

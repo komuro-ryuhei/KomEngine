@@ -1355,7 +1355,7 @@ void BossEnemy::StartMissileVolley() {
 
 		m.obj = std::make_unique<Object3d>();
 		m.obj->Init(BlendType::BLEND_NONE);
-		m.obj->SetModel("sphere.obj");
+		m.obj->SetModel("BossEnemyMissile.obj");
 		m.obj->SetDefaultCamera(camera_);
 		m.obj->SetScale({ 1.0f, 1.0f, 1.0f });
 
@@ -1383,10 +1383,10 @@ void BossEnemy::UpdateMissileVolley(float dt) {
 	if (missilePhase_ == MissilePhase::Telegraph) {
 
 		for (int i = 0; i < 4; ++i) {
-			float t = (float)i / 3.0f;       // 0, 1/3, 2/3, 1
-			float rad = t * 3.14159265f;     // 0..π
+			float t = (float)i / 3.0f;   // 0, 1/3, 2/3, 1
+			float rad = t * 3.14159265f; // 0..π
 
-			// 半円を X-Y 平面に（必要なら X-Z にしてもOK）
+			// 半円を X-Y 平面に
 			Vector3 offset{};
 			offset.x = std::cos(rad) * missileRadius_;
 			offset.y = std::sin(rad) * missileRadius_ + missileHeight_;
@@ -1481,7 +1481,7 @@ void BossEnemy::UpdateMissileVolley(float dt) {
 				m.bullet.reset();
 				m.obj.reset();
 				--aliveCount; // 消したのでaliveを調整
-				break;        // 1発当たったら即終了でOKなら break
+				break;
 			}
 
 			// --- 遠すぎたら消す（全滅条件に寄与）---

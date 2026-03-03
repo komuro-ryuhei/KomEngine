@@ -32,8 +32,8 @@ void TitleScene::Init() {
 	// Sprite
 	titleSprite_ = std::make_unique<Sprite>();
 	titleSprite_->Init("./Resources/images/Title.png", BlendType::BLEND_ADD);
-	titleSprite_->SetSize({ 500.0f,400.0f });
-	titleSprite_->SetPosition({ 460.0f,180.0f });
+	titleSprite_->SetSize({ 640.0f,540.0f });
+	titleSprite_->SetPosition({ 400.0f,-30.0f });
 
 	enterSprite_ = std::make_unique<Sprite>();
 	enterSprite_->Init("./Resources/images/PushEnter.png", BlendType::BLEND_ADD);
@@ -65,7 +65,7 @@ void TitleScene::Init() {
 	player_->Init(BlendType::BLEND_NONE);
 	player_->SetModel("titlePlayer.obj");
 	player_->SetDefaultCamera(camera_.get());
-	player_->SetRotate({ 0.0f, 0.65f, 0.0f });
+	player_->SetRotate({ 0.0f, 3.5f, 0.0f });
 	player_->SetTranslate({ -5.0f, -4.0f, 10.0f });
 
 	// boss

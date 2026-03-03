@@ -42,6 +42,9 @@ void BossTestScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/mouseLightClickWithText.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossArmor.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossEnemyCore.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/PlayerBullet.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossEnemyMissile.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossEnemyMeteor.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -55,6 +58,9 @@ void BossTestScene::Init() {
 	ModelManager::GetInstance()->LoadModel("gun.obj");
 	ModelManager::GetInstance()->LoadModel("BossArmor.obj");
 	ModelManager::GetInstance()->LoadModel("BossEnemyCore.obj");
+	ModelManager::GetInstance()->LoadModel("PlayerBullet.obj");
+	ModelManager::GetInstance()->LoadModel("BossEnemyMissile.obj");
+	ModelManager::GetInstance()->LoadModel("BossEnemyMeteor.obj");
 
 	// カメラ
 	camera_ = std::make_unique<Camera>();
