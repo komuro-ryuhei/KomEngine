@@ -17,6 +17,7 @@ void TitleScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/PushEnter.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/YOUDIE.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/hp.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/white_1x1.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -132,7 +133,7 @@ void TitleScene::Update() {
 		enterSprite_->SetColor({ 1.0f, 1.0f, 1.0f, a });
 
 		if (System::TriggerKey(DIK_RETURN) || System::TriggerKey(DIK_SPACE)) {
-			fade_->Start(Fade::Status::FadeOut, 0.6f);
+			fade_->StartDataErrorClose(0.6f);   // ★変更
 			phase_ = Phase::kFadeOut;
 		}
 	}
@@ -141,7 +142,8 @@ void TitleScene::Update() {
 	case Phase::kFadeOut:
 		fade_->Update();
 		if (fade_->IsFinished()) {
-			sceneManager_->ChangeScene("TEST");   // ゲームへ
+			Fade::SetDefaultOpenModeDataError(true);
+			sceneManager_->ChangeScene("TEST");
 		}
 		break;
 	}

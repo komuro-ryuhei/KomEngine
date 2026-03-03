@@ -86,7 +86,12 @@ void BossTestScene::Init() {
 	// --- フェード初期化（画面サイズは 1280x720）---
 	fade_ = std::make_unique<Fade>();
 	fade_->Initialize(1280, 720);
-	if (Fade::GetDefaultOpenModeSlash()) {
+
+	if (Fade::GetDefaultOpenModeDataError()) {
+		Fade::SetDefaultOpenModeDataError(false);
+		fade_->StartDataErrorOpen(0.45f);
+	} else if (Fade::GetDefaultOpenModeSlash()) {
+		Fade::SetDefaultOpenModeSlash(false);
 		fade_->StartSlashOpen(0.6f, 60.0f, true);
 	} else {
 		fade_->Start(Fade::Status::FadeIn, 0.6f);
