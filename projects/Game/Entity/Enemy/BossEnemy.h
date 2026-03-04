@@ -108,6 +108,8 @@ public:
 
 	void SetInTitleScene(bool isTitleScene) { isInTitleScene_ = isTitleScene; }
 
+	void SetHP(int hp) { hp_ = hp; }
+
 	// 当たり判定管理
 	void SetCollisionManager(CollisionManager* mgr)
 	{

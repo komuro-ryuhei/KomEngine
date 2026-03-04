@@ -20,7 +20,7 @@ void Fade::Initialize(int screenWidth, int screenHeight, const char* texturePath
 	sprite_->SetPosition({ 0.0f, 0.0f });
 	sprite_->SetColor({ 0,0,0,1 }); // 黒に塗る
 
-	// ★DataError用の生成
+	// DataError用の生成
 	rgbR_ = std::make_unique<Sprite>();
 	rgbG_ = std::make_unique<Sprite>();
 	rgbB_ = std::make_unique<Sprite>();
@@ -148,9 +148,13 @@ void Fade::Update() {
 	rgbG_->SetPosition({ 0.0f - offX * 0.6f, 0.0f });
 	rgbB_->SetPosition({ 0.0f + offX * 0.3f, 0.0f - offY });
 
-	rgbR_->SetColor({ 1.0f, 0.15f, 0.15f, 0.35f * intensity });
-	rgbG_->SetColor({ 0.15f, 1.0f, 0.15f, 0.12f * intensity });
-	rgbB_->SetColor({ 0.15f, 0.25f, 1.0f, 0.12f * intensity });
+	const float aR = 0.18f * intensity;
+	const float aG = 0.18f * intensity;
+	const float aB = 0.18f * intensity;
+
+	rgbR_->SetColor({ 1.0f, 1.0f, 1.0f, aR });
+	rgbG_->SetColor({ 1.0f, 1.0f, 1.0f, aG });
+	rgbB_->SetColor({ 1.0f, 1.0f, 1.0f, aB });
 
 	rgbR_->Update(); rgbG_->Update(); rgbB_->Update();
 

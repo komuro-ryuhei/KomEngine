@@ -369,7 +369,7 @@ void BossTestScene::Update() {
 	f.isCameraFollowPlayer = isCameraFollowPlayer_;
 
 	if (attackManager_) {
-		attackManager_->Update(dt, f);
+		// attackManager_->Update(dt, f);
 	}
 
 	// ターゲットシェイク時間更新
@@ -502,7 +502,7 @@ void BossTestScene::Update() {
 				// フェードアウト開始
 				fade_->Start(Fade::Status::FadeOut, 0.6f);
 				phase_ = Phase::kFadeOut;
-				endReason_ = EndReason::BossDeath;   // ← ボス撃破扱い
+				endReason_ = EndReason::BossDeath;
 
 				return;
 			}
@@ -1210,4 +1210,9 @@ void BossTestScene::BeginPlay() {
 	collisionEnabled_ = true;
 	player_->SetControlEnabled(true);
 	boss_->SetCombatEnabled(true);
+
+	// プレイ会用
+	if (boss_) {
+		boss_->SetHP(0);
+	}
 }

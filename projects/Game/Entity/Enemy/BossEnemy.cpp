@@ -126,6 +126,7 @@ void BossEnemy::Update() {
 			if (t < 0.0f) t = 0.0f;
 		}
 		};
+
 	updateFlash(bodyHitFlashTime_);
 	updateFlash(leftHitFlashTime_);
 	updateFlash(rightHitFlashTime_);
@@ -175,10 +176,10 @@ void BossEnemy::Update() {
 			fallStarted_ = true;
 			fallVelY_ = 0.0f;
 
-			// ★開始姿勢の保存
+			// 開始姿勢の保存
 			fallRotateStart_ = transform_.rotate.x;
 
-			// ★重力を弱くする（ゆっくり落下）
+			// 重力を弱くする（ゆっくり落下）
 			// gravityY_ = -0.01f;
 
 			// シェイクタイマー初期化
@@ -209,7 +210,7 @@ void BossEnemy::Update() {
 				fallVelY_ = 0.0f;
 				hasLanded_ = true;
 
-				// ★ ここで一度だけカメラシェイク
+				//　落下時カメラシェイク
 				if (!landingShakeDone_ && camera_) {
 					camera_->StartShake(CameraShakeType::Large);
 					landingShakeDone_ = true;
@@ -219,7 +220,7 @@ void BossEnemy::Update() {
 					fallVelY_ = 0.0f;
 					hasLanded_ = true;
 
-					// ★ 着地時シェイク（既存）
+					// 着地時シェイク（なんか同じ処理あるから後で確認）
 					if (!landingShakeDone_ && camera_) {
 						camera_->StartShake(CameraShakeType::Large);
 						landingShakeDone_ = true;
