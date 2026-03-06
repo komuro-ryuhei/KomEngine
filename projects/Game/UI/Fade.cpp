@@ -11,6 +11,9 @@ void Fade::SetDefaultOpenModeDataError(bool enabled) {
 bool Fade::GetDefaultOpenModeDataError() { return s_defaultDataErrorOpen; }
 
 void Fade::Initialize(int screenWidth, int screenHeight, const char* texturePath) {
+
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/white_1x1.png");
+
 	w_ = screenWidth;
 	h_ = screenHeight;
 

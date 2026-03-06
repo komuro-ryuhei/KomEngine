@@ -273,6 +273,7 @@
     <ClCompile Include="Engine\Base\Collision\CollisionManager.cpp" />
     <ClCompile Include="Game\Camera\KnockoutCameraController.cpp" />
     <ClCompile Include="BossMissile.cpp" />
+    <ClCompile Include="AssetPreloader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -431,6 +432,7 @@
     <ClInclude Include="Engine\Base\Collision\ICollisionObject.h" />
     <ClInclude Include="Game\Camera\KnockoutCameraController.h" />
     <ClInclude Include="BossMissile.h" />
+    <ClInclude Include="AssetPreloader.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

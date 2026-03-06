@@ -176,7 +176,7 @@ private:
 	bool isCameraFollowPlayer_ = true;
 
 	// フェード
-	std::unique_ptr<Fade> fade_ = nullptr;
+	// std::unique_ptr<Fade> fade_ = nullptr;
 	enum class Phase { kFadeIn, kMain, kFadeOut };
 	Phase phase_ = Phase::kFadeIn;
 

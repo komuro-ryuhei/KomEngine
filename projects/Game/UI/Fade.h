@@ -7,10 +7,12 @@
 #include <cmath>
 #include "Engine/Base/2d/Sprite/Sprite.h"
 
+#include "Engine/Base/TextureManager/TextureManager.h"
+
 class Fade {
 public:
     enum class Status { None, FadeIn, FadeOut };
-    enum class Mode { kAlpha, kSlash, kDataError }; // ★追加
+    enum class Mode { kAlpha, kSlash, kDataError };
 
     void Initialize(int screenWidth, int screenHeight,
         const char* texturePath = "./Resources/images/uvChecker.png");
@@ -23,7 +25,7 @@ public:
 
     void StartSlashOpen(float durationSec, float angleDeg = 45.0f, bool withFlash = true);
 
-    // ★追加：データエラー風
+    // データエラー風
     void StartDataErrorClose(float durationSec); // Title → 暗転（FadeOut）
     void StartDataErrorOpen(float durationSec);  // Game  → 明転（FadeIn）
 
@@ -31,7 +33,7 @@ public:
     static void SetDefaultOpenModeSlash(bool enabled);
     static bool GetDefaultOpenModeSlash();
 
-    // ★追加：次シーンをDataErrorで開くためのフラグ
+    // 次シーンをDataErrorで開くためのフラグ
     static void SetDefaultOpenModeDataError(bool enabled);
     static bool GetDefaultOpenModeDataError();
 

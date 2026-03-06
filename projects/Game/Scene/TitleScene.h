@@ -51,7 +51,6 @@ private:
 	bool isPushEnter_ = false;
 
 	// フェード
-	std::unique_ptr<Fade> fade_ = nullptr;
 	enum class Phase { kFadeIn, kMain, kFadeOut };
 	Phase phase_ = Phase::kFadeIn;
 

@@ -40,18 +40,6 @@ void BossTestScene::Init() {
 	glassObject_->SetTranslate({ 0.0f, -5.0f, 0.0f });
 
 	// --- フェード初期化（画面サイズは 1280x720）---
-	fade_ = std::make_unique<Fade>();
-	fade_->Initialize(1280, 720);
-
-	if (Fade::GetDefaultOpenModeDataError()) {
-		Fade::SetDefaultOpenModeDataError(false);
-		fade_->StartDataErrorOpen(0.45f);
-	} else if (Fade::GetDefaultOpenModeSlash()) {
-		Fade::SetDefaultOpenModeSlash(false);
-		fade_->StartSlashOpen(0.6f, 60.0f, true);
-	} else {
-		fade_->Start(Fade::Status::FadeIn, 0.6f);
-	}
 	phase_ = Phase::kFadeIn;
 
 	// Player
@@ -204,13 +192,8 @@ void BossTestScene::Update() {
 	const float dt = System::GetDeltaTime();
 
 	if (phase_ == Phase::kFadeIn) {
-		fade_->Update();
-		if (fade_->IsFinished()) {
-			fade_->Stop();
-			phase_ = Phase::kMain;
-			// フェードが終わった瞬間に Intro を開始
-			InitIntro();
-		}
+		phase_ = Phase::kMain;
+		InitIntro();
 		return;
 	}
 
@@ -254,7 +237,6 @@ void BossTestScene::Update() {
 			System::GetInput()->SetMouseCenterLock(true); // 普段ロックしてるなら戻す（任意）
 
 			// フェードアウト開始
-			fade_->Start(Fade::Status::FadeOut, 0.6f);
 			phase_ = Phase::kFadeOut;
 			endReason_ = EndReason::GoTitle;
 
@@ -412,17 +394,12 @@ void BossTestScene::Update() {
 
 	switch (phase_) {
 	case Phase::kFadeIn:
-		fade_->Update();
-		if (fade_->IsFinished()) {
-			fade_->Stop();
-			phase_ = Phase::kMain;
-		}
+		phase_ = Phase::kMain;
 		break;
 
 	case Phase::kMain:
 
 		if (System::PushKey(DIK_T)) {
-			fade_->Start(Fade::Status::FadeOut, 0.6f);
 			phase_ = Phase::kFadeOut;
 		}
 
@@ -456,7 +433,6 @@ void BossTestScene::Update() {
 			if (System::TriggerKey(DIK_SPACE) || System::TriggerKey(DIK_RETURN)) {
 
 				// フェードアウト開始
-				fade_->Start(Fade::Status::FadeOut, 0.6f);
 				phase_ = Phase::kFadeOut;
 				endReason_ = EndReason::BossDeath;
 
@@ -467,15 +443,11 @@ void BossTestScene::Update() {
 		break;
 
 	case Phase::kFadeOut:
-		fade_->Update();
-		if (fade_->IsFinished()) {
-			Fade::SetDefaultOpenModeSlash(false);
 
-			if (endReason_ == EndReason::BossDeath || endReason_ == EndReason::GoTitle) {
-				sceneManager_->ChangeScene("TITLE");
-			} else if (endReason_ == EndReason::PlayerDeath) {
-				sceneManager_->ChangeScene("GAMEOVER");
-			}
+		if (endReason_ == EndReason::BossDeath || endReason_ == EndReason::GoTitle) {
+			sceneManager_->ChangeScene("TITLE");
+		} else if (endReason_ == EndReason::PlayerDeath) {
+			sceneManager_->ChangeScene("GAMEOVER");
 		}
 		break;
 	}
@@ -541,7 +513,6 @@ void BossTestScene::Draw() {
 
 	// --------------------------------------------------------------------//
 
-	if (fade_) { fade_->Draw(); }
 }
 
 void BossTestScene::Finalize() {}
@@ -768,12 +739,9 @@ void BossTestScene::UpdatePlayerDeath(float dt) {
 		if (ko_.IsDone()) {
 			koFrozen_ = true; // ← ここがポイント
 
-			if (fade_ && phase_ == Phase::kMain) {
-				fade_->Start(Fade::Status::FadeOut, 0.6f);
-				phase_ = Phase::kFadeOut;
-				if (endReason_ == EndReason::None) {
-					endReason_ = EndReason::PlayerDeath;
-				}
+			phase_ = Phase::kFadeOut;
+			if (endReason_ == EndReason::None) {
+				endReason_ = EndReason::PlayerDeath;
 			}
 		}
 	}

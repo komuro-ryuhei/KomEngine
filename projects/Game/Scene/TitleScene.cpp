@@ -79,13 +79,6 @@ void TitleScene::Init() {
 	skybox_->SetDefaultCamera(camera_.get());
 
 	// --- フェード初期化 --- //
-	fade_ = std::make_unique<Fade>();
-	fade_->Initialize(1280, 720);
-	if (Fade::GetDefaultOpenModeSlash()) {
-		fade_->StartSlashOpen(0.6f, 60.0f, true);
-	} else {
-		fade_->Start(Fade::Status::FadeIn, 0.6f); // 普通の黒フェードで明転
-	}
 
 	// Player
 	player_ = std::make_unique<Object3d>();
@@ -140,11 +133,7 @@ void TitleScene::Update() {
 	// 
 	switch (phase_) {
 	case Phase::kFadeIn:
-		fade_->Update();
-		if (fade_->IsFinished()) {
-			fade_->Stop();
-			phase_ = Phase::kMain;
-		}
+		phase_ = Phase::kMain;
 		break;
 
 	case Phase::kMain:
@@ -159,18 +148,13 @@ void TitleScene::Update() {
 		enterSprite_->SetColor({ 1.0f, 1.0f, 1.0f, a });
 
 		if (System::TriggerKey(DIK_RETURN) || System::TriggerKey(DIK_SPACE)) {
-			fade_->StartDataErrorClose(0.6f);   // ★変更
 			phase_ = Phase::kFadeOut;
 		}
 	}
 	break;
 
 	case Phase::kFadeOut:
-		fade_->Update();
-		if (fade_->IsFinished()) {
-			Fade::SetDefaultOpenModeDataError(true);
-			sceneManager_->ChangeScene("TEST");
-		}
+		sceneManager_->ChangeScene("TEST");
 		break;
 	}
 }
@@ -196,7 +180,6 @@ void TitleScene::Draw() {
 	titleSprite_->Draw();
 
 	// フェード
-	fade_->Draw();
 }
 
 void TitleScene::Finalize() {}
