@@ -19,6 +19,26 @@ void TitleScene::Init() {
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/hp.png");
 	TextureManager::GetInstance()->LoadTexture("./Resources/images/white_1x1.png");
 
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossEnemyCore.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossEnemyMeteor.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossEnemyMissile.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossArmor.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/PlayerBullet.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/blackBG.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/controlsGuide.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/gameClear.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/gauge.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/heart.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/inner.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/mouseLeftClickWithText.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/mouseLightClickWithText.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/outer.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/pause.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/reticle.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/returnGame.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/toPause.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/images/toTitle.png");
+
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
 	ModelManager::GetInstance()->LoadModel("axis.obj");
@@ -29,6 +49,12 @@ void TitleScene::Init() {
 	ModelManager::GetInstance()->LoadModel("hand.obj");
 	ModelManager::GetInstance()->LoadModel("BossEnemy.obj");
 	ModelManager::GetInstance()->LoadModel("titlePlayer.obj");
+	ModelManager::GetInstance()->LoadModel("gun.obj");
+	ModelManager::GetInstance()->LoadModel("BossArmor.obj");
+	ModelManager::GetInstance()->LoadModel("BossEnemyCore.obj");
+	ModelManager::GetInstance()->LoadModel("PlayerBullet.obj");
+	ModelManager::GetInstance()->LoadModel("BossEnemyMissile.obj");
+	ModelManager::GetInstance()->LoadModel("BossEnemyMeteor.obj");
 
 	// Sprite
 	titleSprite_ = std::make_unique<Sprite>();

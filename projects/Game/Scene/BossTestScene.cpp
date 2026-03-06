@@ -18,50 +18,6 @@ void BossTestScene::Init() {
 	const std::string& ring = "./Resources/images/gradationLine.png";
 	const std::string& moonLight = "./Resources/images/moonLight.png";
 
-	// テクスチャ、モデルの読み込み
-	TextureManager::GetInstance()->LoadTexture(uvTexture);
-	TextureManager::GetInstance()->LoadTexture(circle);
-	TextureManager::GetInstance()->LoadTexture(circle2);
-	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/reticle.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/inner.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/outer.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/hp.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/blackBG.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/gameClear.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/controlsGuide.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/toTitle.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/returnGame.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/pause.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/toPause.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/heart.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/gauge.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/mouseLeftClickWithText.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/mouseLightClickWithText.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossArmor.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossEnemyCore.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/PlayerBullet.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossEnemyMissile.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/BossEnemyMeteor.png");
-
-	ModelManager::GetInstance()->LoadModel("plane.obj");
-	ModelManager::GetInstance()->LoadModel("sphere.obj");
-	ModelManager::GetInstance()->LoadModel("axis.obj");
-	ModelManager::GetInstance()->LoadModel("cube.obj");
-	ModelManager::GetInstance()->LoadModel("Player.obj");
-	ModelManager::GetInstance()->LoadModel("Enemy.obj");
-	ModelManager::GetInstance()->LoadModel("ground.obj");
-	ModelManager::GetInstance()->LoadModel("hand.obj");
-	ModelManager::GetInstance()->LoadModel("BossEnemy.obj");
-	ModelManager::GetInstance()->LoadModel("gun.obj");
-	ModelManager::GetInstance()->LoadModel("BossArmor.obj");
-	ModelManager::GetInstance()->LoadModel("BossEnemyCore.obj");
-	ModelManager::GetInstance()->LoadModel("PlayerBullet.obj");
-	ModelManager::GetInstance()->LoadModel("BossEnemyMissile.obj");
-	ModelManager::GetInstance()->LoadModel("BossEnemyMeteor.obj");
-
 	// カメラ
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
