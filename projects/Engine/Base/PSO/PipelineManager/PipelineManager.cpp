@@ -18,6 +18,12 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 		assert(vsBlob != nullptr);
 		psBlob = compiler_->CompileShader(L"./Resources/shaders/Object3D.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
 		assert(psBlob != nullptr);
+	} else if (objectType == "object3d_meteorError") {
+		// メテオ専用Shaderをコンパイルする
+		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Object3D.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(vsBlob != nullptr);
+		psBlob = compiler_->CompileShader(L"./Resources/shaders/MeteorError.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
+		assert(psBlob != nullptr);
 	} else if (objectType == "particle") {
 		// particle用Shaderをコンパイルする
 		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Particle.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
@@ -188,6 +194,8 @@ void PipelineManager::PSOSetting(const std::string& objectType, BlendType type) 
 	std::string baseType = objectType;
 	if (objectType.find("posteffect_") == 0) {
 		baseType = "posteffect";
+	} else if (objectType == "object3d_meteorError") {
+		baseType = "object3d";
 	}
 
 	rootSignature_->Create(baseType);

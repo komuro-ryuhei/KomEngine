@@ -32,6 +32,8 @@ public: // メンバ関数
 	/// </summary>
 	/// <param name="type"> ブレンドタイプ </param>
 	void Init(BlendType type);
+	/// <param name="type"> シェーダータイプ </param>
+	void Init(const std::string& shaderType, BlendType type);
 
 	/// <summary>
 	/// 更新

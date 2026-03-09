@@ -56,6 +56,7 @@ void SceneManager::Update() {
 }
 
 void SceneManager::Draw() {
+
 	if (currentScene_) currentScene_->Draw();
 
 	if (state_ != TransitState::Idle) {

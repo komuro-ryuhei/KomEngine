@@ -39,7 +39,7 @@ void BossTestScene::Init() {
 	glassObject_->SetDefaultCamera(camera_.get());
 	glassObject_->SetTranslate({ 0.0f, -5.0f, 0.0f });
 
-	// --- フェード初期化（画面サイズは 1280x720）---
+	// --- フェード初期化（画面サイズは 1280x720）--- //
 	phase_ = Phase::kFadeIn;
 
 	// Player
@@ -200,7 +200,7 @@ void BossTestScene::Update() {
 	if (flowState_ == GameFlowState::Intro) {
 		UpdateIntro(dt);
 
-		// 見た目の更新だけはやっておく（最低限）
+		// 見た目の更新だけはやっておく
 		camera_->Update();
 		skybox_->Update();
 		player_->Update();
@@ -232,15 +232,15 @@ void BossTestScene::Update() {
 			pauseMenu_->SetPaused(false);
 		} else if (r == PauseMenu::Result::GoTitle) {
 
-			// ポーズ解除（重要：FadeOut更新へ到達させるため）
+			// ポーズ解除
 			pauseMenu_->SetPaused(false);
-			System::GetInput()->SetMouseCenterLock(true); // 普段ロックしてるなら戻す（任意）
+			System::GetInput()->SetMouseCenterLock(true);
 
 			// フェードアウト開始
 			phase_ = Phase::kFadeOut;
 			endReason_ = EndReason::GoTitle;
 
-			return; // ここで抜けるのはOK（次フレームはpausedじゃないのでFadeOut進む）
+			return;
 		}
 
 		ImGuiDebug(); // ポーズ中もデバッグは出す
@@ -254,23 +254,6 @@ void BossTestScene::Update() {
 	UpdatePlayerDeath(dt);
 
 	UpdateCamera(dt);
-
-	// ノックアウトカメラの更新
-	//if (koActive_) {
-	//	ko_.Update(dt, camera_.get());
-	//	if (ko_.IsDone()) {
-	//		koActive_ = false;
-
-	//		// フェードアウト開始
-	//		if (fade_ && phase_ == Phase::kMain) {
-	//			fade_->Start(Fade::Status::FadeOut, 0.6f);
-	//			phase_ = Phase::kFadeOut;
-	//			if (endReason_ == EndReason::None) {
-	//				endReason_ = EndReason::PlayerDeath;
-	//			}
-	//		}
-	//	}
-	//}
 
 	// デバッグ：離脱攻撃要求
 	if (System::GetInput()->PushKey(DIK_R)) {
@@ -307,7 +290,7 @@ void BossTestScene::Update() {
 	f.isCameraFollowPlayer = isCameraFollowPlayer_;
 
 	if (attackManager_) {
-		// attackManager_->Update(dt, f);
+		attackManager_->Update(dt, f);
 	}
 
 	// ターゲットシェイク時間更新
@@ -421,7 +404,7 @@ void BossTestScene::Update() {
 				if (result_) {
 					result_->StartSlideIn();
 				}
-				endReason_ = EndReason::BossDeath;   // 「クリア状態」になっただけ
+				endReason_ = EndReason::BossDeath; // 「クリア状態」になっただけ
 			}
 		} else {
 			// ボスが死んでいない or 未着地の時はタイマーリセット
@@ -622,7 +605,7 @@ void BossTestScene::ChangePostEffect() {
 		return;
 	}
 
-	// --- Auto モード：今まで通り「低HPのときだけビネット」 ---
+	// --- Auto モード：今まで通り「低HPのときだけビネット」 --- //
 	if (postEffectDebugMode_ == PostEffectDebugMode::Auto) {
 
 		constexpr int LOW_HP_THRESHOLD = 1; // HP1以下
@@ -640,7 +623,7 @@ void BossTestScene::ChangePostEffect() {
 		return;
 	}
 
-	// --- 手動モード：ImGui で選んだエフェクトを常に適用 ---
+	// --- 手動モード：ImGui で選んだエフェクトを常に適用 --- //
 	const char* effectName = "none";
 
 	switch (postEffectDebugMode_) {
@@ -720,7 +703,7 @@ void BossTestScene::StartKnockout(int fallSide) {
 
 void BossTestScene::UpdatePlayerDeath(float dt) {
 
-	// --- ノックアウト開始トリガー ---
+	// --- ノックアウト開始トリガー --- //
 
 	// デバッグ用：Kキーで強制ノックアウト
 	if (System::TriggerKey(DIK_K)) {
@@ -732,12 +715,12 @@ void BossTestScene::UpdatePlayerDeath(float dt) {
 		StartKnockout(+1);
 	}
 
-	// --- ノックアウトカメラの更新 ---
+	// --- ノックアウトカメラの更新 --- //
 	if (koActive_ && !koFrozen_) {
 		ko_.Update(dt, camera_.get());
 
 		if (ko_.IsDone()) {
-			koFrozen_ = true; // ← ここがポイント
+			koFrozen_ = true;
 
 			phase_ = Phase::kFadeOut;
 			if (endReason_ == EndReason::None) {
@@ -758,8 +741,8 @@ void BossTestScene::UpdateGun() {
 	float cy = std::cos(camRot.y), sy = std::sin(camRot.y);
 
 	Vector3 forward = { sy * cp, -sp, cy * cp }; // カメラ前方
-	Vector3 right = { cy, 0.0f, -sy };         // カメラ右
-	Vector3 up = { 0.0f, 1.0f, 0.0f };      // ワールド上
+	Vector3 right = { cy, 0.0f, -sy };           // カメラ右
+	Vector3 up = { 0.0f, 1.0f, 0.0f };           // ワールド上
 
 	Vector3 gunWorldPos =
 		camPos
@@ -780,7 +763,7 @@ void BossTestScene::UpdateGun() {
 	// 銃の先端（今はモデルの原点）をプレイヤーに渡す
 	if (player_) {
 		// もし本当に「銃の先」にしたければ forward に少し足す
-		Vector3 muzzle = gun_->GetWorldPosition() + forward * 1.0f; // 1.0f は好みで調整
+		Vector3 muzzle = gun_->GetWorldPosition() + forward * 1.0f;
 		player_->SetGunMuzzlePos(muzzle);
 	}
 }
@@ -844,7 +827,7 @@ void BossTestScene::UpdateArmTargetMarker() {
 
 	auto projectToScreen = [&](const Vector3& worldPos, Vector2& outScreen) -> bool {
 
-		// wチェック（0だと Transform 内 assert になるので弾く）
+		// wチェック
 		float w =
 			worldPos.x * vp.m[0][3] +
 			worldPos.y * vp.m[1][3] +
@@ -951,7 +934,7 @@ void BossTestScene::UpdateArmTargetMarker() {
 
 void BossTestScene::LineTarget() {
 
-	// 両腕と胴体を結ぶラインを追加（これは今まで通りでOK）
+	// 両腕と胴体を結ぶライン
 	if (boss_) {
 		Object3d* body = boss_->GetBody();
 		Object3d* leftArm = boss_->GetLeftArm();
@@ -974,7 +957,7 @@ void BossTestScene::LineTarget() {
 		}
 	}
 
-	// ===== ここから「全部の当たり判定AABB」を描画 =====
+	// ===== ここから「全部の当たり判定AABB」を描画 ===== //
 
 	// CollisionManager から AABB 一覧をもらう
 	std::vector<CollisionManager::DebugAABBInfo> infos;
@@ -1004,7 +987,7 @@ void BossTestScene::LineTarget() {
 			break;
 		}
 
-		// AABB を線で描画（AddAABBLines は BossTestScene.h のやつ）
+		// AABB を線で描画
 		AddAABBLines(debugLine_, info.box, color);
 	}
 }
@@ -1023,7 +1006,7 @@ Vector3 BossTestScene::CalcLookAtRotation(const Vector3& camPos, const Vector3& 
 
 void BossTestScene::UpdateIntro(float dt) {
 
-	// メテオのパラメータをそのまま流用（同じ感じにしたいならこれが一番）
+	// メテオのパラメータをそのまま流用
 	const auto& mp = attackManager_->GetMeteor()->GetParams();
 	Vector3 playerPos = player_->GetTransform().translate;
 
@@ -1049,7 +1032,7 @@ void BossTestScene::UpdateIntro(float dt) {
 	case IntroPhase::Falling:
 	{
 
-		// --- ボス落下 ---
+		// --- ボス落下 --- //
 		Vector3 bossPos = boss_->GetTranslate();
 		bossPos.y -= bossFallSpeed_ * dt;
 
@@ -1071,7 +1054,7 @@ void BossTestScene::UpdateIntro(float dt) {
 			camera_->SetTranslate(MyMath::Lerp(cur, goal, 0.08f));
 		}
 
-		// --- 着地処理 ---
+		// --- 着地処理 --- //
 		if (landed) {
 			if (!landingTriggered_) {
 				landingTriggered_ = true;
@@ -1090,7 +1073,7 @@ void BossTestScene::UpdateIntro(float dt) {
 			}
 		}
 
-		// --- 回転（ボス注視） ---
+		// --- 回転（ボス注視） --- //
 		const Vector3 camPos = camera_->GetTranaslate();
 		Vector3 dir = MyMath::Normalize(bossPos - camPos);
 
@@ -1106,8 +1089,7 @@ void BossTestScene::UpdateIntro(float dt) {
 	}
 
 
-	case IntroPhase::CamOut:
-	{
+	case IntroPhase::CamOut: {
 
 		// メテオのOutroと同じ：元のカメラへ戻す
 		introCamLerp_ = std::min(1.0f, introCamLerp_ + dt / mp.camOutroTime);
@@ -1137,6 +1119,6 @@ void BossTestScene::BeginPlay() {
 
 	// プレイ会用
 	if (boss_) {
-		boss_->SetHP(0);
+		// boss_->SetHP(0);
 	}
 }

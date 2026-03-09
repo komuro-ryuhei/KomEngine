@@ -92,7 +92,7 @@ void TitleScene::Init() {
 	boss_ = std::make_unique<BossEnemy>();
 	boss_->Init(camera_.get());
 	boss_->SetTranslate({ 0.0f, 0.0f, 20.0f });
-	boss_->SetAttack(false);
+	boss_->SetAttack(true);
 	boss_->SetRotate({ -0.3f,0.85f,0.0f });
 	boss_->SetTranslate({ 7.0f,4.0f,20.0f });
 

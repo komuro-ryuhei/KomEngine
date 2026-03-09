@@ -7,25 +7,34 @@
 #endif // _DEBUG
 
 void Object3d::Init(BlendType type) {
+	Init("object3d", type);
+}
+
+void Object3d::Init(const std::string& shaderType, BlendType type) {
 
 	camera_ = defaultCamera_;
 
-	//
 	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("object3d", type);
+	pipelineManager_->PSOSetting(shaderType, type);
 
-	// 座標変換用
-	transformationMatrixResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(TransformationMatrix));
-	transformationMatrixResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
-	// 単位行列を書き込む
+	transformationMatrixResource =
+		System::GetDxCommon()->CreateBufferResource(
+			System::GetDxCommon()->GetDevice(),
+			sizeof(TransformationMatrix));
+	transformationMatrixResource->Map(
+		0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
+
 	transformationMatrixData->WVP = MyMath::MakeIdentity4x4();
 	transformationMatrixData->World = MyMath::MakeIdentity4x4();
 
-	// 
-	objectParamResource_ = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(ObjectParams));
-	objectParamResource_->Map(0, nullptr, reinterpret_cast<void**>(&objectParamData_));
+	objectParamResource_ =
+		System::GetDxCommon()->CreateBufferResource(
+			System::GetDxCommon()->GetDevice(),
+			sizeof(ObjectParams));
+	objectParamResource_->Map(
+		0, nullptr, reinterpret_cast<void**>(&objectParamData_));
+
 	objectParamData_->useEnvironmentMap = false;
-	// デフォルトの色は白
 	objectParamData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	transform_ = {
@@ -35,8 +44,8 @@ void Object3d::Init(BlendType type) {
 	};
 
 	cameraTransform = {
-		{1.0f, 1.0f, 1.0f  },
-		{0.3f, 0.0f, 0.0f  },
+		{1.0f, 1.0f, 1.0f},
+		{0.3f, 0.0f, 0.0f},
 		{0.0f, 4.0f, -10.0f},
 	};
 }

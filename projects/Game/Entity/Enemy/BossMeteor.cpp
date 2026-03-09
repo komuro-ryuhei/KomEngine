@@ -12,7 +12,7 @@ void BossMeteor::Init(Camera* camera) {
 	camera_ = camera;
 
 	object3d_ = std::make_unique<Object3d>();
-	object3d_->Init(BlendType::BLEND_NONE);
+	object3d_->Init("object3d_meteorError", BlendType::BLEND_NONE);
 	object3d_->SetModel("BossEnemyMeteor.obj");
 	object3d_->SetDefaultCamera(camera_);
 	object3d_->SetScale({ 0.9f, 0.9f, 0.9f });
