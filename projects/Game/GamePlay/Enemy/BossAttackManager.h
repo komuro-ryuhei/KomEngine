@@ -60,6 +60,10 @@ public:
 	bool IsChargeActive() const;
 	bool IsAnyAttackActive() const;
 
+	// 
+	void StartEnragePause(float duration);
+	bool IsEnragePaused() const { return enragePauseActive_; }
+
 public:
 
 	// getter,setter
@@ -101,5 +105,13 @@ private:
 
 private:
 
+	// ブロック開始フラグ
 	bool blockStarted_ = false;
+
+	// 怒り状態の一時停止
+	bool enragePauseActive_ = false;
+	// 一時停止タイマー
+	float enragePauseTimer_ = 0.0f;
+	// 一時停止の継続時間
+	float enragePauseDuration_ = 0.0f;
 };

@@ -24,6 +24,13 @@ private:
 		WaitMeteor,
 	};
 
+	enum class EnrageTransitionPhase {
+		None,
+		Knockback,
+		Wait,
+		Recover,
+	};
+
 	AttackPhase attackPhase_ = AttackPhase::SingleLeft;
 	bool meteorRequest_ = false; // 両手攻撃完了後にtrue
 
@@ -187,6 +194,14 @@ public:
 
 	void CancelAttacksForMeteor();
 
+	// 怒り遷移中
+	bool IsEnrageTransitioning() const { return enrageTransitioning_; }
+	void StartEnrageTransition(float duration);
+	void UpdateEnrageTransition(float dt);
+
+	// 攻撃を即中断
+	void CancelAllAttacks();
+
 private:
 
 	void Attack();
@@ -317,7 +332,7 @@ private:
 	float baseArmReturnSpeedSingle_ = 0.5f;
 	float baseArmReturnSpeedBoth_ = 0.6f;
 
-	// 怒り倍率（好きに調整OK）
+	// 怒り倍率
 	float enragedArmSpeedMul_ = 1.6f;
 
 	// 攻撃用フラグ
@@ -489,6 +504,11 @@ private:
 
 	float chargeFxCoreTimer_ = 0.0f;
 	float chargeFxPulseTimer_ = 0.0f;
+
+	// 怒り遷移演出用
+	bool enrageTransitioning_ = false;
+	float enrageTransitionTimer_ = 0.0f;
+	float enrageTransitionDuration_ = 0.0f;
 
 private:
 

@@ -97,6 +97,7 @@ void BossEnemy::Update() {
 	const float dt = System::GetDeltaTime();
 
 	UpdateChargeCrossPose(dt);
+	UpdateEnrageTransition(dt);
 
 	ChargeEffect(dt);
 
@@ -399,6 +400,11 @@ void BossEnemy::Attack() {
 
 	if (!player_) return;
 
+	// 怒り遷移中は攻撃しない
+	if (enrageTransitioning_) {
+		return;
+	}
+
 	if (!armComboActive_) {
 		return;
 	}
@@ -667,11 +673,60 @@ void BossEnemy::CancelAttacksForMeteor() {
 	}
 	missileStartedThisRetreat_ = false;
 
-	// チャージ停止（マーカーも含む）
+	// チャージ停止
 	chargeActive_ = false;
 	chargeShotLife_ = 0.0f;
 	chargeShot_.obj.reset();
 	chargeShot_.bullet.reset();
+}
+
+void BossEnemy::CancelAllAttacks() {
+
+	// 既存の停止処理を流用
+	CancelAttacksForMeteor();
+
+	// 退避も止める
+	retreatPhase_ = RetreatPhase::None;
+	retreatT_ = 0.0f;
+	invulnerable_ = false;
+
+	// 腕を基準位置へ
+	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
+	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
+	if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
+	if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
+
+	// 腕状態リセット
+	attackPhase_ = AttackPhase::None;
+	armComboActive_ = false;
+	armComboFinished_ = false;
+	isExtending_ = true;
+	leftExtending_ = true;
+	rightExtending_ = true;
+}
+
+void BossEnemy::StartEnrageTransition(float duration) {
+
+	enrageTransitioning_ = true;
+	enrageTransitionDuration_ = duration;
+	enrageTransitionTimer_ = 0.0f;
+
+	// いったん全攻撃停止
+	CancelAllAttacks();
+}
+
+void BossEnemy::UpdateEnrageTransition(float dt) {
+
+	if (!enrageTransitioning_) {
+		return;
+	}
+
+	enrageTransitionTimer_ += dt;
+
+	if (enrageTransitionTimer_ >= enrageTransitionDuration_) {
+		enrageTransitioning_ = false;
+		enrageTransitionTimer_ = 0.0f;
+	}
 }
 
 bool BossEnemy::ConsumeMeteorRequest() {

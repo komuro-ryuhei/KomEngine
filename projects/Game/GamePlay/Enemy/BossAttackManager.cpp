@@ -48,6 +48,23 @@ bool BossAttackManager::CanArmControlCamera(const UpdateFlags& flags) const {
 
 void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 
+	// 怒り遷移中の一時停止
+	if (enragePauseActive_) {
+		enragePauseTimer_ += dt;
+
+		// 腕コントローラだけ見た目更新が必要なら残す
+		if (arm_) {
+			arm_->Update(dt, false);
+		}
+
+		if (enragePauseTimer_ >= enragePauseDuration_) {
+			enragePauseActive_ = false;
+			enragePauseTimer_ = 0.0f;
+		}
+
+		return;
+	}
+
 	const bool wasMeteorActive = (meteor_ && meteor_->IsActive());
 	const bool wasChargeActive = (charge_ && charge_->IsActive());
 
@@ -151,7 +168,27 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	// =============================================================== //
 }
 
-void BossAttackManager::OnCurrentAttackFinished() {
+void BossAttackManager::OnCurrentAttackFinished() {}
+
+void BossAttackManager::StartEnragePause(float duration) {
+
+	enragePauseActive_ = true;
+	enragePauseTimer_ = 0.0f;
+	enragePauseDuration_ = duration;
+
+	// ボス本体側の攻撃停止
+	if (desc_.boss) {
+		desc_.boss->CancelAllAttacks();
+		desc_.boss->StartEnrageTransition(duration);
+	}
+
+	// 進行中メテオは止める
+	if (meteor_ && meteor_->IsActive()) {
+		meteor_->ForceEnd();
+	}
+
+	// 今のブロックは未開始扱いにして、再開後に改めて始める
+	blockStarted_ = false;
 }
 
 void BossAttackManager::StartMeteor() {

@@ -360,12 +360,15 @@ void BossTestScene::Update() {
 		if (maxHp > 0 && hp <= maxHp / 2) {
 			boss_->SetEnraged(true);
 
+			if (attackManager_) {
+				attackManager_->StartEnragePause(2.5f);
+			}
+
 			if (skybox_) {
 				skybox_->SetColor({ 1.0f, 0.3f, 0.3f, 1.0f });
 			}
 		}
 	}
-
 
 	// パーティクルの更新処理
 	ParticleManager::GetInstance()->Update();
