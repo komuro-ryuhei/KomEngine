@@ -708,11 +708,37 @@ void BossEnemy::CancelAllAttacks() {
 void BossEnemy::StartEnrageTransition(float duration) {
 
 	enrageTransitioning_ = true;
-	enrageTransitionDuration_ = duration;
+	enragePhase_ = EnrageTransitionPhase::Knockback;
 	enrageTransitionTimer_ = 0.0f;
+	enrageTransitionDuration_ = duration;
+	enrageShockwaveEmitted_ = false;
 
 	// いったん全攻撃停止
 	CancelAllAttacks();
+
+	// 基準位置保存
+	enrageStartPos_ = transform_.translate;
+
+	// duration から各フェーズ時間を組む
+	enrageKnockbackDuration_ = std::min(0.25f, duration * 0.18f);
+	enrageRecoverDuration_ = std::min(0.35f, duration * 0.18f);
+	enrageWaitDuration_ = std::max(0.0f, duration - enrageKnockbackDuration_ - enrageRecoverDuration_);
+
+	// 後方に少し下げる
+	enrageKnockbackPos_ = enrageStartPos_;
+	enrageKnockbackPos_.z += enrageKnockbackDistance_;
+	enrageKnockbackPos_.y += enrageKnockbackLift_;
+
+	// ボスの色をいったん通常へ
+	if (object3d_) {
+		object3d_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+	}
+	if (leftArm_) {
+		leftArm_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+	}
+	if (rightArm_) {
+		rightArm_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+	}
 }
 
 void BossEnemy::UpdateEnrageTransition(float dt) {
@@ -723,9 +749,120 @@ void BossEnemy::UpdateEnrageTransition(float dt) {
 
 	enrageTransitionTimer_ += dt;
 
-	if (enrageTransitionTimer_ >= enrageTransitionDuration_) {
+	auto lerp3 = [](const Vector3& a, const Vector3& b, float t) {
+		return Vector3{
+			a.x + (b.x - a.x) * t,
+			a.y + (b.y - a.y) * t,
+			a.z + (b.z - a.z) * t,
+		};
+		};
+
+	const Vector4 baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	const Vector4 redColor = { 1.0f, 0.25f, 0.25f, 1.0f };
+
+	switch (enragePhase_) {
+
+	case EnrageTransitionPhase::Knockback:
+	{
+		float t = (enrageKnockbackDuration_ > 0.0f)
+			? (enrageTransitionTimer_ / enrageKnockbackDuration_)
+			: 1.0f;
+		t = std::clamp(t, 0.0f, 1.0f);
+
+		// 勢いよく飛ぶ
+		float ease = 1.0f - (1.0f - t) * (1.0f - t);
+
+		transform_.translate = lerp3(enrageStartPos_, enrageKnockbackPos_, ease);
+
+		if (t >= 1.0f) {
+			enragePhase_ = EnrageTransitionPhase::Wait;
+			enrageTransitionTimer_ = 0.0f;
+		}
+		break;
+	}
+
+	case EnrageTransitionPhase::Wait:
+	{
+		// 基本停止位置
+		Vector3 pos = enrageKnockbackPos_;
+
+		// 小刻みシェイク
+		float sx = std::sin(enrageTransitionTimer_ * enrageShakeFrequency_) * enrageShakeAmplitude_;
+		float sz = std::cos(enrageTransitionTimer_ * (enrageShakeFrequency_ * 1.27f)) * enrageShakeAmplitude_;
+		pos.x += sx;
+		pos.z += sz;
+		transform_.translate = pos;
+
+		// 赤フラッシュ
+		float flash = (std::sin(enrageTransitionTimer_ * enrageFlashSpeed_) + 1.0f) * 0.5f;
+		Vector4 c{
+			baseColor.x + (redColor.x - baseColor.x) * flash,
+			baseColor.y + (redColor.y - baseColor.y) * flash,
+			baseColor.z + (redColor.z - baseColor.z) * flash,
+			1.0f
+		};
+
+		if (object3d_) { object3d_->SetColor(c); }
+		if (leftArm_) { leftArm_->SetColor(c); }
+		if (rightArm_) { rightArm_->SetColor(c); }
+
+		if (enrageTransitionTimer_ >= enrageWaitDuration_) {
+			enragePhase_ = EnrageTransitionPhase::Recover;
+			enrageTransitionTimer_ = 0.0f;
+
+			// 復帰開始時に衝撃波
+			if (!enrageShockwaveEmitted_) {
+				auto* pm = ParticleManager::GetInstance();
+				if (pm) {
+					if (pm->Exists("ring")) {
+						pm->Emit("ring", transform_.translate, 1);
+					}
+					if (pm->Exists("dust")) {
+						pm->Emit("dust", transform_.translate, 18);
+					}
+				}
+				if (camera_) {
+					camera_->StartShake(CameraShakeType::Large);
+				}
+				enrageShockwaveEmitted_ = true;
+			}
+		}
+		break;
+	}
+
+	case EnrageTransitionPhase::Recover:
+	{
+		float t = (enrageRecoverDuration_ > 0.0f)
+			? (enrageTransitionTimer_ / enrageRecoverDuration_)
+			: 1.0f;
+		t = std::clamp(t, 0.0f, 1.0f);
+
+		// 少しゆっくり戻す
+		float ease = t * t * (3.0f - 2.0f * t);
+
+		transform_.translate = lerp3(enrageKnockbackPos_, enrageStartPos_, ease);
+
+		// 色を戻す
+		if (object3d_) { object3d_->SetColor(baseColor); }
+		if (leftArm_) { leftArm_->SetColor(baseColor); }
+		if (rightArm_) { rightArm_->SetColor(baseColor); }
+
+		if (t >= 1.0f) {
+			transform_.translate = enrageStartPos_;
+			enragePhase_ = EnrageTransitionPhase::None;
+			enrageTransitioning_ = false;
+			enrageTransitionTimer_ = 0.0f;
+			enrageShockwaveEmitted_ = false;
+		}
+		break;
+	}
+
+	default:
+		enragePhase_ = EnrageTransitionPhase::None;
 		enrageTransitioning_ = false;
 		enrageTransitionTimer_ = 0.0f;
+		enrageShockwaveEmitted_ = false;
+		break;
 	}
 }
 
@@ -1140,6 +1277,22 @@ void BossEnemy::DamageShake() {
 	// ==============================
 	Vector4 baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 	Vector4 flashColor = { 1.0f, 0.2f, 0.2f, 1.0f };
+
+	// 怒り遷移の待機中は赤点滅を優先
+	if (enrageTransitioning_ && enragePhase_ == EnrageTransitionPhase::Wait) {
+		float flash = (std::sin(enrageTransitionTimer_ * enrageFlashSpeed_) + 1.0f) * 0.5f;
+		Vector4 rageColor{
+			baseColor.x + (flashColor.x - baseColor.x) * flash,
+			baseColor.y + (flashColor.y - baseColor.y) * flash,
+			baseColor.z + (flashColor.z - baseColor.z) * flash,
+			1.0f
+		};
+
+		if (object3d_) { object3d_->SetColor(rageColor); }
+		if (leftArm_) { leftArm_->SetColor(rageColor); }
+		if (rightArm_) { rightArm_->SetColor(rageColor); }
+		return;
+	}
 
 	// 胴体
 	Vector4 bodyColor = baseColor;
@@ -1716,6 +1869,10 @@ void BossEnemy::UpdateChargeBeamShot(float dt) {
 }
 
 void BossEnemy::UpdateChargeCrossPose(float dt) {
+
+	if (enrageTransitioning_) {
+		return;
+	}
 
 	// チャージしていないなら、保存していた姿勢を戻して終了
 	if (!chargeActive_) {

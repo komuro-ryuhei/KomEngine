@@ -8,6 +8,7 @@
 #include <vector>
 #include <array>
 #include <memory>
+#include <algorithm>
 
 class Player;
 class Camera;
@@ -507,8 +508,33 @@ private:
 
 	// 怒り遷移演出用
 	bool enrageTransitioning_ = false;
+	EnrageTransitionPhase enragePhase_ = EnrageTransitionPhase::None;
+
 	float enrageTransitionTimer_ = 0.0f;
 	float enrageTransitionDuration_ = 0.0f;
+
+	// 各フェーズ時間
+	float enrageKnockbackDuration_ = 0.25f;
+	float enrageWaitDuration_ = 1.50f;
+	float enrageRecoverDuration_ = 0.35f;
+
+	// 移動用
+	Vector3 enrageStartPos_{};
+	Vector3 enrageKnockbackPos_{};
+
+	// ノックバック量
+	float enrageKnockbackDistance_ = 3.5f;
+	float enrageKnockbackLift_ = 1.0f;
+
+	// シェイク
+	float enrageShakeAmplitude_ = 0.12f;
+	float enrageShakeFrequency_ = 40.0f;
+
+	// 赤フラッシュ
+	float enrageFlashSpeed_ = 10.0f;
+
+	// 復帰時衝撃波
+	bool enrageShockwaveEmitted_ = false;
 
 private:
 
