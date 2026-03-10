@@ -134,6 +134,13 @@ void BossTestScene::Init() {
 	toPauseSpr_->SetAnchorPoint({ 0.5f, 0.5f });
 	toPauseSpr_->SetPosition({ 1100.0f, 100.0f });
 
+	// ボスイントロ後のキラーン演出用
+	bossIntroGlintSprite_ = std::make_unique<Sprite>();
+	bossIntroGlintSprite_->Init("./Resources/images/moonLight.png", BlendType::BLEND_ADD);
+	bossIntroGlintSprite_->SetAnchorPoint({ 0.5f, 0.5f });
+	bossIntroGlintSprite_->SetSize({ 0.0f, 0.0f });
+	bossIntroGlintSprite_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
+
 	// パーティクル
 	auto* pm = ParticleManager::GetInstance();
 	pm->Init(camera_.get(), BlendType::BLEND_ADD);
@@ -283,9 +290,18 @@ void BossTestScene::Update() {
 	BossAttackManager::UpdateFlags f{};
 	f.koActive = koActive_;
 
-	// ボスが死んだら isMainPhase を false にして 攻撃 を止める
+	// キラーン中 / 開始待ち中は攻撃を進めない
 	const bool bossAlive = (boss_ && boss_->GetHP() > 0);
-	f.isMainPhase = (phase_ == Phase::kMain) && bossAlive && (endReason_ == EndReason::None);
+	const bool canStartBattle =
+		(flowState_ == GameFlowState::Play) &&
+		(!playStartPending_) &&
+		(!bossIntroGlintActive_);
+
+	f.isMainPhase =
+		(phase_ == Phase::kMain) &&
+		bossAlive &&
+		(endReason_ == EndReason::None) &&
+		canStartBattle;
 
 	f.isCameraFollowPlayer = isCameraFollowPlayer_;
 
@@ -335,6 +351,8 @@ void BossTestScene::Update() {
 	controlGuideSprite2_->Update();
 
 	toPauseSpr_->Update();
+
+	UpdateBossIntroGlint(dt);
 
 	// リザルトスプライトの更新
 	result_->Update();
@@ -476,6 +494,10 @@ void BossTestScene::Draw() {
 	controlGuideSprite2_->Draw();
 
 	toPauseSpr_->Draw();
+
+	if (bossIntroGlintActive_ && bossIntroGlintSprite_) {
+		bossIntroGlintSprite_->Draw();
+	}
 
 	// 
 	leftTargetOuter_->Draw();
@@ -1113,15 +1135,124 @@ void BossTestScene::UpdateIntro(float dt) {
 
 void BossTestScene::BeginPlay() {
 
-	// 
 	flowState_ = GameFlowState::Play;
 
-	collisionEnabled_ = true;
-	player_->SetControlEnabled(true);
-	boss_->SetCombatEnabled(true);
+	// まだ戦闘開始しない
+	collisionEnabled_ = false;
+
+	if (player_) {
+		player_->SetControlEnabled(false);
+	}
+	if (boss_) {
+		boss_->SetCombatEnabled(false);
+	}
+
+	// キラーンが終わったら開始する
+	playStartPending_ = true;
+	StartBossIntroGlint();
 
 	// プレイ会用
 	if (boss_) {
 		// boss_->SetHP(0);
 	}
+}
+
+void BossTestScene::StartBossIntroGlint() {
+
+	if (!bossIntroGlintSprite_) {
+		return;
+	}
+
+	bossIntroGlintActive_ = true;
+	bossIntroGlintTimer_ = 0.0f;
+
+	bossIntroGlintSprite_->SetSize({ 0.0f, 0.0f });
+	bossIntroGlintSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+}
+
+void BossTestScene::UpdateBossIntroGlint(float dt) {
+
+	if (!bossIntroGlintActive_ || !bossIntroGlintSprite_ || !boss_ || !camera_) {
+		return;
+	}
+
+	bossIntroGlintTimer_ += dt;
+
+	float t = bossIntroGlintTimer_ / bossIntroGlintDuration_;
+	if (t >= 1.0f) {
+		bossIntroGlintActive_ = false;
+		bossIntroGlintSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+
+		// キラーン終了後に戦闘開始
+		if (playStartPending_) {
+			playStartPending_ = false;
+			collisionEnabled_ = true;
+
+			if (player_) {
+				player_->SetControlEnabled(true);
+			}
+			if (boss_) {
+				boss_->SetCombatEnabled(true);
+			}
+		}
+
+		return;
+	}
+
+	// ボス中央より少し上を狙う
+	Vector3 worldPos = boss_->GetTranslate() + bossIntroGlintOffset_;
+
+	// ViewProj
+	Matrix4x4 view = camera_->GetViewMatrix();
+	Matrix4x4 proj = camera_->GetProjectionMatrix();
+	Matrix4x4 vp = MyMath::Multiply(view, proj);
+
+	// 画面投影
+	float w =
+		worldPos.x * vp.m[0][3] +
+		worldPos.y * vp.m[1][3] +
+		worldPos.z * vp.m[2][3] +
+		vp.m[3][3];
+
+	if (std::fabs(w) < 1e-6f) {
+		bossIntroGlintSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+		return;
+	}
+
+	Vector3 ndc = MyMath::Transform(worldPos, vp);
+
+	if (ndc.z <= 0.0f || ndc.z >= 1.0f) {
+		bossIntroGlintSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+		return;
+	}
+
+	constexpr float SCREEN_W = 1280.0f;
+	constexpr float SCREEN_H = 720.0f;
+
+	Vector2 screen{};
+	screen.x = (ndc.x * 0.5f + 0.5f) * SCREEN_W;
+	screen.y = (-ndc.y * 0.5f + 0.5f) * SCREEN_H;
+
+	bossIntroGlintSprite_->SetPosition(screen);
+
+	// 最初に一気に広がって、後半で消える
+	float scale = 220.0f;
+	if (t < 0.25f) {
+		scale = 220.0f * (t / 0.25f); // 0 -> 220
+	} else {
+		float u = (t - 0.25f) / 0.75f;
+		scale = 220.0f - 100.0f * u;  // 220 -> 120
+	}
+
+	float alpha = 1.0f;
+	if (t < 0.2f) {
+		alpha = t / 0.2f; // フェードイン
+	} else {
+		alpha = 1.0f - ((t - 0.2f) / 0.8f); // フェードアウト
+	}
+	alpha = std::clamp(alpha, 0.0f, 1.0f);
+
+	bossIntroGlintSprite_->SetSize({ scale, scale });
+	bossIntroGlintSprite_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+	bossIntroGlintSprite_->Update();
 }

@@ -280,6 +280,17 @@ private:
 	float hpHeartInterval_ = 52.0f;       // ハートの間隔
 	Vector2 hpHeartSize_{ 64.0f, 64.0f }; // ハートのサイズ
 
+	// イントロ終了後のキラーン演出
+	std::unique_ptr<Sprite> bossIntroGlintSprite_ = nullptr;
+	bool bossIntroGlintActive_ = false;
+	float bossIntroGlintTimer_ = 0.0f;
+	float bossIntroGlintDuration_ = 0.45f;
+
+	// ボス中央付近から少し上にずらす
+	Vector3 bossIntroGlintOffset_{ 0.0f, 1.2f, 0.0f };
+
+	bool playStartPending_ = false; // キラーン後に戦闘開始する待機中
+
 private:
 	void InitIntro();
 	void UpdateIntro(float dt);
@@ -303,4 +314,10 @@ private:
 	void LineTarget();
 
 	Vector3 CalcLookAtRotation(const Vector3& camPos, const Vector3& targetPos);
+
+	// 演出更新
+	void UpdateBossIntroGlint(float dt);
+
+	// 演出開始
+	void StartBossIntroGlint();
 };
