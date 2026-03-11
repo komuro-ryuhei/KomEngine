@@ -68,7 +68,6 @@ void BossTestScene::Init() {
 	boss_ = std::make_unique<BossEnemy>();
 	boss_->Init(camera_.get());
 	boss_->SetTranslate({ 0.0f, 0.0f, 20.0f });
-	bossSpawnPos_ = boss_->GetTranslate();
 	boss_->SetPlayer(player_.get());
 
 	auto makeTarget = [](std::unique_ptr<Sprite>& outer, std::unique_ptr<Sprite>& inner)

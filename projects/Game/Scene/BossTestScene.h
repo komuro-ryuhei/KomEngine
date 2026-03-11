@@ -57,12 +57,6 @@ public:
 
 	PostEffectDebugMode postEffectDebugMode_ = PostEffectDebugMode::Auto;
 
-	enum class BossAttackType {
-		Arms,
-		Meteor,
-		Sword,
-	};
-
 	// AABB を LineRenderer で描画するヘルパー
 	inline void AddAABBLines(LineRenderer& line, const AABB& box, const Vector4& color)
 	{
@@ -98,8 +92,6 @@ public:
 		line.AddLine(v110, v111, color);
 		line.AddLine(v010, v011, color);
 	}
-
-	BossAttackType currentAttackType_ = BossAttackType::Meteor;
 
 	BossTestScene() = default;
 	~BossTestScene() = default;
@@ -137,7 +129,6 @@ private:
 
 	// Boss
 	std::unique_ptr<BossEnemy> boss_ = nullptr;
-	Vector3 bossSpawnPos_{};
 
 	// 操作方法スプライト
 	std::unique_ptr<Sprite> controlGuideSprite_ = nullptr;
