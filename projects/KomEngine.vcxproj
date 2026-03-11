@@ -111,7 +111,10 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AssetPreloader.cpp" />
-    <ClCompile Include="BossMissile.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossRetreatAttackController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossRetreatAttack.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossMissile.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossMissileController.cpp" />
     <ClCompile Include="Engine\Base\Collision\CollisionManager.cpp" />
     <ClCompile Include="Engine\Base\Debug\LineRenderer.cpp" />
     <ClCompile Include="Game\Camera\KnockoutCameraController.cpp" />
@@ -174,7 +177,10 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetPreloader.h" />
-    <ClInclude Include="BossMissile.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossRetreatAttackController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossRetreatAttack.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossMissile.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossMissileController.h" />
     <ClInclude Include="Engine\Base\Collision\CollisionManager.h" />
     <ClInclude Include="Engine\Base\Collision\CollisionTypes.h" />
     <ClInclude Include="Engine\Base\Collision\ICollisionObject.h" />

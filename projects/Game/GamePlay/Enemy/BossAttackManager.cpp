@@ -1,8 +1,11 @@
 #include "BossAttackManager.h"
 #include "BossMeteorController.h"
 #include "BossArmController.h"
+#include "BossMissileController.h"
+#include "BossRetreatAttackController.h"
 
 #include "Game/Entity/Enemy/BossEnemy.h"
+#include "Game/Entity/Enemy/BossRetreatAttack.h"
 
 #include <cassert>
 
@@ -28,6 +31,22 @@ void BossAttackManager::Init(const InitDesc& desc) {
 	charge_->SetPlayer(desc_.player);
 	charge_->SetBoss(desc_.boss);
 
+	missile_ = std::make_unique<BossMissileController>();
+	missile_->Init();
+	missile_->SetCamera(desc_.camera);
+	missile_->SetPlayer(desc_.player);
+	missile_->SetBoss(desc_.boss);
+	missile_->SetMissiles(desc_.missiles);
+
+	retreatAttack_ = std::make_unique<BossRetreatAttack>();
+	retreatAttack_->Init();
+
+	retreat_ = std::make_unique<BossRetreatAttackController>();
+	retreat_->Init();
+	retreat_->SetBoss(desc_.boss);
+	retreat_->SetRetreat(retreatAttack_.get());
+	retreat_->SetMissileController(missile_.get());
+
 	// 乱数初期化
 	std::random_device rd;
 	rng_ = std::mt19937(rd());
@@ -51,6 +70,13 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	// 怒り遷移中の一時停止
 	if (enragePauseActive_) {
 		enragePauseTimer_ += dt;
+
+		if (retreat_ && retreat_->IsActive()) {
+			retreat_->ForceEnd();
+		}
+		if (missile_ && missile_->IsActive()) {
+			missile_->ForceEnd();
+		}
 
 		// 腕コントローラだけ見た目更新が必要なら残す
 		if (arm_) {
@@ -87,7 +113,7 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		!flags.koActive &&
 		flags.isMainPhase &&
 		!(meteor_ && meteor_->IsActive()) &&
-		!(desc_.boss && desc_.boss->IsRetreating()) &&
+		!(retreat_ && retreat_->IsActive()) &&
 		!(charge_ && charge_->IsActive()) &&
 		!armComboActive;
 
@@ -101,11 +127,33 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		flags.isMainPhase &&
 		!(charge_ && charge_->IsActive()) &&
 		!(meteor_ && meteor_->IsActive()) &&
-		!(desc_.boss && desc_.boss->IsRetreating()) &&
+		!(retreat_ && retreat_->IsActive()) &&
 		!armComboActive;
 
 	if (canStartCharge && desc_.boss && desc_.boss->ConsumeChargeRequest()) {
 		charge_->Start();
+	}
+
+	// 離脱開始
+	const bool canStartRetreat =
+		!flags.koActive &&
+		flags.isMainPhase &&
+		!(meteor_ && meteor_->IsActive()) &&
+		!(charge_ && charge_->IsActive()) &&
+		!(retreat_ && retreat_->IsActive());
+
+	if (canStartRetreat && desc_.boss && desc_.boss->ConsumeRetreatRequest()) {
+		retreat_->Start();
+	}
+
+	// 離脱更新
+	if (retreat_ && retreat_->IsActive()) {
+		retreat_->Update(dt);
+	}
+
+	// ミサイル更新
+	if (missile_ && missile_->IsActive()) {
+		missile_->Update(dt);
 	}
 
 	// メテオ更新
@@ -185,6 +233,16 @@ void BossAttackManager::StartEnragePause(float duration) {
 	// 進行中メテオは止める
 	if (meteor_ && meteor_->IsActive()) {
 		meteor_->ForceEnd();
+	}
+
+	// 離脱も止める
+	if (retreat_ && retreat_->IsActive()) {
+		retreat_->ForceEnd();
+	}
+
+	// ミサイルも止める
+	if (missile_ && missile_->IsActive()) {
+		missile_->ForceEnd();
 	}
 
 	// 今のブロックは未開始扱いにして、再開後に改めて始める
@@ -290,5 +348,9 @@ bool BossAttackManager::IsChargeActive() const {
 }
 
 bool BossAttackManager::IsAnyAttackActive() const {
-	return IsMeteorActive() || IsChargeActive() || (arm_ && arm_->IsActive());
+	return IsMeteorActive()
+		|| IsChargeActive()
+		|| (arm_ && arm_->IsActive())
+		|| (missile_ && missile_->IsActive())
+		|| (retreat_ && retreat_->IsActive());
 }

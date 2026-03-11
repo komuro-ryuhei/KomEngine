@@ -272,8 +272,11 @@
     <ClCompile Include="Engine\Base\Debug\LineRenderer.cpp" />
     <ClCompile Include="Engine\Base\Collision\CollisionManager.cpp" />
     <ClCompile Include="Game\Camera\KnockoutCameraController.cpp" />
-    <ClCompile Include="BossMissile.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossMissile.cpp" />
     <ClCompile Include="AssetPreloader.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossMissileController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossRetreatAttack.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossRetreatAttackController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -431,8 +434,11 @@
     <ClInclude Include="Engine\Base\Collision\CollisionTypes.h" />
     <ClInclude Include="Engine\Base\Collision\ICollisionObject.h" />
     <ClInclude Include="Game\Camera\KnockoutCameraController.h" />
-    <ClInclude Include="BossMissile.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossMissile.h" />
     <ClInclude Include="AssetPreloader.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossMissileController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossRetreatAttack.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossRetreatAttackController.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

@@ -239,9 +239,6 @@ void BossEnemy::Update() {
 			pushEnter_ = true;
 		}
 
-		// 退避中は Boss 自身が動くので先に更新
-		UpdateRetreat(dt);
-
 		// 退避中は腕攻撃は止める（奥で別攻撃する想定）
 		if (IsRetreating()) {
 			// 退避中は通常攻撃をしない
@@ -260,7 +257,6 @@ void BossEnemy::Update() {
 	}
 
 	if (hp_ > 0) {
-		UpdateMissileVolley(dt);
 		UpdateChargeBeamShot(dt);
 	}
 
@@ -282,14 +278,14 @@ void BossEnemy::Update() {
 	rightArmVisible_ = showRight;
 
 	// 表示する腕はスケールを戻し、非表示はスケール0（当たり判定も無効化）
-	leftArm_->SetScale(leftArmVisible_ ? baseArmScale_ : Vector3{ 0.0f, 0.0f, 0.0f });
-	rightArm_->SetScale(rightArmVisible_ ? baseArmScale_ : Vector3{ 0.0f, 0.0f, 0.0f });
+	const Vector3 useBodyScale = retreatVisualOverride_ ? retreatBodyScale_ : baseBodyScale_;
+	const Vector3 useArmScale = retreatVisualOverride_ ? retreatArmScale_ : baseArmScale_;
 
+	object3d_->SetScale(useBodyScale);
+	leftArm_->SetScale(leftArmVisible_ ? useArmScale : Vector3{ 0.0f, 0.0f, 0.0f });
+	rightArm_->SetScale(rightArmVisible_ ? useArmScale : Vector3{ 0.0f, 0.0f, 0.0f });
 
-	// 胴体はBodyRadiusを使う
 	object3d_->SetRadius(bodyRadius_);
-
-	// 腕はそれぞれ専用の半径を使う
 	leftArm_->SetRadius(leftArmVisible_ ? (leftArmRadius_ * leftArm_->GetScale().x) : 0.0f);
 	rightArm_->SetRadius(rightArmVisible_ ? (rightArmRadius_ * rightArm_->GetScale().x) : 0.0f);
 }
@@ -302,7 +298,6 @@ void BossEnemy::Draw() {
 	if (leftArmVisible_) { leftArm_->Draw(); }
 	if (rightArmVisible_) { rightArm_->Draw(); }
 
-	DrawMissileVolley();
 	// チャージビーム弾
 	if (chargeShot_.obj) { chargeShot_.obj->Draw(); }
 }
@@ -568,14 +563,11 @@ void BossEnemy::Attack() {
 			pendingChargeAfterRetreat_ = true;
 			pendingMeteorAfterCharge_ = true;
 
-			// 腕コンボ完了
 			armComboActive_ = false;
 			armComboFinished_ = true;
 
-			// Managerが次を決めるので、ここでは何もしない状態に戻す
 			attackPhase_ = AttackPhase::None;
-
-			StartRetreatAttack();
+			retreatRequest_ = true;
 		}
 		break;
 	}
@@ -662,16 +654,6 @@ void BossEnemy::CancelAttacksForMeteor() {
 	isExtending_ = true;
 	leftExtending_ = true;
 	rightExtending_ = true;
-
-	// ミサイル停止
-	missilePhase_ = MissilePhase::None;
-	missileT_ = 0.0f;
-	for (auto& m : missiles_) {
-		m.obj.reset();
-		m.bullet.reset();
-		m.launched = false;
-	}
-	missileStartedThisRetreat_ = false;
 
 	// チャージ停止
 	chargeActive_ = false;
@@ -1324,30 +1306,8 @@ void BossEnemy::DamageShake() {
 
 void BossEnemy::StartRetreatAttack() {
 
-	if (retreatPhase_ != RetreatPhase::None) return;
 	if (hp_ <= 0) return;
-
-	retreatPhase_ = RetreatPhase::MoveOut;
-	retreatT_ = 0.0f;
-
-	retreatStartPos_ = transform_.translate;
-
-	retreatBackPos_ = retreatStartPos_;
-	retreatBackPos_.z += retreatBackZOffset_;
-	retreatBackPos_.y += retreatUpOffset_;
-
-	invulnerable_ = true;
-
-	// Stay内部状態を毎回リセット
-	retreatStayPhase_ = RetreatStayPhase::Unflatten;
-
-	// 退避開始時に腕を基準位置に戻す
-	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
-	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
-	if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
-	if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
-
-	missileStartedThisRetreat_ = false;
+	retreatRequest_ = true;
 }
 
 void BossEnemy::UpdateRetreat(float dt) {
@@ -2052,4 +2012,29 @@ void BossEnemy::DrawArmors() {
 			a.obj->Draw();
 		}
 	}
+}
+
+bool BossEnemy::ConsumeRetreatRequest() {
+
+	if (!retreatRequest_) {
+		return false;
+	}
+	retreatRequest_ = false;
+	return true;
+}
+
+void BossEnemy::ApplyRetreatPose(const Vector3& pos, const Vector3& bodyScale, const Vector3& armScale) {
+
+	transform_.translate = pos;
+
+	retreatVisualOverride_ = true;
+	retreatBodyScale_ = bodyScale;
+	retreatArmScale_ = armScale;
+}
+
+void BossEnemy::ClearRetreatVisualOverride() {
+
+	retreatVisualOverride_ = false;
+	retreatBodyScale_ = baseBodyScale_;
+	retreatArmScale_ = baseArmScale_;
 }

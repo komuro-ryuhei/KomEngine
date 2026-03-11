@@ -185,7 +185,6 @@ public:
 
 	// 退避→奥から攻撃→復帰（退避中は無敵）
 	void StartRetreatAttack();
-	bool IsRetreating() const { return retreatPhase_ != RetreatPhase::None; }
 	bool IsInvulnerable() const { return invulnerable_; }
 
 	// 腕コンボ（右→左→両手）の開始/完了
@@ -251,11 +250,22 @@ public:
 	void SetCombatEnabled(bool enabled) { combatEnabled_ = enabled; }
 	bool IsCombatEnabled() const { return combatEnabled_; }
 
-	// カメラをボスへ向けたいか（奥にいる間だけ true）
-	bool WantsCameraFocus() const { return retreatPhase_ == RetreatPhase::Stay; }
+	// 退避攻撃関連
+	bool ConsumeRetreatRequest();
+	void SetInvulnerable(bool v) { invulnerable_ = v; }
 
-	// カメラが注視すべき座標（奥へ移動した先）
-	Vector3 GetCameraFocusPos() const { return retreatBackPos_; }
+	void SetRetreating(bool v) { retreatActive_ = v; }
+	bool IsRetreating() const { return retreatActive_; }
+
+	void SetCameraFocusPos(const Vector3& p) { retreatCameraFocusPos_ = p; }
+	Vector3 GetCameraFocusPos() const { return retreatCameraFocusPos_; }
+	bool WantsCameraFocus() const { return retreatActive_; }
+
+	const Vector3& GetBaseBodyScale() const { return baseBodyScale_; }
+	const Vector3& GetBaseArmScale() const { return baseArmScale_; }
+
+	void ApplyRetreatPose(const Vector3& pos, const Vector3& bodyScale, const Vector3& armScale);
+	void ClearRetreatVisualOverride();
 
 private:
 	// カメラ
@@ -535,6 +545,15 @@ private:
 
 	// 復帰時衝撃波
 	bool enrageShockwaveEmitted_ = false;
+
+	// 
+	bool retreatRequest_ = false;
+	bool retreatActive_ = false;
+	Vector3 retreatCameraFocusPos_{};
+
+	bool retreatVisualOverride_ = false;
+	Vector3 retreatBodyScale_{ 2.0f, 2.0f, 2.0f };
+	Vector3 retreatArmScale_{ 1.0f, 1.0f, 1.0f };
 
 private:
 

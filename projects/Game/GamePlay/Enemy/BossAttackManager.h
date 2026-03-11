@@ -5,6 +5,9 @@
 #include <algorithm>
 
 #include "ChargeAttackController.h"
+#include "BossMissileController.h"
+#include "BossRetreatAttackController.h"
+#include "Game/Entity/Enemy/BossRetreatAttack.h"
 
 class Camera;
 class Player;
@@ -12,6 +15,10 @@ class BossEnemy;
 class BossMeteor;
 class BossMeteorController;
 class BossArmController;
+class BossMissile;
+class BossMissileController;
+class BossRetreatAttack;
+class BossRetreatAttackController;
 
 class BossAttackManager {
 
@@ -29,6 +36,7 @@ public:
 		Player* player = nullptr;
 		BossEnemy* boss = nullptr;
 		std::vector<std::unique_ptr<BossMeteor>>* meteors = nullptr;
+		std::vector<std::unique_ptr<BossMissile>>* missiles = nullptr;
 	};
 
 	// BossTestScene側で毎フレーム渡せるフラグ
@@ -70,6 +78,8 @@ public:
 	BossMeteorController* GetMeteor() { return meteor_.get(); }
 	BossArmController* GetArm() { return arm_.get(); }
 	ChargeAttackController* GetCharge() { return charge_.get(); }
+	BossMissileController* GetMissile() { return missile_.get(); }
+	BossRetreatAttackController* GetRetreat() { return retreat_.get(); }
 
 private:
 
@@ -82,6 +92,9 @@ private:
 	std::unique_ptr<BossMeteorController> meteor_;
 	std::unique_ptr<BossArmController> arm_;
 	std::unique_ptr<ChargeAttackController> charge_;
+	std::unique_ptr<BossMissileController> missile_;
+	std::unique_ptr<BossRetreatAttack> retreatAttack_;
+	std::unique_ptr<BossRetreatAttackController> retreat_;
 
 	// 前フレームの腕攻撃アクティブ状態
 	bool prevArmActive_ = false;
@@ -94,17 +107,6 @@ private:
 	std::mt19937 rng_{};
 	bool queueInited_ = false;
 
-	// 次のブロック順を作る（ここでランダム化）
-	void RebuildBlockQueue();
-
-	// 現在ブロックがアクティブか
-	bool IsBlockActive(BossAttackBlock b) const;
-
-	// ブロック開始
-	void StartBlock(BossAttackBlock b);
-
-private:
-
 	// ブロック開始フラグ
 	bool blockStarted_ = false;
 
@@ -114,4 +116,15 @@ private:
 	float enragePauseTimer_ = 0.0f;
 	// 一時停止の継続時間
 	float enragePauseDuration_ = 0.0f;
+
+private:
+
+	// 次のブロック順を作る
+	void RebuildBlockQueue();
+
+	// 現在ブロックがアクティブか
+	bool IsBlockActive(BossAttackBlock b) const;
+
+	// ブロック開始
+	void StartBlock(BossAttackBlock b);
 };

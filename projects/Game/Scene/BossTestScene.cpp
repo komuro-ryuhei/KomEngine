@@ -101,6 +101,20 @@ void BossTestScene::Init() {
 		collisionManager_.Register(m.get());
 	}
 
+	// ボスのミサイル
+	missiles_.clear();
+	missiles_.reserve(4);
+	for (int i = 0; i < 4; ++i) {
+		auto m = std::make_unique<BossMissile>();
+		m->Init(camera_.get());
+		missiles_.push_back(std::move(m));
+	}
+
+	// ミサイルを CollisionManager に登録
+	for (auto& m : missiles_) {
+		collisionManager_.Register(m.get());
+	}
+
 	// ボスの攻撃管理
 	attackManager_ = std::make_unique<BossAttackManager>();
 
@@ -109,6 +123,7 @@ void BossTestScene::Init() {
 	init.player = player_.get();
 	init.boss = boss_.get();
 	init.meteors = &meteors_;
+	init.missiles = &missiles_;
 
 	attackManager_->Init(init);
 
@@ -477,6 +492,11 @@ void BossTestScene::Draw() {
 
 	// Bossのメテオ描画
 	for (auto& m : meteors_) m->Draw();
+
+	// Bossのミサイル描画
+	for (auto& m : missiles_) {
+		m->Draw();
+	}
 
 	// Playerは一人称視点なので非描画
 	player_->Draw();

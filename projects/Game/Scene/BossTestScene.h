@@ -17,6 +17,7 @@
 #include "Game/Entity/Enemy/BossEnemy.h"
 #include "Game/Entity/Enemy/BossMeteor.h"
 #include "Game/Entity/Enemy/BossSword.h"
+#include "Game/Entity/Enemy/BossMissile.h"
 
 #include "Game/UI/Fade.h"
 #include "Game/Camera/KnockoutCameraController.h"
@@ -210,6 +211,8 @@ private:
 
 	// メテオ
 	std::vector<std::unique_ptr<BossMeteor>> meteors_;
+
+	std::vector<std::unique_ptr<BossMissile>> missiles_;
 
 	//// メテオ攻撃の制御はコントローラに委譲
 	//std::unique_ptr<BossMeteorController> meteorController_;
