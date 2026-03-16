@@ -161,9 +161,6 @@ private:
 
 private:
 
-	// 現在選択中のポストエフェクト
-	int selectedPostEffectIndex_ = 0;
-
 	// Cameraをプレイヤーに追従させるかのフラグ
 	bool isCameraFollowPlayer_ = true;
 
@@ -225,9 +222,6 @@ private:
 	const float targetShakeDuration_ = 0.15f;  // 揺れる時間(秒)
 	const float targetShakeAmplitude_ = 12.0f; // 揺れ幅(ピクセル)
 
-	// 出現時演出用タイムライン
-	float introTimer_ = 0.0f;
-
 	// 演出パラメータ（あとでjson化してOK）
 	float introCamLookUpTime_ = 0.6f;   // 上を見る時間
 	float introFallStartDelay_ = 0.2f;  // 少し溜めて落とす
@@ -251,18 +245,10 @@ private:
 	float landingWaitTime_ = 0.35f;
 
 	bool collisionEnabled_ = false;
-
-	enum class CameraMode { FollowPlayer, FocusBoss, ReturnToPlayer };
-	CameraMode cameraMode_ = CameraMode::FollowPlayer;
-
+	
+	// カメラ追従の強さ（0.0f なら即座にプレイヤー位置、1.0f なら追従なし）
 	float cameraPosLerp_ = 0.10f;
 	float cameraRotLerp_ = 0.15f;
-
-	Vector3 camFocusPos_{};
-
-	bool wasFocusBoss_ = false;
-	bool isReturning_ = false;        // フォーカス解除後の復帰中
-	float returnEndDist_ = 0.05f;     // 復帰完了判定（距離）
 
 	// ポーズ用
 	std::unique_ptr<PauseMenu> pauseMenu_;
@@ -286,12 +272,10 @@ private:
 	bool playStartPending_ = false; // キラーン後に戦闘開始する待機中
 
 private:
+
 	void InitIntro();
 	void UpdateIntro(float dt);
 	void BeginPlay();
-
-	// カメラ演出用（あなたの既存のVP/カメラ制御に合わせて中身を差し替え）
-	void SetCameraLookAt(const Vector3& eye, const Vector3& target);
 
 private:
 

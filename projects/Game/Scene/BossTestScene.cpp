@@ -411,6 +411,7 @@ void BossTestScene::Update() {
 	// -------------------------------------------------------------------- //
 
 	switch (phase_) {
+
 	case Phase::kFadeIn:
 		phase_ = Phase::kMain;
 		break;
