@@ -861,9 +861,9 @@ void BossTestScene::UpdateArmTargetMarker() {
 	const int rightHits = boss_->GetRightHitCount();
 	const int maxHits = boss_->GetMaxHitCount();
 
-	const bool isLeftAttack = boss_->IsLeftArmAttacking();      // 片手(左)
-	const bool isRightAttack = boss_->IsRightArmAttacking();     // 片手(右)
-	const bool isBothAttack = boss_->IsBothHandsAttacking();    // 両手
+	const bool isLeftAttack = boss_->IsLeftArmAttacking();   // 片手(左)
+	const bool isRightAttack = boss_->IsRightArmAttacking(); // 片手(右)
+	const bool isBothAttack = boss_->IsBothHandsAttacking(); // 両手
 
 	// ViewProj
 	Matrix4x4 view = camera_->GetViewMatrix();
@@ -872,7 +872,6 @@ void BossTestScene::UpdateArmTargetMarker() {
 
 	auto projectToScreen = [&](const Vector3& worldPos, Vector2& outScreen) -> bool {
 
-		// wチェック
 		float w =
 			worldPos.x * vp.m[0][3] +
 			worldPos.y * vp.m[1][3] +
@@ -907,21 +906,47 @@ void BossTestScene::UpdateArmTargetMarker() {
 		return;
 	}
 
-	// ---- 左手ターゲット表示条件 ---- //
-	bool showLeft = false;
-	if (boss_->IsChargeActive()) {
-		showLeft = boss_->IsChargeTargetLeft() && (leftHits < maxHits);
-	} else {
-		showLeft =
-			(isLeftAttack && leftHits < maxHits) ||
-			(isBothAttack && leftHits < maxHits);
+	// =========================================================
+	// チャージ中はコアをターゲット表示する
+	// =========================================================
+	if (boss_->IsChargeActive() && boss_->IsChargeCoreActive()) {
+
+		Vector2 screen;
+		if (projectToScreen(boss_->GetChargeCoreWorldPos(), screen)) {
+
+			// チャージ中は左側ターゲットUIをコア用として使う
+			if (leftTargetShakeTime_ > 0.0f) {
+				float t = leftTargetShakeTime_ / targetShakeDuration_;
+				float amp = targetShakeAmplitude_ * t;
+				float ox = MyMath::Rand(-amp, amp);
+				float oy = MyMath::Rand(-amp, amp);
+				screen.x += ox;
+				screen.y += oy;
+			}
+
+			leftTargetOuter_->SetPosition(screen);
+			leftTargetInner_->SetPosition(screen);
+			leftTargetOuter_->SetColor({ 1,1,1,1 });
+			leftTargetInner_->SetColor({ 1,1,1,1 });
+		}
+
+		// 右側は使わないので非表示のまま
+		rightTargetOuter_->SetColor({ 1,1,1,0 });
+		rightTargetInner_->SetColor({ 1,1,1,0 });
+		return;
 	}
+
+	// =========================================================
+	// 通常時：左手ターゲット
+	// =========================================================
+	bool showLeft =
+		(isLeftAttack && leftHits < maxHits) ||
+		(isBothAttack && leftHits < maxHits);
 
 	if (showLeft) {
 		Vector2 screen;
 		if (projectToScreen(boss_->GetLeftHandWorldPos(), screen)) {
 
-			// シェイク中なら少しランダムにずらす（時間とともに減衰）
 			if (leftTargetShakeTime_ > 0.0f) {
 				float t = leftTargetShakeTime_ / targetShakeDuration_;
 				float amp = targetShakeAmplitude_ * t;
@@ -937,20 +962,16 @@ void BossTestScene::UpdateArmTargetMarker() {
 			leftTargetInner_->SetColor({ 1,1,1,1 });
 		}
 	} else {
-		// 表示しない時は透明にして残像を消す
-		leftTargetOuter_->SetColor({ 1, 1, 1, 0 });
-		leftTargetInner_->SetColor({ 1, 1, 1, 0 });
+		leftTargetOuter_->SetColor({ 1,1,1,0 });
+		leftTargetInner_->SetColor({ 1,1,1,0 });
 	}
 
-	// ---- 右手ターゲット表示条件 ---- //	
-	bool showRight = false;
-	if (boss_->IsChargeActive()) {
-		showRight = !boss_->IsChargeTargetLeft() && (rightHits < maxHits);
-	} else {
-		showRight =
-			(isRightAttack && rightHits < maxHits) ||
-			(isBothAttack && rightHits < maxHits);
-	}
+	// =========================================================
+	// 通常時：右手ターゲット
+	// =========================================================
+	bool showRight =
+		(isRightAttack && rightHits < maxHits) ||
+		(isBothAttack && rightHits < maxHits);
 
 	if (showRight) {
 		Vector2 screen;
@@ -971,9 +992,8 @@ void BossTestScene::UpdateArmTargetMarker() {
 			rightTargetInner_->SetColor({ 1,1,1,1 });
 		}
 	} else {
-		// 表示しない時は透明にして残像を消す
-		rightTargetOuter_->SetColor({ 1, 1, 1, 0 });
-		rightTargetInner_->SetColor({ 1, 1, 1, 0 });
+		rightTargetOuter_->SetColor({ 1,1,1,0 });
+		rightTargetInner_->SetColor({ 1,1,1,0 });
 	}
 }
 
@@ -1134,7 +1154,8 @@ void BossTestScene::UpdateIntro(float dt) {
 	}
 
 
-	case IntroPhase::CamOut: {
+	case IntroPhase::CamOut:
+	{
 
 		// メテオのOutroと同じ：元のカメラへ戻す
 		introCamLerp_ = std::min(1.0f, introCamLerp_ + dt / mp.camOutroTime);

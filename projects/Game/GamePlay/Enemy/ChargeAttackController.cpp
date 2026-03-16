@@ -14,44 +14,24 @@ void ChargeAttackController::Start() {
 	if (active_) return;
 	if (!boss_) return;
 
-	// Request側で決めたターゲット（左/右）
-	bool wantLeft = boss_->IsChargeTargetLeft();
-
-	// 既に壊れている腕を選んでいたら入れ替える
-	const bool leftBroken = boss_->IsLeftArmBroken();
-	const bool rightBroken = boss_->IsRightArmBroken();
-
-	if (wantLeft && leftBroken && !rightBroken) {
-		wantLeft = false;
-	} else if (!wantLeft && rightBroken && !leftBroken) {
-		wantLeft = true;
-	}
-
-	// 両腕とも壊れているならチャージ攻撃は成立しない
-	if (leftBroken && rightBroken) {
-		// マーカーを消す
-		boss_->SetChargeActive(false);
-		return;
-	}
-
-	targetLeft_ = wantLeft;
+	targetLeft_ = boss_->IsChargeTargetLeft();
 
 	active_ = true;
 	state_ = State::ChargeStart;
 	t_ = 0.0f;
 
-	// マーカー表示用
 	boss_->SetChargeTargetLeft(targetLeft_);
 	boss_->SetChargeActive(true);
+	boss_->ActivateChargeCore();
 }
 
 void ChargeAttackController::ForceEnd() {
 
 	if (!active_) return;
 
-	// マーカー消し
 	if (boss_) {
 		boss_->SetChargeActive(false);
+		boss_->DeactivateChargeCore();
 	}
 
 	active_ = false;
@@ -69,19 +49,15 @@ void ChargeAttackController::Update(float dt) {
 	switch (state_) {
 
 	case State::ChargeStart:
+
 		if (t_ >= telegraphTime_) {
 			BeginCharge();
 		}
 		break;
 
 	case State::Charging:
-	{
-		// 部位破壊で中断
-		const bool broken =
-			(targetLeft_ && boss_->IsLeftArmBroken()) ||
-			(!targetLeft_ && boss_->IsRightArmBroken());
 
-		if (broken) {
+		if (boss_->IsChargeCoreBroken()) {
 			InterruptCharge();
 			break;
 		}
@@ -89,8 +65,7 @@ void ChargeAttackController::Update(float dt) {
 		if (t_ >= chargeTime_) {
 			FireShot();
 		}
-	}
-	break;
+		break;
 
 	case State::Fire:
 		// 
@@ -120,9 +95,9 @@ void ChargeAttackController::BeginCharge() {
 
 void ChargeAttackController::InterruptCharge() {
 
-	// 
 	if (boss_) {
 		boss_->SetChargeActive(false);
+		boss_->DeactivateChargeCore();
 	}
 	state_ = State::End;
 }
@@ -131,18 +106,22 @@ void ChargeAttackController::FireShot() {
 
 	state_ = State::Fire;
 
-	// 発射
-	boss_->StartChargeBeamShot(targetLeft_);
+	if (boss_) {
+		boss_->DeactivateChargeCore();
+		boss_->StartChargeBeamShot(targetLeft_);
+		boss_->SetChargeActive(false);
+	}
 
-	// 発射後は弾が消えるまで待つ
 	state_ = State::WaitShotEnd;
 	t_ = 0.0f;
-
-	// 発射が終わったらマーカーは消す
-	boss_->SetChargeActive(false);
 }
 
 void ChargeAttackController::Finish() {
+
+	if (boss_) {
+		boss_->DeactivateChargeCore();
+		boss_->OnChargeAttackFinished();
+	}
 
 	active_ = false;
 	state_ = State::None;

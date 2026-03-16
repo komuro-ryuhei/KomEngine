@@ -1,9 +1,15 @@
 #pragma once
+
+// Engine
 #include "Engine/Base/3d/Object3d/Object3d.h"
 #include "Engine/Base/2d/Sprite/Sprite.h"
 #include "Engine/Base/Collision/ICollisionObject.h"
 #include "Engine/Base/Collision/CollisionManager.h"
+
+// Game
 #include "Game/Entity/Enemy/EnemyBullet.h"
+#include "Game/Entity/Enemy/BossChargeCore.h"
+#include "Game/Entity/Enemy/BossChargeBeam.h"
 
 #include <vector>
 #include <array>
@@ -119,14 +125,21 @@ public:
 	void SetHP(int hp) { hp_ = hp; }
 
 	// 当たり判定管理
-	void SetCollisionManager(CollisionManager* mgr)
-	{
+	void SetCollisionManager(CollisionManager* mgr) {
+
 		collisionManager_ = mgr;
 
 		if (collisionManager_) {
 			collisionManager_->Register(&bodyCol_);
 			collisionManager_->Register(&leftCol_);
 			collisionManager_->Register(&rightCol_);
+
+			if (chargeCore_) {
+				collisionManager_->Register(chargeCore_.get());
+			}
+			if (chargeBeam_) {
+				collisionManager_->Register(chargeBeam_.get());
+			}
 		}
 	}
 
@@ -266,6 +279,13 @@ public:
 
 	void ApplyRetreatPose(const Vector3& pos, const Vector3& bodyScale, const Vector3& armScale);
 	void ClearRetreatVisualOverride();
+
+	// チャージコア
+	void ActivateChargeCore();
+	void DeactivateChargeCore();
+	bool IsChargeCoreBroken() const;
+	bool IsChargeCoreActive() const;
+	Vector3 GetChargeCoreWorldPos() const;
 
 private:
 	// カメラ
@@ -467,9 +487,9 @@ private:
 	float missileHeight_ = 2.0f;        // ボス上方向オフセット
 	float missileSpeed_ = 0.2f;         // 発射速度
 
-	bool missileHitPlayer_ = false; // 当たったらtrue（1回のボレー中）
-	float missileHitDist_ = 0.7f;   // 当たり判定距離（仮。ゲームに合わせて調整）
-	float missileMaxDist_ = 200.0f; // 遠すぎたら消す（仮）
+	bool missileHitPlayer_ = false; // 当たったらtrue
+	float missileHitDist_ = 0.7f;   // 当たり判定距離
+	float missileMaxDist_ = 200.0f; // 遠すぎたら消す
 
 	float missileLaunchTimeout_ = 6.0f;
 
@@ -555,6 +575,13 @@ private:
 	Vector3 retreatBodyScale_{ 2.0f, 2.0f, 2.0f };
 	Vector3 retreatArmScale_{ 1.0f, 1.0f, 1.0f };
 
+	// チャージコア、チャージビーム
+	std::unique_ptr<BossChargeCore> chargeCore_;
+	std::unique_ptr<BossChargeBeam> chargeBeam_;
+
+	Vector3 chargeCoreOffset_{ 0.0f, 3.0f, 0.0f };
+	int chargeCoreHp_ = 12;
+
 private:
 
 	void UpdateRetreat(float dt);
@@ -568,6 +595,6 @@ private:
 	void UpdateChargeBeamShot(float dt);
 	void UpdateChargeCrossPose(float dt);
 
-	// 
+	// チャージ時のエフェクト
 	void ChargeEffect(float dt);
 };

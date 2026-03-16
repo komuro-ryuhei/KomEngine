@@ -111,6 +111,8 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AssetPreloader.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossChargeBeam.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossChargeCore.cpp" />
     <ClCompile Include="Game\GamePlay\Enemy\BossRetreatAttackController.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossRetreatAttack.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossMissile.cpp" />
@@ -177,6 +179,8 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetPreloader.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossChargeBeam.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossChargeCore.h" />
     <ClInclude Include="Game\GamePlay\Enemy\BossRetreatAttackController.h" />
     <ClInclude Include="Game\Entity\Enemy\BossRetreatAttack.h" />
     <ClInclude Include="Game\Entity\Enemy\BossMissile.h" />

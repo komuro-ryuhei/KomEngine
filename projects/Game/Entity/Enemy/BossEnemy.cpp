@@ -67,6 +67,14 @@ void BossEnemy::Init(Camera* camera) {
 	hpSprite_->SetSize({ 700.0f,50.0f });
 	hpSprite_->SetPosition({ 200.0f,100.0f });
 
+	// チャージコア、チャージビームの生成
+	chargeCore_ = std::make_unique<BossChargeCore>();
+	chargeCore_->Init(camera_);
+
+	chargeBeam_ = std::make_unique<BossChargeBeam>();
+	chargeBeam_->Init(camera_);
+
+	// 当たり判定コライダーの設定
 	bodyCol_.owner = this;
 	bodyCol_.part = PartCollider::Part::Body;
 
@@ -100,6 +108,15 @@ void BossEnemy::Update() {
 	UpdateEnrageTransition(dt);
 
 	ChargeEffect(dt);
+
+	if (chargeCore_ && chargeCore_->IsActive()) {
+		chargeCore_->SetWorldPos(transform_.translate + chargeCoreOffset_);
+		chargeCore_->Update(dt);
+	}
+
+	if (chargeBeam_ && chargeBeam_->IsActive()) {
+		chargeBeam_->Update(dt);
+	}
 
 	// 3Dオブジェクト更新
 	object3d_->Update();
@@ -300,6 +317,13 @@ void BossEnemy::Draw() {
 
 	// チャージビーム弾
 	if (chargeShot_.obj) { chargeShot_.obj->Draw(); }
+
+	if (chargeCore_) {
+		chargeCore_->Draw();
+	}
+	if (chargeBeam_) {
+		chargeBeam_->Draw();
+	}
 }
 
 void BossEnemy::ImGuiDebug() {
@@ -660,6 +684,13 @@ void BossEnemy::CancelAttacksForMeteor() {
 	chargeShotLife_ = 0.0f;
 	chargeShot_.obj.reset();
 	chargeShot_.bullet.reset();
+
+	// 
+	DeactivateChargeCore();
+
+	if (chargeBeam_) {
+		chargeBeam_->Destroy();
+	}
 }
 
 void BossEnemy::CancelAllAttacks() {
@@ -671,6 +702,13 @@ void BossEnemy::CancelAllAttacks() {
 	retreatPhase_ = RetreatPhase::None;
 	retreatT_ = 0.0f;
 	invulnerable_ = false;
+
+	// 
+	DeactivateChargeCore();
+
+	if (chargeBeam_) {
+		chargeBeam_->Destroy();
+	}
 
 	// 腕を基準位置へ
 	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
@@ -1728,38 +1766,20 @@ bool BossEnemy::IsChargeBeamShotActive() const {
 
 void BossEnemy::StartChargeBeamShot(bool useLeftArm) {
 
-	// 既に発射中なら上書きしない
-	if (chargeShot_.bullet) { return; }
-	if (!camera_ || !player_) { return; }
-	// 生成位置：対象腕の先端付近
-	Vector3 spawnPos = useLeftArm ? GetLeftHandWorldPos() : GetRightHandWorldPos();
-	Vector3 playerPos = player_->GetTransform().translate;
+	useLeftArm; // 今回は使わない
 
-	// 見た目（球）
-	chargeShot_.obj = std::make_unique<Object3d>();
-	chargeShot_.obj->Init(BlendType::BLEND_NONE);
-	chargeShot_.obj->SetModel("sphere.obj");
-	chargeShot_.obj->SetDefaultCamera(camera_);
-	chargeShot_.obj->SetTranslate(spawnPos);
-
-	chargeShot_.bullet = std::make_unique<EnemyBullet>();
-	chargeShot_.bullet->Init(camera_, chargeShot_.obj.get());
-	chargeShot_.bullet->SetDestroyOnPlayerHit(false);
-	chargeShot_.bullet->SetTranlate(spawnPos);
-
-	chargeShot_.obj->SetScale(chargeBeamStartScale_);
-
-	Vector3 dir = MyMath::Normalize(playerPos - spawnPos);
-	chargeShot_.bullet->SetDirection(dir);
-	chargeShot_.bullet->SetSpeed(1.0f); // 速め
-
-	if (collisionManager_) {
-		collisionManager_->Register(chargeShot_.bullet.get());
-
+	if (!chargeBeam_ || chargeBeam_->IsActive()) {
+		return;
 	}
-	chargeShotLife_ = 0.0f;
+	if (!player_) {
+		return;
+	}
 
-	chargeShotHitOnce_ = false;
+	const Vector3 spawnPos = GetChargeCoreWorldPos();
+	const Vector3 playerPos = player_->GetTransform().translate;
+	const Vector3 dir = MyMath::Normalize(playerPos - spawnPos);
+
+	chargeBeam_->Fire(spawnPos, dir);
 }
 
 void BossEnemy::UpdateChargeBeamShot(float dt) {
@@ -1882,11 +1902,7 @@ void BossEnemy::ChargeEffect(float dt) {
 
 	if (chargeActive_) {
 
-		// 手の位置（ワールド）から、中央（両手の中間）を作る
-		Vector3 leftW = GetLeftHandWorldPos();
-		Vector3 rightW = GetRightHandWorldPos();
-
-		Vector3 fxPos = (leftW + rightW) * 0.5f;
+		Vector3 fxPos = GetChargeCoreWorldPos();
 
 		auto* pm = ParticleManager::GetInstance();
 
@@ -2037,4 +2053,39 @@ void BossEnemy::ClearRetreatVisualOverride() {
 	retreatVisualOverride_ = false;
 	retreatBodyScale_ = baseBodyScale_;
 	retreatArmScale_ = baseArmScale_;
+}
+
+void BossEnemy::ActivateChargeCore() {
+
+	if (!chargeCore_) {
+		return;
+	}
+
+	chargeCore_->ResetHP(chargeCoreHp_);
+	chargeCore_->Activate(transform_.translate + chargeCoreOffset_);
+}
+
+void BossEnemy::DeactivateChargeCore() {
+
+	if (chargeCore_) {
+		chargeCore_->Deactivate();
+	}
+}
+
+bool BossEnemy::IsChargeCoreBroken() const {
+
+	return chargeCore_ && chargeCore_->IsActive() && chargeCore_->IsBroken();
+}
+
+bool BossEnemy::IsChargeCoreActive() const {
+
+	return chargeCore_ && chargeCore_->IsActive();
+}
+
+Vector3 BossEnemy::GetChargeCoreWorldPos() const {
+
+	if (chargeCore_ && chargeCore_->IsActive()) {
+		return chargeCore_->GetWorldPos();
+	}
+	return transform_.translate + chargeCoreOffset_;
 }

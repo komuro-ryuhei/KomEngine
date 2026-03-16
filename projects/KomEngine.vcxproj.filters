@@ -277,6 +277,8 @@
     <ClCompile Include="Game\GamePlay\Enemy\BossMissileController.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossRetreatAttack.cpp" />
     <ClCompile Include="Game\GamePlay\Enemy\BossRetreatAttackController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossChargeCore.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossChargeBeam.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -439,6 +441,8 @@
     <ClInclude Include="Game\GamePlay\Enemy\BossMissileController.h" />
     <ClInclude Include="Game\Entity\Enemy\BossRetreatAttack.h" />
     <ClInclude Include="Game\GamePlay\Enemy\BossRetreatAttackController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossChargeCore.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossChargeBeam.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />
