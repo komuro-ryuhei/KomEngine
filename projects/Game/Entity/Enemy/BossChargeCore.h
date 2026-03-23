@@ -28,7 +28,7 @@ public:
 	// ICollisionObject
 	Vector3 GetCollisionPosition() const override { return worldPos_; }
 	float GetCollisionRadius() const override { return active_ ? radius_ : 0.0f; }
-	CollisionLayer GetCollisionLayer() const override { return CollisionLayer::Enemy; }
+	CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyCore; }
 	void OnCollision(ICollisionObject* other) override;
 
 private:

@@ -47,7 +47,7 @@ public:
 	// ----------------------- ICollisionObjectの実装 ----------------------- //
 	Vector3 GetCollisionPosition() const override;
 	float   GetCollisionRadius() const override;
-	CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyBullet; }
+	CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyMeteor; }
 	void OnCollision(ICollisionObject* other) override;
 
 private:

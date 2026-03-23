@@ -32,7 +32,7 @@ public:
     // ICollisionObject
     Vector3 GetCollisionPosition() const override;
     float GetCollisionRadius() const override;
-    CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyBullet; }
+    CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyMissile; }
     void OnCollision(ICollisionObject* other) override;
 
 private:

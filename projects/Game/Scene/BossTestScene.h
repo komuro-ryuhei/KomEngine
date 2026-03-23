@@ -250,6 +250,15 @@ private:
 	float cameraPosLerp_ = 0.10f;
 	float cameraRotLerp_ = 0.15f;
 
+	// チャージ中の一時注視
+	bool chargeLookActive_ = false;
+	float chargeLookBlend_ = 0.0f;
+	float chargeLookInSpeed_ = 5.0f;
+	float chargeLookOutSpeed_ = 6.0f;
+
+	// コアそのものだと少し低い場合の微調整
+	Vector3 chargeLookOffset_{ 0.0f, 1.2f, 0.0f };
+
 	// ポーズ用
 	std::unique_ptr<PauseMenu> pauseMenu_;
 

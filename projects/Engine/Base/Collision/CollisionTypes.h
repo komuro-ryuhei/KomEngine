@@ -8,8 +8,11 @@ enum class CollisionLayer : uint8_t
     Enemy,
     PlayerBullet,
     EnemyBullet,
+    EnemyMeteor,
+    EnemyMissile,
+    EnemyCharge,
+    EnemyCore,
     Environment,
-    // 必要に応じて増やす
 };
 
 // AABB の構造体

@@ -187,8 +187,16 @@ void BossTestScene::Init() {
 	// ---- CollisionManager 設定 ----
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::Enemy);
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyBullet);
+	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyMeteor);
+	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyCharge);
+	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyMissile);
+	
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::Enemy);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyBullet);
+	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyMeteor);
+	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyMissile);
+	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyCore);
+	
 
 	// AddComponent 的な登録
 	collisionManager_.Register(player_.get());
@@ -605,6 +613,8 @@ void BossTestScene::UpdateCamera(float dt) {
 	}
 
 	const bool focusBoss = (boss_ && boss_->WantsCameraFocus());
+	const bool focusChargeCore =
+		(boss_ && boss_->IsChargeActive() && boss_->IsChargeCoreActive());
 
 	// フォーカス中だけ player 追従を切る
 	isCameraFollowPlayer_ = !focusBoss;
@@ -630,11 +640,37 @@ void BossTestScene::UpdateCamera(float dt) {
 	Vector3 targetRot = camera_->GetRotate();
 
 	if (focusBoss) {
-		// ボスを向く
+		// 退避中などは従来通りボスを向く
 		targetRot = CalcLookAtRotation(newCamPos, boss_->GetCameraFocusPos());
 	} else if (isCameraFollowPlayer_) {
 		// 通常はプレイヤー向き
 		targetRot = player_->GetTransform().rotate;
+	}
+
+	// =========================
+	// チャージ中だけコアを見る回転を少し混ぜる
+	// =========================
+	if (focusChargeCore) {
+		chargeLookActive_ = true;
+		chargeLookBlend_ += dt * chargeLookInSpeed_;
+		if (chargeLookBlend_ > 1.0f) {
+			chargeLookBlend_ = 1.0f;
+		}
+	} else {
+		chargeLookActive_ = false;
+		chargeLookBlend_ -= dt * chargeLookOutSpeed_;
+		if (chargeLookBlend_ < 0.0f) {
+			chargeLookBlend_ = 0.0f;
+		}
+	}
+
+	if (chargeLookBlend_ > 0.0f && boss_) {
+		Vector3 chargeLookTarget = boss_->GetChargeCoreWorldPos() + chargeLookOffset_;
+		Vector3 chargeRot = CalcLookAtRotation(newCamPos, chargeLookTarget);
+
+		// 少しだけ向ける
+		float t = chargeLookBlend_ * 0.55f;
+		targetRot = MyMath::Lerp(targetRot, chargeRot, t);
 	}
 
 	// 現在回転 → 目標回転へ Lerp
