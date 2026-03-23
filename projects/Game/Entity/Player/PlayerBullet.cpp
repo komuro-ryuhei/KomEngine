@@ -31,7 +31,7 @@ void PlayerBullet::Update() {
 	transform_.translate += direction_ * speed_;
 	object3d_->SetTranslate(transform_.translate);
 
-	// ★ ここを ParticleManager::EmitTrail から Emitter に変更
+	// ここを ParticleManager::EmitTrail から Emitter に変更
 	if (trailEmitter_) {
 		trailEmitter_->SetTranslate(transform_.translate);
 		trailEmitter_->Update();   // Update の中で Emit() が呼ばれてパーティクル生成
@@ -89,8 +89,6 @@ void PlayerBullet::SetScale(const Vector3& s) {
 
 	}
 }
-
-bool PlayerBullet::IsAlive() const { return isAlive_; }
 
 // ================= ICollisionObject の実装 ================= //
 

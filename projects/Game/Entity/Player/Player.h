@@ -12,12 +12,13 @@
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "Engine/Base/Collision/ICollisionObject.h"
 #include "Engine/Base/Collision/CollisionManager.h"
+#include "Game/Entity/GameObject.h"
 
 // C++
 #include <algorithm>
 #include <vector>
 
-class Player : public ICollisionObject {
+class Player : public GameObject, public ICollisionObject {
 
 public:
 
@@ -26,9 +27,14 @@ public:
 
 	void Init(Camera* camera);
 
-	void Update();
+	void Update() override;
+	void Draw() override;
 
-	void Draw();
+	void Kill() override {
+		isActive_ = false;
+		canShoot_ = false;
+		controlEnabled_ = false;
+	}
 
 	void ImGuiDebug();
 
@@ -43,6 +49,7 @@ public:
 	void SetCollisionManager(CollisionManager* mgr) { collisionManager_ = mgr; }
 
 public:
+
 	float GetRadius() const;
 	Transform GetTransform() const;
 	Vector3 GetTranslate() const;
@@ -62,6 +69,8 @@ public:
 	bool CanShoot() const { return canShoot_; }
 
 	void SetGunMuzzlePos(const Vector3& pos) { gunMuzzlePos_ = pos; hasGunMuzzlePos_ = true; }
+
+	bool IsAlive() const { return IsActive(); }
 
 private:
 
@@ -84,6 +93,7 @@ private:
 	void UpdateHeatGauge();
 
 public:
+
 	void RailMove();
 	void RotateY90();
 

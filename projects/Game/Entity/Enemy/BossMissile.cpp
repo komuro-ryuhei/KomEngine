@@ -28,7 +28,10 @@ void BossMissile::Spawn(const Vector3& startPos, const Vector3& direction, float
 	lifeTimer_ = 0.0f;
 }
 
-void BossMissile::Update(float dt) {
+void BossMissile::Update() {
+
+	const float dt = System::GetDeltaTime();
+
 	if (!isAlive_ || !object3d_) {
 		return;
 	}
@@ -55,10 +58,6 @@ void BossMissile::Draw() {
 		return;
 	}
 	object3d_->Draw();
-}
-
-void BossMissile::Kill() {
-	isAlive_ = false;
 }
 
 Vector3 BossMissile::GetCollisionPosition() const {

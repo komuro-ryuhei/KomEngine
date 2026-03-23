@@ -7,8 +7,8 @@
 class Camera;
 class Player;
 
-// ボスが落とす隕石。スポーン→落下（重力）→着弾で爆発→消滅 という最小機能。
-class BossMeteor : public ICollisionObject {
+// ボスが落とす隕石。スポーン→落下（重力）→着弾で爆発→消滅 という最小機能
+class BossMeteor : public GameObject, public ICollisionObject {
 
 public:
 
@@ -19,8 +19,14 @@ public:
 	void Init(Camera* camera);
 
 	// フレーム更新／描画
-	void Update();
-	void Draw();
+	void Update() override;
+	void Draw() override;
+
+	void Kill() override {
+		isActive_ = false;
+		isExploding_ = false;
+		lifeTimer_ = 0.0f;
+	}
 
 	// デバッグUI
 	void ImGuiDebug();
@@ -68,6 +74,7 @@ private:
 	float gravity_ = 0.02f;         // 下向き加速度
 	float rotateSpeed_ = 0.05f;     // くるくる回転
 	float radius_ = 1.2f;           // 当たり判定（スケール前ベース）
+
 	bool  isAlive_ = false;
 	bool  isExploding_ = false;
 	float lifeTimer_ = 0.0f;        // 生存時間

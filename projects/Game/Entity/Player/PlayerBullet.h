@@ -8,15 +8,22 @@
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "struct.h"
 #include "Engine/Base/Collision/ICollisionObject.h"
+#include "Game/Entity/GameObject.h"
 
-class PlayerBullet : public ICollisionObject {
+class PlayerBullet : public GameObject, public ICollisionObject {
 
 public:
+
 	void Init(Camera* camera, Object3d* object3d);
 
-	void Update();
+	// ----------------------- GameObjectの実装 ----------------------- //
+	void Update() override;
+	void Draw() override;
 
-	void Draw();
+	void Kill() override {
+		isActive_ = false;
+		pendingKill_ = true;
+	}
 
 	void ImGuiDebug();
 
@@ -30,7 +37,7 @@ public:
 	float GetRadius() const;
 	Vector3 GetTranslate() const;
 	int  GetDamage() const { return damage_; }
-	bool IsAlive() const;
+	bool IsAlive() const { return isAlive_; }
 
 	// ----------------------- ICollisionObjectの実装 ----------------------- //
 	Vector3 GetCollisionPosition() const override;

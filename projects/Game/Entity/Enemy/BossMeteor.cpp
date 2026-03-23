@@ -34,6 +34,7 @@ void BossMeteor::Spawn(const Vector3& startPos, const Vector3& targetPos, float 
 	if (MyMath::Length(dir) > 0.0001f) { dir = MyMath::Normalize(dir); }
 	velocity_ = dir * speed;
 
+	isActive_ = true;
 	lifeTimer_ = 0.0f;
 	isExploding_ = false;
 	isAlive_ = true;

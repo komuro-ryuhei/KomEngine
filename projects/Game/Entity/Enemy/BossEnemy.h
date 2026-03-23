@@ -10,6 +10,7 @@
 #include "Game/Entity/Enemy/EnemyBullet.h"
 #include "Game/Entity/Enemy/BossChargeCore.h"
 #include "Game/Entity/Enemy/BossChargeBeam.h"
+#include "Game/Entity/GameObject.h"
 
 #include <vector>
 #include <array>
@@ -19,7 +20,7 @@
 class Player;
 class Camera;
 
-class BossEnemy : public ICollisionObject {
+class BossEnemy : public GameObject, public ICollisionObject {
 
 private:
 
@@ -70,9 +71,14 @@ public:
 
 	void Init(Camera* camera);
 
-	void Update();
+	void Update() override;
+	void Draw() override;
 
-	void Draw();
+	void Kill() override {
+		isActive_ = false;
+		combatEnabled_ = false;
+		isAttack_ = false;
+	}
 
 	void ImGuiDebug();
 

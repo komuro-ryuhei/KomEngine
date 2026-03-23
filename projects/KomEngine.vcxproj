@@ -179,6 +179,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetPreloader.h" />
+    <ClInclude Include="Game\Entity\GameObject.h" />
     <ClInclude Include="Game\Entity\Enemy\BossChargeBeam.h" />
     <ClInclude Include="Game\Entity\Enemy\BossChargeCore.h" />
     <ClInclude Include="Game\GamePlay\Enemy\BossRetreatAttackController.h" />

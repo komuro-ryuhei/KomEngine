@@ -92,7 +92,7 @@ void BossMissileController::UpdateTelegraph(float dt) {
 		offset.z = 0.0f;
 
 		(*missiles_)[i]->SetTranslate(bossPos + offset);
-		(*missiles_)[i]->Update(0.0f);
+		(*missiles_)[i]->Update();
 	}
 
 	if (timer_ >= params_.telegraphTime) {
@@ -124,7 +124,7 @@ void BossMissileController::UpdateLaunch(float dt) {
 			continue;
 		}
 
-		m->Update(dt);
+		m->Update();
 
 		if (m->DidHitPlayer()) {
 			hitPlayer_ = true;
