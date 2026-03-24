@@ -26,6 +26,11 @@ public:
 		isActive_ = false;
 		isExploding_ = false;
 		lifeTimer_ = 0.0f;
+
+		if (collisionManager_ && collisionRegistered_) {
+			collisionManager_->Unregister(this);
+			collisionRegistered_ = false;
+		}
 	}
 
 	// デバッグUI
@@ -49,12 +54,17 @@ public:
 	void SetRadius(float r) { radius_ = r; if (object3d_) object3d_->SetRadius(radius_ * object3d_->GetScale().x); }
 	void SetScale(const Vector3& s) { if (object3d_) { object3d_->SetScale(s); object3d_->SetRadius(radius_ * s.x); } }
 	void SetGravity(float g) { gravity_ = g; accel_ = { 0.0f, -gravity_, 0.0f }; }
+	void SetPlayer(Player* player) { player_ = player; }
 
 	// ----------------------- ICollisionObjectの実装 ----------------------- //
 	Vector3 GetCollisionPosition() const override;
 	float   GetCollisionRadius() const override;
 	CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyMeteor; }
 	void OnCollision(ICollisionObject* other) override;
+
+	CollisionManager* collisionManager_ = nullptr;
+	bool collisionRegistered_ = false;
+	void SetCollisionManager(CollisionManager* mgr) { collisionManager_ = mgr; }
 
 private:
 
@@ -66,6 +76,8 @@ private:
 	// 描画
 	Camera* camera_ = nullptr;
 	std::unique_ptr<Object3d> object3d_ = nullptr;
+
+	Player* player_ = nullptr;
 
 	// 物理／状態
 	Transform transform_{};         // 平行移動はここがソース

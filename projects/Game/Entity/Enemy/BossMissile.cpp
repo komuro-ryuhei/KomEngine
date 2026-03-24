@@ -17,6 +17,7 @@ void BossMissile::Init(Camera* camera) {
 }
 
 void BossMissile::Spawn(const Vector3& startPos, const Vector3& direction, float speed) {
+
 	transform_.translate = startPos;
 	transform_.rotate = { 0.0f, 0.0f, 0.0f };
 
@@ -26,6 +27,30 @@ void BossMissile::Spawn(const Vector3& startPos, const Vector3& direction, float
 	isAlive_ = true;
 	hitPlayer_ = false;
 	lifeTimer_ = 0.0f;
+
+	if (object3d_) {
+		object3d_->SetTranslate(transform_.translate);
+		object3d_->SetRotate(transform_.rotate);
+		object3d_->Update();
+	}
+
+	if (collisionManager_ && !collisionRegistered_) {
+		collisionManager_->Register(this);
+		collisionRegistered_ = true;
+	}
+}
+
+void BossMissile::Kill() {
+
+	isActive_ = false;
+	isAlive_ = false;
+	hitPlayer_ = false;
+	lifeTimer_ = 0.0f;
+
+	if (collisionManager_ && collisionRegistered_) {
+		collisionManager_->Unregister(this);
+		collisionRegistered_ = false;
+	}
 }
 
 void BossMissile::Update() {
@@ -54,6 +79,7 @@ void BossMissile::Update() {
 }
 
 void BossMissile::Draw() {
+
 	if (!isAlive_ || !object3d_) {
 		return;
 	}
@@ -61,6 +87,7 @@ void BossMissile::Draw() {
 }
 
 Vector3 BossMissile::GetCollisionPosition() const {
+
 	if (object3d_) {
 		return object3d_->GetWorldPosition();
 	}
@@ -68,6 +95,7 @@ Vector3 BossMissile::GetCollisionPosition() const {
 }
 
 float BossMissile::GetCollisionRadius() const {
+
 	if (!isAlive_) {
 		return 0.0f;
 	}
@@ -78,19 +106,15 @@ float BossMissile::GetCollisionRadius() const {
 }
 
 void BossMissile::OnCollision(ICollisionObject* other) {
+
 	if (!isAlive_ || !other) {
 		return;
 	}
 
 	if (other->GetCollisionLayer() == CollisionLayer::Player) {
-		if (auto* player = dynamic_cast<Player*>(other)) {
-			if (!player->IsInvincible()) {
-				player->Damage(1);
-				player->SetInvincible(true);
-				hitPlayer_ = true;
-				Kill();
-			}
-		}
+
+		hitPlayer_ = true;
+		Kill();
 	} else if (other->GetCollisionLayer() == CollisionLayer::PlayerBullet) {
 		Kill();
 	}

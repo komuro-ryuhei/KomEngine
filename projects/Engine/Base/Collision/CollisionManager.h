@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <algorithm>
 #include "ICollisionObject.h"
 #include "CollisionTypes.h"
 
@@ -20,7 +21,7 @@ public:
 	// デバッグ用：各オブジェクトのAABB情報
 	struct DebugAABBInfo
 	{
-		AABB          box;   // AABB（CollisionTypes.h のやつ）
+		AABB box; // AABB（CollisionTypes.h のやつ）
 		CollisionLayer layer; // そのAABBが属しているレイヤー
 	};
 
@@ -30,6 +31,7 @@ public:
 private:
 
 	bool IsPairEnabled(CollisionLayer a, CollisionLayer b) const;
+	void FlushPendingRemove();
 
 private:
 
@@ -42,4 +44,7 @@ private:
 
 	std::vector<ICollisionObject*> objects_;
 	std::vector<PairRule>          pairRules_;
+
+	bool isUpdating_ = false;
+	std::vector<ICollisionObject*> pendingRemove_;
 };

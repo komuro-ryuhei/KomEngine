@@ -37,7 +37,7 @@ void Player::Damage(int amount) {
 	hp_ -= amount;
 
 	if (camera_) {
-		camera_->StartShake(CameraShakeType::Small);
+		camera_->StartShake(CameraShakeType::Medium);
 	}
 }
 
@@ -627,18 +627,36 @@ CollisionLayer Player::GetCollisionLayer() const
 	return CollisionLayer::Player;
 }
 
-void Player::OnCollision(ICollisionObject* other)
-{
+void Player::OnCollision(ICollisionObject* other) {
+
 	switch (other->GetCollisionLayer()) {
 		// 敵と当たった場合
 	case CollisionLayer::Enemy:
 		if (!GetInvincible()) {
-			// Damage(1);
+			Damage(1);
 			SetInvincible(true);
 		}
 		break;
 		// 敵弾と当たった場合
 	case CollisionLayer::EnemyBullet:
+		if (!GetInvincible()) {
+			Damage(1);
+			SetInvincible(true);
+		}
+		break;
+	case CollisionLayer::EnemyCharge:
+		if (!GetInvincible()) {
+			Damage(1);
+			SetInvincible(true);
+		}
+		break;
+	case CollisionLayer::EnemyMeteor:
+		if (!GetInvincible()) {
+			Damage(1);
+			SetInvincible(true);
+		}
+		break;
+	case CollisionLayer::EnemyMissile:
 		if (!GetInvincible()) {
 			Damage(1);
 			SetInvincible(true);

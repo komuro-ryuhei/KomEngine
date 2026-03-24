@@ -92,12 +92,13 @@ void BossTestScene::Init() {
 	for (int i = 0; i < 32; ++i) {
 		auto m = std::make_unique<BossMeteor>();
 		m->Init(camera_.get());
+		m->SetCollisionManager(&collisionManager_);
 		meteors_.push_back(std::move(m));
 	}
 
 	// メテオを CollisionManager に登録
 	for (auto& m : meteors_) {
-		collisionManager_.Register(m.get());
+		// collisionManager_.Register(m.get());
 	}
 
 	// ボスのミサイル
@@ -106,12 +107,13 @@ void BossTestScene::Init() {
 	for (int i = 0; i < 4; ++i) {
 		auto m = std::make_unique<BossMissile>();
 		m->Init(camera_.get());
+		m->SetCollisionManager(&collisionManager_);
 		missiles_.push_back(std::move(m));
 	}
 
 	// ミサイルを CollisionManager に登録
 	for (auto& m : missiles_) {
-		collisionManager_.Register(m.get());
+		// collisionManager_.Register(m.get());
 	}
 
 	// ボスの攻撃管理
@@ -365,8 +367,15 @@ void BossTestScene::Update() {
 
 	// ボス
 	boss_->Update();
+
 	// ボスのメテオ攻撃用
-	for (auto& m : meteors_) m->Update();
+	for (auto& m : meteors_) {
+		m->Update();
+	}
+
+	for (auto& m : missiles_) {
+		m->Update();
+	}
 
 	// 
 	controlGuideSprite_->Update();

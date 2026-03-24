@@ -38,6 +38,17 @@ void BossMeteor::Spawn(const Vector3& startPos, const Vector3& targetPos, float 
 	lifeTimer_ = 0.0f;
 	isExploding_ = false;
 	isAlive_ = true;
+
+	if (object3d_) {
+		object3d_->SetTranslate(transform_.translate);
+		object3d_->SetRotate(transform_.rotate);
+		object3d_->Update();
+	}
+
+	if (collisionManager_ && !collisionRegistered_) {
+		collisionManager_->Register(this);
+		collisionRegistered_ = true;
+	}
 }
 
 void BossMeteor::Update() {
@@ -82,9 +93,13 @@ void BossMeteor::OnHitGround() {
 
 void BossMeteor::Explode() {
 
-	// 
 	isExploding_ = true;
 	isAlive_ = false;
+
+	if (collisionManager_ && collisionRegistered_) {
+		collisionManager_->Unregister(this);
+		collisionRegistered_ = false;
+	}
 }
 
 void BossMeteor::Draw() {
@@ -145,14 +160,7 @@ void BossMeteor::OnCollision(ICollisionObject* other) {
 
 	if (other->GetCollisionLayer() == CollisionLayer::Player) {
 
-		auto* player = dynamic_cast<Player*>(other);
-		if (player && !player->IsInvincible()) {
-
-			player->Damage(1);
-			player->SetInvincible(true);
-
-			Explode();   // メテオを消す
-		}
+		Explode();   // メテオを消す
 	} else if (other->GetCollisionLayer() == CollisionLayer::PlayerBullet) {
 		// 消滅
 		Explode();

@@ -3,6 +3,7 @@
 
 #include "Engine/Base/3d/Object3d/Object3d.h"
 #include "Engine/Base/Collision/ICollisionObject.h"
+#include "Engine/Base/Collision/CollisionManager.h"
 #include "Game/Entity/GameObject.h"
 
 class Camera;
@@ -20,10 +21,7 @@ public:
 	void Update() override;
 	void Draw() override;
 
-	void Kill() override {
-		isActive_ = false;
-		isAlive_ = false;
-	}
+	void Kill() override;
 
 	void Spawn(const Vector3& startPos, const Vector3& direction, float speed);
 	bool IsAlive() const { return isAlive_; }
@@ -37,6 +35,10 @@ public:
 	float GetCollisionRadius() const override;
 	CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyMissile; }
 	void OnCollision(ICollisionObject* other) override;
+
+	CollisionManager* collisionManager_ = nullptr;
+	bool collisionRegistered_ = false;
+	void SetCollisionManager(CollisionManager* mgr) { collisionManager_ = mgr; }
 
 private:
 	Camera* camera_ = nullptr;

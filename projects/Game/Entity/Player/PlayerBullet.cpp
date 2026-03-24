@@ -126,6 +126,21 @@ void PlayerBullet::OnCollision(ICollisionObject* other) {
 		pendingKill_ = true;
 		break;
 
+	case CollisionLayer::EnemyMeteor:
+
+		pendingKill_ = true;
+		break;
+
+	case CollisionLayer::EnemyCore:
+
+		pendingKill_ = true;
+		break;
+
+	case CollisionLayer::EnemyMissile:
+
+		pendingKill_ = true;
+		break;
+
 	case CollisionLayer::Environment:
 
 		// 敵やステージに当たったら弾は消える
