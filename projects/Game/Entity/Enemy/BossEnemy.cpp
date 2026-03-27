@@ -244,7 +244,7 @@ void BossEnemy::Update() {
 						landingShakeDone_ = true;
 					}
 					// 撃破後の着地時に砂ぼこりパーティクル発生
-					ParticleManager::GetInstance()->Emit("dust", transform_.translate, 80);
+					System::GetParticleManager()->Emit("dust", transform_.translate, 80);
 				}
 
 			}
@@ -832,7 +832,7 @@ void BossEnemy::UpdateEnrageTransition(float dt) {
 
 			// 復帰開始時に衝撃波
 			if (!enrageShockwaveEmitted_) {
-				auto* pm = ParticleManager::GetInstance();
+				auto* pm = System::GetParticleManager();
 				if (pm) {
 					if (pm->Exists("ring")) {
 						pm->Emit("ring", transform_.translate, 1);
@@ -1904,7 +1904,7 @@ void BossEnemy::ChargeEffect(float dt) {
 
 		Vector3 fxPos = GetChargeCoreWorldPos();
 
-		auto* pm = ParticleManager::GetInstance();
+		auto* pm = System::GetParticleManager();
 
 		const bool hasCore = pm->Exists("charge_core");
 		const bool hasPulse = pm->Exists("charge_pulse");

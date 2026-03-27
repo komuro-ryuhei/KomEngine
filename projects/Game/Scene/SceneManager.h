@@ -51,4 +51,6 @@ private:
 	// アセットプリローダー
 	std::unique_ptr<AssetPreloader> preloader_;
 	int loadBudgetPerFrame_ = 4;
+
+	bool commonAssetsLoaded_ = false;
 };

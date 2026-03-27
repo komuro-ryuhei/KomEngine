@@ -38,6 +38,7 @@ namespace {
 	std::unique_ptr<Light> light_;
 	std::unique_ptr<SrvManager> srvManager_;
 	std::unique_ptr<TextureManager> textureManager_;
+	std::unique_ptr<ParticleManager> particleManager_;
 	std::unique_ptr<ImGuiManager> imguiManager_;
 	std::unique_ptr<OffscreenRendering> offscreenRendering_;
 }
@@ -51,6 +52,8 @@ Input* System::GetInput() { return input_.get(); }
 SrvManager* System::GetSrvManager() { return srvManager_.get(); }
 
 TextureManager* System::GetTextureManager() { return textureManager_.get(); }
+
+ParticleManager* System::GetParticleManager() { return particleManager_.get(); }
 
 Light* System::GetLight() { return light_.get(); }
 
@@ -86,6 +89,9 @@ void System::Initialize(const char* title, int width, int height) {
 	// TextureManager
 	textureManager_ = std::make_unique<TextureManager>();
 	textureManager_->Init(srvManager_.get());
+
+	particleManager_ = std::make_unique<ParticleManager>();
+	particleManager_->Init(BlendType::BLEND_ADD);
 
 	ModelManager::GetInstance()->Init();
 
@@ -148,9 +154,6 @@ void System::Finalize() {
 	dxCommon_.reset();
 	input_.reset();
 	light_.reset();
-
-	//
-	ModelManager::GetInstance()->Finalize();
 
 	imguiManager_->Finalize();
 }

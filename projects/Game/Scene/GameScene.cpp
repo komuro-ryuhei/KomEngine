@@ -22,6 +22,7 @@ void GameScene::Init() {
 	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
 	camera_->SetTranslate({ 0.0f, 0.0f, -30.0f });
+	System::GetParticleManager()->SetCamera(camera_.get());
 
 	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
@@ -78,13 +79,13 @@ void GameScene::Init() {
 	// audio_->SoundPlayWave(audio_->GetXAudio2(), soundData);
 
 	// particle
-	ParticleManager::GetInstance()->Init(camera_.get(), BlendType::BLEND_ADD);
-	ParticleManager::GetInstance()->CreateParticleGeoup("hit", circle2, "a");
-	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
-	ParticleManager::GetInstance()->CreateParticleGeoup("ring", ring, "ring");
-	ParticleManager::GetInstance()->CreateParticleGeoup("cylinder", ring, "cylinder");
-	ParticleManager::GetInstance()->CreateParticleGeoup("moonLight", moonLight, "moonLight");
-	ParticleManager::GetInstance()->CreateParticleGeoup("ribbon", moonLight, "ribbon");
+	System::GetParticleManager()->Init(BlendType::BLEND_ADD);
+	System::GetParticleManager()->CreateParticleGeoup("hit", circle2, "a");
+	System::GetParticleManager()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
+	System::GetParticleManager()->CreateParticleGeoup("ring", ring, "ring");
+	System::GetParticleManager()->CreateParticleGeoup("cylinder", ring, "cylinder");
+	System::GetParticleManager()->CreateParticleGeoup("moonLight", moonLight, "moonLight");
+	System::GetParticleManager()->CreateParticleGeoup("ribbon", moonLight, "ribbon");
 
 	emitter_ = std::make_unique<ParticleEmitter>();
 	emitter_->Init("hit", { 0.0f, 0.0f, 10.0f }, 8);
@@ -208,10 +209,8 @@ void GameScene::Draw() {
 	// ステージエディターの描画
 	// loader_->Draw();
 
-	ParticleManager::GetInstance()->Draw();
+	System::GetParticleManager()->Draw();
 }
-
-void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }
 
 void GameScene::ImGuiDebug() {
 
@@ -278,7 +277,7 @@ double GameScene::NowSec() {
 void GameScene::ParticleUpdate() {
 
 	// パーティクルの更新処理
-	ParticleManager::GetInstance()->Update();
+	System::GetParticleManager()->Update();
 
 #ifdef USE_IMGUI
 

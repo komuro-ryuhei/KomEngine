@@ -5,20 +5,7 @@
 
 #include <numbers>
 
-ParticleManager* ParticleManager::instance = nullptr;
-
-ParticleManager* ParticleManager::GetInstance() {
-
-	if (instance == nullptr) {
-		instance = new ParticleManager;
-	}
-	return instance;
-}
-
-void ParticleManager::Init(Camera* camera, BlendType type) {
-
-	//
-	camera_ = camera;
+void ParticleManager::Init(BlendType type) {
 
 	//
 	pipelineManager_ = std::make_unique<PipelineManager>();
@@ -30,6 +17,10 @@ void ParticleManager::Init(Camera* camera, BlendType type) {
 }
 
 void ParticleManager::Update() {
+
+	if (!camera_) {
+		return;
+	}
 
 	std::random_device seedGenerator;
 	std::mt19937 randomEngine(seedGenerator());
@@ -66,7 +57,7 @@ void ParticleManager::Update() {
 			particle.color.w = lifeRatio;
 
 			// -----------------------------
-			// ★ チャージ専用の見た目調整
+			// チャージ専用の見た目調整
 			// -----------------------------
 			if (name == "charge_core") {
 				// 少し回転（エネルギー感）
@@ -156,12 +147,6 @@ void ParticleManager::Draw() {
 
 		System::GetDxCommon()->GetCommandList()->DrawInstanced(static_cast<UINT>(group.vertices.size()), group.instanceCount, 0, 0);
 	}
-}
-
-void ParticleManager::Finalize() {
-
-	delete instance;
-	instance = nullptr;
 }
 
 void ParticleManager::Emit(const std::string name, const Vector3& position, uint32_t count) {

@@ -1,4 +1,3 @@
-
 #pragma once
 
 // C++
@@ -56,14 +55,17 @@ class ParticleManager {
 
 public:
 
-	static ParticleManager* GetInstance();
+	ParticleManager() = default;
+	~ParticleManager() = default;
+	ParticleManager(ParticleManager&) = delete;
+	ParticleManager& operator=(ParticleManager&) = delete;
 
 	/// <summary>
 	/// 初期化処理
 	/// </summary>
 	/// <param name="camera"> カメラ </param>
 	/// <param name="type"> ブレンドタイプ </param>
-	void Init(Camera* camera, BlendType type);
+	void Init(BlendType type);
 
 	/// <summary>
 	/// 更新処理
@@ -75,10 +77,10 @@ public:
 	/// </summary>
 	void Draw();
 
-	/// <summary>
-	/// 終了処理
-	/// </summary>
-	void Finalize();
+public:
+
+	// setter
+	void SetCamera(Camera* camera) { camera_ = camera; }
 
 	/// <summary>
 	/// 生成
@@ -102,7 +104,7 @@ public:
 	// ★ 弾道パーティクル（細い白線）
 	Particle MakeTrailParticle(const Vector3& pos);
 
-	// ★ 弾道専用 Emit
+	// 弾道専用 Emit
 	void EmitTrail(const Vector3& pos, const Vector3& dir);
 
 	// 白いリングのエフェクト
@@ -131,15 +133,7 @@ public:
 	}
 
 private:
-	ParticleManager() = default;
-	~ParticleManager() = default;
-	ParticleManager(ParticleManager&) = delete;
-	ParticleManager& operator=(ParticleManager&) = delete;
 
-public:
-	static ParticleManager* instance;
-
-private:
 	Camera* camera_ = nullptr;
 
 	ModelData modelData;

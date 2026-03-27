@@ -543,7 +543,7 @@ void Player::ChargeEffect(float dt) {
 	pulseColor.w = 0.85f;
 
 	// ParticleManager に反映
-	ParticleManager::GetInstance()->SetChargeEffectColor(coreColor, pulseColor);
+	System::GetParticleManager()->SetChargeEffectColor(coreColor, pulseColor);
 
 	// ----------------------------
 	// カメラ基準で「手元位置」を作る

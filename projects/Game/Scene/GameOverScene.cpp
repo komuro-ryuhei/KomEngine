@@ -2,29 +2,11 @@
 
 void GameOverScene::Init() {
 
-	// テクスチャ、モデルの読み込み
-	System::GetTextureManager()->LoadTexture("./Resources/images/uvChecker.png");
-	System::GetTextureManager()->LoadTexture("./Resources/images/circle.png");
-	System::GetTextureManager()->LoadTexture("./Resources/images/circle2.png");
-	System::GetTextureManager()->LoadTexture("./Resources/images/test.dds");
-	System::GetTextureManager()->LoadTexture("./Resources/images/ground.png");
-	System::GetTextureManager()->LoadTexture("./Resources/images/YOUDIE.png");
-
-	ModelManager::GetInstance()->LoadModel("plane.obj");
-	ModelManager::GetInstance()->LoadModel("sphere.obj");
-	ModelManager::GetInstance()->LoadModel("axis.obj");
-	ModelManager::GetInstance()->LoadModel("cube.obj");
-	ModelManager::GetInstance()->LoadModel("Player.obj");
-	ModelManager::GetInstance()->LoadModel("Enemy.obj");
-	ModelManager::GetInstance()->LoadModel("ground.obj");
-	ModelManager::GetInstance()->LoadModel("hand.obj");
-	ModelManager::GetInstance()->LoadModel("BossEnemy.obj");
-	ModelManager::GetInstance()->LoadModel("downPlayer.obj");
-
 	// カメラ
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.6f, 0.0f, 0.0f });
 	camera_->SetTranslate({ 0.0f, 25.0f, -30.0f });
+	System::GetParticleManager()->SetCamera(camera_.get());
 
 	// スプライト
 	sprite_ = std::make_unique<Sprite>();

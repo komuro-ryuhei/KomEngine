@@ -22,6 +22,7 @@ void BossTestScene::Init() {
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
 	// camera_->SetTranslate({ 0.0f, 0.0f, -30.0f });
+	System::GetParticleManager()->SetCamera(camera_.get());
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
@@ -158,8 +159,8 @@ void BossTestScene::Init() {
 	bossIntroGlintSprite_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
 	// パーティクル
-	auto* pm = ParticleManager::GetInstance();
-	pm->Init(camera_.get(), BlendType::BLEND_ADD);
+	auto* pm = System::GetParticleManager();
+	pm->Init(BlendType::BLEND_ADD);
 
 	pm->CreateParticleGeoup("hit", circle2, "a");
 	pm->CreateParticleGeoup("explosion", monsterBallTexture, "a");
@@ -420,7 +421,7 @@ void BossTestScene::Update() {
 	}
 
 	// パーティクルの更新処理
-	ParticleManager::GetInstance()->Update();
+	System::GetParticleManager()->Update();
 
 	// ポストエフェクトの変更
 	ChangePostEffect();
@@ -546,7 +547,7 @@ void BossTestScene::Draw() {
 	// debugLine_.Draw();
 
 	// パーティクル描画
-	ParticleManager::GetInstance()->Draw();
+	System::GetParticleManager()->Draw();
 
 	// リザルト
 	result_->Draw();

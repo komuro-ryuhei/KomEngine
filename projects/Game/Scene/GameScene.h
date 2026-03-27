@@ -56,9 +56,8 @@ public:
 
 	void Draw() override;
 
-	void Finalize() override;
-
 private:
+
 	// カメラシェイク
 	// void CameraShake();
 	// 当たり判定処理
@@ -67,6 +66,7 @@ private:
 	void ImGuiDebug();
 
 private:
+
 	// Camera
 	std::unique_ptr<Camera> camera_ = nullptr;
 	// Audio

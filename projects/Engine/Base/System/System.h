@@ -25,6 +25,7 @@
 #include "Engine/lib/Logger/Logger.h"
 #include "Engine/Base/SrvManager/SrvManager.h"
 #include "Engine/Base/TextureManager/TextureManager.h"
+#include "Engine/Base/Particle/ParticleManager.h"
 
 /// <summary>
 /// システム
@@ -87,6 +88,7 @@ public:
 	static Input* GetInput();                           // Inputの取得
 	static SrvManager* GetSrvManager();                 // SrvManagerの取得
 	static TextureManager* GetTextureManager();         // TextureManagerの取得
+	static ParticleManager* GetParticleManager();       // ParticleManagerの取得
 	static Light* GetLight();                           // Lightの取得
 	static WinApp* GetWinApp();                         // WinAppの取得
 	static OffscreenRendering* GetOffscreenRendering(); // OffscreenRenderingの取得
