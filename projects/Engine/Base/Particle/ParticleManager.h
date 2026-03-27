@@ -2,6 +2,7 @@
 
 // C++
 #include <Random>
+#include <functional>
 
 // MyClass
 #include "Engine/Base/Camera/Camera.h"
@@ -97,7 +98,7 @@ public:
 	// ヒットエフェクトっぽいパーティクル
 	Particle MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate);
 	// 埃っぽいパーティクル
-	Particle MakeDustParticle(std::mt19937 &randomEngine, const Vector3 &translate);
+	Particle MakeDustParticle(std::mt19937& randomEngine, const Vector3& translate);
 	// マズルフラッシュのパーティクル
 	Particle MakeMuzzleFlashParticle(std::mt19937& randomEngine, const Vector3& translate);
 
@@ -165,4 +166,22 @@ private:
 	/// 渦巻きエミッター更新
 	/// </summary>
 	void UpdateSpiralEmitter();
+
+	// 
+	using EmitFunc = std::function<void(ParticleGroup&, const Vector3&, uint32_t)>;
+	std::unordered_map<std::string, EmitFunc> emitTable_;
+
+	void BuildEmitTable();
+
+	void EmitExplosion(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitHit(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitMuzzle(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitDust(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitRing(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitCylinder(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitMoonLight(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitChargeCore(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitChargePulse(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitRibbon(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitTrailGroup(ParticleGroup& group, const Vector3& position, uint32_t count);
 };

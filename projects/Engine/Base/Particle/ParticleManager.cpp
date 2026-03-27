@@ -14,6 +14,8 @@ void ParticleManager::Init(BlendType type) {
 	std::random_device seedGenerator;
 	std::mt19937 randomEngine(seedGenerator());
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+
+	BuildEmitTable();
 }
 
 void ParticleManager::Update() {
@@ -151,56 +153,19 @@ void ParticleManager::Draw() {
 
 void ParticleManager::Emit(const std::string name, const Vector3& position, uint32_t count) {
 
-	// 指定したパーティクルグループが存在するか確認
-	auto it = particleGroups.find(name);
-	if (it == particleGroups.end()) {
+	auto groupIt = particleGroups.find(name);
+	if (groupIt == particleGroups.end()) {
 		assert(false && "Particle group not found.");
 		return;
 	}
 
-	ParticleGroup& group = it->second;
-
-	if (name == "trail") {
-		// ★ 弾道用：ランダムは使わず、位置固定・短命の線を量産
-		for (int i = 0; i < count; ++i) {
-			group.particles.push_back(MakeTrailParticle(position));
-		}
+	auto emitIt = emitTable_.find(name);
+	if (emitIt == emitTable_.end()) {
+		assert(false && "Emit function not found.");
 		return;
 	}
 
-	// ランダムエンジンの初期化
-	std::random_device seedGenerator;
-	std::mt19937 randomEngine(seedGenerator());
-
-	// 指定した数だけパーティクルを発生
-	for (uint32_t i = 0; i < count; ++i) {
-		if (name == "explosion") {
-			group.particles.push_back(MakeRandomParticle(randomEngine, position));
-		} else if (name == "hit") {
-			group.particles.push_back(MakeNewParticle(randomEngine, position));
-		} else if (name == "muzzle") {
-			group.particles.push_back(MakeMuzzleFlashParticle(randomEngine, position));
-		} else if (name == "dust") {
-			group.particles.push_back(MakeDustParticle(randomEngine, position));
-		} else if (name == "ring") {
-			group.particles.push_back(MakeRingParticle(randomEngine, position));
-		} else if (name == "cylinder") {
-			group.particles.push_back(MakeCylinderParticle(randomEngine, position));
-		} else if (name == "moonLight") {
-			group.particles.push_back(MakeRingParticle(randomEngine, position));
-			group.particles.push_back(MakeMoonLightParticle(position, true));
-			group.particles.push_back(MakeMoonLightParticle(position, false));
-		} else if (name == "charge_core") {
-			group.particles.push_back(MakeChargeCoreParticle(randomEngine, position));
-		} else if (name == "charge_pulse") {
-			group.particles.push_back(MakeChargePulseRingParticle(randomEngine, position));
-		} else if (name == "ribbon") {
-			spiralEmitter.position = position;
-			spiralEmitter.count = 0;
-			spiralEmitter.timer = 0.0f;
-			spiralEmitter.active = true;
-		}
-	}
+	emitIt->second(groupIt->second, position, count);
 }
 
 void ParticleManager::CreateParticleGeoup(const std::string name, const std::string textureFilePath, const std::string& particleType) {
@@ -305,7 +270,7 @@ Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vect
 	return particle;
 }
 
-Particle ParticleManager::MakeDustParticle(std::mt19937 &randomEngine, const Vector3 &translate)
+Particle ParticleManager::MakeDustParticle(std::mt19937& randomEngine, const Vector3& translate)
 {
 	std::uniform_real_distribution<float> distPos(-1.2f, 1.2f);   // 広めに散る
 	std::uniform_real_distribution<float> distVelX(-0.05f, 0.05f);
@@ -737,4 +702,163 @@ Particle ParticleManager::MakeChargePulseRingParticle(std::mt19937& randomEngine
 	p.currentTime = 0.0f;
 
 	return p;
+}
+
+void ParticleManager::BuildEmitTable() {
+
+	emitTable_.clear();
+
+	emitTable_["explosion"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitExplosion(group, position, count);
+		};
+
+	emitTable_["hit"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitHit(group, position, count);
+		};
+
+	emitTable_["muzzle"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitMuzzle(group, position, count);
+		};
+
+	emitTable_["dust"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitDust(group, position, count);
+		};
+
+	emitTable_["ring"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitRing(group, position, count);
+		};
+
+	emitTable_["cylinder"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitCylinder(group, position, count);
+		};
+
+	emitTable_["moonLight"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitMoonLight(group, position, count);
+		};
+
+	emitTable_["charge_core"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitChargeCore(group, position, count);
+		};
+
+	emitTable_["charge_pulse"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitChargePulse(group, position, count);
+		};
+
+	emitTable_["ribbon"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitRibbon(group, position, count);
+		};
+
+	emitTable_["trail"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitTrailGroup(group, position, count);
+		};
+}
+
+void ParticleManager::EmitExplosion(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeRandomParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitHit(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeNewParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitMuzzle(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeMuzzleFlashParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitDust(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeDustParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitRing(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeRingParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitCylinder(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeCylinderParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitMoonLight(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeRingParticle(randomEngine, position));
+		group.particles.push_back(MakeMoonLightParticle(position, true));
+		group.particles.push_back(MakeMoonLightParticle(position, false));
+	}
+}
+
+void ParticleManager::EmitChargeCore(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeChargeCoreParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitChargePulse(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeChargePulseRingParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitRibbon(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	(void)group;
+	(void)count;
+
+	spiralEmitter.position = position;
+	spiralEmitter.count = 0;
+	spiralEmitter.timer = 0.0f;
+	spiralEmitter.active = true;
+}
+
+void ParticleManager::EmitTrailGroup(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeTrailParticle(position));
+	}
 }

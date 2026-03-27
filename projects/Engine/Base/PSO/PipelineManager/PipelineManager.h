@@ -11,6 +11,7 @@
 
 #include <string>
 #include <memory>
+#include <unordered_map>
 
 class RootSignature;
 
@@ -18,15 +19,11 @@ class RootSignature;
 /// パイプライン管理
 /// </summary>
 class PipelineManager {
+
 public:
+
 	PipelineManager() = default;
 	~PipelineManager() = default;
-
-	/// <summary>
-	/// シングルトンインスタンス
-	/// </summary>
-	/// <returns></returns>
-	static PipelineManager* GetInstance();
 
 	/// <summary>
 	/// ShaderをCompile
@@ -49,6 +46,14 @@ public:
 	ID3D12PipelineState* GetGraphicsPipelineState() const; // グラフィックスパイプラインステートの取得
 
 private:
+
+	struct ShaderPair {
+		std::wstring vsPath;
+		std::wstring psPath;
+	};
+
+	static const std::unordered_map<std::string, ShaderPair> kShaderTable;
+
 	std::unique_ptr<Compiler> compiler_ = std::make_unique<Compiler>();
 	std::unique_ptr<RootSignature> rootSignature_ = std::make_unique<RootSignature>();
 	std::unique_ptr<InputLayout> inputLayout_ = std::make_unique<InputLayout>();
@@ -62,6 +67,7 @@ private:
 	ComPtr<IDxcBlob> psBlob;
 
 private:
+
 	PipelineManager(const PipelineManager&) = delete;
 	const PipelineManager& operator=(const PipelineManager&) = delete;
 };
