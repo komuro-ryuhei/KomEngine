@@ -8,17 +8,17 @@ void LineRenderer::Init(uint32_t maxLines, BlendType type)
 
     maxVertices_ = maxLines * 2;
 
-    auto* device = System::GetDxCommon()->GetDevice();
+    auto* device = KomEngine::System::GetDxCommon()->GetDevice();
     const uint32_t bufferSize = sizeof(LineVertex) * maxVertices_;
 
-    vertexResource_ = System::GetDxCommon()->CreateBufferResource(device, bufferSize);
+    vertexResource_ = KomEngine::System::GetDxCommon()->CreateBufferResource(device, bufferSize);
     vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
 
     vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
     vertexBufferView_.StrideInBytes = sizeof(LineVertex);
     vertexBufferView_.SizeInBytes = bufferSize;
 
-    cameraResource_ = System::GetDxCommon()->CreateBufferResource(
+    cameraResource_ = KomEngine::System::GetDxCommon()->CreateBufferResource(
         device, sizeof(LineCameraMatrix));
     cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraData_));
 
@@ -60,7 +60,7 @@ void LineRenderer::Draw()
 {
     if (vertexCount_ == 0) return;
 
-    auto commandList = System::GetDxCommon()->GetCommandList();
+    auto commandList = KomEngine::System::GetDxCommon()->GetCommandList();
 
     commandList->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
     commandList->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());

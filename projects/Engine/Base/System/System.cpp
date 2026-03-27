@@ -43,25 +43,25 @@ namespace {
 	std::unique_ptr<OffscreenRendering> offscreenRendering_;
 }
 
-float System::GetDeltaTime() { return kDeltaTime_; }
+float KomEngine::System::GetDeltaTime() { return kDeltaTime_; }
 
-DirectXCommon* System::GetDxCommon() { return dxCommon_.get(); }
+DirectXCommon* KomEngine::System::GetDxCommon() { return dxCommon_.get(); }
 
-Input* System::GetInput() { return input_.get(); }
+Input* KomEngine::System::GetInput() { return input_.get(); }
 
-SrvManager* System::GetSrvManager() { return srvManager_.get(); }
+SrvManager* KomEngine::System::GetSrvManager() { return srvManager_.get(); }
 
-TextureManager* System::GetTextureManager() { return textureManager_.get(); }
+TextureManager* KomEngine::System::GetTextureManager() { return textureManager_.get(); }
 
-ParticleManager* System::GetParticleManager() { return particleManager_.get(); }
+ParticleManager* KomEngine::System::GetParticleManager() { return particleManager_.get(); }
 
-Light* System::GetLight() { return light_.get(); }
+Light* KomEngine::System::GetLight() { return light_.get(); }
 
-WinApp* System::GetWinApp() { return winApp_.get(); }
+WinApp* KomEngine::System::GetWinApp() { return winApp_.get(); }
 
-OffscreenRendering* System::GetOffscreenRendering() { return offscreenRendering_.get(); }
+OffscreenRendering* KomEngine::System::GetOffscreenRendering() { return offscreenRendering_.get(); }
 
-void System::Initialize(const char* title, int width, int height) {
+void KomEngine::System::Initialize(const char* title, int width, int height) {
 
 	winApp_ = std::make_unique<WinApp>();
 
@@ -104,9 +104,9 @@ void System::Initialize(const char* title, int width, int height) {
 	imguiManager_->Init(winApp_.get());
 }
 
-bool System::ProcessMessage() { return winApp_->ProcessMessage(); }
+bool KomEngine::System::ProcessMessage() { return winApp_->ProcessMessage(); }
 
-void System::BeginFrame() {
+void KomEngine::System::BeginFrame() {
 
 	offscreenRendering_->RenderToTexture();
 
@@ -123,9 +123,9 @@ void System::BeginFrame() {
 #endif // _DEBUG
 }
 
-void System::Update() {}
+void KomEngine::System::Update() {}
 
-void System::EndFrame() {
+void KomEngine::System::EndFrame() {
 
 	// DirectX描画前処理
 	dxCommon_->PreDraw();
@@ -145,7 +145,7 @@ void System::EndFrame() {
 	dxCommon_->PostDraw();
 }
 
-void System::Finalize() {
+void KomEngine::System::Finalize() {
 
 	winApp_->TerminateGameWindow();
 
@@ -158,6 +158,6 @@ void System::Finalize() {
 	imguiManager_->Finalize();
 }
 
-bool System::PushKey(BYTE keyNumber) { return input_->PushKey(keyNumber); }
+bool KomEngine::System::PushKey(BYTE keyNumber) { return input_->PushKey(keyNumber); }
 
-bool System::TriggerKey(BYTE keyNumber) { return input_->TriggerKey(keyNumber); }
+bool KomEngine::System::TriggerKey(BYTE keyNumber) { return input_->TriggerKey(keyNumber); }

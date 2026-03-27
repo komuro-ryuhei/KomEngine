@@ -9,7 +9,7 @@ void OffscreenRendering::SetPostEffect(const std::string& effectName) {
 void OffscreenRendering::Init() {
 
 	// PointLight用のマテリアルリソースを作る
-	materialBufferResource_ = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(MaterialBuffer));
+	materialBufferResource_ = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(MaterialBuffer));
 	materialBufferResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialBufferData_));
 
 	materialBufferData_->time = 0.0f;
@@ -28,14 +28,14 @@ void OffscreenRendering::Draw() {
 	materialBufferData_->time += 0.01f;
 
 	// オブジェクトの描画処理
-	System::GetDxCommon()->GetCommandList()->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
-	System::GetDxCommon()->GetCommandList()->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
-	System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(
-	    1, System::GetDxCommon()->GetGPUDescriptorHandle(System::GetDxCommon()->GetSrvDescriptorHeap(), System::GetDxCommon()->GetDescriptorSizeSRV(), 0)); // SRVの設定
-	System::GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(2, materialBufferResource_->GetGPUVirtualAddress());
+	KomEngine::System::GetDxCommon()->GetCommandList()->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
+	KomEngine::System::GetDxCommon()->GetCommandList()->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
+	KomEngine::System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(
+	    1, KomEngine::System::GetDxCommon()->GetGPUDescriptorHandle(KomEngine::System::GetDxCommon()->GetSrvDescriptorHeap(), KomEngine::System::GetDxCommon()->GetDescriptorSizeSRV(), 0)); // SRVの設定
+	KomEngine::System::GetDxCommon()->GetCommandList()->SetGraphicsRootConstantBufferView(2, materialBufferResource_->GetGPUVirtualAddress());
 
 	// 描画
-	System::GetDxCommon()->GetCommandList()->DrawInstanced(3, 1, 0, 0);
+	KomEngine::System::GetDxCommon()->GetCommandList()->DrawInstanced(3, 1, 0, 0);
 }
 
 void OffscreenRendering::PostDraw() {
@@ -44,7 +44,7 @@ void OffscreenRendering::PostDraw() {
 	renderTextureBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	renderTextureBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-	System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &renderTextureBarrier);
+	KomEngine::System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &renderTextureBarrier);
 }
 
 ComPtr<ID3D12Resource> OffscreenRendering::CreateRenderTextureResource(ID3D12Device* device, UINT width, UINT height, DXGI_FORMAT format, const Vector4& clearColor) {
@@ -81,16 +81,16 @@ ComPtr<ID3D12Resource> OffscreenRendering::CreateRenderTextureResource(ID3D12Dev
 
 void OffscreenRendering::OffScreeenRenderTargetView() {
 
-	renderTargetHandle_ = System::GetDxCommon()->GetRtvStartHandle();
-	renderTargetHandle_.ptr += System::GetDxCommon()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * 2;
+	renderTargetHandle_ = KomEngine::System::GetDxCommon()->GetRtvStartHandle();
+	renderTargetHandle_.ptr += KomEngine::System::GetDxCommon()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * 2;
 
 	//
 	const Vector4 kRenderTargetClearValue = {kRenderTargetClearValue_};
 	renderTextureResource_ = CreateRenderTextureResource(
-	    System::GetDxCommon()->GetDevice(), System::GetWinApp()->GetWindowWidth(), System::GetWinApp()->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
+	    KomEngine::System::GetDxCommon()->GetDevice(), KomEngine::System::GetWinApp()->GetWindowWidth(), KomEngine::System::GetWinApp()->GetWindowHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, kRenderTargetClearValue);
 
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = System::GetDxCommon()->GetRtvDesc();
-	System::GetDxCommon()->GetDevice()->CreateRenderTargetView(renderTextureResource_.Get(), &rtvDesc, renderTargetHandle_);
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = KomEngine::System::GetDxCommon()->GetRtvDesc();
+	KomEngine::System::GetDxCommon()->GetDevice()->CreateRenderTargetView(renderTextureResource_.Get(), &rtvDesc, renderTargetHandle_);
 
 	// SRVの設定
 	D3D12_SHADER_RESOURCE_VIEW_DESC renderTextureSrvDesc{};
@@ -100,8 +100,8 @@ void OffscreenRendering::OffScreeenRenderTargetView() {
 	renderTextureSrvDesc.Texture2D.MipLevels = 1;
 
 	// SRVの生成
-	System::GetDxCommon()->GetDevice()->CreateShaderResourceView(
-	    renderTextureResource_.Get(), &renderTextureSrvDesc, System::GetDxCommon()->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
+	KomEngine::System::GetDxCommon()->GetDevice()->CreateShaderResourceView(
+	    renderTextureResource_.Get(), &renderTextureSrvDesc, KomEngine::System::GetDxCommon()->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 }
 
 void OffscreenRendering::OffScreenShaderResourceView() {}
@@ -113,28 +113,28 @@ void OffscreenRendering::RenderToTexture() {
 	renderTextureBarrier.Transition.pResource = renderTextureResource_.Get();
 
 	// レンダーテクスチャをターゲットとして設定
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = System::GetDxCommon()->GetDsvHandle();
-	System::GetDxCommon()->GetCommandList()->OMSetRenderTargets(1, &renderTargetHandle_, false, &dsvHandle);
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = KomEngine::System::GetDxCommon()->GetDsvHandle();
+	KomEngine::System::GetDxCommon()->GetCommandList()->OMSetRenderTargets(1, &renderTargetHandle_, false, &dsvHandle);
 
 	// レンダーテクスチャをクリア
 	float clearColor[] = {kRenderTargetClearValue_.x, kRenderTargetClearValue_.y, kRenderTargetClearValue_.z, kRenderTargetClearValue_.w};
-	System::GetDxCommon()->GetCommandList()->ClearRenderTargetView(renderTargetHandle_, clearColor, 0, nullptr);
+	KomEngine::System::GetDxCommon()->GetCommandList()->ClearRenderTargetView(renderTargetHandle_, clearColor, 0, nullptr);
 
 	// 深度ステンシルをクリア
-	System::GetDxCommon()->GetCommandList()->ClearDepthStencilView(System::GetDxCommon()->GetDsvHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	KomEngine::System::GetDxCommon()->GetCommandList()->ClearDepthStencilView(KomEngine::System::GetDxCommon()->GetDsvHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	// ビューポートとシザー矩形を設定
-	D3D12_VIEWPORT viewport = System::GetDxCommon()->GetViewPort();
-	D3D12_RECT scissorRect = System::GetDxCommon()->GetScissor();
-	System::GetDxCommon()->GetCommandList()->RSSetViewports(1, &viewport);
-	System::GetDxCommon()->GetCommandList()->RSSetScissorRects(1, &scissorRect);
+	D3D12_VIEWPORT viewport = KomEngine::System::GetDxCommon()->GetViewPort();
+	D3D12_RECT scissorRect = KomEngine::System::GetDxCommon()->GetScissor();
+	KomEngine::System::GetDxCommon()->GetCommandList()->RSSetViewports(1, &viewport);
+	KomEngine::System::GetDxCommon()->GetCommandList()->RSSetScissorRects(1, &scissorRect);
 
-	System::GetDxCommon()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	KomEngine::System::GetDxCommon()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 void OffscreenRendering::OffscreenBarrier() {
 
 	renderTextureBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	renderTextureBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &renderTextureBarrier);
+	KomEngine::System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &renderTextureBarrier);
 }

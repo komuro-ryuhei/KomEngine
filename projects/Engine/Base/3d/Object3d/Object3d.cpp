@@ -18,8 +18,8 @@ void Object3d::Init(const std::string& shaderType, BlendType type) {
 	pipelineManager_->PSOSetting(shaderType, type);
 
 	transformationMatrixResource =
-		System::GetDxCommon()->CreateBufferResource(
-			System::GetDxCommon()->GetDevice(),
+		KomEngine::System::GetDxCommon()->CreateBufferResource(
+			KomEngine::System::GetDxCommon()->GetDevice(),
 			sizeof(TransformationMatrix));
 	transformationMatrixResource->Map(
 		0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
@@ -28,8 +28,8 @@ void Object3d::Init(const std::string& shaderType, BlendType type) {
 	transformationMatrixData->World = MyMath::MakeIdentity4x4();
 
 	objectParamResource_ =
-		System::GetDxCommon()->CreateBufferResource(
-			System::GetDxCommon()->GetDevice(),
+		KomEngine::System::GetDxCommon()->CreateBufferResource(
+			KomEngine::System::GetDxCommon()->GetDevice(),
 			sizeof(ObjectParams));
 	objectParamResource_->Map(
 		0, nullptr, reinterpret_cast<void**>(&objectParamData_));
@@ -114,7 +114,7 @@ void Object3d::Update() {
 
 void Object3d::Draw() {
 
-	ComPtr<ID3D12GraphicsCommandList> commandList = System::GetDxCommon()->GetCommandList();
+	ComPtr<ID3D12GraphicsCommandList> commandList = KomEngine::System::GetDxCommon()->GetCommandList();
 
 	// コマンド: ルートシグネチャを設定
 	commandList->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
@@ -125,13 +125,13 @@ void Object3d::Draw() {
 	// TransformationMatrixCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 	// DirectionalLight の CBV を設定（RootParameter 3）
-	commandList->SetGraphicsRootConstantBufferView(3, System::GetLight()->GetLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(3, KomEngine::System::GetLight()->GetLightResource()->GetGPUVirtualAddress());
 	//
-	commandList->SetGraphicsRootConstantBufferView(4, System::GetLight()->GetPhongLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(4, KomEngine::System::GetLight()->GetPhongLightResource()->GetGPUVirtualAddress());
 	//
-	commandList->SetGraphicsRootConstantBufferView(5, System::GetLight()->GetPointLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(5, KomEngine::System::GetLight()->GetPointLightResource()->GetGPUVirtualAddress());
 
-	commandList->SetGraphicsRootConstantBufferView(6, System::GetLight()->GetSpotLightResource()->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(6, KomEngine::System::GetLight()->GetSpotLightResource()->GetGPUVirtualAddress());
 
 	if (environmentGpuHandle_.ptr != 0) {
 		commandList->SetGraphicsRootDescriptorTable(7, environmentGpuHandle_);
@@ -203,7 +203,7 @@ Vector3 Object3d::GetRotate() const { return transform_.rotate; }
 Vector3 Object3d::GetTranslate() const { return transform_.translate; }
 
 void Object3d::SetEnvironmentTexture(const std::string& filePath) {
-	environmentGpuHandle_ = System::GetTextureManager()->GetSrvHandleGPU(filePath);
+	environmentGpuHandle_ = KomEngine::System::GetTextureManager()->GetSrvHandleGPU(filePath);
 	if (objectParamData_) {
 		objectParamData_->useEnvironmentMap = true;
 	}

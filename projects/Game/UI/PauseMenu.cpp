@@ -38,7 +38,7 @@ void PauseMenu::Toggle() { isPaused_ = !isPaused_; }
 
 PauseMenu::Result PauseMenu::Update(float dt) {
 
-	Input* input = System::GetInput();
+	Input* input = KomEngine::System::GetInput();
 
 	const POINT p = input->GetMousePosition();
 	const Vector2 mouse{ (float)p.x, (float)p.y };

@@ -102,7 +102,7 @@ void BossEnemy::Init(Camera* camera) {
 
 void BossEnemy::Update() {
 
-	const float dt = System::GetDeltaTime();
+	const float dt = KomEngine::System::GetDeltaTime();
 
 	UpdateChargeCrossPose(dt);
 	UpdateEnrageTransition(dt);
@@ -244,7 +244,7 @@ void BossEnemy::Update() {
 						landingShakeDone_ = true;
 					}
 					// 撃破後の着地時に砂ぼこりパーティクル発生
-					System::GetParticleManager()->Emit("dust", transform_.translate, 80);
+					KomEngine::System::GetParticleManager()->Emit("dust", transform_.translate, 80);
 				}
 
 			}
@@ -252,7 +252,7 @@ void BossEnemy::Update() {
 	} else {
 		// 生きている間の従来処理
 
-		if (System::GetInput()->PushKey(DIK_SPACE)) {
+		if (KomEngine::System::GetInput()->PushKey(DIK_SPACE)) {
 			pushEnter_ = true;
 		}
 
@@ -832,7 +832,7 @@ void BossEnemy::UpdateEnrageTransition(float dt) {
 
 			// 復帰開始時に衝撃波
 			if (!enrageShockwaveEmitted_) {
-				auto* pm = System::GetParticleManager();
+				auto* pm = KomEngine::System::GetParticleManager();
 				if (pm) {
 					if (pm->Exists("ring")) {
 						pm->Emit("ring", transform_.translate, 1);
@@ -1904,7 +1904,7 @@ void BossEnemy::ChargeEffect(float dt) {
 
 		Vector3 fxPos = GetChargeCoreWorldPos();
 
-		auto* pm = System::GetParticleManager();
+		auto* pm = KomEngine::System::GetParticleManager();
 
 		const bool hasCore = pm->Exists("charge_core");
 		const bool hasPulse = pm->Exists("charge_pulse");

@@ -4,7 +4,7 @@ void Model::Init(const std::string& directoryPath, const std::string& filename) 
 
 	modelData = LoadObjFile(std::move(directoryPath), std::move(filename));
 
-	vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * modelData.vertices.size());
+	vertexResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(VertexData) * modelData.vertices.size());
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
 	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
@@ -12,20 +12,20 @@ void Model::Init(const std::string& directoryPath, const std::string& filename) 
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
 
-	materialResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(Material));
+	materialResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(Material));
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	materialData->enableLighting = false;
 	materialData->uvTransform = MyMath::MakeIdentity4x4();
 	materialData->shininess = 48.3f;
 
-	System::GetTextureManager()->LoadTexture(modelData.material.textureFilePath);
-	modelData.material.textureIndex = System::GetTextureManager()->GetTextureIndexByFilePath(modelData.material.textureFilePath);
+	KomEngine::System::GetTextureManager()->LoadTexture(modelData.material.textureFilePath);
+	modelData.material.textureIndex = KomEngine::System::GetTextureManager()->GetTextureIndexByFilePath(modelData.material.textureFilePath);
 }
 
 void Model::Draw() {
 
-	ComPtr<ID3D12GraphicsCommandList> commandList = System::GetDxCommon()->GetCommandList();
+	ComPtr<ID3D12GraphicsCommandList> commandList = KomEngine::System::GetDxCommon()->GetCommandList();
 
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
 
@@ -33,7 +33,7 @@ void Model::Draw() {
 
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 
-	commandList->SetGraphicsRootDescriptorTable(2, System::GetTextureManager()->GetSrvHandleGPU(modelData.material.textureFilePath));
+	commandList->SetGraphicsRootDescriptorTable(2, KomEngine::System::GetTextureManager()->GetSrvHandleGPU(modelData.material.textureFilePath));
 
 	// Modelの描画
 	commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);

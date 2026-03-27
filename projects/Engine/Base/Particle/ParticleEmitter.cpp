@@ -19,5 +19,5 @@ void ParticleEmitter::Update() {
 void ParticleEmitter::Emit() { 
 	
 	// 
-	System::GetParticleManager()->Emit(name_, translate_, count_);
+	KomEngine::System::GetParticleManager()->Emit(name_, translate_, count_);
 }

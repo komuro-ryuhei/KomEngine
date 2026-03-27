@@ -55,7 +55,7 @@ void BossMissile::Kill() {
 
 void BossMissile::Update() {
 
-	const float dt = System::GetDeltaTime();
+	const float dt = KomEngine::System::GetDeltaTime();
 
 	if (!isAlive_ || !object3d_) {
 		return;

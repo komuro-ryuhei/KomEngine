@@ -67,7 +67,7 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	}
 
 	textureData.metaData = mipImage.GetMetadata();
-	textureData.resource = CreateTextureResource(System::GetDxCommon()->GetDevice(), textureData.metaData);
+	textureData.resource = CreateTextureResource(KomEngine::System::GetDxCommon()->GetDevice(), textureData.metaData);
 
 	textureData.srvIndex = srvManager_->Allocate();
 	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
@@ -132,10 +132,10 @@ ComPtr<ID3D12Resource> TextureManager::UploadTextureData(ID3D12Resource* texture
 
 	// 
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-	DirectX::PrepareUpload(System::GetDxCommon()->GetDevice(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
+	DirectX::PrepareUpload(KomEngine::System::GetDxCommon()->GetDevice(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
 	uint64_t intermediateSize = GetRequiredIntermediateSize(texture, 0, UINT(subresources.size()));
-	ComPtr<ID3D12Resource> intermediateResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), intermediateSize);
-	UpdateSubresources(System::GetDxCommon()->GetCommandList(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
+	ComPtr<ID3D12Resource> intermediateResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), intermediateSize);
+	UpdateSubresources(KomEngine::System::GetDxCommon()->GetCommandList(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
 	// Textureへの転送は後は利用できるよう、D3D12_RESOURCE_STATE_COPY_DESTからD3D12_RESOURCE_STATE_GENERIC_READへResourceStateを変更する
 	D3D12_RESOURCE_BARRIER barrier{};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -144,7 +144,7 @@ ComPtr<ID3D12Resource> TextureManager::UploadTextureData(ID3D12Resource* texture
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
-	System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &barrier);
+	KomEngine::System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &barrier);
 
 	return intermediateResource;
 }

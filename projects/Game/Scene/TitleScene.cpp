@@ -5,7 +5,7 @@
 
 void TitleScene::Init() {
 
-	System::GetOffscreenRendering()->SetPostEffect("none");
+	KomEngine::System::GetOffscreenRendering()->SetPostEffect("none");
 
 	// Sprite
 	titleSprite_ = std::make_unique<Sprite>();
@@ -23,7 +23,7 @@ void TitleScene::Init() {
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
 	camera_->SetTranslate({ 0.0f, 0.0f, -10.0f });
-	System::GetParticleManager()->SetCamera(camera_.get());
+	KomEngine::System::GetParticleManager()->SetCamera(camera_.get());
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
@@ -49,12 +49,12 @@ void TitleScene::Init() {
 	boss_->SetTranslate({ 7.0f,4.0f,20.0f });
 
 	// マウスカーソルを中央に固定を解除
-	System::GetInput()->SetMouseCenterLock(false);
+	KomEngine::System::GetInput()->SetMouseCenterLock(false);
 }
 
 void TitleScene::Update() {
 
-	const float dt = System::GetDeltaTime();
+	const float dt = KomEngine::System::GetDeltaTime();
 
 	// camera
 	camera_->Update();
@@ -77,7 +77,7 @@ void TitleScene::Update() {
 	boss_->Update();
 	boss_->ImGuiDebug();
 
-	//if (System::TriggerKey(DIK_RETURN)) {
+	//if (KomEngine::System::TriggerKey(DIK_RETURN)) {
 	//	// ゲームシーンを生成
 	//	sceneManager_->ChangeScene("TEST");
 	//}
@@ -99,7 +99,7 @@ void TitleScene::Update() {
 
 		enterSprite_->SetColor({ 1.0f, 1.0f, 1.0f, a });
 
-		if (System::TriggerKey(DIK_RETURN) || System::TriggerKey(DIK_SPACE)) {
+		if (KomEngine::System::TriggerKey(DIK_RETURN) || KomEngine::System::TriggerKey(DIK_SPACE)) {
 			phase_ = Phase::kFadeOut;
 		}
 	}

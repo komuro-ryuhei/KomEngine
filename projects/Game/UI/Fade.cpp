@@ -12,7 +12,7 @@ bool Fade::GetDefaultOpenModeDataError() { return s_defaultDataErrorOpen; }
 
 void Fade::Initialize(int screenWidth, int screenHeight, const char* texturePath) {
 
-	System::GetTextureManager()->LoadTexture("./Resources/images/white_1x1.png");
+	KomEngine::System::GetTextureManager()->LoadTexture("./Resources/images/white_1x1.png");
 
 	w_ = screenWidth;
 	h_ = screenHeight;

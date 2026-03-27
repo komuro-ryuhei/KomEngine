@@ -108,7 +108,7 @@ void Player::Init(Camera* camera) {
 
 void Player::Update() {
 
-	const float dt = System::GetDeltaTime();
+	const float dt = KomEngine::System::GetDeltaTime();
 
 	firedThisFrame_ = false;
 
@@ -245,7 +245,7 @@ void Player::Attack(float dt) {
 
 	if (!canShoot_) { return; }
 
-	auto* input = System::GetInput();
+	auto* input = KomEngine::System::GetInput();
 
 	const bool mouse0Down = input->PushMouse(1); //左左クリック想定
 	const bool mouse1Down = input->PushMouse(0); // 右クリック長押し連射
@@ -482,7 +482,7 @@ void Player::UpdateReticleSprite() {
 	GetCursorPos(&pt);
 
 	// ゲームウィンドウのクライアント座標系に変換
-	HWND hwnd = System::GetWinApp()->GetHwnd();
+	HWND hwnd = KomEngine::System::GetWinApp()->GetHwnd();
 	ScreenToClient(hwnd, &pt);
 
 	// レティクルへ反映
@@ -543,7 +543,7 @@ void Player::ChargeEffect(float dt) {
 	pulseColor.w = 0.85f;
 
 	// ParticleManager に反映
-	System::GetParticleManager()->SetChargeEffectColor(coreColor, pulseColor);
+	KomEngine::System::GetParticleManager()->SetChargeEffectColor(coreColor, pulseColor);
 
 	// ----------------------------
 	// カメラ基準で「手元位置」を作る

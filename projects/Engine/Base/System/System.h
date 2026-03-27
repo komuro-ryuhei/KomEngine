@@ -27,69 +27,72 @@
 #include "Engine/Base/TextureManager/TextureManager.h"
 #include "Engine/Base/Particle/ParticleManager.h"
 
-/// <summary>
-/// システム
-/// </summary>
-class System {
-
-public: // 静的メンバ関数
-	/// <summary>
-	/// システム全体の初期化
-	/// </summary>
-	/// <param name="title">タイトル</param>
-	/// <param name="width">ウィンドウの高さ</param>
-	/// <param name="height">ウィンドウの幅</param>
-	static void Initialize(const char* title, int width, int height);
+namespace KomEngine {
 
 	/// <summary>
-	/// システム全体の更新
+	/// システム
 	/// </summary>
-	static void Update();
+	class System {
 
-	/// <summary>
-	/// Windowsのメッセージを処理する
-	/// </summary>
-	/// <returns>1: ゲーム終了 0: ゲーム継続</returns>
-	static bool ProcessMessage();
+	public: // 静的メンバ関数
+		/// <summary>
+		/// システム全体の初期化
+		/// </summary>
+		/// <param name="title">タイトル</param>
+		/// <param name="width">ウィンドウの高さ</param>
+		/// <param name="height">ウィンドウの幅</param>
+		static void Initialize(const char* title, int width, int height);
 
-	/// <summary>
-	/// フレーム開始処理
-	/// </summary>
-	static void BeginFrame();
+		/// <summary>
+		/// システム全体の更新
+		/// </summary>
+		static void Update();
 
-	/// <summary>
-	/// フレーム終了処理
-	/// </summary>
-	static void EndFrame();
+		/// <summary>
+		/// Windowsのメッセージを処理する
+		/// </summary>
+		/// <returns>1: ゲーム終了 0: ゲーム継続</returns>
+		static bool ProcessMessage();
 
-	/// <summary>
-	/// 終了処理
-	/// </summary>
-	static void Finalize();
+		/// <summary>
+		/// フレーム開始処理
+		/// </summary>
+		static void BeginFrame();
 
-public:
+		/// <summary>
+		/// フレーム終了処理
+		/// </summary>
+		static void EndFrame();
 
-	/// <summary>
-	/// プッシュキー
-	/// </summary>
-	static bool PushKey(BYTE keyNumber);
+		/// <summary>
+		/// 終了処理
+		/// </summary>
+		static void Finalize();
 
-	/// <summary>
-	/// トリガーキー
-	/// </summary>
-	static bool TriggerKey(BYTE keyNumber);
+	public:
 
-public:
-	/// <summary>
-	/// getter・setter
-	/// </summary>
-	static float GetDeltaTime();                        // デルタタイムの取得
-	static DirectXCommon* GetDxCommon();                // DxCommonの取得
-	static Input* GetInput();                           // Inputの取得
-	static SrvManager* GetSrvManager();                 // SrvManagerの取得
-	static TextureManager* GetTextureManager();         // TextureManagerの取得
-	static ParticleManager* GetParticleManager();       // ParticleManagerの取得
-	static Light* GetLight();                           // Lightの取得
-	static WinApp* GetWinApp();                         // WinAppの取得
-	static OffscreenRendering* GetOffscreenRendering(); // OffscreenRenderingの取得
-};
+		/// <summary>
+		/// プッシュキー
+		/// </summary>
+		static bool PushKey(BYTE keyNumber);
+
+		/// <summary>
+		/// トリガーキー
+		/// </summary>
+		static bool TriggerKey(BYTE keyNumber);
+
+	public:
+		/// <summary>
+		/// getter・setter
+		/// </summary>
+		static float GetDeltaTime();                        // デルタタイムの取得
+		static DirectXCommon* GetDxCommon();                // DxCommonの取得
+		static Input* GetInput();                           // Inputの取得
+		static SrvManager* GetSrvManager();                 // SrvManagerの取得
+		static TextureManager* GetTextureManager();         // TextureManagerの取得
+		static ParticleManager* GetParticleManager();       // ParticleManagerの取得
+		static Light* GetLight();                           // Lightの取得
+		static WinApp* GetWinApp();                         // WinAppの取得
+		static OffscreenRendering* GetOffscreenRendering(); // OffscreenRenderingの取得
+	};
+}

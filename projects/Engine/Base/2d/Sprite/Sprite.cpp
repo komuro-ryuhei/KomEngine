@@ -23,7 +23,7 @@ void Sprite::SetPosition(const Vector2& position) { position_ = position; }
 void Sprite::SetRotation(float rotation) { rotation_ = rotation; }
 void Sprite::SetColor(const Vector4& color) { materialData->color = color; }
 void Sprite::SetSize(const Vector2& size) { size_ = size; }
-void Sprite::SetTexture(const std::string& textureFilePath) { textureIndex = System::GetTextureManager()->GetTextureIndexByFilePath(textureFilePath); }
+void Sprite::SetTexture(const std::string& textureFilePath) { textureIndex = KomEngine::System::GetTextureManager()->GetTextureIndexByFilePath(textureFilePath); }
 
 void Sprite::SetAnchorPoint(const Vector2& anchorPoint) { anchorPoint_ = anchorPoint; }
 
@@ -56,8 +56,8 @@ void Sprite::Init(const std::string& textureFilePath, BlendType type) {
 	pipelineManager_->PSOSetting("sprite", type);
 
 	// リソース作成
-	vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * 4);
-	indexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(uint32_t) * 6);
+	vertexResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(VertexData) * 4);
+	indexResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(uint32_t) * 6);
 
 	// VertexBufferViewを設定
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress(); // 先頭のアドレスを使用
@@ -74,7 +74,7 @@ void Sprite::Init(const std::string& textureFilePath, BlendType type) {
 	indexResource->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
 
 	// マテリアルリソース作成
-	materialResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(Material));
+	materialResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(Material));
 	// Resourceに書き込むためのアドレスをDataに割り当てる
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	// マテリアルの初期値を書き込む
@@ -83,7 +83,7 @@ void Sprite::Init(const std::string& textureFilePath, BlendType type) {
 	materialData->uvTransform = MyMath::MakeIdentity4x4();
 
 	// 座標変換用
-	transformationMatrixResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(TransformationMatrix));
+	transformationMatrixResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(TransformationMatrix));
 	transformationMatrixResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
 	// 単位行列を書き込む
 	transformationMatrixData->WVP = MyMath::MakeIdentity4x4();
@@ -101,7 +101,7 @@ void Sprite::Init(const std::string& textureFilePath, BlendType type) {
 	    {0.0f, 0.0f, 0.0f},
 	};
 
-	textureIndex = System::GetTextureManager()->GetTextureIndexByFilePath(textureFilePath);
+	textureIndex = KomEngine::System::GetTextureManager()->GetTextureIndexByFilePath(textureFilePath);
 
 	AdjustTextureSize();
 }
@@ -159,7 +159,7 @@ void Sprite::Update() {
 	vertexData[2].position = {right, bottom, 0.0f, 1.0f}; // 右下
 	vertexData[3].position = {right, top, 0.0f, 1.0f};    // 右上vertexData
 
-	const DirectX::TexMetadata& metaData = System::GetTextureManager()->GetMetaData(textureFilePath_);
+	const DirectX::TexMetadata& metaData = KomEngine::System::GetTextureManager()->GetMetaData(textureFilePath_);
 	float tex_left = textureLeftTop_.x / metaData.width;
 	float tex_right = (textureLeftTop_.x + textureSize_.x) / metaData.width;
 	float tex_top = textureLeftTop_.y / metaData.height;
@@ -186,7 +186,7 @@ void Sprite::Update() {
 
 void Sprite::Draw() {
 
-	ComPtr<ID3D12GraphicsCommandList> commandList = System::GetDxCommon()->GetCommandList();
+	ComPtr<ID3D12GraphicsCommandList> commandList = KomEngine::System::GetDxCommon()->GetCommandList();
 
 	// ルートシグネチャをセット
 	commandList->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
@@ -205,14 +205,14 @@ void Sprite::Draw() {
 	// TransformationMatrixCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 	//
-	commandList->SetGraphicsRootDescriptorTable(2, System::GetTextureManager()->GetSrvHandleGPU(textureFilePath_));
+	commandList->SetGraphicsRootDescriptorTable(2, KomEngine::System::GetTextureManager()->GetSrvHandleGPU(textureFilePath_));
 	// Spriteの描画
 	commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }
 
 void Sprite::PreDraw() {
 
-	ComPtr<ID3D12GraphicsCommandList> commandList = System::GetDxCommon()->GetCommandList();
+	ComPtr<ID3D12GraphicsCommandList> commandList = KomEngine::System::GetDxCommon()->GetCommandList();
 
 	// ルートシグネチャをセット
 	commandList->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
@@ -226,7 +226,7 @@ void Sprite::PreDraw() {
 void Sprite::AdjustTextureSize() {
 
 	// テクスチャメタデータを取得
-	const DirectX::TexMetadata& metaData = System::GetTextureManager()->GetMetaData(textureFilePath_);
+	const DirectX::TexMetadata& metaData = KomEngine::System::GetTextureManager()->GetMetaData(textureFilePath_);
 
 	textureSize_.x = static_cast<float>(metaData.width);
 	textureSize_.y = static_cast<float>(metaData.height);

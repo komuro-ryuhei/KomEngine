@@ -18,7 +18,7 @@ ID3D12Resource* Light::GetSpotLightResource() const { return materialResourceSpo
 void Light::LightSetting() {
 
 	// Light用のマテリアルリソースを作る
-	materialResourceLight = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(DirectionalLight));
+	materialResourceLight = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(DirectionalLight));
 	materialResourceLight->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -26,13 +26,13 @@ void Light::LightSetting() {
 	directionalLightData->intensity = 0.0f;
 
 	// Phong用のマテリアルリソースを作る
-	materialResourcePhong = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(CameraForGPU));
+	materialResourcePhong = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(CameraForGPU));
 	materialResourcePhong->Map(0, nullptr, reinterpret_cast<void**>(&phongLightData));
 
 	phongLightData->worldPosition = { 0.0f, 4.0f, -10.0f };
 
 	// PointLight用のマテリアルリソースを作る
-	materialResourcePoint = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(PointLight));
+	materialResourcePoint = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(PointLight));
 	materialResourcePoint->Map(0, nullptr, reinterpret_cast<void**>(&pointLightData));
 
 	pointLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -42,7 +42,7 @@ void Light::LightSetting() {
 	pointLightData->decay = 2.0f;
 
 	// PointLight用のマテリアルリソースを作る
-	materialResourceSpot = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(SpotLight));
+	materialResourceSpot = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(SpotLight));
 	materialResourceSpot->Map(0, nullptr, reinterpret_cast<void**>(&spotLightData));
 
 	spotLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };

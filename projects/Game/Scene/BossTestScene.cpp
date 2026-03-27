@@ -22,7 +22,7 @@ void BossTestScene::Init() {
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
 	// camera_->SetTranslate({ 0.0f, 0.0f, -30.0f });
-	System::GetParticleManager()->SetCamera(camera_.get());
+	KomEngine::System::GetParticleManager()->SetCamera(camera_.get());
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
@@ -159,7 +159,7 @@ void BossTestScene::Init() {
 	bossIntroGlintSprite_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
 	// パーティクル
-	auto* pm = System::GetParticleManager();
+	auto* pm = KomEngine::System::GetParticleManager();
 	pm->Init(BlendType::BLEND_ADD);
 
 	pm->CreateParticleGeoup("hit", circle2, "a");
@@ -221,7 +221,7 @@ void BossTestScene::Init() {
 
 void BossTestScene::Update() {
 
-	const float dt = System::GetDeltaTime();
+	const float dt = KomEngine::System::GetDeltaTime();
 
 	if (phase_ == Phase::kFadeIn) {
 		phase_ = Phase::kMain;
@@ -248,12 +248,12 @@ void BossTestScene::Update() {
 		!(result_ && result_->IsSlideFinished());
 
 	// Pキーでポーズメニューの表示
-	if (canPause && System::TriggerKey(DIK_P) && pauseMenu_) {
+	if (canPause && KomEngine::System::TriggerKey(DIK_P) && pauseMenu_) {
 		pauseMenu_->Toggle();
 	}
 
 	if (pauseMenu_->IsPaused()) {
-		System::GetInput()->SetMouseCenterLock(false);
+		KomEngine::System::GetInput()->SetMouseCenterLock(false);
 	}
 
 	if (pauseMenu_ && pauseMenu_->IsPaused()) {
@@ -266,7 +266,7 @@ void BossTestScene::Update() {
 
 			// ポーズ解除
 			pauseMenu_->SetPaused(false);
-			System::GetInput()->SetMouseCenterLock(true);
+			KomEngine::System::GetInput()->SetMouseCenterLock(true);
 
 			// フェードアウト開始
 			phase_ = Phase::kFadeOut;
@@ -288,12 +288,12 @@ void BossTestScene::Update() {
 	UpdateCamera(dt);
 
 	// デバッグ：離脱攻撃要求
-	if (System::GetInput()->PushKey(DIK_R)) {
+	if (KomEngine::System::GetInput()->PushKey(DIK_R)) {
 		boss_->StartRetreatAttack();
 	}
 
 	// デバッグ：チャージ攻撃要求
-	if (System::GetInput()->PushKey(DIK_C)) {
+	if (KomEngine::System::GetInput()->PushKey(DIK_C)) {
 
 		// 既にチャージ攻撃が動いているなら要求しない
 		if (!boss_->IsChargeActive()) {
@@ -306,7 +306,7 @@ void BossTestScene::Update() {
 		}
 	}
 
-	if (System::GetInput()->PushKey(DIK_T)) {
+	if (KomEngine::System::GetInput()->PushKey(DIK_T)) {
 		boss_->SetAttack(false);
 	}
 
@@ -421,7 +421,7 @@ void BossTestScene::Update() {
 	}
 
 	// パーティクルの更新処理
-	System::GetParticleManager()->Update();
+	KomEngine::System::GetParticleManager()->Update();
 
 	// ポストエフェクトの変更
 	ChangePostEffect();
@@ -436,7 +436,7 @@ void BossTestScene::Update() {
 
 	case Phase::kMain:
 
-		if (System::PushKey(DIK_T)) {
+		if (KomEngine::System::PushKey(DIK_T)) {
 			phase_ = Phase::kFadeOut;
 		}
 
@@ -467,7 +467,7 @@ void BossTestScene::Update() {
 
 		// ResultImage がスライド完了したら SPACE でフェードアウト開始
 		if (result_ && result_->IsSlideFinished()) {
-			if (System::TriggerKey(DIK_SPACE) || System::TriggerKey(DIK_RETURN)) {
+			if (KomEngine::System::TriggerKey(DIK_SPACE) || KomEngine::System::TriggerKey(DIK_RETURN)) {
 
 				// フェードアウト開始
 				phase_ = Phase::kFadeOut;
@@ -547,7 +547,7 @@ void BossTestScene::Draw() {
 	// debugLine_.Draw();
 
 	// パーティクル描画
-	System::GetParticleManager()->Draw();
+	KomEngine::System::GetParticleManager()->Draw();
 
 	// リザルト
 	result_->Draw();
@@ -691,7 +691,7 @@ void BossTestScene::UpdateCamera(float dt) {
 
 void BossTestScene::ChangePostEffect() {
 
-	auto* offscreen = System::GetOffscreenRendering();
+	auto* offscreen = KomEngine::System::GetOffscreenRendering();
 	if (!offscreen || !player_) {
 		return;
 	}
@@ -797,7 +797,7 @@ void BossTestScene::UpdatePlayerDeath(float dt) {
 	// --- ノックアウト開始トリガー --- //
 
 	// デバッグ用：Kキーで強制ノックアウト
-	if (System::TriggerKey(DIK_K)) {
+	if (KomEngine::System::TriggerKey(DIK_K)) {
 		StartKnockout(+1); // +1 or -1 で倒れる向き指定
 	}
 
@@ -864,7 +864,7 @@ void BossTestScene::UpdateMeteorControl() {
 	if (!attackManager_) return;
 
 	// デバッグ：MでON/OFF
-	if (System::TriggerKey(DIK_M)) {
+	if (KomEngine::System::TriggerKey(DIK_M)) {
 		if (!attackManager_->IsMeteorActive()) attackManager_->StartMeteor();
 		else attackManager_->ForceEndMeteor();
 	}

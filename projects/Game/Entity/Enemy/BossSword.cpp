@@ -37,7 +37,7 @@ void BossSword::Update() {
 		pos_ += vel_;
 		rot_.y += 0.2f;
 	} else if (mode_ == Mode::kSweep) {
-		const float dt = System::GetDeltaTime();
+		const float dt = KomEngine::System::GetDeltaTime();
 		sweepT_ += dt / sweepDur_;
 		if (sweepT_ >= 1.f) { alive_ = false; } // 斬り終わりで消滅
 

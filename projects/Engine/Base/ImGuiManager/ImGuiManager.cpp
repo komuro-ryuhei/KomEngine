@@ -50,12 +50,12 @@ void ImGuiManager::Init(WinApp* winApp) {
 	desc.NumDescriptors = 1;
 	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	// デスクリプタヒープ生成
-	hr = System::GetDxCommon()->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&srvHeap_));
+	hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&srvHeap_));
 	assert(SUCCEEDED(hr));
 
 	// DX12用の初期化
 	ImGui_ImplDX12_Init(
-		System::GetDxCommon()->GetDevice(), static_cast<int>(System::GetDxCommon()->GetBackBufferCount()), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, srvHeap_.Get(), srvHeap_->GetCPUDescriptorHandleForHeapStart(),
+		KomEngine::System::GetDxCommon()->GetDevice(), static_cast<int>(KomEngine::System::GetDxCommon()->GetBackBufferCount()), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, srvHeap_.Get(), srvHeap_->GetCPUDescriptorHandleForHeapStart(),
 	    srvHeap_->GetGPUDescriptorHandleForHeapStart());
 
 	ImGuiIO& io = ImGui::GetIO();
@@ -103,7 +103,7 @@ void ImGuiManager::End() {
 
 void ImGuiManager::Draw() {
 	
-	ID3D12GraphicsCommandList* commandList = System::GetDxCommon()->GetCommandList();
+	ID3D12GraphicsCommandList* commandList = KomEngine::System::GetDxCommon()->GetCommandList();
 
 	// デスクリプタヒープ
 	ID3D12DescriptorHeap* ppHeaps[] = {srvHeap_.Get()};

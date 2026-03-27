@@ -93,7 +93,7 @@ void PipelineManager::CreatePSO(const std::string& objectType)
 		graphicsPipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 	} else {
 		// 通常3D(Object3D, Particle 等)：エンジン既定のDepth設定
-		graphicsPipelineStateDesc.DepthStencilState = System::GetDxCommon()->GetDepthStencilDesc();
+		graphicsPipelineStateDesc.DepthStencilState = KomEngine::System::GetDxCommon()->GetDepthStencilDesc();
 	}
 
 	// トポロジ設定：line だけ LINE、それ以外は TRIANGLE
@@ -104,7 +104,7 @@ void PipelineManager::CreatePSO(const std::string& objectType)
 	}
 
 	// PSO生成（全分岐共通）
-	hr = System::GetDxCommon()->GetDevice()->CreateGraphicsPipelineState(
+	hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateGraphicsPipelineState(
 		&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&graphicsPipelineState)
 	);

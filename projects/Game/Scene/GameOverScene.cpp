@@ -6,7 +6,7 @@ void GameOverScene::Init() {
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.6f, 0.0f, 0.0f });
 	camera_->SetTranslate({ 0.0f, 25.0f, -30.0f });
-	System::GetParticleManager()->SetCamera(camera_.get());
+	KomEngine::System::GetParticleManager()->SetCamera(camera_.get());
 
 	// スプライト
 	sprite_ = std::make_unique<Sprite>();
@@ -58,7 +58,7 @@ void GameOverScene::Update() {
 
 	case Phase::kMain:
 		// Enterでタイトルへ戻る
-		if (System::TriggerKey(DIK_RETURN) || (System::TriggerKey(DIK_SPACE))) {
+		if (KomEngine::System::TriggerKey(DIK_RETURN) || (KomEngine::System::TriggerKey(DIK_SPACE))) {
 			fade_->Start(Fade::Status::FadeOut, 0.6f);
 			phase_ = Phase::kFadeOut;
 		}
@@ -68,7 +68,7 @@ void GameOverScene::Update() {
 		fade_->Update();
 		if (fade_->IsFinished()) {
 			// 
-			System::GetOffscreenRendering()->SetPostEffect("none");
+			KomEngine::System::GetOffscreenRendering()->SetPostEffect("none");
 			// タイトルは斬撃で開きたい等、好みに応じて既定を設定
 			Fade::SetDefaultOpenModeSlash(false);
 			sceneManager_->ChangeScene("TITLE");

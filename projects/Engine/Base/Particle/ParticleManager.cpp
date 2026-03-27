@@ -124,16 +124,16 @@ void ParticleManager::Update() {
 void ParticleManager::Draw() {
 
 	// コマンド: ルートシグネチャを設定
-	System::GetDxCommon()->GetCommandList()->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
+	KomEngine::System::GetDxCommon()->GetCommandList()->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
 
 	// コマンド: PSO(Pipeline State Object)を設定
-	System::GetDxCommon()->GetCommandList()->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
+	KomEngine::System::GetDxCommon()->GetCommandList()->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
 
 	// コマンド: プリミティブトポロジーを設定 (三角形リスト)
-	System::GetDxCommon()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	KomEngine::System::GetDxCommon()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// コマンド: VBV(Vertex Buffer View)を設定
-	// System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
+	// KomEngine::System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
 
 	for (auto& [name, group] : particleGroups) {
 
@@ -142,12 +142,12 @@ void ParticleManager::Draw() {
 			continue;
 		}
 
-		System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &group.vertexBufferView);
+		KomEngine::System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &group.vertexBufferView);
 
-		System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(0, System::GetSrvManager()->GetGPUDescriptorHandle(group.instancingSrvIndex));
-		System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(1, System::GetSrvManager()->GetGPUDescriptorHandle(group.srvIndex));
+		KomEngine::System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(0, KomEngine::System::GetSrvManager()->GetGPUDescriptorHandle(group.instancingSrvIndex));
+		KomEngine::System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(1, KomEngine::System::GetSrvManager()->GetGPUDescriptorHandle(group.srvIndex));
 
-		System::GetDxCommon()->GetCommandList()->DrawInstanced(static_cast<UINT>(group.vertices.size()), group.instanceCount, 0, 0);
+		KomEngine::System::GetDxCommon()->GetCommandList()->DrawInstanced(static_cast<UINT>(group.vertices.size()), group.instanceCount, 0, 0);
 	}
 }
 
@@ -180,18 +180,18 @@ void ParticleManager::CreateParticleGeoup(const std::string name, const std::str
 
 	MakeVertexData(newParticle, particleType);
 
-	System::GetTextureManager()->LoadTexture(textureFilePath);
-	uint32_t srvIndex = System::GetTextureManager()->GetTextureIndexByFilePath(textureFilePath);
+	KomEngine::System::GetTextureManager()->LoadTexture(textureFilePath);
+	uint32_t srvIndex = KomEngine::System::GetTextureManager()->GetTextureIndexByFilePath(textureFilePath);
 	newParticle.srvIndex = srvIndex;
 
 	newParticle.kInstanceNum = 0xffff;
 	newParticle.instancingResource =
-		System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(),
+		KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(),
 			sizeof(ParticleForGPU) * newParticle.kInstanceNum);
 	newParticle.instancingResource->Map(0, nullptr, reinterpret_cast<void**>(&newParticle.instancingData));
 
-	newParticle.instancingSrvIndex = System::GetSrvManager()->Allocate();
-	System::GetSrvManager()->CreateSRVforStructuredBuffer(newParticle.instancingSrvIndex,
+	newParticle.instancingSrvIndex = KomEngine::System::GetSrvManager()->Allocate();
+	KomEngine::System::GetSrvManager()->CreateSRVforStructuredBuffer(newParticle.instancingSrvIndex,
 		newParticle.instancingResource.Get(),
 		newParticle.kInstanceNum,
 		sizeof(ParticleForGPU));
@@ -601,7 +601,7 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 
 	// 頂点リソース作成
 	group.vertices = vertices;
-	group.vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * group.vertices.size());
+	group.vertexResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(VertexData) * group.vertices.size());
 
 	void* mappedData = nullptr;
 	group.vertexResource->Map(0, nullptr, &mappedData);

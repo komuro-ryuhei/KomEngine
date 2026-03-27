@@ -88,7 +88,7 @@ void RootSignature::Create(const std::string& objectName) {
 			assert(false);
 		}
 		// バイナリを元に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 	} else if (objectName == "particle") {
 
@@ -140,7 +140,7 @@ void RootSignature::Create(const std::string& objectName) {
 			assert(false);
 		}
 		// バイナリを元に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 	} else if (objectName == "sprite") {
 
@@ -189,7 +189,7 @@ void RootSignature::Create(const std::string& objectName) {
 			assert(false);
 		}
 		// バイナリを元に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 	} else if (objectName == "posteffect") {
 
@@ -238,7 +238,7 @@ void RootSignature::Create(const std::string& objectName) {
 			assert(false);
 		}
 		// バイナリを元に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 	} else if (objectName == "skybox") {
 
@@ -289,7 +289,7 @@ void RootSignature::Create(const std::string& objectName) {
 			Logger::Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
 			assert(false);
 		}
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 	} else if (objectName == "line") {
 
@@ -319,7 +319,7 @@ void RootSignature::Create(const std::string& objectName) {
 			assert(false);
 		}
 
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(
 			0,
 			signatureBlob->GetBufferPointer(),
 			signatureBlob->GetBufferSize(),
