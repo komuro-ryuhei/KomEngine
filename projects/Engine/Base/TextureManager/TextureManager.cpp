@@ -4,15 +4,7 @@
 #include "externals/DirectXTex/d3dx12.h"
 #include <vector>
 
-TextureManager* TextureManager::instance = nullptr;
 uint32_t TextureManager::kSRVIndexTop_ = 1;
-
-TextureManager* TextureManager::GetInstance() {
-	if (instance == nullptr) {
-		instance = new TextureManager;
-	}
-	return instance;
-}
 
 void TextureManager::Init(SrvManager* srvManager) {
 
@@ -20,12 +12,6 @@ void TextureManager::Init(SrvManager* srvManager) {
 
 	// SRVの数と同様
 	textureDatas.reserve(DirectXCommon::kMaxSRVCount);
-}
-
-void TextureManager::Finalize() {
-
-	delete instance;
-	instance = nullptr;
 }
 
 std::string TextureManager::PreferDDSPath(const std::string& requestPath)

@@ -24,6 +24,7 @@
 #include "Engine/lib/Input/Input.h"
 #include "Engine/lib/Logger/Logger.h"
 #include "Engine/Base/SrvManager/SrvManager.h"
+#include "Engine/Base/TextureManager/TextureManager.h"
 
 /// <summary>
 /// システム
@@ -81,11 +82,12 @@ public:
 	/// <summary>
 	/// getter・setter
 	/// </summary>
-	static float GetDeltaTime(); // デルタタイムの取得
-	static DirectXCommon* GetDxCommon(); // DxCommonの取得
-	static Input* GetInput(); // Inputの取得
-	static SrvManager* GetSrvManager(); // SrvManagerの取得
-	static Light* GetLight(); // Lightの取得
-	static WinApp* GetWinApp(); // WinAppの取得
+	static float GetDeltaTime();                        // デルタタイムの取得
+	static DirectXCommon* GetDxCommon();                // DxCommonの取得
+	static Input* GetInput();                           // Inputの取得
+	static SrvManager* GetSrvManager();                 // SrvManagerの取得
+	static TextureManager* GetTextureManager();         // TextureManagerの取得
+	static Light* GetLight();                           // Lightの取得
+	static WinApp* GetWinApp();                         // WinAppの取得
 	static OffscreenRendering* GetOffscreenRendering(); // OffscreenRenderingの取得
 };

@@ -32,13 +32,13 @@ void GameScene::Init() {
 	const std::string& moonLight = "./Resources/images/moonLight.png";
 
 	// テクスチャ、モデルの読み込み
-	TextureManager::GetInstance()->LoadTexture(uvTexture);
-	TextureManager::GetInstance()->LoadTexture(circle);
-	TextureManager::GetInstance()->LoadTexture(circle2);
-	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/rostock_laage_airport_4k.dds");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
+	System::GetTextureManager()->LoadTexture(uvTexture);
+	System::GetTextureManager()->LoadTexture(circle);
+	System::GetTextureManager()->LoadTexture(circle2);
+	System::GetTextureManager()->LoadTexture(monsterBallTexture);
+	System::GetTextureManager()->LoadTexture("./Resources/images/rostock_laage_airport_4k.dds");
+	System::GetTextureManager()->LoadTexture("./Resources/images/test.dds");
+	System::GetTextureManager()->LoadTexture("./Resources/images/ground.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");

@@ -8,6 +8,7 @@
 #include "Engine/Base/2d/Sprite/Sprite.h"
 
 #include "Engine/Base/TextureManager/TextureManager.h"
+#include "Engine/Base/System/System.h"
 
 class Fade {
 public:

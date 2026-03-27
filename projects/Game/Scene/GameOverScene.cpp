@@ -3,12 +3,12 @@
 void GameOverScene::Init() {
 
 	// テクスチャ、モデルの読み込み
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/uvChecker.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle2.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/YOUDIE.png");
+	System::GetTextureManager()->LoadTexture("./Resources/images/uvChecker.png");
+	System::GetTextureManager()->LoadTexture("./Resources/images/circle.png");
+	System::GetTextureManager()->LoadTexture("./Resources/images/circle2.png");
+	System::GetTextureManager()->LoadTexture("./Resources/images/test.dds");
+	System::GetTextureManager()->LoadTexture("./Resources/images/ground.png");
+	System::GetTextureManager()->LoadTexture("./Resources/images/YOUDIE.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");

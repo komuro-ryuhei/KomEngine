@@ -33,7 +33,7 @@ void Skybox::Init(const std::string& filename) {
 	materialData->uvTransform = MyMath::MakeIdentity4x4();
 	materialData->shininess = 48.3f;
 
-	TextureManager::GetInstance()->LoadTexture(std::move(filename));
+	System::GetTextureManager()->LoadTexture(std::move(filename));
 
 	// 座標変換用
 	transformationMatrixResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(TransformationMatrix));
@@ -97,7 +97,7 @@ void Skybox::Draw() {
 	// TransformationMatrixCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 
-	commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(filename_));
+	commandList->SetGraphicsRootDescriptorTable(2, System::GetTextureManager()->GetSrvHandleGPU(filename_));
 
 	// Modelの描画
 	commandList->DrawInstanced(kSkyboxVertexCount, 1, 0, 0);

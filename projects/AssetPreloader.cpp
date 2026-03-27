@@ -89,7 +89,7 @@ void AssetPreloader::Update(int budgetPerFrame) {
     int budget = budgetPerFrame;
 
     while (budget > 0 && texIndex_ < textures_.size()) {
-        TextureManager::GetInstance()->LoadTexture(textures_[texIndex_++]);
+        System::GetTextureManager()->LoadTexture(textures_[texIndex_++]);
         --budget;
     }
     while (budget > 0 && modelIndex_ < models_.size()) {

@@ -230,8 +230,8 @@ void ParticleManager::CreateParticleGeoup(const std::string name, const std::str
 
 	MakeVertexData(newParticle, particleType);
 
-	TextureManager::GetInstance()->LoadTexture(textureFilePath);
-	uint32_t srvIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+	System::GetTextureManager()->LoadTexture(textureFilePath);
+	uint32_t srvIndex = System::GetTextureManager()->GetTextureIndexByFilePath(textureFilePath);
 	newParticle.srvIndex = srvIndex;
 
 	newParticle.kInstanceNum = 0xffff;

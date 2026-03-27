@@ -37,6 +37,7 @@ namespace {
 	std::unique_ptr<Input> input_;
 	std::unique_ptr<Light> light_;
 	std::unique_ptr<SrvManager> srvManager_;
+	std::unique_ptr<TextureManager> textureManager_;
 	std::unique_ptr<ImGuiManager> imguiManager_;
 	std::unique_ptr<OffscreenRendering> offscreenRendering_;
 }
@@ -48,6 +49,8 @@ DirectXCommon* System::GetDxCommon() { return dxCommon_.get(); }
 Input* System::GetInput() { return input_.get(); }
 
 SrvManager* System::GetSrvManager() { return srvManager_.get(); }
+
+TextureManager* System::GetTextureManager() { return textureManager_.get(); }
 
 Light* System::GetLight() { return light_.get(); }
 
@@ -81,7 +84,8 @@ void System::Initialize(const char* title, int width, int height) {
 	input_->Initialize(winApp_.get());
 
 	// TextureManager
-	TextureManager::GetInstance()->Init(srvManager_.get());
+	textureManager_ = std::make_unique<TextureManager>();
+	textureManager_->Init(srvManager_.get());
 
 	ModelManager::GetInstance()->Init();
 
@@ -89,6 +93,7 @@ void System::Initialize(const char* title, int width, int height) {
 	light_ = std::make_unique<Light>();
 	light_->LightSetting();
 
+	// ImGuiManager
 	imguiManager_ = std::make_unique<ImGuiManager>();
 	imguiManager_->Init(winApp_.get());
 }
@@ -138,13 +143,13 @@ void System::Finalize() {
 
 	winApp_->TerminateGameWindow();
 
+	textureManager_.reset();
 	winApp_.reset();
 	dxCommon_.reset();
 	input_.reset();
 	light_.reset();
 
 	//
-	TextureManager::GetInstance()->Finalize();
 	ModelManager::GetInstance()->Finalize();
 
 	imguiManager_->Finalize();

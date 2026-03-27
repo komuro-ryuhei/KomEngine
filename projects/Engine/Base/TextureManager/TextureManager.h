@@ -19,8 +19,11 @@ namespace fs = std::filesystem;
 class TextureManager {
 
 public:
-	// シングルトンインスタンスの取得
-	static TextureManager* GetInstance();
+
+	TextureManager() = default;
+	~TextureManager() = default;
+	TextureManager(TextureManager&) = delete;
+	TextureManager& operator=(TextureManager&) = delete;
 
 	/// <summary>
 	/// 初期化処理
@@ -28,12 +31,6 @@ public:
 	/// <param name="srvManager"> SRVManager </param>
 	void Init(SrvManager* srvManager);
 
-	/// <summary>
-	/// 終了処理
-	/// </summary>
-	void Finalize();
-
-public:
 	/// <summary>
 	/// テクスチャファイルの読み込み
 	/// </summary>
@@ -68,16 +65,11 @@ public:
 	uint32_t GetSrvIndex(const std::string& filePath);
 
 public:
-	static TextureManager* instance;
 
 	// SRVインデックスの開始番号
 	static uint32_t kSRVIndexTop_;
 
 private:
-	TextureManager() = default;
-	~TextureManager() = default;
-	TextureManager(TextureManager&) = delete;
-	TextureManager& operator=(TextureManager&) = delete;
 
 	// テクスチャ1枚分のデータ
 	struct TextureData {

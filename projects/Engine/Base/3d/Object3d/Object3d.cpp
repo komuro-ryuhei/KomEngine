@@ -203,7 +203,7 @@ Vector3 Object3d::GetRotate() const { return transform_.rotate; }
 Vector3 Object3d::GetTranslate() const { return transform_.translate; }
 
 void Object3d::SetEnvironmentTexture(const std::string& filePath) {
-	environmentGpuHandle_ = TextureManager::GetInstance()->GetSrvHandleGPU(filePath);
+	environmentGpuHandle_ = System::GetTextureManager()->GetSrvHandleGPU(filePath);
 	if (objectParamData_) {
 		objectParamData_->useEnvironmentMap = true;
 	}
