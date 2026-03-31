@@ -166,12 +166,6 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		charge_->Update(dt);
 	}
 
-	// メテオが終わった瞬間にBossへ通知（ForceEndでもここで拾える）
-	const bool isMeteorActive = (meteor_ && meteor_->IsActive());
-	if (wasMeteorActive && !isMeteorActive && desc_.boss) {
-		desc_.boss->OnMeteorFinished();
-	}
-
 	// チャージが終わった瞬間にBossへ通知
 	const bool isChargeActive = (charge_ && charge_->IsActive());
 	if (wasChargeActive && !isChargeActive && desc_.boss) {
