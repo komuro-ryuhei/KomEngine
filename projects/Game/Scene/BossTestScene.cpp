@@ -175,6 +175,7 @@ void BossTestScene::Init() {
 	pm->CreateParticleGeoup("charge_pulse", ring, "ring");
 	pm->CreateParticleGeoup("charge_core", circle2, "a");
 	pm->CreateParticleGeoup("charge_pulse", ring, "a");
+	pm->CreateParticleGeoup("player_charge_line", "./Resources/images/streak.png", "a");
 
 	// グループが既にあれば作らない
 	if (!pm->Exists("hit")) {

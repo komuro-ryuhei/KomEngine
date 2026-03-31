@@ -31,7 +31,8 @@
     "./Resources/images/toTitle.png",
     "./Resources/images/monsterBall.png",
     "./Resources/images/gradationLine.png",
-    "./Resources/images/moonLight.png"
+    "./Resources/images/moonLight.png",
+    "./Resources/images/streak.png"
   ],
   "models": [
     "plane.obj",

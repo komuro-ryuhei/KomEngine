@@ -176,6 +176,8 @@ private:
 	// チャージ演出
 	std::unique_ptr<ParticleEmitter> chargeCoreEmitter_ = nullptr;
 	std::unique_ptr<ParticleEmitter> chargePulseEmitter_ = nullptr;
+	std::unique_ptr<ParticleEmitter> chargeLineEmitter_ = nullptr;
+
 	float chargeFxCoreTimer_ = 0.0f;
 	float chargeFxPulseTimer_ = 0.0f;
 

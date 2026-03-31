@@ -92,6 +92,9 @@ void Player::Init(Camera* camera) {
 	chargePulseEmitter_ = std::make_unique<ParticleEmitter>();
 	chargePulseEmitter_->Init("charge_pulse", { 0.0f, 0.0f, 0.0f }, 1); // たまにリング
 
+	chargeLineEmitter_ = std::make_unique<ParticleEmitter>();
+	chargeLineEmitter_->Init("player_charge_line", { 0.0f, 0.0f, 0.0f }, 8);
+
 	// オーバーヒートゲージのスプライト
 	heatGaugeBg_ = std::make_unique<Sprite>();
 	heatGaugeBg_->Init("./Resources/images/blackBG.png", BlendType::BLEND_ALPHA);
@@ -158,7 +161,8 @@ void Player::Update() {
 			}
 
 			it = bulletObjects_.erase(it);
-		} else {
+		}
+		else {
 			++it;
 		}
 	}
@@ -285,7 +289,8 @@ void Player::Attack(float dt) {
 			heat_ = heatMax_;
 			isOverheated_ = true;
 			canShoot_ = false;
-		} else {
+		}
+		else {
 			heat_ += cost;
 			SpawnBullet(1);
 			autofireTimer_ = autofireInterval_;
@@ -505,7 +510,8 @@ void Player::ChargeEffect(float dt) {
 		chargeFxPulseTimer_ = 0.0f;
 		return;
 	}
-	if (!camera_ || !chargeCoreEmitter_ || !chargePulseEmitter_) { return; }
+
+	if (!camera_ || !chargeCoreEmitter_ || !chargePulseEmitter_ || !chargeLineEmitter_) { return; }
 
 	// チャージしてないならタイマーだけリセット
 	if (!isCharging_) {
@@ -535,7 +541,8 @@ void Player::ChargeEffect(float dt) {
 	Vector4 coreColor;
 	if (tCharge < 0.5f) {
 		coreColor = Lerp4(blue, yellow, tCharge / 0.5f);
-	} else {
+	}
+	else {
 		coreColor = Lerp4(yellow, red, (tCharge - 0.5f) / 0.5f);
 	}
 
@@ -562,44 +569,29 @@ void Player::ChargeEffect(float dt) {
 	MyMath::Normalize(camRight);
 	MyMath::Normalize(camUp);
 
-	// 手元：カメラ前方 + 右下（邪魔になりにくい）
-	const float handDist = 2.0f;    // 手元までの距離（見え方の要）
-	const float rightOff = 0.35f;   // 右に寄せる
-	const float downOff = 0.25f;   // 下に寄せる
+	// 
+	const float handDist = 2.0f;  // 手元までの距離
+	const float rightOff = 0.35f; // 右に寄せる
+	const float downOff = 0.25f;  // 下に寄せる
 
 	Vector3 handPos = camPos + camFwd * handDist + camRight * rightOff - camUp * downOff;
 
-	// 「奥から吸い寄せ」用：奥の開始点
-	Vector3 farPos = camPos + camFwd * 6.0f;
-
 	// ----------------------------
-	// 奥→手元へ吸い寄せる“細かい粒”
-	// （邪魔にならないように少量）
+	// 集光コア：handPos の一点へ吸い込む粒を多めに出す
 	// ----------------------------
+	// 奥から手元へ飛び込むライン粒
 	chargeFxCoreTimer_ -= dt;
 	if (chargeFxCoreTimer_ <= 0.0f) {
 
-		// 1〜2点だけ撒く（画面の邪魔防止）
-		const int spawnCount = 2;
-
-		for (int i = 0; i < spawnCount; ++i) {
-			float t = (float)(std::rand() % 100) / 100.0f; // 0..1
-			Vector3 p = farPos + (handPos - farPos) * t;
-
-			// 少しだけ散らす（吸い込まれる感じ）
-			float jx = ((std::rand() % 100) / 100.0f - 0.5f) * 0.25f;
-			float jy = ((std::rand() % 100) / 100.0f - 0.5f) * 0.25f;
-			p = p + camRight * jx + camUp * jy;
-
-			chargeCoreEmitter_->SetTranslate(p);
-			chargeCoreEmitter_->Update();
+		int lineCount = 10 + static_cast<int>(tCharge * 18.0f); // 10〜28
+		chargeLineEmitter_->SetTranslate(handPos);
+		for (int i = 0; i < lineCount; ++i) {
+			chargeLineEmitter_->Update();
 		}
 
-		// 手元にも1発（中心が光る）
-		chargeCoreEmitter_->SetTranslate(handPos);
-		chargeCoreEmitter_->Update();
+		// ライン主体なので中心コアはいったん出さない
 
-		chargeFxCoreTimer_ = 0.04f; // 25fps相当
+		chargeFxCoreTimer_ = 0.035f - 0.018f * tCharge;
 	}
 
 	// ----------------------------
@@ -613,20 +605,11 @@ void Player::ChargeEffect(float dt) {
 	}
 }
 
-Vector3 Player::GetCollisionPosition() const
-{
-	return GetTranslate();  // 現状は中心＝Translate
-}
+Vector3 Player::GetCollisionPosition() const { return GetTranslate(); }
 
-float Player::GetCollisionRadius() const
-{
-	return GetRadius();     // Object3d の radius
-}
+float Player::GetCollisionRadius() const { return GetRadius(); }
 
-CollisionLayer Player::GetCollisionLayer() const
-{
-	return CollisionLayer::Player;
-}
+CollisionLayer Player::GetCollisionLayer() const { return CollisionLayer::Player; }
 
 void Player::OnCollision(ICollisionObject* other) {
 

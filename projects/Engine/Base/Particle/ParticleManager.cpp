@@ -62,33 +62,82 @@ void ParticleManager::Update() {
 			// チャージ専用の見た目調整
 			// -----------------------------
 			if (name == "charge_core") {
-				// 少し回転（エネルギー感）
-				particle.transform.rotate.z += 0.25f;
+				particle.transform.rotate.z += 0.18f;
 
-				// 寿命で小さくなる（最後は消える前に極小に）
-				float sc = 0.30f * (1.0f - t);
-				sc = std::max(sc, 0.05f);
+				// 寿命後半で急に締まる
+				float sc = 0.24f * (1.0f - t);
+				sc = std::max(sc, 0.03f);
 				particle.transform.scale.x = sc;
 				particle.transform.scale.y = sc;
 
-				// 軽く上昇を弱めて、中心に吸い込まれる印象を維持（任意）
-				particle.velocity.y *= 0.985f;
-			} else if (name == "charge_pulse") {
-				// リングが広がる + 脈動（sin）
-				float pulse = 1.0f + 0.08f * std::sin(t * 12.0f); // 12は脈動回数
-				float sc = (0.55f + 1.35f * t) * pulse;
+				// 吸い込まれていく感じを少し強調
+				particle.velocity.x *= 1.01f;
+				particle.velocity.y *= 1.01f;
+				particle.velocity.z *= 1.01f;
+			}
+
+			else if (name == "charge_pulse") {
+
+				// 外側から内側へ縮む
+				float baseScale = 2.6f - 2.2f * t; // 2.6 -> 0.4
+				baseScale = std::max(baseScale, 0.25f);
+
+				// 脈動は弱め
+				float pulse = 1.0f + 0.02f * std::sin(t * 8.0f);
+				float sc = baseScale * pulse;
 
 				particle.transform.scale.x = sc;
 				particle.transform.scale.y = sc;
 
-				// ちょい回転
-				particle.transform.rotate.z += 0.10f;
+				particle.transform.rotate.z += 0.03f;
 
-				// 色は寿命の後半で少し薄く（alphaとは別で、白→青寄りに）
-				// ※不要なら消してOK
-				particle.color.x = 0.75f;
-				particle.color.y = 0.90f;
-				particle.color.z = 1.00f;
+				// -------------------------
+				// 色変化をもっと緩やかに
+				// 0.0 ~ 0.65 : 青 -> 黄
+				// 0.65 ~ 1.0 : 黄 -> 赤
+				// -------------------------
+				Vector4 c{};
+				if (t < 0.65f) {
+					float tt = t / 0.65f;
+					c.x = 0.20f + (1.00f - 0.20f) * tt;
+					c.y = 0.55f + (0.95f - 0.55f) * tt;
+					c.z = 1.00f + (0.20f - 1.00f) * tt;
+				}
+				else {
+					float tt = (t - 0.65f) / 0.35f;
+					c.x = 1.00f;
+					c.y = 0.95f + (0.20f - 0.95f) * tt;
+					c.z = 0.20f;
+				}
+
+				// 薄すぎ対策
+				float alpha = 1.0f;
+				if (t < 0.75f) {
+					alpha = 1.0f;
+				}
+				else {
+					float tt = (t - 0.75f) / 0.25f;
+					alpha = 1.0f - 0.35f * tt; // 最後でも 0.65 は残す
+				}
+				alpha = std::clamp(alpha, 0.65f, 1.0f);
+
+				c.w = alpha;
+				particle.color = c;
+			}
+
+			else if (name == "player_charge_line") {
+				float len = 2.2f * (1.0f - t) + 0.6f;
+				float wid = 0.16f * (1.0f - t) + 0.05f;
+
+				particle.transform.scale.x = wid;
+				particle.transform.scale.y = len;
+
+				particle.velocity.x *= 1.025f;
+				particle.velocity.y *= 1.025f;
+				particle.velocity.z *= 1.025f;
+
+				// 少し明るめ
+				particle.color.w *= 1.0f;
 			}
 
 			// 速度による移動
@@ -498,7 +547,8 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 				{0.0f, 0.0f, 1.0f}
 				});
 		}
-	} else if (particleType == "cylinder") {
+	}
+	else if (particleType == "cylinder") {
 
 		const uint32_t kLineCount = 32;
 		const float radius = 2.0f;
@@ -542,7 +592,8 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 			vertices.push_back({ p1, uvBottom, normal });
 			vertices.push_back({ p3, uvTop, normal });
 		}
-	} else if (particleType == "moonLight") {
+	}
+	else if (particleType == "moonLight") {
 
 		const uint32_t kRingDivide = 32;
 		const float kOuterRadius = 2.0f;
@@ -588,7 +639,8 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 				{0.0f, 0.0f, 1.0f}
 				});
 		}
-	} else {
+	}
+	else {
 		vertices = {
 			{{1.0f, 1.0f, 0.0f, 1.0f},   {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
 			{{-1.0f, 1.0f, 0.0f, 1.0f},  {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
@@ -641,35 +693,36 @@ bool ParticleManager::Exists(const std::string& name) const {
 
 Particle ParticleManager::MakeChargeCoreParticle(std::mt19937& randomEngine, const Vector3& center) {
 
-	// 円周上から中心へ吸い込まれる粒
+	// 手元の一点へ集光する粒
 	std::uniform_real_distribution<float> distAngle(0.0f, 2.0f * std::numbers::pi_v<float>);
-	std::uniform_real_distribution<float> distRadius(1.2f, 2.2f);
-	std::uniform_real_distribution<float> distSpeed(0.08f, 0.16f);
-	std::uniform_real_distribution<float> distLife(0.28f, 0.45f);
-	std::uniform_real_distribution<float> distUp(0.002f, 0.008f);
+	std::uniform_real_distribution<float> distRadius(1.8f, 3.8f);
+	std::uniform_real_distribution<float> distHeight(-1.0f, 1.0f);
+	std::uniform_real_distribution<float> distSpeed(0.18f, 0.34f);
+	std::uniform_real_distribution<float> distLife(0.18f, 0.32f);
+	std::uniform_real_distribution<float> distScale(0.10f, 0.20f);
 
 	const float a = distAngle(randomEngine);
 	const float r = distRadius(randomEngine);
+	const float h = distHeight(randomEngine);
 
-	// 中心の周りにばら撒く
-	Vector3 offset{ std::cos(a) * r, 0.0f, std::sin(a) * r };
+	Vector3 offset{
+		std::cos(a) * r,
+		h,
+		std::sin(a) * r
+	};
 
 	Particle p;
 	p.transform.translate = center + offset;
-
-	// ビルボード想定なので Z回転だけで十分
 	p.transform.rotate = { 0.0f, 0.0f, a };
 
-	// 小さめの粒
-	p.transform.scale = { 0.25f, 0.25f, 1.0f };
+	float sc = distScale(randomEngine);
+	p.transform.scale = { sc, sc, 1.0f };
 
-	// 速度：中心へ向かう（XZ）
-	Vector3 dir = MyMath::Normalize(Vector3{ -offset.x, 0.0f, -offset.z });
+	// 中心へ向かう速度
+	Vector3 dir = MyMath::Normalize(center - p.transform.translate);
 	float spd = distSpeed(randomEngine);
+	p.velocity = dir * spd;
 
-	p.velocity = { dir.x * spd, distUp(randomEngine), dir.z * spd };
-
-	// 青白いチャージ色
 	p.color = chargeCoreColor_;
 
 	p.lifeTime = distLife(randomEngine);
@@ -681,7 +734,7 @@ Particle ParticleManager::MakeChargeCoreParticle(std::mt19937& randomEngine, con
 Particle ParticleManager::MakeChargePulseRingParticle(std::mt19937& randomEngine, const Vector3& center) {
 
 	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
-	std::uniform_real_distribution<float> distLife(0.30f, 0.45f);
+	std::uniform_real_distribution<float> distLife(0.55f, 0.80f);
 
 	Particle p;
 	p.transform.translate = center;
@@ -698,6 +751,44 @@ Particle ParticleManager::MakeChargePulseRingParticle(std::mt19937& randomEngine
 	// 少し青寄りの白
 	p.color = chargePulseColor_;
 
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+Particle ParticleManager::MakePlayerChargeLineParticle(std::mt19937& randomEngine, const Vector3& center) {
+
+	std::uniform_real_distribution<float> distX(-12.0f, 12.0f);
+	std::uniform_real_distribution<float> distY(-7.0f, 7.0f);
+	std::uniform_real_distribution<float> distZ(16.0f, 34.0f);
+	std::uniform_real_distribution<float> distSpeed(0.70f, 1.35f);
+	std::uniform_real_distribution<float> distLife(0.10f, 0.18f);
+
+	Particle p;
+
+	Vector3 startOffset{
+		distX(randomEngine),
+		distY(randomEngine),
+		-distZ(randomEngine)
+	};
+
+	p.transform.translate = center + startOffset;
+
+	Vector3 dir = MyMath::Normalize(center - p.transform.translate);
+	float spd = distSpeed(randomEngine);
+	p.velocity = dir * spd;
+
+	// 進行方向を向かせる
+	float angle = std::atan2(dir.y, dir.x);
+
+	// 横長 streak.png を使うので +90度 回す
+	p.transform.rotate = { 0.0f, 0.0f, angle + 1.5707963f };
+
+	// scale は1回だけ
+	p.transform.scale = { 0.18f, 2.8f, 1.0f };
+
+	p.color = chargeCoreColor_;
 	p.lifeTime = distLife(randomEngine);
 	p.currentTime = 0.0f;
 
@@ -750,6 +841,10 @@ void ParticleManager::BuildEmitTable() {
 
 	emitTable_["trail"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
 		EmitTrailGroup(group, position, count);
+		};
+
+	emitTable_["player_charge_line"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitPlayerChargeLine(group, position, count);
 		};
 }
 
@@ -860,5 +955,15 @@ void ParticleManager::EmitTrailGroup(ParticleGroup& group, const Vector3& positi
 
 	for (uint32_t i = 0; i < count; ++i) {
 		group.particles.push_back(MakeTrailParticle(position));
+	}
+}
+
+void ParticleManager::EmitPlayerChargeLine(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakePlayerChargeLineParticle(randomEngine, position));
 	}
 }

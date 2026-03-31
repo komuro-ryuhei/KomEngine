@@ -122,6 +122,9 @@ public:
 	// 敵のチャージ中の「脈動リング」
 	Particle MakeChargePulseRingParticle(std::mt19937& randomEngine, const Vector3& center);
 
+	// チャージのラインエフェクト
+	Particle MakePlayerChargeLineParticle(std::mt19937& randomEngine, const Vector3& center);
+
 	/// <summary>
 	/// 存在確認
 	/// </summary>
@@ -184,4 +187,5 @@ private:
 	void EmitChargePulse(ParticleGroup& group, const Vector3& position, uint32_t count);
 	void EmitRibbon(ParticleGroup& group, const Vector3& position, uint32_t count);
 	void EmitTrailGroup(ParticleGroup& group, const Vector3& position, uint32_t count);
+	void EmitPlayerChargeLine(ParticleGroup& group, const Vector3& position, uint32_t count);
 };
