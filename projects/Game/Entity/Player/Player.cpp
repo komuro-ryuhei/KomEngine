@@ -359,7 +359,7 @@ void Player::SpawnBullet(int damage) {
 	newBullet->SetRadius(radius);
 
 	// 速度
-	float speed = 0.01f * (1.0f + 0.25f * (power - 1.0f));
+	float speed = 0.5f * (1.0f + 0.25f * (power - 1.0f));
 	newBullet->SetSpeed(speed);
 
 	// ----------------------------
@@ -378,7 +378,8 @@ void Player::SpawnBullet(int damage) {
 			MyMath::MakeViewportMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f);
 		Matrix4x4 invViewportMatrix = MyMath::Inverse4x4(viewportMatrix);
 
-		Vector2 spritePos = reticleSprite_->GetCenterPosition();
+		Vector2 spritePos = reticleSprite_->GetPosition();
+
 		Vector3 screenNear = { spritePos.x, spritePos.y, 0.0f };
 		Vector3 screenFar = { spritePos.x, spritePos.y, 1.0f };
 
@@ -389,12 +390,12 @@ void Player::SpawnBullet(int damage) {
 		Vector3 worldFar = MyMath::Transform(ndcFar, invVPMatrix);
 
 		direction = worldFar - worldNear;
-
-	} else {
+	}
+	else {
 		direction = { 0.0f, 0.0f, 1.0f };
 	}
 
-	MyMath::Normalize(direction);
+	direction = MyMath::Normalize(direction);
 	newBullet->SetDirection(direction);
 
 	// 出現位置は元のプレイヤー中心
