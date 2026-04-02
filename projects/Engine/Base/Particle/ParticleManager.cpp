@@ -102,8 +102,7 @@ void ParticleManager::Update() {
 					c.x = 0.20f + (1.00f - 0.20f) * tt;
 					c.y = 0.55f + (0.95f - 0.55f) * tt;
 					c.z = 1.00f + (0.20f - 1.00f) * tt;
-				}
-				else {
+				} else {
 					float tt = (t - 0.65f) / 0.35f;
 					c.x = 1.00f;
 					c.y = 0.95f + (0.20f - 0.95f) * tt;
@@ -114,8 +113,7 @@ void ParticleManager::Update() {
 				float alpha = 1.0f;
 				if (t < 0.75f) {
 					alpha = 1.0f;
-				}
-				else {
+				} else {
 					float tt = (t - 0.75f) / 0.25f;
 					alpha = 1.0f - 0.35f * tt; // 最後でも 0.65 は残す
 				}
@@ -255,13 +253,15 @@ Particle ParticleManager::MakeRandomParticle(std::mt19937& randomEngine, const V
 	std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
 	std::uniform_real_distribution<float> distTime(2.0f, 4.0f);
 
+	Vector4 color = { 1.0f, 0.0f, 0.0f , 1.0f };
+
 	Particle particle;
 	Vector3 randomTranslate{ distribution(randomEngine), distribution(randomEngine), distribution(randomEngine) };
-	particle.transform.scale = { 1.0f, 1.0f, 1.0f };
+	particle.transform.scale = { 0.3f, 0.3f, 0.3f };
 	particle.transform.rotate = { 0.0f, 0.0f, 0.0f };
 	particle.transform.translate = translate + randomTranslate;
 	particle.velocity = { distribution(randomEngine), distribution(randomEngine), distribution(randomEngine) };
-	particle.color = { distColor(randomEngine), distColor(randomEngine), distColor(randomEngine), 1.0f };
+	particle.color = { color };
 	particle.lifeTime = distTime(randomEngine);
 	particle.currentTime = 0.0f;
 
@@ -547,8 +547,7 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 				{0.0f, 0.0f, 1.0f}
 				});
 		}
-	}
-	else if (particleType == "cylinder") {
+	} else if (particleType == "cylinder") {
 
 		const uint32_t kLineCount = 32;
 		const float radius = 2.0f;
@@ -592,8 +591,7 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 			vertices.push_back({ p1, uvBottom, normal });
 			vertices.push_back({ p3, uvTop, normal });
 		}
-	}
-	else if (particleType == "moonLight") {
+	} else if (particleType == "moonLight") {
 
 		const uint32_t kRingDivide = 32;
 		const float kOuterRadius = 2.0f;
@@ -639,8 +637,7 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 				{0.0f, 0.0f, 1.0f}
 				});
 		}
-	}
-	else {
+	} else {
 		vertices = {
 			{{1.0f, 1.0f, 0.0f, 1.0f},   {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
 			{{-1.0f, 1.0f, 0.0f, 1.0f},  {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},

@@ -320,7 +320,8 @@ private:
 	struct ArmorUnit {
 		std::unique_ptr<Object3d> obj;
 		bool alive = true;   // 破壊済みならfalse
-		float angle = 0.0f;  // 周回角度（ラジアン）
+		float angle = 0.0f;  // 周回角度
+		int hp = 3;          // アーマー1個の耐久値
 	};
 
 	std::vector<ArmorUnit> armors_;
@@ -339,11 +340,12 @@ private:
 	void DrawArmors();
 	void BreakOneArmor();
 	int  GetAliveArmorCount() const;
+	bool DamageArmor(int damage);
+	bool AreAllArmorsBroken() const;
 
 	// 腕は腕攻撃時のみ表示（描画・当たり判定を無効化するため）
 	bool leftArmVisible_ = false;
 	bool rightArmVisible_ = false;
-
 
 	// 
 	std::unique_ptr<Sprite> hpSprite_;

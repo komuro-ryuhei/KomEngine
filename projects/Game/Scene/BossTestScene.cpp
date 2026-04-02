@@ -163,7 +163,7 @@ void BossTestScene::Init() {
 	pm->Init(BlendType::BLEND_ADD);
 
 	pm->CreateParticleGeoup("hit", circle2, "a");
-	pm->CreateParticleGeoup("explosion", monsterBallTexture, "a");
+	pm->CreateParticleGeoup("explosion", circle2, "a");
 	pm->CreateParticleGeoup("ring", ring, "ring");
 	pm->CreateParticleGeoup("cylinder", ring, "cylinder");
 	pm->CreateParticleGeoup("moonLight", moonLight, "moonLight");

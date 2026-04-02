@@ -1022,6 +1022,14 @@ void BossEnemy::Damage(int v) {
 	// 胴体フラッシュ開始
 	StartBodyHitFlash();
 
+	// まだアーマーが残っているなら、本体ではなくアーマーにダメージ
+	if (!AreAllArmorsBroken()) {
+		DamageArmor(v);
+		return;
+	}
+
+	// ---------------- 本体ダメージ ---------------- //
+
 	// ダメージ前の幅
 	float prevRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 	prevRatio = std::clamp(prevRatio, 0.0f, 1.0f);
@@ -1029,9 +1037,6 @@ void BossEnemy::Damage(int v) {
 
 	// HPを減らす
 	hp_ = std::max(0, hp_ - v);
-
-	// 装甲を1つ破壊（ボスがダメージを受けた時だけ）
-	BreakOneArmor();
 
 	// ダメージ後の幅
 	float newRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
@@ -1957,8 +1962,55 @@ void BossEnemy::InitArmors() {
 		float t = (armorInitialCount_ > 0) ? (float)i / (float)armorInitialCount_ : 0.0f;
 		u.angle = MyMath::GetPI() * 2.0f * t;
 
+		u.alive = true;
+		u.hp = 3;
+
 		armors_.push_back(std::move(u));
 	}
+}
+
+bool BossEnemy::DamageArmor(int damage) {
+
+	if (damage <= 0) {
+		return false;
+	}
+
+	// 生きているアーマーのうち、末尾側から1個選んでダメージ
+	for (int i = static_cast<int>(armors_.size()) - 1; i >= 0; --i) {
+		auto& a = armors_[i];
+		if (!a.alive) {
+			continue;
+		}
+
+		a.hp -= damage;
+
+		if (a.hp <= 0) {
+			a.hp = 0;
+
+			// 壊れる直前の位置を取る
+			Vector3 breakPos = transform_.translate;
+			if (a.obj) {
+				breakPos = a.obj->GetWorldPosition();
+			}
+
+			a.alive = false;
+
+			// 軽い爆発エフェクト
+			auto* pm = KomEngine::System::GetParticleManager();
+			if (pm) {
+				if (pm->Exists("explosion")) {
+					pm->Emit("explosion", breakPos, 12);
+				}
+				if (pm->Exists("hit")) {
+					pm->Emit("hit", breakPos, 18);
+				}
+			}
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
 void BossEnemy::BreakOneArmor() {
@@ -2028,6 +2080,16 @@ void BossEnemy::DrawArmors() {
 			a.obj->Draw();
 		}
 	}
+}
+
+bool BossEnemy::AreAllArmorsBroken() const {
+
+	for (const auto& a : armors_) {
+		if (a.alive) {
+			return false;
+		}
+	}
+	return true;
 }
 
 bool BossEnemy::ConsumeRetreatRequest() {
