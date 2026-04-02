@@ -35,10 +35,11 @@ void TitleScene::Init() {
 	// Player
 	player_ = std::make_unique<Object3d>();
 	player_->Init(BlendType::BLEND_NONE);
-	player_->SetModel("titlePlayer.obj");
+	player_->SetModel("human.obj");
 	player_->SetDefaultCamera(camera_.get());
-	player_->SetRotate({ 0.0f, 3.5f, 0.0f });
-	player_->SetTranslate({ -5.0f, -4.0f, 10.0f });
+	player_->SetScale({ 2.0f, 2.0f, 2.0f });
+	player_->SetRotate({ 0.0f, 3.8f, 0.0f });
+	player_->SetTranslate({ -1.4f, -4.0f, -3.5 });
 
 	// boss
 	boss_ = std::make_unique<BossEnemy>();

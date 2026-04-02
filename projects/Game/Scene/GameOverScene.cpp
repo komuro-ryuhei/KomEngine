@@ -17,8 +17,9 @@ void GameOverScene::Init() {
 	// 倒れているプレイヤーのモデル
 	downPlayer_ = std::make_unique<Object3d>();
 	downPlayer_->Init(BlendType::BLEND_NONE);
-	downPlayer_->SetModel("downPlayer.obj");
+	downPlayer_->SetModel("downHuman.obj");
 	downPlayer_->SetDefaultCamera(camera_.get());
+	downPlayer_->SetScale({ 2.0f, 2.0f, 2.0f });
 	downPlayer_->SetTranslate({ 0.0f, 0.0f, 0.0f });
 
 	// --- フェード初期化（画面サイズは 1280x720）--- //

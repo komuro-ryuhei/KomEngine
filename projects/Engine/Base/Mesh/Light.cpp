@@ -23,7 +23,7 @@ void Light::LightSetting() {
 
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
-	directionalLightData->intensity = 0.0f;
+	directionalLightData->intensity = 4.0f;
 
 	// Phong用のマテリアルリソースを作る
 	materialResourcePhong = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(CameraForGPU));
@@ -49,7 +49,7 @@ void Light::LightSetting() {
 	spotLightData->position = { 2.0f, 1.25f, 0.0f };
 	spotLightData->distance = 7.0f;
 	spotLightData->direction = MyMath::Normalize({ -1.0f, -1.0f, 0.0f });
-	spotLightData->intensity = 4.0f;
+	spotLightData->intensity = 0.0f;
 	spotLightData->decay = 2.0f;
 	spotLightData->casAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
 	spotLightData->cosFalloffStart = 1.0f;
