@@ -733,6 +733,12 @@ void BossEnemy::StartEnrageTransition(float duration) {
 	enrageTransitionDuration_ = duration;
 	enrageShockwaveEmitted_ = false;
 
+	// 怒り演出中は無敵
+	invulnerable_ = true;
+
+	// 怒り突入時にアーマーを再セット
+	ResetArmors(3);
+
 	// いったん全攻撃停止
 	CancelAllAttacks();
 
@@ -873,6 +879,9 @@ void BossEnemy::UpdateEnrageTransition(float dt) {
 			enrageTransitioning_ = false;
 			enrageTransitionTimer_ = 0.0f;
 			enrageShockwaveEmitted_ = false;
+
+			// 怒り演出終了で無敵解除
+			invulnerable_ = false;
 		}
 		break;
 	}
@@ -1016,6 +1025,11 @@ void BossEnemy::Damage(int v) {
 
 	if (v <= 0) return;
 
+	// 無敵中は本体ダメージを受けない
+	if (invulnerable_ || enrageTransitioning_) {
+		return;
+	}
+
 	// 被弾シェイク開始
 	StartBodyHitShake();
 
@@ -1030,20 +1044,16 @@ void BossEnemy::Damage(int v) {
 
 	// ---------------- 本体ダメージ ---------------- //
 
-	// ダメージ前の幅
 	float prevRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 	prevRatio = std::clamp(prevRatio, 0.0f, 1.0f);
 	float prevWidth = 700.0f * prevRatio;
 
-	// HPを減らす
 	hp_ = std::max(0, hp_ - v);
 
-	// ダメージ後の幅
 	float newRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 	newRatio = std::clamp(newRatio, 0.0f, 1.0f);
 	float newWidth = 700.0f * newRatio;
 
-	// 減ったぶんからチップ生成
 	if (hpSprite_ && prevWidth > newWidth) {
 		SpawnHpChips(prevWidth, newWidth);
 	}
@@ -2000,6 +2010,9 @@ void BossEnemy::InitArmors() {
 	armors_.clear();
 	armors_.reserve(armorInitialCount_);
 
+	armorTime_ = 0.0f;
+	armorGlobalAngle_ = 0.0f;
+
 	for (int i = 0; i < armorInitialCount_; ++i) {
 		ArmorUnit u{};
 		u.obj = std::make_unique<Object3d>();
@@ -2130,6 +2143,37 @@ void BossEnemy::DrawArmors() {
 	for (auto& a : armors_) {
 		if (a.obj && a.alive) {
 			a.obj->Draw();
+		}
+	}
+}
+
+void BossEnemy::ResetArmors(int hp) {
+
+	if (hp <= 0) {
+		hp = 1;
+	}
+
+	// 個数が変わっていたら作り直す
+	if (static_cast<int>(armors_.size()) != armorInitialCount_) {
+		InitArmors();
+	}
+
+	armorTime_ = 0.0f;
+	armorGlobalAngle_ = 0.0f;
+
+	const int count = static_cast<int>(armors_.size());
+	for (int i = 0; i < count; ++i) {
+		auto& a = armors_[i];
+
+		a.alive = true;
+		a.hp = hp;
+
+		float t = (count > 0) ? static_cast<float>(i) / static_cast<float>(count) : 0.0f;
+		a.angle = MyMath::GetPI() * 2.0f * t;
+
+		if (a.obj) {
+			a.obj->SetScale(armorScale_);
+			a.obj->SetParent(object3d_.get());
 		}
 	}
 }

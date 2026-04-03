@@ -335,9 +335,11 @@ private:
 	Vector3 armorScale_ = { 0.3f, 0.3f, 0.3f };
 	bool armorRebuildRequest_ = false;
 
+	// 
 	void InitArmors();
 	void UpdateArmors(float dt);
 	void DrawArmors();
+	void ResetArmors(int hp = 3);
 	void BreakOneArmor();
 	int  GetAliveArmorCount() const;
 	bool DamageArmor(int damage);
