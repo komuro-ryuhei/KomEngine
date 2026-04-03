@@ -32,7 +32,8 @@
     "./Resources/images/monsterBall.png",
     "./Resources/images/gradationLine.png",
     "./Resources/images/moonLight.png",
-    "./Resources/images/streak.png"
+    "./Resources/images/streak.png",
+    "./Resources/images/enemyChargeCore.png"
   ],
   "models": [
     "plane.obj",
@@ -53,6 +54,7 @@
     "BossEnemyMeteor.obj",
     "human.obj",
     "downHuman.obj",
+    "EnemyChargeCore",
     "downPlayer.obj"
   ]
 }

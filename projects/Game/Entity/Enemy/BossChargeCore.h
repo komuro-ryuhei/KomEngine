@@ -42,7 +42,10 @@ private:
 
 	float radius_ = 1.2f;
 	Vector3 worldPos_{};
-	Vector3 scale_{ 1.2f, 1.2f, 1.2f };
+	Vector3 scale_{ 1.0f, 1.0f, 1.0f };
 
 	float rotY_ = 0.0f;
+
+	// 発光の脈動用
+	float pulseTime_ = 0.0f;
 };

@@ -1905,30 +1905,82 @@ void BossEnemy::UpdateChargeCrossPose(float dt) {
 
 void BossEnemy::ChargeEffect(float dt) {
 
+	auto* pm = KomEngine::System::GetParticleManager();
+	if (!pm) {
+		return;
+	}
+
 	if (chargeActive_) {
 
 		Vector3 fxPos = GetChargeCoreWorldPos();
 
-		auto* pm = KomEngine::System::GetParticleManager();
-
 		const bool hasCore = pm->Exists("charge_core");
 		const bool hasPulse = pm->Exists("charge_pulse");
+		const bool hasMoon = pm->Exists("moonLight");
+		const bool hasAura = pm->Exists("charge_aura");
+		const bool hasLine = pm->Exists("player_charge_line");
 
+		// 青白い気の色に統一
+		pm->SetChargeEffectColor(
+			{ 0.72f, 0.90f, 1.00f, 1.0f },   // core
+			{ 0.85f, 0.95f, 1.00f, 1.0f }    // pulse
+		);
+
+		// 中心に吸い込まれる細かい粒
 		chargeFxCoreTimer_ += dt;
-		if (chargeFxCoreTimer_ >= 0.035f) {
+		if (chargeFxCoreTimer_ >= 0.020f) {
 			chargeFxCoreTimer_ = 0.0f;
-			if (hasCore) pm->Emit("charge_core", fxPos, 6);
+
+			if (hasCore) {
+				pm->Emit("charge_core", fxPos, 12);
+			}
 		}
 
+		// 遠くから中心に集まる線
+		chargeFxRibbonTimer_ += dt;
+		if (chargeFxRibbonTimer_ >= 0.060f) {
+			chargeFxRibbonTimer_ = 0.0f;
+
+			if (hasLine) {
+				pm->Emit("player_charge_line", fxPos, 5);
+			}
+		}
+
+		// 外周の脈動リング
 		chargeFxPulseTimer_ += dt;
-		if (chargeFxPulseTimer_ >= 0.18f) {
+		if (chargeFxPulseTimer_ >= 0.22f) {
 			chargeFxPulseTimer_ = 0.0f;
-			if (hasPulse) pm->Emit("charge_pulse", fxPos, 1);
+
+			if (hasPulse) {
+				pm->Emit("charge_pulse", fxPos, 1);
+			}
 		}
 
+		// たまに十字っぽい光を足す
+		chargeFxRingTimer_ += dt;
+		if (chargeFxRingTimer_ >= 0.30f) {
+			chargeFxRingTimer_ = 0.0f;
+
+			if (hasMoon) {
+				pm->Emit("moonLight", fxPos, 1);
+			}
+		}
+
+		// 中心の大きい“気の塊”本体
+		chargeFxCylinderTimer_ += dt;
+		if (chargeFxCylinderTimer_ >= 0.08f) {
+			chargeFxCylinderTimer_ = 0.0f;
+
+			if (hasAura) {
+				pm->Emit("charge_aura", fxPos, 2);
+			}
+		}
 	} else {
 		chargeFxCoreTimer_ = 0.0f;
 		chargeFxPulseTimer_ = 0.0f;
+		chargeFxRibbonTimer_ = 0.0f;
+		chargeFxRingTimer_ = 0.0f;
+		chargeFxCylinderTimer_ = 0.0f;
 	}
 }
 
