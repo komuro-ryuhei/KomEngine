@@ -7,7 +7,7 @@ void BossChargeCore::Init(Camera* camera) {
 	camera_ = camera;
 
 	obj_ = std::make_unique<Object3d>();
-	obj_->Init(BlendType::BLEND_ADD);
+	obj_->Init("object3d_chargeCore", BlendType::BLEND_NONE);
 	obj_->SetModel("EnemyChargeCore.obj");
 	obj_->SetDefaultCamera(camera_);
 	obj_->SetScale(scale_);

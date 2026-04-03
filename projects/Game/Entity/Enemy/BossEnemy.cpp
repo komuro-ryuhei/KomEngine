@@ -1928,7 +1928,7 @@ void BossEnemy::ChargeEffect(float dt) {
 
 		// 中心に吸い込まれる細かい粒
 		chargeFxCoreTimer_ += dt;
-		if (chargeFxCoreTimer_ >= 0.020f) {
+		if (chargeFxCoreTimer_ >= 0.035f) {
 			chargeFxCoreTimer_ = 0.0f;
 
 			if (hasCore) {
@@ -1968,7 +1968,7 @@ void BossEnemy::ChargeEffect(float dt) {
 
 		// 中心の大きい“気の塊”本体
 		chargeFxCylinderTimer_ += dt;
-		if (chargeFxCylinderTimer_ >= 0.08f) {
+		if (chargeFxCylinderTimer_ >= 0.18f) {
 			chargeFxCylinderTimer_ = 0.0f;
 
 			if (hasAura) {

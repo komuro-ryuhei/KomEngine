@@ -6,8 +6,8 @@ void BossChargeBeam::Init(Camera* camera) {
 	camera_ = camera;
 
 	obj_ = std::make_unique<Object3d>();
-	obj_->Init(BlendType::BLEND_ADD);
-	obj_->SetModel("sphere.obj");
+	obj_->Init("object3d_chargeCore", BlendType::BLEND_NONE);
+	obj_->SetModel("EnemyChargeCore.obj");
 	obj_->SetDefaultCamera(camera_);
 	obj_->SetColor({ 1.0f, 0.4f, 0.2f, 1.0f });
 	obj_->SetScale(startScale_);

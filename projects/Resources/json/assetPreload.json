@@ -54,7 +54,7 @@
     "BossEnemyMeteor.obj",
     "human.obj",
     "downHuman.obj",
-    "EnemyChargeCore",
+    "EnemyChargeCore.obj",
     "downPlayer.obj"
   ]
 }

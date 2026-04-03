@@ -443,6 +443,7 @@
     <ClInclude Include="Game\GamePlay\Enemy\BossRetreatAttackController.h" />
     <ClInclude Include="Game\Entity\Enemy\BossChargeCore.h" />
     <ClInclude Include="Game\Entity\Enemy\BossChargeBeam.h" />
+    <ClInclude Include="Game\Entity\GameObject.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />
