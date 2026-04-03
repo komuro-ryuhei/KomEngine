@@ -146,7 +146,7 @@ private:
 
 	// 待機時間
 	float clearWaitTimer_ = 0.0f;
-	float clearWaitDuration_ = 2.0f;
+	float clearWaitDuration_ = 1.0f;
 
 	// 
 	float showerCamBlendTime_ = 0.6f;

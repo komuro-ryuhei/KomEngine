@@ -92,6 +92,6 @@ private:
 	float lifeTimer_ = 0.0f;        // 生存時間
 	float maxLife_ = 15.0f;         // 保険で自動消滅
 
-	// 地面レベル（暫定）。シーン側で合わせるならsetter用意してもOK
+	// 地面
 	float groundY_ = 0.0f;
 };
