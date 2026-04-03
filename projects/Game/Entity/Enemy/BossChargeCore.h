@@ -33,8 +33,10 @@ public:
 
 private:
 
+private:
 	Camera* camera_ = nullptr;
-	std::unique_ptr<Object3d> obj_;
+
+	std::unique_ptr<Object3d> coreObj_;
 
 	bool active_ = false;
 	int hp_ = 8;
@@ -42,10 +44,9 @@ private:
 
 	float radius_ = 1.2f;
 	Vector3 worldPos_{};
-	Vector3 scale_{ 1.0f, 1.0f, 1.0f };
+
+	Vector3 coreScale_{ 0.95f, 0.95f, 0.95f };
 
 	float rotY_ = 0.0f;
-
-	// 発光の脈動用
 	float pulseTime_ = 0.0f;
 };

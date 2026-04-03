@@ -113,17 +113,17 @@ void ParticleManager::Update() {
 
 			if (name == "charge_aura") {
 
-				float sc = 1.9f + 0.6f * std::sin(t * 6.28318f);
+				float sc = 1.10f + 0.14f * std::sin(t * 6.28318f);
 				particle.transform.scale.x = sc;
 				particle.transform.scale.y = sc;
 
-				particle.transform.rotate.z += 0.01f;
+				particle.transform.rotate.z += 0.003f;
 
 				Vector4 c;
-				c.x = 0.78f + 0.10f * t;
-				c.y = 0.92f + 0.04f * t;
+				c.x = 0.72f + 0.03f * t;
+				c.y = 0.88f + 0.02f * t;
 				c.z = 1.00f;
-				c.w = (1.0f - t) * 0.55f;
+				c.w = (1.0f - t) * 0.07f;
 
 				particle.color = c;
 			}
@@ -698,8 +698,8 @@ bool ParticleManager::Exists(const std::string& name) const {
 Particle ParticleManager::MakeChargeCoreParticle(std::mt19937& randomEngine, const Vector3& center) {
 
 	std::uniform_real_distribution<float> distAngle(0.0f, 2.0f * std::numbers::pi_v<float>);
-	std::uniform_real_distribution<float> distRadius(1.4f, 3.2f);
-	std::uniform_real_distribution<float> distHeight(-0.8f, 0.8f);
+	std::uniform_real_distribution<float> distRadius(0.9f, 2.0f);
+	std::uniform_real_distribution<float> distHeight(-0.45f, 0.45f);
 	std::uniform_real_distribution<float> distSpeed(0.10f, 0.22f);
 	std::uniform_real_distribution<float> distLife(0.22f, 0.40f);
 	std::uniform_real_distribution<float> distScale(0.06f, 0.15f);

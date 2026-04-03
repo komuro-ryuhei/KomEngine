@@ -6,62 +6,73 @@ void BossChargeCore::Init(Camera* camera) {
 
 	camera_ = camera;
 
-	obj_ = std::make_unique<Object3d>();
-	obj_->Init("object3d_chargeCore", BlendType::BLEND_NONE);
-	obj_->SetModel("EnemyChargeCore.obj");
-	obj_->SetDefaultCamera(camera_);
-	obj_->SetScale(scale_);
-
-	// 青白い中心光
-	obj_->SetColor({ 0.88f, 0.96f, 1.0f, 1.0f });
+	// 芯
+	coreObj_ = std::make_unique<Object3d>();
+	coreObj_->Init("object3d_chargeCore", BlendType::BLEND_NONE);
+	coreObj_->SetModel("EnemyChargeCore.obj");
+	coreObj_->SetDefaultCamera(camera_);
+	coreObj_->SetScale(coreScale_);
+	coreObj_->SetColor({ 0.82f, 0.93f, 1.0f, 1.0f });
 }
 
 void BossChargeCore::Update(float dt) {
 
-	if (!active_ || !obj_) {
+	if (!active_) {
 		return;
 	}
 
 	pulseTime_ += dt;
 
-	// 回転はかなり弱める
-	rotY_ += dt * 0.6f;
-
-	obj_->SetTranslate(worldPos_);
-	obj_->SetRotate({ 0.0f, rotY_, 0.0f });
+	// 回転はかなり弱くする
+	rotY_ += dt * 0.04f;
 
 	float hpRate = (maxHp_ > 0) ? static_cast<float>(hp_) / static_cast<float>(maxHp_) : 0.0f;
 	hpRate = std::clamp(hpRate, 0.0f, 1.0f);
 
-	// HPが減るほど少し不安定になる
-	float pulse =
-		1.0f +
-		std::sin(pulseTime_ * 8.0f) * 0.08f +
-		(1.0f - hpRate) * 0.10f;
+	// ----------------------------- //
+	// チャージ経過でどんどん大きくする
+	const float growDuration = 3.5f;
+	float growT = std::clamp(pulseTime_ / growDuration, 0.0f, 1.0f);
 
-	float s = pulse;
-	obj_->SetScale({
-		scale_.x * s,
-		scale_.y * s,
-		scale_.z * s
-		});
+	// 後半ほど迫ってくる感じを出す
+	float growEase = growT * growT * (3.0f - 2.0f * growT);
 
-	// 青寄り
+	// 最小倍率 -> 最大倍率
+	float growScale = 0.72f + (1.65f - 0.72f) * growEase;
+
+	// HPが減っている時は少し不安定さを足す
+	float unstable = (1.0f - hpRate) * 0.04f * std::sin(pulseTime_ * 14.0f);
+
+	float finalScale = growScale + unstable;
+
 	Vector4 coreColor{
-		0.90f + (1.00f - 0.90f) * (1.0f - hpRate),
-		0.96f,
+		0.86f + 0.10f * growT,                 // 時間経過で少し白く
+		0.94f + 0.03f * growT,
 		1.00f,
 		1.0f
 	};
-	obj_->SetColor(coreColor);
 
-	obj_->Update();
+	if (coreObj_) {
+		coreObj_->SetTranslate(worldPos_);
+		coreObj_->SetRotate({ 0.0f, rotY_, 0.0f });
+		coreObj_->SetScale({
+			coreScale_.x * finalScale,
+			coreScale_.y * finalScale,
+			coreScale_.z * finalScale
+			});
+		coreObj_->SetColor(coreColor);
+		coreObj_->Update();
+	}
 }
 
 void BossChargeCore::Draw() {
 
-	if (active_ && obj_) {
-		obj_->Draw();
+	if (!active_) {
+		return;
+	}
+
+	if (coreObj_) {
+		coreObj_->Draw();
 	}
 }
 
@@ -70,10 +81,12 @@ void BossChargeCore::Activate(const Vector3& worldPos) {
 	active_ = true;
 	hp_ = maxHp_;
 	worldPos_ = worldPos;
+	pulseTime_ = 0.0f;
+	rotY_ = 0.0f;
 
-	if (obj_) {
-		obj_->SetTranslate(worldPos_);
-		obj_->SetScale(scale_);
+	if (coreObj_) {
+		coreObj_->SetTranslate(worldPos_);
+		coreObj_->SetScale(coreScale_);
 	}
 }
 
@@ -84,8 +97,9 @@ void BossChargeCore::Deactivate() {
 void BossChargeCore::SetWorldPos(const Vector3& worldPos) {
 
 	worldPos_ = worldPos;
-	if (obj_) {
-		obj_->SetTranslate(worldPos_);
+
+	if (coreObj_) {
+		coreObj_->SetTranslate(worldPos_);
 	}
 }
 
