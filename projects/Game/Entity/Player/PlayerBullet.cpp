@@ -84,9 +84,9 @@ void PlayerBullet::SetTranlate(Vector3 translate) {
 void PlayerBullet::SetDirection(const Vector3& direction) { direction_ = direction; }
 
 void PlayerBullet::SetScale(const Vector3& s) {
+
 	if (object3d_) {
 		object3d_->SetScale(s);
-
 	}
 }
 

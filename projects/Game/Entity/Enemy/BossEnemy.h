@@ -39,7 +39,7 @@ private:
 		Recover,
 	};
 
-	AttackPhase attackPhase_ = AttackPhase::SingleLeft;
+	AttackPhase attackPhase_ = AttackPhase::None;
 	bool meteorRequest_ = false; // 両手攻撃完了後にtrue
 
 	// HPエフェクト用チップ
@@ -176,9 +176,6 @@ public:
 	// 攻撃中かどうか（腕が伸びているフェーズか）を外からチェック用
 	bool IsExtending() const { return isExtending_; }
 
-	// 現在攻撃に使っている腕が左かどうか
-	bool IsLeftArmAttacking() const { return attackPhase_ == AttackPhase::SingleLeft; }
-
 	// 今攻撃に使っている腕のワールド座標
 	Vector3 GetCurrentArmWorldPos() const;
 
@@ -195,9 +192,18 @@ public:
 	void AddHitLeftArm() { ++leftArmHitCount_; }
 	void AddHitRightArm() { ++rightArmHitCount_; }
 
-	// AttackPhase 取得系（UpdateArmTargetMarker用）
-	bool IsRightArmAttacking() const { return attackPhase_ == AttackPhase::SingleRight; }
-	bool IsBothHandsAttacking() const { return attackPhase_ == AttackPhase::BothHands; }
+
+	bool IsLeftArmAttacking() const {
+		return armComboActive_ && attackPhase_ == AttackPhase::SingleLeft;
+	}
+
+	bool IsRightArmAttacking() const {
+		return armComboActive_ && attackPhase_ == AttackPhase::SingleRight;
+	}
+
+	bool IsBothHandsAttacking() const {
+		return armComboActive_ && attackPhase_ == AttackPhase::BothHands;
+	}
 
 	// 最大ヒット数（ターゲット消す条件に使う）
 	int GetMaxHitCount() const { return maxHitCount_; }

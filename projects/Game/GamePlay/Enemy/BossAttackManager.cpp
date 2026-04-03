@@ -51,14 +51,17 @@ void BossAttackManager::Init(const InitDesc& desc) {
 	std::random_device rd;
 	rng_ = std::mt19937(rd());
 	queueInited_ = false;
+
+	waitingNextBlock_ = false;
+	nextBlockWaitTimer_ = 0.0f;
 }
 
 bool BossAttackManager::CanArmControlCamera(const UpdateFlags& flags) const {
 
-	// 
 	return
 		!flags.koActive
 		&& flags.isMainPhase
+		&& !waitingNextBlock_
 		&& !IsMeteorActive()
 		&& !IsChargeActive()
 		&& !flags.swordCamActive
@@ -81,8 +84,13 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		}
 
 		// 腕コントローラだけ見た目更新が必要なら残す
+			// 腕更新
 		if (arm_) {
-			arm_->Update(dt, false);
+			if (waitingNextBlock_) {
+				arm_->Update(dt, false);
+			} else {
+				arm_->Update(dt, CanArmControlCamera(flags));
+			}
 		}
 
 		if (enragePauseTimer_ >= enragePauseDuration_) {
@@ -91,6 +99,16 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		}
 
 		return;
+	}
+
+	// 攻撃間の待機
+	if (waitingNextBlock_) {
+		nextBlockWaitTimer_ += dt;
+
+		if (nextBlockWaitTimer_ >= nextBlockWaitDuration_) {
+			waitingNextBlock_ = false;
+			nextBlockWaitTimer_ = 0.0f;
+		}
 	}
 
 	const bool wasMeteorActive = (meteor_ && meteor_->IsActive());
@@ -114,6 +132,7 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	const bool canStartMeteor =
 		!flags.koActive &&
 		flags.isMainPhase &&
+		!waitingNextBlock_ &&
 		!(meteor_ && meteor_->IsActive()) &&
 		!(retreat_ && retreat_->IsActive()) &&
 		!(charge_ && charge_->IsActive()) &&
@@ -127,6 +146,7 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	const bool canStartCharge =
 		!flags.koActive &&
 		flags.isMainPhase &&
+		!waitingNextBlock_ &&
 		!(charge_ && charge_->IsActive()) &&
 		!(meteor_ && meteor_->IsActive()) &&
 		!(retreat_ && retreat_->IsActive()) &&
@@ -140,6 +160,7 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	const bool canStartRetreat =
 		!flags.koActive &&
 		flags.isMainPhase &&
+		!waitingNextBlock_ &&
 		!(meteor_ && meteor_->IsActive()) &&
 		!(charge_ && charge_->IsActive()) &&
 		!(retreat_ && retreat_->IsActive());
@@ -177,12 +198,25 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	// ================== ブロック順制御（ランダム） ================== //
 	if (!queueInited_) {
 		RebuildBlockQueue();
-		StartBlock(blockQueue_[blockIndex_++]); // 最初のブロック開始
+
+		waitingNextBlock_ = true;
+		nextBlockWaitTimer_ = 0.0f;
+		nextBlockWaitDuration_ =
+			(desc_.boss && desc_.boss->IsEnraged())
+			? enragedNextBlockWaitDuration_
+			: nextBlockWaitDuration_;
+
+		currentBlock_ = blockQueue_[blockIndex_];
 	}
 
-	// まだ開始できてないブロックは、条件が揃うまで毎フレーム再試行
-	if (queueInited_ && !blockStarted_) {
-		StartBlock(currentBlock_);
+	// 待機が終わったら現在ブロック開始
+	if (queueInited_ && !blockStarted_ && !waitingNextBlock_) {
+		if (blockIndex_ < blockQueue_.size()) {
+			currentBlock_ = blockQueue_[blockIndex_];
+			if (StartBlock(currentBlock_)) {
+				++blockIndex_;
+			}
+		}
 	}
 
 	// 現在のブロックが終わったら次へ
@@ -206,8 +240,15 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 			RebuildBlockQueue();
 		}
 
-		// 次ブロック開始
-		StartBlock(blockQueue_[blockIndex_++]);
+		// 次の攻撃まで待機
+		waitingNextBlock_ = true;
+		nextBlockWaitTimer_ = 0.0f;
+		nextBlockWaitDuration_ =
+			(desc_.boss && desc_.boss->IsEnraged())
+			? enragedNextBlockWaitDuration_
+			: nextBlockWaitDuration_;
+
+		blockStarted_ = false;
 	}
 	// =============================================================== //
 }
@@ -243,6 +284,10 @@ void BossAttackManager::StartEnragePause(float duration) {
 
 	// 今のブロックは未開始扱いにして、再開後に改めて始める
 	blockStarted_ = false;
+
+	waitingNextBlock_ = true;
+	nextBlockWaitTimer_ = 0.0f;
+	nextBlockWaitDuration_ = enragedNextBlockWaitDuration_;
 }
 
 void BossAttackManager::StartMeteor() {
@@ -291,16 +336,16 @@ bool BossAttackManager::IsBlockActive(BossAttackBlock b) const {
 	}
 }
 
-void BossAttackManager::StartBlock(BossAttackBlock b) {
+bool BossAttackManager::StartBlock(BossAttackBlock b) {
 
 	currentBlock_ = b;
 	blockStarted_ = false;
 
-	if (!desc_.boss) return;
+	if (!desc_.boss) return false;
 
 	// 退避中は開始しない
 	if (desc_.boss->IsRetreating()) {
-		return;
+		return false;
 	}
 
 	switch (b) {
@@ -309,6 +354,7 @@ void BossAttackManager::StartBlock(BossAttackBlock b) {
 		if (!IsMeteorActive() && !IsChargeActive()) {
 			desc_.boss->StartArmCombo();
 			blockStarted_ = true;
+			return true;
 		}
 		break;
 
@@ -318,6 +364,7 @@ void BossAttackManager::StartBlock(BossAttackBlock b) {
 
 			charge_->Start();
 			blockStarted_ = true;
+			return true;
 		}
 		break;
 
@@ -327,12 +374,15 @@ void BossAttackManager::StartBlock(BossAttackBlock b) {
 
 			meteor_->Start();
 			blockStarted_ = true;
+			return true;
 		}
 		break;
 
 	default:
 		break;
 	}
+
+	return false;
 }
 
 void BossAttackManager::StopAllAttacks(float dt) {

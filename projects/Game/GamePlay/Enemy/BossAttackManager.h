@@ -118,6 +118,12 @@ private:
 	// ブロック開始フラグ
 	bool blockStarted_ = false;
 
+	// 攻撃ブロック間の待機
+	bool waitingNextBlock_ = false;
+	float nextBlockWaitTimer_ = 0.0f;
+	float nextBlockWaitDuration_ = 1.5f;        // 通常時の攻撃間隔
+	float enragedNextBlockWaitDuration_ = 1.0f; // 怒り時の攻撃間隔
+
 	// 怒り状態の一時停止
 	bool enragePauseActive_ = false;
 	// 一時停止タイマー
@@ -138,7 +144,7 @@ private:
 	bool IsBlockActive(BossAttackBlock b) const;
 
 	// ブロック開始
-	void StartBlock(BossAttackBlock b);
+	bool StartBlock(BossAttackBlock b);
 
 	// 
 	void StopAllAttacks(float dt);
