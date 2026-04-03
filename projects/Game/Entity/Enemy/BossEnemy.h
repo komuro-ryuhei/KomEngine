@@ -587,7 +587,7 @@ private:
 	std::unique_ptr<BossChargeCore> chargeCore_;
 	std::unique_ptr<BossChargeBeam> chargeBeam_;
 
-	Vector3 chargeCoreOffset_{ 0.0f, 3.0f, 0.0f };
+	Vector3 chargeCoreOffset_{ 0.0f, 4.2f, 0.0f };
 	int chargeCoreHp_ = 12;
 
 private:
