@@ -67,6 +67,8 @@ bool BossAttackManager::CanArmControlCamera(const UpdateFlags& flags) const {
 
 void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 
+	StopAllAttacks(dt);
+
 	// 怒り遷移中の一時停止
 	if (enragePauseActive_) {
 		enragePauseTimer_ += dt;
@@ -331,6 +333,102 @@ void BossAttackManager::StartBlock(BossAttackBlock b) {
 	default:
 		break;
 	}
+}
+
+void BossAttackManager::StopAllAttacks(float dt) {
+
+	// ==============================
+	// デバッグ用：全攻撃停止
+	// ==============================
+	if (debugPauseAllAttacks_) {
+
+		if (desc_.boss) {
+			desc_.boss->CancelAllAttacks();
+		}
+
+		if (meteor_ && meteor_->IsActive()) {
+			meteor_->ForceEnd();
+		}
+		if (charge_ && charge_->IsActive()) {
+			charge_->ForceEnd();
+		}
+		if (retreat_ && retreat_->IsActive()) {
+			retreat_->ForceEnd();
+		}
+		if (missile_ && missile_->IsActive()) {
+			missile_->ForceEnd();
+		}
+
+		// 腕カメラ演出だけ残したくないので false 更新だけ
+		if (arm_) {
+			arm_->Update(dt, false);
+		}
+
+		// 自動攻撃再開を防ぐ
+		blockStarted_ = false;
+
+		return;
+	}
+}
+
+void BossAttackManager::SetDebugPauseAllAttacks(bool pause) {
+
+	debugPauseAllAttacks_ = pause;
+
+	if (!pause) {
+		return;
+	}
+
+	// pause を入れた瞬間にも止める
+	if (desc_.boss) {
+		desc_.boss->CancelAllAttacks();
+	}
+
+	if (meteor_ && meteor_->IsActive()) {
+		meteor_->ForceEnd();
+	}
+	if (charge_ && charge_->IsActive()) {
+		charge_->ForceEnd();
+	}
+	if (retreat_ && retreat_->IsActive()) {
+		retreat_->ForceEnd();
+	}
+	if (missile_ && missile_->IsActive()) {
+		missile_->ForceEnd();
+	}
+
+	blockStarted_ = false;
+}
+
+void BossAttackManager::RequestDebugChargeAttack(bool targetLeft) {
+
+	if (!desc_.boss) {
+		return;
+	}
+
+	// まず他の攻撃を全部止める
+	SetDebugPauseAllAttacks(false);
+
+	desc_.boss->CancelAllAttacks();
+
+	if (meteor_ && meteor_->IsActive()) {
+		meteor_->ForceEnd();
+	}
+	if (charge_ && charge_->IsActive()) {
+		charge_->ForceEnd();
+	}
+	if (retreat_ && retreat_->IsActive()) {
+		retreat_->ForceEnd();
+	}
+	if (missile_ && missile_->IsActive()) {
+		missile_->ForceEnd();
+	}
+
+	// 次フレームの自動開始判定が暴れないようにする
+	blockStarted_ = false;
+
+	// ボスにチャージ要求だけ積む
+	desc_.boss->RequestChargeAttack(targetLeft);
 }
 
 bool BossAttackManager::IsMeteorActive() const {

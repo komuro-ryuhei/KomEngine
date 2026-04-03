@@ -72,6 +72,14 @@ public:
 	void StartEnragePause(float duration);
 	bool IsEnragePaused() const { return enragePauseActive_; }
 
+	// ---------------- デバッグ用追加 ---------------- //
+	void SetDebugPauseAllAttacks(bool pause);
+	bool IsDebugPauseAllAttacks() const { return debugPauseAllAttacks_; }
+
+	// 全攻撃を一回止めて、チャージだけ出したいときに使う
+	void RequestDebugChargeAttack(bool targetLeft);
+	// ----------------------------------------------- //
+
 public:
 
 	// getter,setter
@@ -117,6 +125,10 @@ private:
 	// 一時停止の継続時間
 	float enragePauseDuration_ = 0.0f;
 
+	// ---------------- デバッグ用追加 ----------------
+	bool debugPauseAllAttacks_ = false;
+	// -----------------------------------------------
+
 private:
 
 	// 次のブロック順を作る
@@ -127,4 +139,7 @@ private:
 
 	// ブロック開始
 	void StartBlock(BossAttackBlock b);
+
+	// 
+	void StopAllAttacks(float dt);
 };

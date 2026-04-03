@@ -288,27 +288,25 @@ void BossTestScene::Update() {
 
 	UpdateCamera(dt);
 
-	// デバッグ：離脱攻撃要求
-	if (KomEngine::System::GetInput()->PushKey(DIK_R)) {
-		boss_->StartRetreatAttack();
+	// デバッグ：Tで全攻撃停止ON/OFF
+	if (KomEngine::System::GetInput()->PushKey(DIK_T)) {
+		if (attackManager_) {
+			const bool next = !attackManager_->IsDebugPauseAllAttacks();
+			attackManager_->SetDebugPauseAllAttacks(next);
+		}
 	}
 
-	// デバッグ：チャージ攻撃要求
+	// デバッグ：Cで他攻撃を全部キャンセルしてチャージだけ開始
 	if (KomEngine::System::GetInput()->PushKey(DIK_C)) {
-
-		// 既にチャージ攻撃が動いているなら要求しない
-		if (!boss_->IsChargeActive()) {
+		if (attackManager_ && boss_) {
 
 			bool targetLeft = !boss_->IsLeftArmBroken();
 			if (boss_->IsLeftArmBroken() && !boss_->IsRightArmBroken()) {
 				targetLeft = false;
 			}
-			boss_->RequestChargeAttack(targetLeft);
-		}
-	}
 
-	if (KomEngine::System::GetInput()->PushKey(DIK_T)) {
-		boss_->SetAttack(false);
+			attackManager_->RequestDebugChargeAttack(targetLeft);
+		}
 	}
 
 	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
