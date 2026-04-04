@@ -14,6 +14,18 @@ void BossMeteorController::Init() {
 	spawnTimer_ = 0.0f;
 	camLerp_ = 0.0f;
 	clearWaitTimer_ = 0.0f;
+
+	// 警告スプライト初期化
+	warningSprite_ = std::make_unique<Sprite>();
+	warningSprite_->Init("./Resources/images/exclamationMark.png", BlendType::BLEND_ALPHA);
+	warningSprite_->SetAnchorPoint({ 0.5f, 0.5f });
+	warningSprite_->SetPosition(warningPos_);
+	warningSprite_->SetSize(warningSize_);
+	warningSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+	warningSprite_->Update();
+
+	warningTimer_ = 0.0f;
+	warningVisible_ = true;
 }
 
 void BossMeteorController::Start() {
@@ -24,10 +36,15 @@ void BossMeteorController::Start() {
 		boss_->CancelAttacksForMeteor();
 	}
 
-	phase_ = Phase::kIntro;
+	// まず警告フェーズへ
+	phase_ = Phase::kWarning;
+
 	meteorModeTimer_ = 0.0f;
 	spawnTimer_ = 0.0f;
 	clearWaitTimer_ = 0.0f;
+
+	warningTimer_ = 0.0f;
+	warningVisible_ = true;
 
 	savedCamPos_ = camera_->GetTranaslate();
 	savedCamRot_ = camera_->GetRotate();
@@ -39,6 +56,7 @@ void BossMeteorController::Update(float dt) {
 	if (!camera_ || !player_) return;
 
 	switch (phase_) {
+	case Phase::kWarning:   UpdateWarning(dt);   break;
 	case Phase::kIntro:     UpdateIntro(dt);     break;
 	case Phase::kShower:    UpdateShower(dt);    break;
 	case Phase::kWaitClear: UpdateWaitClear(dt); break;
@@ -46,6 +64,35 @@ void BossMeteorController::Update(float dt) {
 	case Phase::kIdle:
 	default:
 		break;
+	}
+}
+
+void BossMeteorController::Draw() {
+
+	if (phase_ == Phase::kWarning && warningSprite_ && warningVisible_) {
+		warningSprite_->Draw();
+	}
+}
+
+void BossMeteorController::UpdateWarning(float dt) {
+
+	warningTimer_ += dt;
+
+	// 点滅
+	const int blinkIndex = static_cast<int>(warningTimer_ / warningBlinkInterval_);
+	warningVisible_ = ((blinkIndex % 2) == 0);
+
+	if (warningSprite_) {
+		warningSprite_->SetPosition(warningPos_);
+		warningSprite_->SetSize(warningSize_);
+		warningSprite_->Update();
+	}
+
+	// 2秒経過後に本来のメテオ導入へ
+	if (warningTimer_ >= warningDuration_) {
+		warningVisible_ = false;
+		phase_ = Phase::kIntro;
+		meteorModeTimer_ = 0.0f;
 	}
 }
 
@@ -59,7 +106,6 @@ void BossMeteorController::LoadParamsFromJson(const std::string& path)
 {
 	std::ifstream file(path);
 	if (file.fail()) {
-		// ファイルが無ければデフォルトのまま開始
 		return;
 	}
 
@@ -75,7 +121,6 @@ void BossMeteorController::SaveParamsToJson(const std::string& path)
 {
 	nlohmann::json j;
 
-	// 既存ファイルがあれば読み込んでから上書き
 	{
 		std::ifstream ifs(path);
 		if (!ifs.fail()) {
@@ -91,13 +136,12 @@ void BossMeteorController::SaveParamsToJson(const std::string& path)
 		}
 	}
 
-	// meteorAttack の JSON を構築
 	nlohmann::json meteorJson;
 	params_.SaveJSON(meteorJson);
 	j["meteorAttack"] = meteorJson;
 
 	std::ofstream ofs(path);
-	ofs << std::setprecision(3) << j.dump(4); // 4はインデント
+	ofs << std::setprecision(3) << j.dump(4);
 }
 
 void BossMeteorController::UpdateIntro(float dt) {
@@ -107,12 +151,10 @@ void BossMeteorController::UpdateIntro(float dt) {
 	meteorModeTimer_ += dt;
 	camLerp_ = std::min(1.0f, meteorModeTimer_ / params_.camIntroTime);
 
-	// 目標カメラ：プレイヤー位置 + 少し上、ピッチだけ上向きに
 	Vector3 targetPos = playerPos + params_.camOffset;
 	Vector3 targetRot = savedCamRot_;
 	targetRot.x = params_.pitchUp;
 
-	// 補間
 	camera_->SetTranslate(MyMath::Lerp(savedCamPos_, targetPos, camLerp_));
 	camera_->SetRotate(MyMath::Lerp(savedCamRot_, targetRot, camLerp_));
 
@@ -133,7 +175,6 @@ void BossMeteorController::UpdateShower(float dt) {
 	meteorModeTimer_ += dt;
 	spawnTimer_ += dt;
 
-	// カメラ処理はそのまま
 	{
 		const Vector3 targetPos = playerPos + params_.camOffset;
 
@@ -182,7 +223,6 @@ void BossMeteorController::UpdateShower(float dt) {
 		enraged ? enragedMeteorSpeedMul_
 		: 1.0f;
 
-	// duration 中だけ新規スポーン
 	const bool canSpawn = (meteorModeTimer_ < params_.duration);
 
 	if (canSpawn && spawnTimer_ >= spawnInterval) {
@@ -217,7 +257,6 @@ void BossMeteorController::UpdateShower(float dt) {
 		}
 	}
 
-	// duration を過ぎたら待機フェーズへ
 	if (!canSpawn) {
 		phase_ = Phase::kWaitClear;
 		clearWaitTimer_ = 0.0f;
@@ -233,7 +272,6 @@ void BossMeteorController::UpdateWaitClear(float dt) {
 		return;
 	}
 
-	// この待機中もカメラは上向き維持
 	Vector3 playerPos = player_->GetTransform().translate;
 	Vector3 targetPos = playerPos + params_.camOffset;
 
@@ -256,13 +294,11 @@ void BossMeteorController::UpdateWaitClear(float dt) {
 		}
 	}
 
-	// まだ残ってるなら待機タイマーは進めない
 	if (aliveMeteorCount > 0) {
 		clearWaitTimer_ = 0.0f;
 		return;
 	}
 
-	// 全部消えたあとに2秒待つ
 	clearWaitTimer_ += dt;
 	if (clearWaitTimer_ >= clearWaitDuration_) {
 		phase_ = Phase::kOutro;
@@ -276,7 +312,6 @@ void BossMeteorController::UpdateOutro(float dt) {
 	meteorModeTimer_ += dt;
 	camLerp_ = std::min(1.0f, meteorModeTimer_ / params_.camOutroTime);
 
-	// 目標は保存していた通常カメラ
 	Vector3 curPos = camera_->GetTranaslate();
 	Vector3 curRot = camera_->GetRotate();
 
@@ -290,27 +325,26 @@ void BossMeteorController::UpdateOutro(float dt) {
 
 void BossMeteorController::EndInternal() {
 
-	// 生きているメテオは爆発させる
 	if (meteors_) {
 		for (auto& m : *meteors_) {
 			if (m->IsAlive()) m->Explode();
 		}
 	}
 
-	// カメラを元に戻す
 	if (camera_) {
 		camera_->SetTranslate(savedCamPos_);
 		camera_->SetRotate(savedCamRot_);
 	}
 
-	// ボスに「メテオ終わったよ」と伝える（元 EndMeteorMode と同じ）
 	if (boss_) {
 		boss_->OnMeteorFinished();
 	}
 
-	// フェーズリセット
 	phase_ = Phase::kIdle;
 	camLerp_ = 0.0f;
 	meteorModeTimer_ = 0.0f;
 	spawnTimer_ = 0.0f;
+
+	warningTimer_ = 0.0f;
+	warningVisible_ = false;
 }

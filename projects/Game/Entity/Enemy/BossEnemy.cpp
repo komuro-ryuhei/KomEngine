@@ -679,13 +679,18 @@ void BossEnemy::CancelAttacksForMeteor() {
 	leftExtending_ = true;
 	rightExtending_ = true;
 
+	// 退避関連もクリア
+	retreatActive_ = false;
+	retreatRequest_ = false;
+	retreatPhase_ = RetreatPhase::None;
+	retreatT_ = 0.0f;
+
 	// チャージ停止
 	chargeActive_ = false;
 	chargeShotLife_ = 0.0f;
 	chargeShot_.obj.reset();
 	chargeShot_.bullet.reset();
 
-	// 
 	DeactivateChargeCore();
 
 	if (chargeBeam_) {
@@ -695,12 +700,14 @@ void BossEnemy::CancelAttacksForMeteor() {
 
 void BossEnemy::CancelAllAttacks() {
 
-	// 既存の停止処理を流用
+	// 停止処理
 	CancelAttacksForMeteor();
 
 	// 退避も止める
 	retreatPhase_ = RetreatPhase::None;
 	retreatT_ = 0.0f;
+	retreatActive_ = false;
+	retreatRequest_ = false;
 	invulnerable_ = false;
 
 	// 

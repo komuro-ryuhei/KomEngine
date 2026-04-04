@@ -509,6 +509,10 @@ void BossTestScene::Draw() {
 
 	// Bossのメテオ描画
 	for (auto& m : meteors_) m->Draw();
+	// メテオの警戒表示
+	if (attackManager_ && attackManager_->GetMeteor()) {
+		attackManager_->GetMeteor()->Draw();
+	}
 
 	// Bossのミサイル描画
 	for (auto& m : missiles_) {

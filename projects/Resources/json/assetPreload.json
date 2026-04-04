@@ -33,7 +33,8 @@
     "./Resources/images/gradationLine.png",
     "./Resources/images/moonLight.png",
     "./Resources/images/streak.png",
-    "./Resources/images/enemyChargeCore.png"
+    "./Resources/images/enemyChargeCore.png",
+    "./Resources/images/exclamationMark.png"
   ],
   "models": [
     "plane.obj",

@@ -5,6 +5,8 @@
 #include "externals/nlohmann/json.hpp"
 
 #include "Engine/lib/Math/MyMath.h"
+#include "Engine/Base/2d/Sprite/Sprite.h"
+#include "Engine/Base/2d/Sprite/Sprite.h"
 
 class Camera;
 class Player;
@@ -21,9 +23,6 @@ struct MeteorAttackParams {
 	Vector3 camOffset = { 0.0f, 2.0f, 0.0f };
 	float pitchUp = -0.45f;
 
-	// ================================
-	// JSON から読み込む
-	// ================================
 	void LoadJSON(const nlohmann::json& j) {
 		if (j.contains("duration"))      duration = j["duration"];
 		if (j.contains("spawnInterval")) spawnInterval = j["spawnInterval"];
@@ -39,13 +38,10 @@ struct MeteorAttackParams {
 		if (j.contains("pitchUp")) pitchUp = j["pitchUp"];
 	}
 
-	// ================================
-	// JSON へ保存する
-	// ================================
 	void SaveJSON(nlohmann::json& j) const {
 
 		auto R = [](float v) {
-			return std::round(v * 1000.0f) / 1000.0f; // 小数3桁に丸め
+			return std::round(v * 1000.0f) / 1000.0f;
 			};
 
 		j["duration"] = R(duration);
@@ -66,34 +62,31 @@ struct MeteorAttackParams {
 	}
 };
 
-/// ボスのメテオ耐久フェーズ全体を制御するクラス
 class BossMeteorController {
 
 public:
+
 	BossMeteorController() = default;
 	~BossMeteorController() = default;
 
-	// 変数の初期化だけ行う
 	void Init();
 
-	// メテオモード開始
-	void Start();
-
-	// 毎フレーム更新（メテオ中のみ呼ぶ or 常に呼んで中で分岐でもOK）
 	void Update(float dt);
 
-	// 強制終了（デバッグ用Mキーなど）
+	void Draw();
+
+	void Start();
+
 	void ForceEnd();
 
-	// 状態確認
 	bool IsActive() const { return phase_ != Phase::kIdle; }
 
 public:
 
+	// パラメータアクセス用
 	MeteorAttackParams& GetParams() { return params_; }
 	const MeteorAttackParams& GetParams() const { return params_; }
 
-	// 依存オブジェクトをシーンから渡す
 	void SetCamera(Camera* cam) { camera_ = cam; }
 	void SetPlayer(Player* player) { player_ = player; }
 	void SetBoss(BossEnemy* boss) { boss_ = boss; }
@@ -101,55 +94,70 @@ public:
 
 public:
 
+	// Jsonからのパラメータ読み込み・保存
 	void LoadParamsFromJson(const std::string& path);
-
 	void SaveParamsToJson(const std::string& path);
 
 private:
-	enum class Phase { kIdle, kIntro, kWaitClear, kShower, kOutro };
 
+	// 内部状態管理
+	enum class Phase {
+		kIdle,
+		kWarning,
+		kIntro,
+		kWaitClear,
+		kShower,
+		kOutro
+	};
+
+	void UpdateWarning(float dt);
 	void UpdateIntro(float dt);
 	void UpdateWaitClear(float dt);
 	void UpdateShower(float dt);
 	void UpdateOutro(float dt);
 
-	void EndInternal(); // 実際の終了処理本体（ForceEnd/Outro両方から呼ぶ）
+	void EndInternal();
 
 private:
+
 	Camera* camera_ = nullptr;
 	Player* player_ = nullptr;
 	BossEnemy* boss_ = nullptr;
 	std::vector<std::unique_ptr<BossMeteor>>* meteors_ = nullptr;
 
-	// フェーズ
 	Phase phase_ = Phase::kIdle;
 
-	// カメラ保存＆補間
 	Vector3 savedCamPos_{};
 	Vector3 savedCamRot_{};
 	float   camLerp_ = 0.0f;
 
-	// 進行管理
 	float meteorModeTimer_ = 0.0f;
-
-	// メテオスポーン
 	float spawnTimer_ = 0.0f;
 
-	float enragedMeteorSpeedMul_ = 1.5f;     // 飛ぶ速度
-	float enragedMeteorIntervalMul_ = 0.65f; // 出る間隔（小さいほど頻度UP）
+	float enragedMeteorSpeedMul_ = 1.5f;
+	float enragedMeteorIntervalMul_ = 0.65f;
 
-	// Shower カメラ演出用
 	bool    showerCamInited_ = false;
 	float   showerCamT_ = 0.0f;
 	Vector3 showerCamStartPos_{};
 	Vector3 showerCamStartRot_{};
 
-	// 待機時間
 	float clearWaitTimer_ = 0.0f;
 	float clearWaitDuration_ = 1.0f;
 
-	// 
 	float showerCamBlendTime_ = 0.6f;
+
+	// =========================
+	// 警告表示用
+	// =========================
+	std::unique_ptr<Sprite> warningSprite_ = nullptr;
+	float warningTimer_ = 0.0f;
+	float warningDuration_ = 2.0f;      // 2秒表示
+	float warningBlinkInterval_ = 0.15f; // 点滅間隔
+	bool  warningVisible_ = true;
+
+	Vector2 warningPos_ = { 640.0f, 80.0f };
+	Vector2 warningSize_ = { 220.0f, 220.0f };
 
 	MeteorAttackParams params_;
 };
