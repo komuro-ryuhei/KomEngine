@@ -370,11 +370,47 @@ private:
 	int rightArmHitCount_ = 0;
 	const int maxHitCount_ = 5;
 
-	// 戻り速度（今までの 0.5f / 0.6f を変数化）
+	// -------------------- 片腕攻撃の予備動作 -------------------- //
+	bool  armTelegraphActive_ = false;       // 片腕攻撃前の溜め中か
+	float armTelegraphTimer_ = 0.0f;         // 溜め経過時間
+
+	float armTelegraphBackTime_ = 0.20f;     // 後ろに引く時間
+	float armTelegraphHoldTime_ = 1.0f;      // 引いたあと少し止める時間
+	float armTelegraphDuration_ = 1.2f;      // 全体時間 = 引き + 溜め
+
+	float armTelegraphBackAmount_ = 1.8f;    // 後ろに引く距離
+	float armTelegraphShakeAmount_ = 0.050f; // 溜め中の震え幅
+	float armTelegraphShakeFreq_ = 65.0f;    // 震え速さ
+
+	float armRushSpeed_ = 0.18f;            // 突進速度
+
+	Vector3 armTelegraphStartPos_{};        // 溜め開始時の腕位置
+	Vector3 armTelegraphTargetPos_{};       // 引いた先の位置
+
+	// -------------------- 両手攻撃の予備動作 -------------------- //
+	bool  bothTelegraphActive_ = false;
+	float bothTelegraphTimer_ = 0.0f;
+
+	float bothTelegraphBackTime_ = 0.20f;   // 両手を引く時間
+	float bothTelegraphHoldTime_ = 1.2f;    // 引いたあと溜める時間
+	float bothTelegraphDuration_ = 1.4f;    // 全体時間
+
+	float bothTelegraphBackAmount_ = 2.0f;   // 後ろに引く距離
+	float bothTelegraphShakeAmount_ = 0.06f; // 振動幅
+	float bothTelegraphShakeFreq_ = 60.0f;   // 振動速度
+
+	float bothRushSpeed_ = 0.16f;            // 両手突進速度
+
+	Vector3 leftBothTelegraphStartPos_{};
+	Vector3 rightBothTelegraphStartPos_{};
+	Vector3 leftBothTelegraphTargetPos_{};
+	Vector3 rightBothTelegraphTargetPos_{};
+
+	// 戻り速度
 	float armReturnSpeedSingle_ = 0.5f;
 	float armReturnSpeedBoth_ = 0.6f;
 
-	// 通常値（怒り解除しないなら保存目的は「倍率適用の基準」）
+	// 通常値
 	float baseAttackSpeed_ = 0.1f;
 	float baseArmReturnSpeedSingle_ = 0.5f;
 	float baseArmReturnSpeedBoth_ = 0.6f;

@@ -249,7 +249,8 @@ void BossEnemy::Update() {
 
 			}
 		}
-	} else {
+	}
+	else {
 		// 生きている間の従来処理
 
 		if (KomEngine::System::GetInput()->PushKey(DIK_SPACE)) {
@@ -259,7 +260,8 @@ void BossEnemy::Update() {
 		// 退避中は腕攻撃は止める（奥で別攻撃する想定）
 		if (IsRetreating()) {
 			// 退避中は通常攻撃をしない
-		} else {
+		}
+		else {
 			if (combatEnabled_ && isAttack_ && !chargeActive_) {
 				Attack();
 			}
@@ -450,16 +452,80 @@ void BossEnemy::Attack() {
 		Vector3 toPlayer = player_->GetTranslate() - worldBase;
 		Vector3 dir = MyMath::Normalize(toPlayer);
 
+		// =====================================================
+		// 予備動作
+		// 1. 元位置に表示
+		// 2. 後ろに引く
+		// 3. 引いた位置で少し溜める
+		// =====================================================
+		if (armTelegraphActive_) {
+
+			if (armTelegraphTimer_ <= 0.0f) {
+				// 必ず「元の位置」から始める
+				armTelegraphStartPos_ = baseLocalOffset;
+				armTelegraphTargetPos_ = baseLocalOffset - dir * armTelegraphBackAmount_;
+
+				targetPos = armTelegraphStartPos_;
+				targetArm->SetTranslate(targetPos);
+			}
+
+			armTelegraphTimer_ += KomEngine::System::GetDeltaTime();
+
+			Vector3 telegraphPos = armTelegraphStartPos_;
+
+			// -------------------------
+			// 前半：元位置 → 後ろへ引く
+			// -------------------------
+			if (armTelegraphTimer_ < armTelegraphBackTime_) {
+				float t = armTelegraphTimer_ / armTelegraphBackTime_;
+				t = std::clamp(t, 0.0f, 1.0f);
+
+				float ease = t * t * (3.0f - 2.0f * t);
+				telegraphPos = MyMath::Lerp(armTelegraphStartPos_, armTelegraphTargetPos_, ease);
+			}
+			// -------------------------
+			// 後半：引いた位置で少し溜める
+			// -------------------------
+			else {
+				float s = armTelegraphTimer_ - armTelegraphBackTime_;
+				telegraphPos = armTelegraphTargetPos_;
+
+				telegraphPos.x += std::sin(s * armTelegraphShakeFreq_) * armTelegraphShakeAmount_;
+				telegraphPos.y += std::cos(s * armTelegraphShakeFreq_ * 1.11f) * armTelegraphShakeAmount_;
+				telegraphPos.z += std::sin(s * armTelegraphShakeFreq_ * 0.91f) * armTelegraphShakeAmount_;
+			}
+
+			armPos = telegraphPos;
+			targetPos = armPos;
+			targetArm->SetTranslate(targetPos);
+
+			// 予備動作終了 → 突進開始
+			if (armTelegraphTimer_ >= armTelegraphDuration_) {
+				armTelegraphActive_ = false;
+				armTelegraphTimer_ = 0.0f;
+
+				isExtending_ = true;
+				targetPos = armTelegraphTargetPos_;
+				targetArm->SetTranslate(targetPos);
+			}
+
+			break;
+		}
+
+		// =====================================================
+		// 通常の片腕攻撃（突進）
+		// =====================================================
 		if (isExtending_) {
-			// 伸ばす
-			armPos += dir * attackSpeed_;
+			// 長めにグッと前へ出る
+			armPos += dir * armRushSpeed_;
 
 			// 一定距離 or 規定ヒット数で戻りフェーズへ
-			if (MyMath::Length(armPos - baseLocalOffset) >= 20.0f ||
+			if (MyMath::Length(armPos - baseLocalOffset) >= 22.0f ||
 				hitCount >= maxHitCount_) {
 				isExtending_ = false;
 			}
-		} else {
+		}
+		else {
 			// 基本位置へ戻す
 			Vector3 toOrigin = baseLocalOffset - armPos;
 			float dist = MyMath::Length(toOrigin);
@@ -468,15 +534,35 @@ void BossEnemy::Attack() {
 				// 戻り完了
 				armPos = baseLocalOffset;
 				hitCount = 0;
-				isExtending_ = true;
 
-				// 次フェーズへ（右→左→両手）
+				// 次の片腕/両手へ
+				isExtending_ = false;
+				armTelegraphActive_ = true;
+				armTelegraphTimer_ = 0.0f;
+
 				if (attackPhase_ == AttackPhase::SingleRight) {
-					attackPhase_ = AttackPhase::SingleLeft;  // 次は左
-				} else {
-					attackPhase_ = AttackPhase::BothHands;   // 次は両手
+					attackPhase_ = AttackPhase::SingleLeft;
 				}
-			} else {
+				else {
+					attackPhase_ = AttackPhase::BothHands;
+
+					armTelegraphActive_ = false;
+					armTelegraphTimer_ = 0.0f;
+
+					bothTelegraphActive_ = true;
+					bothTelegraphTimer_ = 0.0f;
+
+					leftExtending_ = false;
+					rightExtending_ = false;
+
+					leftArmPos_ = { -4.0f, 0.0f, 0.0f };
+					rightArmPos_ = { 4.0f, 0.0f, 0.0f };
+
+					if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
+					if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
+				}
+			}
+			else {
 				Vector3 dirToOrigin = MyMath::Normalize(toOrigin);
 				float step = std::min(armReturnSpeedSingle_, dist);
 				armPos += dirToOrigin * step;
@@ -491,29 +577,105 @@ void BossEnemy::Attack() {
 	// ================== 両手同時攻撃 ================== //
 	case AttackPhase::BothHands:
 	{
-		// ローカル基準位置
 		const Vector3 leftBaseLocal{ -4.0f, 0.0f, 0.0f };
 		const Vector3 rightBaseLocal{ 4.0f, 0.0f, 0.0f };
 
-		// ワールド基準位置
 		const Vector3 leftBaseWorld = transform_.translate + leftBaseLocal;
 		const Vector3 rightBaseWorld = transform_.translate + rightBaseLocal;
 
-		// 今のワールド位置（毎フレーム取得）
 		Vector3 leftWorldPos = leftArm_->GetWorldPosition();
 		Vector3 rightWorldPos = rightArm_->GetWorldPosition();
 
 		const Vector3 playerPos = player_->GetTranslate();
 
-		const float maxLen = 22.0f;    // どこまで伸ばすか（必要なら調整）
-		const float extendSpeed = attackSpeed_;
+		Vector3 dirL = MyMath::Normalize(playerPos - leftBaseWorld);
+		Vector3 dirR = MyMath::Normalize(playerPos - rightBaseWorld);
+
+		const float maxLen = 22.0f;
 		const float returnSpeed = armReturnSpeedBoth_;
 		const float endThreshold = 0.3f;
 
-		// ===== 左腕 =====
+		// =========================================
+		// 両手の予備動作
+		// =========================================
+		if (bothTelegraphActive_) {
+
+			if (bothTelegraphTimer_ <= 0.0f) {
+				leftBothTelegraphStartPos_ = leftBaseLocal;
+				rightBothTelegraphStartPos_ = rightBaseLocal;
+
+				leftBothTelegraphTargetPos_ = leftBaseLocal - dirL * bothTelegraphBackAmount_;
+				rightBothTelegraphTargetPos_ = rightBaseLocal - dirR * bothTelegraphBackAmount_;
+
+				leftArmPos_ = leftBothTelegraphStartPos_;
+				rightArmPos_ = rightBothTelegraphStartPos_;
+
+				leftArm_->SetTranslate(leftArmPos_);
+				rightArm_->SetTranslate(rightArmPos_);
+			}
+
+			bothTelegraphTimer_ += KomEngine::System::GetDeltaTime();
+
+			Vector3 leftLocal = leftBothTelegraphStartPos_;
+			Vector3 rightLocal = rightBothTelegraphStartPos_;
+
+			// 前半：左右同時に後ろへ引く
+			if (bothTelegraphTimer_ < bothTelegraphBackTime_) {
+				float t = bothTelegraphTimer_ / bothTelegraphBackTime_;
+				t = std::clamp(t, 0.0f, 1.0f);
+
+				float ease = t * t * (3.0f - 2.0f * t);
+
+				leftLocal = MyMath::Lerp(leftBothTelegraphStartPos_, leftBothTelegraphTargetPos_, ease);
+				rightLocal = MyMath::Lerp(rightBothTelegraphStartPos_, rightBothTelegraphTargetPos_, ease);
+			}
+			// 後半：引いた位置で左右同時に振動
+			else {
+				float s = bothTelegraphTimer_ - bothTelegraphBackTime_;
+
+				leftLocal = leftBothTelegraphTargetPos_;
+				rightLocal = rightBothTelegraphTargetPos_;
+
+				float shakeX = std::sin(s * bothTelegraphShakeFreq_) * bothTelegraphShakeAmount_;
+				float shakeY = std::cos(s * bothTelegraphShakeFreq_ * 1.09f) * bothTelegraphShakeAmount_;
+				float shakeZ = std::sin(s * bothTelegraphShakeFreq_ * 0.93f) * bothTelegraphShakeAmount_;
+
+				leftLocal.x += shakeX;
+				leftLocal.y += shakeY;
+				leftLocal.z += shakeZ;
+
+				rightLocal.x -= shakeX;
+				rightLocal.y += shakeY;
+				rightLocal.z += shakeZ;
+			}
+
+			leftArm_->SetTranslate(leftLocal);
+			rightArm_->SetTranslate(rightLocal);
+			leftArmPos_ = leftLocal;
+			rightArmPos_ = rightLocal;
+
+			if (bothTelegraphTimer_ >= bothTelegraphDuration_) {
+				bothTelegraphActive_ = false;
+				bothTelegraphTimer_ = 0.0f;
+
+				leftExtending_ = true;
+				rightExtending_ = true;
+
+				leftArmPos_ = leftBothTelegraphTargetPos_;
+				rightArmPos_ = rightBothTelegraphTargetPos_;
+
+				leftArm_->SetTranslate(leftArmPos_);
+				rightArm_->SetTranslate(rightArmPos_);
+			}
+
+			break;
+		}
+
+		// =========================================
+		// 通常の両手突進
+		// =========================================
 		if (leftExtending_) {
-			Vector3 dirL = MyMath::Normalize(playerPos - leftBaseWorld);
-			leftWorldPos += dirL * extendSpeed;
+			leftWorldPos += dirL * bothRushSpeed_;
 
 			float len = MyMath::Length(leftWorldPos - leftBaseWorld);
 			bool reachedDist = (len >= maxLen);
@@ -522,22 +684,22 @@ void BossEnemy::Attack() {
 			if (reachedDist || hitEnough) {
 				leftExtending_ = false;
 			}
-		} else {
+		}
+		else {
 			Vector3 toBase = leftBaseWorld - leftWorldPos;
 			float dist = MyMath::Length(toBase);
 			if (dist < endThreshold) {
 				leftWorldPos = leftBaseWorld;
-			} else {
+			}
+			else {
 				Vector3 dirToBase = MyMath::Normalize(toBase);
 				float step = std::min(returnSpeed, dist);
 				leftWorldPos += dirToBase * step;
 			}
 		}
 
-		// ===== 右腕 =====
 		if (rightExtending_) {
-			Vector3 dirR = MyMath::Normalize(playerPos - rightBaseWorld);
-			rightWorldPos += dirR * extendSpeed;
+			rightWorldPos += dirR * bothRushSpeed_;
 
 			float len = MyMath::Length(rightWorldPos - rightBaseWorld);
 			bool reachedDist = (len >= maxLen);
@@ -546,19 +708,20 @@ void BossEnemy::Attack() {
 			if (reachedDist || hitEnough) {
 				rightExtending_ = false;
 			}
-		} else {
+		}
+		else {
 			Vector3 toBase = rightBaseWorld - rightWorldPos;
 			float dist = MyMath::Length(toBase);
 			if (dist < endThreshold) {
 				rightWorldPos = rightBaseWorld;
-			} else {
+			}
+			else {
 				Vector3 dirToBase = MyMath::Normalize(toBase);
 				float step = std::min(returnSpeed, dist);
 				rightWorldPos += dirToBase * step;
 			}
 		}
 
-		// ===== ワールド→ローカルに戻して反映 =====
 		Vector3 leftLocal = leftWorldPos - transform_.translate;
 		Vector3 rightLocal = rightWorldPos - transform_.translate;
 
@@ -567,7 +730,6 @@ void BossEnemy::Attack() {
 		leftArmPos_ = leftLocal;
 		rightArmPos_ = rightLocal;
 
-		// ===== メテオ移行判定 =====
 		bool leftFinished =
 			!leftExtending_ &&
 			MyMath::Length(leftWorldPos - leftBaseWorld) < endThreshold;
@@ -582,6 +744,9 @@ void BossEnemy::Attack() {
 
 			leftExtending_ = true;
 			rightExtending_ = true;
+
+			bothTelegraphActive_ = false;
+			bothTelegraphTimer_ = 0.0f;
 
 			attackPhase_ = AttackPhase::WaitMeteor;
 			pendingChargeAfterRetreat_ = true;
@@ -608,7 +773,8 @@ void BossEnemy::TitleSceneMove() {
 	if (!isMoveRight_) {
 		if (leftArmPos_.x >= 0.19f) {
 			leftArmPos_.x -= 0.1f;
-		} else if (leftArmPos_.x <= 0.19f) {
+		}
+		else if (leftArmPos_.x <= 0.19f) {
 			isMoveRight_ = true;
 		}
 	}
@@ -624,7 +790,8 @@ void BossEnemy::AddHitToAttackingArm() {
 
 	if (attackLeftArm_) {
 		++leftArmHitCount_;
-	} else {
+	}
+	else {
 		++rightArmHitCount_;
 	}
 }
@@ -650,8 +817,10 @@ void BossEnemy::StartArmCombo() {
 	// コンボ開始は「右→左→両手」
 	attackPhase_ = AttackPhase::SingleRight;
 
-	// 片手用
-	isExtending_ = true;
+	// 片手用：最初は予備動作から始める
+	isExtending_ = false;
+	armTelegraphActive_ = true;
+	armTelegraphTimer_ = 0.0f;
 
 	// 両手用
 	leftExtending_ = true;
@@ -660,6 +829,13 @@ void BossEnemy::StartArmCombo() {
 	// ヒット数リセット
 	leftArmHitCount_ = 0;
 	rightArmHitCount_ = 0;
+
+	// 予備動作用の初期位置
+	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
+	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
+
+	if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
+	if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
 }
 
 bool BossEnemy::ConsumeArmComboFinished() {
@@ -675,6 +851,10 @@ void BossEnemy::CancelAttacksForMeteor() {
 	armComboActive_ = false;
 	armComboFinished_ = false;
 	attackPhase_ = AttackPhase::None;
+	armTelegraphActive_ = false;
+	armTelegraphTimer_ = 0.0f;
+	bothTelegraphActive_ = false;
+	bothTelegraphTimer_ = 0.0f;
 	isExtending_ = true;
 	leftExtending_ = true;
 	rightExtending_ = true;
@@ -725,6 +905,10 @@ void BossEnemy::CancelAllAttacks() {
 
 	// 腕状態リセット
 	attackPhase_ = AttackPhase::None;
+	armTelegraphActive_ = false;
+	armTelegraphTimer_ = 0.0f;
+	bothTelegraphActive_ = false;
+	bothTelegraphTimer_ = 0.0f;
 	armComboActive_ = false;
 	armComboFinished_ = false;
 	isExtending_ = true;
@@ -913,9 +1097,13 @@ bool BossEnemy::ConsumeMeteorRequest() {
 
 void BossEnemy::OnMeteorFinished() {
 
-	// 次は左片手攻撃から再開（← この状態を「退避の後にやる」）
+	// 次は左片手攻撃から再開
 	attackPhase_ = AttackPhase::SingleLeft;
-	isExtending_ = true;
+
+	// いきなり伸ばさず、予備動作から
+	isExtending_ = false;
+	armTelegraphActive_ = true;
+	armTelegraphTimer_ = 0.0f;
 
 	// 片手フェーズ用にヒット数リセット
 	leftArmHitCount_ = 0;
@@ -1488,7 +1676,8 @@ void BossEnemy::UpdateRetreat(float dt) {
 				}
 			}
 
-		} else { // Hold
+		}
+		else { // Hold
 
 			// 奥で攻撃中（Hold）
 			ApplyScaleFactorXZ_Y(1.0f, 1.0f);
@@ -1992,7 +2181,8 @@ void BossEnemy::ChargeEffect(float dt) {
 				pm->Emit("charge_aura", fxPos, 2);
 			}
 		}
-	} else {
+	}
+	else {
 		chargeFxCoreTimer_ = 0.0f;
 		chargeFxPulseTimer_ = 0.0f;
 		chargeFxRibbonTimer_ = 0.0f;
