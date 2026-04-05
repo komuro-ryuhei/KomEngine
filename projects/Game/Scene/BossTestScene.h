@@ -280,6 +280,9 @@ private:
 
 	bool playStartPending_ = false; // キラーン後に戦闘開始する待機中
 
+	// マーカー演出用
+	float markerAnimTimer_ = 0.0f;
+
 private:
 
 	void InitIntro();

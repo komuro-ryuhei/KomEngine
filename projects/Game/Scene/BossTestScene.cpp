@@ -194,13 +194,13 @@ void BossTestScene::Init() {
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyMeteor);
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyCharge);
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyMissile);
-	
+
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::Enemy);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyBullet);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyMeteor);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyMissile);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyCore);
-	
+
 
 	// AddComponent 的な登録
 	collisionManager_.Register(player_.get());
@@ -223,6 +223,8 @@ void BossTestScene::Init() {
 void BossTestScene::Update() {
 
 	const float dt = KomEngine::System::GetDeltaTime();
+
+	markerAnimTimer_ += dt;
 
 	if (phase_ == Phase::kFadeIn) {
 		phase_ = Phase::kMain;
@@ -263,7 +265,8 @@ void BossTestScene::Update() {
 
 		if (r == PauseMenu::Result::Resume) {
 			pauseMenu_->SetPaused(false);
-		} else if (r == PauseMenu::Result::GoTitle) {
+		}
+		else if (r == PauseMenu::Result::GoTitle) {
 
 			// ポーズ解除
 			pauseMenu_->SetPaused(false);
@@ -459,7 +462,8 @@ void BossTestScene::Update() {
 				}
 				endReason_ = EndReason::BossDeath; // 「クリア状態」になっただけ
 			}
-		} else {
+		}
+		else {
 			// ボスが死んでいない or 未着地の時はタイマーリセット
 			bossDeathTimer_ = 0.0f;
 		}
@@ -482,7 +486,8 @@ void BossTestScene::Update() {
 
 		if (endReason_ == EndReason::BossDeath || endReason_ == EndReason::GoTitle) {
 			sceneManager_->ChangeScene("TITLE");
-		} else if (endReason_ == EndReason::PlayerDeath) {
+		}
+		else if (endReason_ == EndReason::PlayerDeath) {
 			sceneManager_->ChangeScene("GAMEOVER");
 		}
 		break;
@@ -655,7 +660,8 @@ void BossTestScene::UpdateCamera(float dt) {
 	if (focusBoss) {
 		// 退避中などは従来通りボスを向く
 		targetRot = CalcLookAtRotation(newCamPos, boss_->GetCameraFocusPos());
-	} else if (isCameraFollowPlayer_) {
+	}
+	else if (isCameraFollowPlayer_) {
 		// 通常はプレイヤー向き
 		targetRot = player_->GetTransform().rotate;
 	}
@@ -669,7 +675,8 @@ void BossTestScene::UpdateCamera(float dt) {
 		if (chargeLookBlend_ > 1.0f) {
 			chargeLookBlend_ = 1.0f;
 		}
-	} else {
+	}
+	else {
 		chargeLookActive_ = false;
 		chargeLookBlend_ -= dt * chargeLookOutSpeed_;
 		if (chargeLookBlend_ < 0.0f) {
@@ -708,7 +715,8 @@ void BossTestScene::ChangePostEffect() {
 		if (nowLow && !lowHpVfxOn_) {
 			offscreen->SetPostEffect("Vignetting");
 			lowHpVfxOn_ = true;
-		} else if (!nowLow && lowHpVfxOn_) {
+		}
+		else if (!nowLow && lowHpVfxOn_) {
 			// 低HPを脱したら元に戻す
 			offscreen->SetPostEffect("none");
 			lowHpVfxOn_ = false;
@@ -910,9 +918,9 @@ void BossTestScene::UpdateArmTargetMarker() {
 	const int rightHits = boss_->GetRightHitCount();
 	const int maxHits = boss_->GetMaxHitCount();
 
-	const bool isLeftAttack = boss_->IsLeftArmAttacking();   // 片手(左)
-	const bool isRightAttack = boss_->IsRightArmAttacking(); // 片手(右)
-	const bool isBothAttack = boss_->IsBothHandsAttacking(); // 両手
+	const bool isLeftAttack = boss_->IsLeftArmAttacking();
+	const bool isRightAttack = boss_->IsRightArmAttacking();
+	const bool isBothAttack = boss_->IsBothHandsAttacking();
 
 	// ViewProj
 	Matrix4x4 view = camera_->GetViewMatrix();
@@ -955,15 +963,29 @@ void BossTestScene::UpdateArmTargetMarker() {
 		return;
 	}
 
+	// =========================
+	// 共通アニメ値
+	// =========================
+	const bool isChargeMarker = (boss_->IsChargeActive() && boss_->IsChargeCoreActive());
+
+	const float sizeMul = isChargeMarker ? 1.20f : 1.00f;
+	const float pulse = 1.0f + 0.08f * std::sin(markerAnimTimer_ * 4.0f);
+	const float innerPulse = 1.0f + 0.05f * std::sin(markerAnimTimer_ * 5.5f + 0.7f);
+
+	const float outerSize = 128.0f * sizeMul * pulse;
+	const float innerSize = 112.0f * sizeMul * innerPulse;
+
+	const float outerRot = markerAnimTimer_ * (isChargeMarker ? 1.2f : 0.8f);
+	const float innerRot = -markerAnimTimer_ * (isChargeMarker ? 2.0f : 1.5f);
+
 	// =========================================================
 	// チャージ中はコアをターゲット表示する
 	// =========================================================
-	if (boss_->IsChargeActive() && boss_->IsChargeCoreActive()) {
+	if (isChargeMarker) {
 
 		Vector2 screen;
 		if (projectToScreen(boss_->GetChargeCoreWorldPos(), screen)) {
 
-			// チャージ中は左側ターゲットUIをコア用として使う
 			if (leftTargetShakeTime_ > 0.0f) {
 				float t = leftTargetShakeTime_ / targetShakeDuration_;
 				float amp = targetShakeAmplitude_ * t;
@@ -975,11 +997,17 @@ void BossTestScene::UpdateArmTargetMarker() {
 
 			leftTargetOuter_->SetPosition(screen);
 			leftTargetInner_->SetPosition(screen);
+
+			leftTargetOuter_->SetSize({ outerSize, outerSize });
+			leftTargetInner_->SetSize({ innerSize, innerSize });
+
+			leftTargetOuter_->SetRotation(outerRot);
+			leftTargetInner_->SetRotation(innerRot);
+
 			leftTargetOuter_->SetColor({ 1,1,1,1 });
 			leftTargetInner_->SetColor({ 1,1,1,1 });
 		}
 
-		// 右側は使わないので非表示のまま
 		rightTargetOuter_->SetColor({ 1,1,1,0 });
 		rightTargetInner_->SetColor({ 1,1,1,0 });
 		return;
@@ -1007,10 +1035,18 @@ void BossTestScene::UpdateArmTargetMarker() {
 
 			leftTargetOuter_->SetPosition(screen);
 			leftTargetInner_->SetPosition(screen);
+
+			leftTargetOuter_->SetSize({ outerSize, outerSize });
+			leftTargetInner_->SetSize({ innerSize, innerSize });
+
+			leftTargetOuter_->SetRotation(outerRot);
+			leftTargetInner_->SetRotation(innerRot);
+
 			leftTargetOuter_->SetColor({ 1,1,1,1 });
 			leftTargetInner_->SetColor({ 1,1,1,1 });
 		}
-	} else {
+	}
+	else {
 		leftTargetOuter_->SetColor({ 1,1,1,0 });
 		leftTargetInner_->SetColor({ 1,1,1,0 });
 	}
@@ -1037,10 +1073,18 @@ void BossTestScene::UpdateArmTargetMarker() {
 
 			rightTargetOuter_->SetPosition(screen);
 			rightTargetInner_->SetPosition(screen);
+
+			rightTargetOuter_->SetSize({ outerSize, outerSize });
+			rightTargetInner_->SetSize({ innerSize, innerSize });
+
+			rightTargetOuter_->SetRotation(outerRot);
+			rightTargetInner_->SetRotation(innerRot);
+
 			rightTargetOuter_->SetColor({ 1,1,1,1 });
 			rightTargetInner_->SetColor({ 1,1,1,1 });
 		}
-	} else {
+	}
+	else {
 		rightTargetOuter_->SetColor({ 1,1,1,0 });
 		rightTargetInner_->SetColor({ 1,1,1,0 });
 	}
@@ -1161,7 +1205,8 @@ void BossTestScene::UpdateIntro(float dt) {
 		if (!landed) {
 			// 着地前：今まで通り（メテオ式）
 			camera_->SetTranslate(targetPos);
-		} else {
+		}
+		else {
 			// 着地後：プレイヤー位置へ寄せる（ズレ防止）
 			Vector3 cur = camera_->GetTranaslate();
 			Vector3 goal = player_->GetTranslate();
@@ -1329,7 +1374,8 @@ void BossTestScene::UpdateBossIntroGlint(float dt) {
 	float scale = 220.0f;
 	if (t < 0.25f) {
 		scale = 220.0f * (t / 0.25f); // 0 -> 220
-	} else {
+	}
+	else {
 		float u = (t - 0.25f) / 0.75f;
 		scale = 220.0f - 100.0f * u;  // 220 -> 120
 	}
@@ -1337,7 +1383,8 @@ void BossTestScene::UpdateBossIntroGlint(float dt) {
 	float alpha = 1.0f;
 	if (t < 0.2f) {
 		alpha = t / 0.2f; // フェードイン
-	} else {
+	}
+	else {
 		alpha = 1.0f - ((t - 0.2f) / 0.8f); // フェードアウト
 	}
 	alpha = std::clamp(alpha, 0.0f, 1.0f);
