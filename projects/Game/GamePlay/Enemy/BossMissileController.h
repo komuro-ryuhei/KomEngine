@@ -20,6 +20,11 @@ public:
 		float height = 2.0f;
 		float speed = 0.2f;
 		float launchTimeout = 6.0f;
+
+		float curveSideOffset = 6.0f; // 外側へのふくらみ
+		float curveUpOffset = 1.5f;   // 少し上にも持ち上げる
+		float curveDuration = 3.0f;   // 着弾までの時間
+
 	};
 
 	BossMissileController() = default;

@@ -103,8 +103,35 @@ void BossMissileController::UpdateTelegraph(float dt) {
 
 		for (int i = 0; i < count; ++i) {
 			Vector3 from = (*missiles_)[i]->GetTranslate();
-			Vector3 dir = MyMath::Normalize(playerPos - from);
-			(*missiles_)[i]->Spawn(from, dir, params_.speed);
+
+			// プレイヤー現在位置
+			Vector3 end = playerPos;
+
+			// ミサイルごとに左右どちらへ膨らませるか決める
+			float sideSign = 0.0f;
+			if (count > 1) {
+				float t = static_cast<float>(i) / static_cast<float>(count - 1); // 0..1
+				sideSign = (t - 0.5f) * 2.0f; // -1 .. +1
+			}
+
+			// start→end 方向
+			Vector3 forward = MyMath::Normalize(end - from);
+
+			// 横方向ベクトル（XZ平面ベース）
+			Vector3 side = { forward.z, 0.0f, -forward.x };
+			if (MyMath::Length(side) < 0.0001f) {
+				side = { 1.0f, 0.0f, 0.0f };
+			}
+			side = MyMath::Normalize(side);
+
+			// 中間点を外側にずらす
+			Vector3 mid = (from + end) * 0.5f;
+			Vector3 control =
+				mid +
+				side * (params_.curveSideOffset * sideSign) +
+				Vector3{ 0.0f, params_.curveUpOffset, 0.0f };
+
+			(*missiles_)[i]->SpawnCurve(from, control, end, params_.curveDuration);
 		}
 	}
 }
