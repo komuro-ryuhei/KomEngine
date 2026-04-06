@@ -376,13 +376,13 @@ private:
 
 	float armTelegraphBackTime_ = 0.20f;     // 後ろに引く時間
 	float armTelegraphHoldTime_ = 1.0f;      // 引いたあと少し止める時間
-	float armTelegraphDuration_ = 1.2f;      // 全体時間 = 引き + 溜め
+	float armTelegraphDuration_ = 1.2f;      // 全体時間
 
 	float armTelegraphBackAmount_ = 1.8f;    // 後ろに引く距離
 	float armTelegraphShakeAmount_ = 0.050f; // 溜め中の震え幅
 	float armTelegraphShakeFreq_ = 65.0f;    // 震え速さ
 
-	float armRushSpeed_ = 0.18f;            // 突進速度
+	float armRushSpeed_ = 0.15f;            // 突進速度
 
 	Vector3 armTelegraphStartPos_{};        // 溜め開始時の腕位置
 	Vector3 armTelegraphTargetPos_{};       // 引いた先の位置

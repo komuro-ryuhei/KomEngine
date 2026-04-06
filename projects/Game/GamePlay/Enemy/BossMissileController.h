@@ -23,7 +23,7 @@ public:
 
 		float curveSideOffset = 6.0f; // 外側へのふくらみ
 		float curveUpOffset = 1.5f;   // 少し上にも持ち上げる
-		float curveDuration = 3.0f;   // 着弾までの時間
+		float curveDuration = 6.0f;   // 着弾までの時間
 
 	};
 
