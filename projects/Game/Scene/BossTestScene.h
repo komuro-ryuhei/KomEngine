@@ -145,6 +145,8 @@ private:
 	std::unique_ptr<Sprite> rightTargetOuter_;
 	std::unique_ptr<Sprite> rightTargetInner_;
 
+	std::vector<std::unique_ptr<Sprite>> missileTelegraphMarkers_;
+
 	// Particle・Effect
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;
 
@@ -293,6 +295,9 @@ private:
 
 	// アームの位置に描画するマーカーの更新
 	void UpdateArmTargetMarker();
+
+	// ミサイルの位置に描画するマーカーの更新
+	void UpdateMissileTelegraphMarkers();
 
 	// 銃の更新用
 	void UpdateGun();

@@ -48,6 +48,12 @@ public:
 	Params& GetParams() { return params_; }
 	const Params& GetParams() const { return params_; }
 
+	bool IsTelegraphing() const { return phase_ == Phase::Telegraph; }
+	int GetTelegraphCount() const {
+		return missiles_ ? static_cast<int>(std::min<size_t>(4, missiles_->size())) : 0;
+	}
+	bool GetTelegraphWorldPos(int index, Vector3& outPos) const;
+
 private:
 
 	enum class Phase {

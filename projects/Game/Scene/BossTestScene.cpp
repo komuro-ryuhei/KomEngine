@@ -87,6 +87,19 @@ void BossTestScene::Init() {
 	makeTarget(leftTargetOuter_, leftTargetInner_);
 	makeTarget(rightTargetOuter_, rightTargetInner_);
 
+	// ミサイル予告用マーカー
+	missileTelegraphMarkers_.clear();
+	missileTelegraphMarkers_.reserve(4);
+
+	for (int i = 0; i < 4; ++i) {
+		auto sp = std::make_unique<Sprite>();
+		sp->Init("./Resources/images/outer.png", BlendType::BLEND_ALPHA);
+		sp->SetAnchorPoint({ 0.5f, 0.5f });
+		sp->SetSize({ 80.0f, 80.0f });
+		sp->SetColor({ 1,1,1,0 }); // 初期は非表示
+		missileTelegraphMarkers_.push_back(std::move(sp));
+	}
+
 	// ボスのメテオ
 	meteors_.clear();
 	meteors_.reserve(32);
@@ -399,11 +412,16 @@ void BossTestScene::Update() {
 
 	// 狙う弱点マーカーの更新
 	UpdateArmTargetMarker();
+	UpdateMissileTelegraphMarkers();
 
 	leftTargetOuter_->Update();
 	leftTargetInner_->Update();
 	rightTargetOuter_->Update();
 	rightTargetInner_->Update();
+
+	for (auto& sp : missileTelegraphMarkers_) {
+		if (sp) { sp->Update(); }
+	}
 
 	// ボス怒り状態チェック
 	if (boss_ && !boss_->IsEnraged()) {
@@ -551,6 +569,10 @@ void BossTestScene::Draw() {
 	leftTargetInner_->Draw();
 	rightTargetOuter_->Draw();
 	rightTargetInner_->Draw();
+
+	for (auto& sp : missileTelegraphMarkers_) {
+		if (sp) { sp->Draw(); }
+	}
 
 	// デバッグライン
 	// debugLine_.Draw();
@@ -1088,6 +1110,89 @@ void BossTestScene::UpdateArmTargetMarker() {
 	else {
 		rightTargetOuter_->SetColor({ 1,1,1,0 });
 		rightTargetInner_->SetColor({ 1,1,1,0 });
+	}
+}
+
+void BossTestScene::UpdateMissileTelegraphMarkers() {
+
+	if (!camera_ || !attackManager_ || !attackManager_->GetMissile()) {
+		return;
+	}
+
+	auto* missileCtrl = attackManager_->GetMissile();
+
+	// 全消し
+	for (auto& sp : missileTelegraphMarkers_) {
+		if (sp) {
+			sp->SetColor({ 1,1,1,0 });
+		}
+	}
+
+	// 予告中だけ表示
+	if (!missileCtrl->IsTelegraphing()) {
+		return;
+	}
+
+	// ViewProj
+	Matrix4x4 view = camera_->GetViewMatrix();
+	Matrix4x4 proj = camera_->GetProjectionMatrix();
+	Matrix4x4 vp = MyMath::Multiply(view, proj);
+
+	auto projectToScreen = [&](const Vector3& worldPos, Vector2& outScreen) -> bool {
+
+		float w =
+			worldPos.x * vp.m[0][3] +
+			worldPos.y * vp.m[1][3] +
+			worldPos.z * vp.m[2][3] +
+			vp.m[3][3];
+
+		if (std::fabs(w) < 1e-6f) return false;
+
+		Vector3 ndc = MyMath::Transform(worldPos, vp);
+
+		if (ndc.z <= 0.0f || ndc.z >= 1.0f) return false;
+
+		constexpr float SCREEN_W = 1280.0f;
+		constexpr float SCREEN_H = 720.0f;
+
+		outScreen.x = (ndc.x * 0.5f + 0.5f) * SCREEN_W;
+		outScreen.y = (-ndc.y * 0.5f + 0.5f) * SCREEN_H;
+		return true;
+		};
+
+	// 点滅
+	float blink = std::sin(markerAnimTimer_ * 10.0f);
+	float alpha = (blink > 0.0f) ? 1.0f : 0.2f;
+
+	// 少しだけ脈動
+	float pulse = 1.0f + 0.08f * std::sin(markerAnimTimer_ * 8.0f);
+	float size = 80.0f * pulse;
+
+	const int count = std::min(
+		static_cast<int>(missileTelegraphMarkers_.size()),
+		missileCtrl->GetTelegraphCount()
+	);
+
+	for (int i = 0; i < count; ++i) {
+
+		Vector3 worldPos;
+		if (!missileCtrl->GetTelegraphWorldPos(i, worldPos)) {
+			continue;
+		}
+
+		Vector2 screen;
+		if (!projectToScreen(worldPos, screen)) {
+			continue;
+		}
+
+		auto& sp = missileTelegraphMarkers_[i];
+		if (!sp) {
+			continue;
+		}
+
+		sp->SetPosition(screen);
+		sp->SetSize({ size, size });
+		sp->SetColor({ 1.0f, 0.35f, 0.35f, alpha });
 	}
 }
 

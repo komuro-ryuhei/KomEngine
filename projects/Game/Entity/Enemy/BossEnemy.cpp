@@ -2444,3 +2444,23 @@ Vector3 BossEnemy::GetChargeCoreWorldPos() const {
 	}
 	return transform_.translate + chargeCoreOffset_;
 }
+
+bool BossEnemy::IsMissileTelegraphing() const {
+
+	return missilePhase_ == MissilePhase::Telegraph;
+}
+
+bool BossEnemy::GetMissileTelegraphWorldPos(int index, Vector3& outPos) const {
+
+	if (index < 0 || index >= static_cast<int>(missiles_.size())) {
+		return false;
+	}
+
+	const auto& m = missiles_[index];
+	if (!m.bullet) {
+		return false;
+	}
+
+	outPos = m.bullet->GetTranslate();
+	return true;
+}

@@ -282,6 +282,10 @@ public:
 	void SetRetreating(bool v) { retreatActive_ = v; }
 	bool IsRetreating() const { return retreatActive_; }
 
+	bool IsMissileTelegraphing() const;
+	bool GetMissileTelegraphWorldPos(int index, Vector3& outPos) const;
+	int GetMissileTelegraphCount() const { return static_cast<int>(missiles_.size()); }
+
 	void SetCameraFocusPos(const Vector3& p) { retreatCameraFocusPos_ = p; }
 	Vector3 GetCameraFocusPos() const { return retreatCameraFocusPos_; }
 	bool WantsCameraFocus() const { return retreatActive_; }

@@ -166,3 +166,23 @@ void BossMissileController::UpdateLaunch(float dt) {
 		ForceEnd();
 	}
 }
+
+bool BossMissileController::GetTelegraphWorldPos(int index, Vector3& outPos) const {
+
+	if (!missiles_) {
+		return false;
+	}
+
+	const int count = static_cast<int>(std::min<size_t>(4, missiles_->size()));
+	if (index < 0 || index >= count) {
+		return false;
+	}
+
+	const auto& m = (*missiles_)[index];
+	if (!m || !m->IsAlive()) {
+		return false;
+	}
+
+	outPos = m->GetTranslate();
+	return true;
+}
