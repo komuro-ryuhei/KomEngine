@@ -116,6 +116,8 @@ void BossMissile::Update() {
 		return;
 	}
 
+	Vector3 moveDirForFx = direction_;
+
 	if (useCurve_) {
 
 		lastCurveT_ = curveT_;
@@ -128,6 +130,7 @@ void BossMissile::Update() {
 		Vector3 moveDir = MyMath::Normalize(newPos - lastCurvePos_);
 
 		transform_.translate = newPos;
+		moveDirForFx = moveDir;
 
 		if (MyMath::Length(newPos - lastCurvePos_) > 0.0001f) {
 			const float yaw = std::atan2(moveDir.x, moveDir.z);
@@ -143,6 +146,7 @@ void BossMissile::Update() {
 	else {
 
 		transform_.translate += direction_ * speed_;
+		moveDirForFx = direction_;
 
 		const float yaw = std::atan2(direction_.x, direction_.z);
 		const float pitch = -std::asin(direction_.y);
@@ -152,6 +156,25 @@ void BossMissile::Update() {
 	object3d_->SetTranslate(transform_.translate);
 	object3d_->SetRotate(transform_.rotate);
 	object3d_->Update();
+
+	// =========================
+	// ミサイル後方の炎パーティクル
+	// =========================
+	bool canEmitFlame = false;
+
+	if (useCurve_) {
+		// 曲線移動中は、実際に位置が動いている時だけ
+		canEmitFlame = (MyMath::Length(moveDirForFx) > 0.0001f);
+	}
+	else {
+		// 直線移動中は speed がある時だけ
+		canEmitFlame = (speed_ > 0.0001f);
+	}
+
+	auto* pm = KomEngine::System::GetParticleManager();
+	if (canEmitFlame && pm && pm->Exists("missile_flame")) {
+		pm->EmitMissileFlame(transform_.translate, moveDirForFx, 5);
+	}
 
 	lifeTimer_ += dt;
 	if (lifeTimer_ >= maxLife_) {

@@ -110,6 +110,32 @@ void ParticleManager::Update() {
 
 				particle.color = c;
 			}
+			
+			else if (name == "missile_flame") {
+
+				// 少し回す
+				particle.transform.rotate.z += 0.06f;
+
+				// 最初大きめ、後半しぼむ
+				float k = 1.0f - t;
+				float sc = 0.10f + k * 0.28f;
+				particle.transform.scale.x = sc;
+				particle.transform.scale.y = sc * (1.2f + 0.6f * k);
+
+				// 少しずつ減速して煙っぽく
+				particle.velocity.x *= 0.95f;
+				particle.velocity.y *= 0.98f;
+				particle.velocity.z *= 0.95f;
+
+				// 白→黄→オレンジっぽく抜ける
+				Vector4 c;
+				c.x = 1.0f;
+				c.y = 0.45f + 0.45f * k;
+				c.z = 0.05f + 0.18f * k;
+				c.w = (1.0f - t) * 0.85f;
+
+				particle.color = c;
+			}
 
 			if (name == "charge_aura") {
 
@@ -832,6 +858,57 @@ Particle ParticleManager::MakePlayerChargeLineParticle(std::mt19937& randomEngin
 	return p;
 }
 
+Particle ParticleManager::MakeMissileFlameParticle(std::mt19937& randomEngine, const Vector3& pos, const Vector3& forward) {
+
+	std::uniform_real_distribution<float> distBack(0.15f, 0.55f);
+	std::uniform_real_distribution<float> distSide(-0.08f, 0.08f);
+	std::uniform_real_distribution<float> distUp(0.01f, 0.08f);
+	std::uniform_real_distribution<float> distScale(0.18f, 0.34f);
+	std::uniform_real_distribution<float> distLife(0.10f, 0.22f);
+	std::uniform_real_distribution<float> distG(0.55f, 0.95f);
+	std::uniform_real_distribution<float> distA(0.75f, 1.0f);
+
+	Particle p{};
+
+	Vector3 dir = MyMath::Normalize(forward);
+
+	// 後ろ方向
+	Vector3 back = dir * -1.0f;
+
+	// 横方向
+	Vector3 side = { dir.z, 0.0f, -dir.x };
+	if (MyMath::Length(side) < 0.0001f) {
+		side = { 1.0f, 0.0f, 0.0f };
+	}
+	side = MyMath::Normalize(side);
+
+	// 少しだけミサイル後方にずらして生成
+	p.transform.translate =
+		pos
+		+ back * distBack(randomEngine)
+		+ side * distSide(randomEngine)
+		+ Vector3{ 0.0f, distUp(randomEngine), 0.0f };
+
+	float sc = distScale(randomEngine);
+	p.transform.scale = { sc, sc, 1.0f };
+	p.transform.rotate = { 0.0f, 0.0f, 0.0f };
+
+	// 後方へ流れつつ、少し上に立ちのぼる
+	p.velocity =
+		back * MyMath::Rand(0.10f, 0.22f) +
+		side * distSide(randomEngine) * 0.25f +
+		Vector3{ 0.0f, MyMath::Rand(0.01f, 0.04f), 0.0f };
+
+	// 白黄〜オレンジ
+	float g = distG(randomEngine);
+	p.color = { 1.0f, g, 0.18f, distA(randomEngine) };
+
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
 void ParticleManager::BuildEmitTable() {
 
 	emitTable_.clear();
@@ -1016,5 +1093,20 @@ void ParticleManager::EmitChargeAura(ParticleGroup& group, const Vector3& positi
 
 	for (uint32_t i = 0; i < count; ++i) {
 		group.particles.push_back(MakeChargeAuraParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitMissileFlame(const Vector3& pos, const Vector3& forward, uint32_t count) {
+
+	auto it = particleGroups.find("missile_flame");
+	if (it == particleGroups.end()) {
+		return;
+	}
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		it->second.particles.push_back(MakeMissileFlameParticle(randomEngine, pos, forward));
 	}
 }

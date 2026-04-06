@@ -102,11 +102,8 @@ public:
 	// マズルフラッシュのパーティクル
 	Particle MakeMuzzleFlashParticle(std::mt19937& randomEngine, const Vector3& translate);
 
-	// ★ 弾道パーティクル（細い白線）
+	// 弾道パーティクル（細い白線）
 	Particle MakeTrailParticle(const Vector3& pos);
-
-	// 弾道専用 Emit
-	void EmitTrail(const Vector3& pos, const Vector3& dir);
 
 	// 白いリングのエフェクト
 	Particle MakeRingParticle(std::mt19937& randomEngine, const Vector3& translate);
@@ -127,6 +124,15 @@ public:
 
 	// チャージ中の「気の塊本体」
 	Particle MakeChargeAuraParticle(std::mt19937& randomEngine, const Vector3& center);
+
+	// missile flame
+	Particle MakeMissileFlameParticle(std::mt19937& randomEngine, const Vector3& pos, const Vector3& forward);
+
+	// 弾道専用 Emit
+	void EmitTrail(const Vector3& pos, const Vector3& dir);
+
+	// ミサイルの炎専用 Emit
+	void EmitMissileFlame(const Vector3& pos, const Vector3& forward, uint32_t count);
 
 	/// <summary>
 	/// 存在確認
