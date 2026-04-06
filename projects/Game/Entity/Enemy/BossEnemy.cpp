@@ -2163,14 +2163,8 @@ void BossEnemy::ChargeEffect(float dt) {
 		}
 
 		// たまに十字っぽい光を足す
-		chargeFxRingTimer_ += dt;
-		if (chargeFxRingTimer_ >= 0.30f) {
-			chargeFxRingTimer_ = 0.0f;
-
-			if (hasMoon) {
-				pm->Emit("moonLight", fxPos, 1);
-			}
-		}
+		// moonLight はチャージ演出では一旦使わない
+		chargeFxRingTimer_ = 0.0f;
 
 		// 中心の大きい“気の塊”本体
 		chargeFxCylinderTimer_ += dt;
