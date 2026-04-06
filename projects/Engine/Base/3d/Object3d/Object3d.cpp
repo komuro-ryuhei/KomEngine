@@ -34,7 +34,8 @@ void Object3d::Init(const std::string& shaderType, BlendType type) {
 	objectParamResource_->Map(
 		0, nullptr, reinterpret_cast<void**>(&objectParamData_));
 
-	objectParamData_->useEnvironmentMap = false;
+	objectParamData_->useEnvironmentMap = 0;
+	objectParamData_->padding_ = { 0.0f, 0.0f, 0.0f };
 	objectParamData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	transform_ = {
@@ -59,7 +60,8 @@ void Object3d::Update() {
 	Matrix4x4 rotateMatrix;
 	if (fromBlender_) {
 		rotateMatrix = MyMath::MakeRotateMatrixFromBlenderEuler(transform_.rotate);
-	} else {
+	}
+	else {
 		Matrix4x4 rotX = MyMath::MakeRotateXMatrix(transform_.rotate.x);
 		Matrix4x4 rotY = MyMath::MakeRotateYMatrix(transform_.rotate.y);
 		Matrix4x4 rotZ = MyMath::MakeRotateZMatrix(transform_.rotate.z);
@@ -86,7 +88,8 @@ void Object3d::Update() {
 		}
 
 		worldMatrix_ = MyMath::Multiply(scaleMatrix, MyMath::Multiply(localMatrix, parentMatrix));
-	} else {
+	}
+	else {
 		worldMatrix_ = MyMath::Multiply(scaleMatrix, localMatrix);
 	}
 
@@ -101,7 +104,8 @@ void Object3d::Update() {
 	if (defaultCamera_) {
 		const Matrix4x4& viewProjectionMatrix = defaultCamera_->GetViewProjectionMatrix();
 		worldViewProjectionMatrix = MyMath::Multiply(worldMatrix_, viewProjectionMatrix);
-	} else {
+	}
+	else {
 		worldViewProjectionMatrix = worldMatrix_;
 	}
 
@@ -205,7 +209,7 @@ Vector3 Object3d::GetTranslate() const { return transform_.translate; }
 void Object3d::SetEnvironmentTexture(const std::string& filePath) {
 	environmentGpuHandle_ = KomEngine::System::GetTextureManager()->GetSrvHandleGPU(filePath);
 	if (objectParamData_) {
-		objectParamData_->useEnvironmentMap = true;
+		objectParamData_->useEnvironmentMap = 1;
 	}
 }
 

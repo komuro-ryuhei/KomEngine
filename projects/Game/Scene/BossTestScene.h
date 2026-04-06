@@ -308,6 +308,9 @@ private:
 	// 
 	void LineTarget();
 
+	// 仮の床グリッド描画
+	void AddFloorGrid();
+
 	Vector3 CalcLookAtRotation(const Vector3& camPos, const Vector3& targetPos);
 
 	// 演出更新

@@ -9,6 +9,7 @@ const std::unordered_map<std::string, PipelineManager::ShaderPair> PipelineManag
 	{ "object3d",                  { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/Object3D.PS.hlsl" } },
 	{ "object3d_meteorError",      { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/MeteorError.PS.hlsl" } },
 	{ "object3d_chargeCore",       { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/ChargeCore.PS.hlsl" } },
+	{ "object3d_gridFloor",        { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/GridFloor.PS.hlsl" } },
 	{ "particle",                  { L"./Resources/shaders/Particle.VS.hlsl",   L"./Resources/shaders/Particle.PS.hlsl" } },
 	{ "sprite",                    { L"./Resources/shaders/Sprite.VS.hlsl",     L"./Resources/shaders/Sprite.PS.hlsl" } },
 	{ "skybox",                    { L"./Resources/shaders/Skybox.VS.hlsl",     L"./Resources/shaders/Skybox.PS.hlsl" } },
@@ -122,7 +123,11 @@ void PipelineManager::PSOSetting(const std::string& objectType, BlendType type) 
 	std::string baseType = objectType;
 	if (objectType.find("posteffect_") == 0) {
 		baseType = "posteffect";
-	} else if (objectType == "object3d_meteorError" || objectType == "object3d_chargeCore") {
+	}
+	else if (
+		objectType == "object3d_meteorError" ||
+		objectType == "object3d_chargeCore" ||
+		objectType == "object3d_gridFloor") {
 		baseType = "object3d";
 	}
 

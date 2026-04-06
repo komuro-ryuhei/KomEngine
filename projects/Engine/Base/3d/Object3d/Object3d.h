@@ -5,6 +5,7 @@
 #include "sstream"
 #include <d3d12.h>
 #include <vector>
+#include <cstdint>
 
 // MyClass
 #include "Engine/Base/3d/Model/Model.h"
@@ -85,6 +86,7 @@ public: // メンバ関数
 	void SetFromBlender(bool flag);
 
 private:
+
 	// ウィンドウズアプリケーション
 	WinApp* winApp_ = nullptr;
 
@@ -104,10 +106,11 @@ private:
 
 	// 環境マップ用変数
 	struct ObjectParams {
-		bool useEnvironmentMap;
+		int32_t useEnvironmentMap;
 		Vector3 padding_;
 		Vector4 color;
 	};
+
 	ComPtr<ID3D12Resource> environmentTexture_ = nullptr;
 	D3D12_GPU_DESCRIPTOR_HANDLE  environmentGpuHandle_{};
 	ComPtr<ID3D12Resource> objectParamResource_;

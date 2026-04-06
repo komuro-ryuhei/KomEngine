@@ -35,10 +35,11 @@ void BossTestScene::Init() {
 
 	// 地面
 	glassObject_ = std::make_unique<Object3d>();
-	glassObject_->Init(BlendType::BLEND_NONE);
+	glassObject_->Init("object3d_gridFloor", BlendType::BLEND_NONE);
 	glassObject_->SetModel("ground.obj");
 	glassObject_->SetDefaultCamera(camera_.get());
 	glassObject_->SetTranslate({ 0.0f, -5.0f, 0.0f });
+	glassObject_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 
 	// --- フェード初期化（画面サイズは 1280x720）--- //
 	phase_ = Phase::kFadeIn;
@@ -252,6 +253,11 @@ void BossTestScene::Update() {
 		// 見た目の更新だけはやっておく
 		camera_->Update();
 		skybox_->Update();
+
+		if (glassObject_) {
+			glassObject_->Update();
+		}
+
 		player_->Update();
 		boss_->Update(); // combatEnabled_ が false なら攻撃しない
 		ImGuiDebug();
@@ -370,7 +376,7 @@ void BossTestScene::Update() {
 	// ライン側でカメラ行列更新
 	debugLine_.Update();
 
-	// ここから AddLine だけ書けばいい
+	// 
 	LineTarget();
 
 	// Playerの銃の更新
@@ -520,7 +526,7 @@ void BossTestScene::Draw() {
 	// Skyboxの描画
 	skybox_->Draw();
 	// 地面オブジェクトの描画
-	// glassObject_->Draw();
+	glassObject_->Draw();
 
 	// -------------------- ゲームオブジェクトシーンの描画 -------------------- //
 
@@ -1253,6 +1259,44 @@ void BossTestScene::LineTarget() {
 
 		// AABB を線で描画
 		AddAABBLines(debugLine_, info.box, color);
+	}
+}
+
+void BossTestScene::AddFloorGrid() {
+
+	// まずは雰囲気確認用の仮グリッド
+	const float y = -4.95f;
+
+	// グリッドの広さ
+	const int halfCount = 40;     // 左右に40本ずつ
+	const float spacing = 2.0f;   // 1マスの間隔
+
+	// 色
+	const Vector4 mainColor = { 0.15f, 0.45f, 1.0f, 0.55f };
+	const Vector4 centerColor = { 0.35f, 0.75f, 1.0f, 0.95f };
+
+	const float minPos = -halfCount * spacing;
+	const float maxPos = halfCount * spacing;
+
+	for (int i = -halfCount; i <= halfCount; ++i) {
+		float p = static_cast<float>(i) * spacing;
+
+		// 真ん中の軸だけ少し強調
+		Vector4 color = (i == 0) ? centerColor : mainColor;
+
+		// Z方向へ伸びる線（X一定）
+		debugLine_.AddLine(
+			{ p, y, minPos },
+			{ p, y, maxPos },
+			color
+		);
+
+		// X方向へ伸びる線（Z一定）
+		debugLine_.AddLine(
+			{ minPos, y, p },
+			{ maxPos, y, p },
+			color
+		);
 	}
 }
 
