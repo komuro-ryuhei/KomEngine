@@ -110,7 +110,7 @@ void ParticleManager::Update() {
 
 				particle.color = c;
 			}
-			
+
 			else if (name == "missile_flame") {
 
 				// 少し回す
@@ -580,7 +580,8 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 				{0.0f, 0.0f, 1.0f}
 				});
 		}
-	} else if (particleType == "cylinder") {
+	}
+	else if (particleType == "cylinder") {
 
 		const uint32_t kLineCount = 32;
 		const float radius = 2.0f;
@@ -624,7 +625,8 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 			vertices.push_back({ p1, uvBottom, normal });
 			vertices.push_back({ p3, uvTop, normal });
 		}
-	} else if (particleType == "moonLight") {
+	}
+	else if (particleType == "moonLight") {
 
 		const uint32_t kRingDivide = 32;
 		const float kOuterRadius = 2.0f;
@@ -670,7 +672,8 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 				{0.0f, 0.0f, 1.0f}
 				});
 		}
-	} else {
+	}
+	else {
 		vertices = {
 			{{1.0f, 1.0f, 0.0f, 1.0f},   {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
 			{{-1.0f, 1.0f, 0.0f, 1.0f},  {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
