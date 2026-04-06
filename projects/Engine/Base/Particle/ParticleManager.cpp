@@ -130,8 +130,8 @@ void ParticleManager::Update() {
 				// 白→黄→オレンジっぽく抜ける
 				Vector4 c;
 				c.x = 1.0f;
-				c.y = 0.45f + 0.45f * k;
-				c.z = 0.05f + 0.18f * k;
+				c.y = 0.18f + 0.22f * k;
+				c.z = 0.02f + 0.06f * k;
 				c.w = (1.0f - t) * 0.85f;
 
 				particle.color = c;
@@ -865,7 +865,7 @@ Particle ParticleManager::MakeMissileFlameParticle(std::mt19937& randomEngine, c
 	std::uniform_real_distribution<float> distUp(0.01f, 0.08f);
 	std::uniform_real_distribution<float> distScale(0.18f, 0.34f);
 	std::uniform_real_distribution<float> distLife(0.10f, 0.22f);
-	std::uniform_real_distribution<float> distG(0.55f, 0.95f);
+	std::uniform_real_distribution<float> distG(0.08f, 0.25f);
 	std::uniform_real_distribution<float> distA(0.75f, 1.0f);
 
 	Particle p{};
@@ -901,7 +901,7 @@ Particle ParticleManager::MakeMissileFlameParticle(std::mt19937& randomEngine, c
 
 	// 白黄〜オレンジ
 	float g = distG(randomEngine);
-	p.color = { 1.0f, g, 0.18f, distA(randomEngine) };
+	p.color = { 1.0f, distG(randomEngine), 0.03f, distA(randomEngine) };
 
 	p.lifeTime = distLife(randomEngine);
 	p.currentTime = 0.0f;
