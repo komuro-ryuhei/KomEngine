@@ -26,7 +26,7 @@ void BossTestScene::Init() {
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
-	skybox_->Init("./Resources/images/test.dds");
+	skybox_->Init("./Resources/images/blackCube.dds");
 	skybox_->SetDefaultCamera(camera_.get());
 
 	// デバッグライン
@@ -520,7 +520,7 @@ void BossTestScene::Draw() {
 	// Skyboxの描画
 	skybox_->Draw();
 	// 地面オブジェクトの描画
-	glassObject_->Draw();
+	// glassObject_->Draw();
 
 	// -------------------- ゲームオブジェクトシーンの描画 -------------------- //
 

@@ -1,9 +1,10 @@
 {
   "textures": [
+    "./Resources/images/test.dds",
+    "./Resources/images/blackCube.dds",
     "./Resources/images/uvChecker.png",
     "./Resources/images/circle.png",
     "./Resources/images/circle2.png",
-    "./Resources/images/test.dds",
     "./Resources/images/ground.png",
     "./Resources/images/Title.png",
     "./Resources/images/PushEnter.png",

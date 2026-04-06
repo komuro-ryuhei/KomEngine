@@ -15,7 +15,7 @@ class BossMissileController {
 public:
 
 	struct Params {
-		float telegraphTime = 1.0f;
+		float telegraphTime = 2.0f;
 		float radius = 2.5f;
 		float height = 2.0f;
 		float speed = 0.2f;
