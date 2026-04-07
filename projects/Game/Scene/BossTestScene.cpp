@@ -437,10 +437,6 @@ void BossTestScene::Update() {
 	// -----------------------------
 	// チャージ説明用ゲージ更新
 	// -----------------------------
-		// -----------------------------
-	// 自機のチャージゲージ更新
-	// チャージ中だけマウスの下に表示
-	// -----------------------------
 	bool isPlayerCharging = (player_ && player_->IsCharging());
 
 	float chargeT = player_ ? player_->GetChargeRatio() : 0.0f;
@@ -708,9 +704,9 @@ void BossTestScene::Draw() {
 
 	toPauseSpr_->Draw();
 
-	if (bossIntroGlintActive_ && bossIntroGlintSprite_) {
+	/*if (bossIntroGlintActive_ && bossIntroGlintSprite_) {
 		bossIntroGlintSprite_->Draw();
-	}
+	}*/
 
 	// 
 	leftTargetOuter_->Draw();
