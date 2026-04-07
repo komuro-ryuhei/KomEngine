@@ -52,6 +52,7 @@
     "gun.obj",
     "BossArmor.obj",
     "BossEnemyCore.obj",
+    "BossEnemyCore_Enrage.obj",
     "PlayerBullet.obj",
     "BossEnemyMissile.obj",
     "BossEnemyMeteor.obj",

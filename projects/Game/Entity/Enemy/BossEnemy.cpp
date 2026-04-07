@@ -145,10 +145,6 @@ void BossEnemy::Update() {
 		}
 		};
 
-	updateFlash(bodyHitFlashTime_);
-	updateFlash(leftHitFlashTime_);
-	updateFlash(rightHitFlashTime_);
-
 	// ---------------------------- HPバーの更新更新 ---------------------------- //
 
 	if (hpSprite_) {
@@ -1012,6 +1008,12 @@ void BossEnemy::UpdateEnrageTransition(float dt) {
 
 		if (t >= 1.0f) {
 			transform_.translate = enrageStartPos_;
+
+			// 演出が全部終わってから怒りモデルへ切り替え
+			if (isEnraged_) {
+				if (object3d_) { object3d_->SetModel("BossEnemyCore_Enrage.obj"); }
+			}
+
 			enragePhase_ = EnrageTransitionPhase::None;
 			enrageTransitioning_ = false;
 			enrageTransitionTimer_ = 0.0f;
@@ -1084,7 +1086,6 @@ void BossEnemy::HPDraw() {
 
 void BossEnemy::SetEnraged(bool enraged) {
 
-	// 同じ状態なら何もしない
 	if (isEnraged_ == enraged) {
 		return;
 	}
@@ -1095,6 +1096,13 @@ void BossEnemy::SetEnraged(bool enraged) {
 		attackSpeed_ = baseAttackSpeed_ * enragedArmSpeedMul_;
 		armReturnSpeedSingle_ = baseArmReturnSpeedSingle_ * enragedArmSpeedMul_;
 		armReturnSpeedBoth_ = baseArmReturnSpeedBoth_ * enragedArmSpeedMul_;
+	}
+	else {
+		attackSpeed_ = baseAttackSpeed_;
+		armReturnSpeedSingle_ = baseArmReturnSpeedSingle_;
+		armReturnSpeedBoth_ = baseArmReturnSpeedBoth_;
+
+		if (object3d_) { object3d_->SetModel("BossEnemyCore.obj"); }
 	}
 }
 
@@ -1173,9 +1181,6 @@ void BossEnemy::Damage(int v) {
 
 	// 被弾シェイク開始
 	StartBodyHitShake();
-
-	// 胴体フラッシュ開始
-	StartBodyHitFlash();
 
 	// まだアーマーが残っているなら、本体ではなくアーマーにダメージ
 	if (!AreAllArmorsBroken()) {
@@ -1269,7 +1274,6 @@ void BossEnemy::PartCollider::OnCollision(ICollisionObject* other) {
 	case Part::Body:
 		owner->Damage(dmg);                 // ←固定1→弾のダメージ
 		owner->StartBodyHitShake();
-		owner->StartBodyHitFlash();
 		break;
 
 	case Part::LeftArm:
@@ -1278,7 +1282,6 @@ void BossEnemy::PartCollider::OnCollision(ICollisionObject* other) {
 			owner->AddHitLeftArm();
 		}
 		owner->StartLeftArmHitShake();
-		owner->StartLeftHitFlash();
 		break;
 
 	case Part::RightArm:
@@ -1286,7 +1289,6 @@ void BossEnemy::PartCollider::OnCollision(ICollisionObject* other) {
 			owner->AddHitRightArm();
 		}
 		owner->StartRightArmHitShake();
-		owner->StartRightHitFlash();
 		break;
 	}
 }
@@ -1466,18 +1468,20 @@ void BossEnemy::DamageShake() {
 	rightArm_->SetRotate(rightArmRot_);
 
 	// ==============================
-	// 部位ごとのフラッシュ色を反映
+	// 色を反映
 	// ==============================
-	Vector4 baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-	Vector4 flashColor = { 1.0f, 0.2f, 0.2f, 1.0f };
+	Vector4 normalColor =
+		(isEnraged_ && !enrageTransitioning_)
+		? Vector4{ 1.0f, 0.1f, 0.1f, 1.0f } : Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 	// 怒り遷移の待機中は赤点滅を優先
 	if (enrageTransitioning_ && enragePhase_ == EnrageTransitionPhase::Wait) {
 		float flash = (std::sin(enrageTransitionTimer_ * enrageFlashSpeed_) + 1.0f) * 0.5f;
+
 		Vector4 rageColor{
-			baseColor.x + (flashColor.x - baseColor.x) * flash,
-			baseColor.y + (flashColor.y - baseColor.y) * flash,
-			baseColor.z + (flashColor.z - baseColor.z) * flash,
+			1.0f,
+			normalColor.y + (0.12f - normalColor.y) * flash,
+			normalColor.z + (0.12f - normalColor.z) * flash,
 			1.0f
 		};
 
@@ -1487,32 +1491,8 @@ void BossEnemy::DamageShake() {
 		return;
 	}
 
-	// 胴体
-	Vector4 bodyColor = baseColor;
-	if (bodyHitFlashTime_ > 0.0f) {
-		bodyColor = flashColor;
-	}
-	if (object3d_) {
-		object3d_->SetColor(bodyColor);
-	}
-
-	// 左腕
-	Vector4 leftColor = baseColor;
-	if (leftHitFlashTime_ > 0.0f) {
-		leftColor = flashColor;
-	}
-	if (leftArm_) {
-		leftArm_->SetColor(leftColor);
-	}
-
-	// 右腕
-	Vector4 rightColor = baseColor;
-	if (rightHitFlashTime_ > 0.0f) {
-		rightColor = flashColor;
-	}
-	if (rightArm_) {
-		rightArm_->SetColor(rightColor);
-	}
+	// 通常時 / 怒り時の通常色
+	if (object3d_) { object3d_->SetColor(normalColor); }
 }
 
 void BossEnemy::StartRetreatAttack() {
