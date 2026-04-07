@@ -2247,7 +2247,7 @@ void BossEnemy::UpdateDeathEffect(float dt) {
 
 			auto* pm = KomEngine::System::GetParticleManager();
 			if (pm && pm->Exists("dust")) {
-				pm->Emit("dust", transform_.translate, 80);
+				pm->Emit("dust", transform_.translate, 120);
 			}
 		}
 	}
@@ -2297,15 +2297,15 @@ void BossEnemy::TriggerFinalExplosion() {
 			pm->Emit("hit", transform_.translate, 60);
 		}
 
-		// 衝撃波リング
-		if (pm->Exists("ring")) {
-			pm->Emit("ring", transform_.translate, 2);
-		}
+		//// 衝撃波リング
+		//if (pm->Exists("ring")) {
+		//	pm->Emit("ring", transform_.translate, 2);
+		//}
 
-		// 爆発余韻
-		if (pm->Exists("dust")) {
-			pm->Emit("dust", transform_.translate, 35);
-		}
+		//// 爆発余韻
+		//if (pm->Exists("dust")) {
+		//	pm->Emit("dust", transform_.translate, 35);
+		//}
 	}
 
 	if (camera_) {

@@ -182,7 +182,7 @@ void BossTestScene::Init() {
 	pm->CreateParticleGeoup("cylinder", ring, "cylinder");
 	pm->CreateParticleGeoup("moonLight", moonLight, "moonLight");
 	pm->CreateParticleGeoup("ribbon", moonLight, "ribbon");
-	pm->CreateParticleGeoup("dust", "./Resources/images/circle2.png", "a");
+	pm->CreateParticleGeoup("dust", "./Resources/images/dust.png", "a");
 	pm->CreateParticleGeoup("muzzle", circle2, "a");
 	pm->CreateParticleGeoup("trail", "./Resources/images/circle.png", "a");
 	pm->CreateParticleGeoup("charge_core", "./Resources/images/circle2.png", "a");

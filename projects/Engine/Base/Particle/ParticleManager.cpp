@@ -361,7 +361,7 @@ Particle ParticleManager::MakeDustParticle(std::mt19937& randomEngine, const Vec
 	std::uniform_real_distribution<float> distLife(0.8f, 1.4f);
 
 	Particle p;
-	p.transform.scale = { 1.5f,1.5f,1.5f }; // 少し大きめ
+	p.transform.scale = { 0.3f,0.3f,0.3f }; // 少し大きめ
 	p.transform.rotate = { 0,0,0 };
 	p.transform.translate = {
 		translate.x + distPos(randomEngine),
