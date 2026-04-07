@@ -149,21 +149,51 @@ void BossTestScene::Init() {
 
 	// 
 	controlGuideSprite_ = std::make_unique<Sprite>();
-	controlGuideSprite_->Init("./Resources/images/mouseLeftClickWithText.png", BlendType::BLEND_ALPHA);
-	controlGuideSprite_->SetSize({ 256.0f, 280.0f });
-	controlGuideSprite_->SetPosition({ 980.0f, 180.0f });
+	controlGuideSprite_->Init("./Resources/images/mouseLeftClick.png", BlendType::BLEND_ALPHA);
+	controlGuideSprite_->SetAnchorPoint({ 0.5f, 0.5f });
+	controlGuideSprite_->SetSize(controlGuide1Size_);
+	controlGuideSprite_->SetPosition(controlGuide1Pos_);
 
 	controlGuideSprite2_ = std::make_unique<Sprite>();
 	controlGuideSprite2_->Init("./Resources/images/mouseLightClickWithText.png", BlendType::BLEND_ALPHA);
-	controlGuideSprite2_->SetSize({ 256.0f, 280.0f });
-	controlGuideSprite2_->SetPosition({ 980.0f, 420.0f });
+	controlGuideSprite2_->SetAnchorPoint({ 0.5f, 0.5f });
+	controlGuideSprite2_->SetSize(controlGuide2Size_);
+	controlGuideSprite2_->SetPosition(controlGuide2Pos_);
 
 	// 
 	toPauseSpr_ = std::make_unique<Sprite>();
-	toPauseSpr_->Init("./Resources/images/toPause.png", BlendType::BLEND_ALPHA);
-	toPauseSpr_->SetSize({ 320.0f, 64.0f });
+	toPauseSpr_->Init("./Resources/images/escape.png", BlendType::BLEND_ALPHA);
 	toPauseSpr_->SetAnchorPoint({ 0.5f, 0.5f });
-	toPauseSpr_->SetPosition({ 1100.0f, 100.0f });
+	toPauseSpr_->SetSize(toPauseSize_);
+	toPauseSpr_->SetPosition(toPausePos_);
+
+	// チャージ説明用ゲージ
+	chargeGaugeFrameSpr_ = std::make_unique<Sprite>();
+	chargeGaugeFrameSpr_->Init("./Resources/images/ChargeGueage.png", BlendType::BLEND_ALPHA);
+	chargeGaugeFrameSpr_->SetAnchorPoint({ 0.5f, 0.5f });
+	chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
+	chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
+	chargeGaugeFrameSpr_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+
+	// チャージ説明用ゲージの中身
+	chargeGaugeFillSpr_ = std::make_unique<Sprite>();
+	chargeGaugeFillSpr_->Init("./Resources/images/ChargeBlueGueage.png", BlendType::BLEND_ALPHA);
+	chargeGaugeFillSpr_->SetAnchorPoint({ 0.0f, 0.5f });
+	chargeGaugeFillSpr_->SetSize({ 0.0f, chargeGaugeFillBaseSize_.y });
+	chargeGaugeFillSpr_->SetPosition({
+		chargeGaugePos_.x + chargeGaugeFillOffset_.x,
+		chargeGaugePos_.y + chargeGaugeFillOffset_.y });
+	chargeGaugeFillSpr_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+
+	// 
+	leftClickOverlaySpr_ = std::make_unique<Sprite>();
+	leftClickOverlaySpr_->Init("./Resources/images/mouseLeftClickRed.png", BlendType::BLEND_ALPHA);
+	leftClickOverlaySpr_->SetAnchorPoint({ 0.5f, 0.5f });
+	leftClickOverlaySpr_->SetSize(leftClickOverlaySize_);
+	leftClickOverlaySpr_->SetPosition({
+		controlGuide1Pos_.x + leftClickOverlayOffset_.x,
+		controlGuide1Pos_.y + leftClickOverlayOffset_.y });
+	leftClickOverlaySpr_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
 
 	// ボスイントロ後のキラーン演出用
 	bossIntroGlintSprite_ = std::make_unique<Sprite>();
@@ -271,7 +301,7 @@ void BossTestScene::Update() {
 		!(result_ && result_->IsSlideFinished());
 
 	// Pキーでポーズメニューの表示
-	if (canPause && KomEngine::System::TriggerKey(DIK_P) && pauseMenu_) {
+	if (canPause && KomEngine::System::TriggerKey(DIK_ESCAPE) && pauseMenu_) {
 		pauseMenu_->Toggle();
 	}
 
@@ -404,7 +434,106 @@ void BossTestScene::Update() {
 	controlGuideSprite_->Update();
 	controlGuideSprite2_->Update();
 
+	// -----------------------------
+	// チャージ説明用ゲージ更新
+	// -----------------------------
+		// -----------------------------
+	// 自機のチャージゲージ更新
+	// チャージ中だけマウスの下に表示
+	// -----------------------------
+	bool isPlayerCharging = (player_ && player_->IsCharging());
+
+	float chargeT = player_ ? player_->GetChargeRatio() : 0.0f;
+	chargeT = std::clamp(chargeT, 0.0f, 1.0f);
+
+	// ImGui表示用
+	chargeGaugeTimer_ = chargeT * chargeGaugeMaxTime_;
+
+	// チャージ中だけマウスの下へ移動
+	if (isPlayerCharging) {
+		POINT pt;
+		GetCursorPos(&pt);
+
+		HWND hwnd = KomEngine::System::GetWinApp()->GetHwnd();
+		ScreenToClient(hwnd, &pt);
+
+		chargeGaugePos_.x = static_cast<float>(pt.x) + chargeGaugeMouseOffset_.x;
+		chargeGaugePos_.y = static_cast<float>(pt.y) + chargeGaugeMouseOffset_.y;
+
+		// 画面外にはみ出しにくくする
+		chargeGaugePos_.x = std::clamp(chargeGaugePos_.x, 100.0f, 1180.0f);
+		chargeGaugePos_.y = std::clamp(chargeGaugePos_.y, 40.0f, 680.0f);
+	}
+
+	if (chargeGaugeFillSpr_) {
+		chargeGaugeFillSpr_->SetSize({
+			chargeGaugeFillBaseSize_.x * chargeT,
+			chargeGaugeFillBaseSize_.y
+			});
+
+		chargeGaugeFillSpr_->SetPosition({
+			chargeGaugePos_.x + chargeGaugeFillOffset_.x,
+			chargeGaugePos_.y + chargeGaugeFillOffset_.y
+			});
+
+		float alpha = isPlayerCharging ? 1.0f : 0.0f;
+		chargeGaugeFillSpr_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+		chargeGaugeFillSpr_->Update();
+	}
+
+	if (chargeGaugeFrameSpr_) {
+		chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
+		chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
+
+		float alpha = isPlayerCharging ? 1.0f : 0.0f;
+		chargeGaugeFrameSpr_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+		chargeGaugeFrameSpr_->Update();
+	}
+
+	// 左クリック説明用の赤オーバーレイ
+	if (leftClickOverlaySpr_) {
+		leftClickOverlaySpr_->SetPosition({
+			controlGuide1Pos_.x + leftClickOverlayOffset_.x,
+			controlGuide1Pos_.y + leftClickOverlayOffset_.y
+			});
+		leftClickOverlaySpr_->SetSize(leftClickOverlaySize_);
+
+		// Player::Attack と同じく PushMouse(1) を左クリック扱いに合わせる
+		const bool isLeftClickDown = KomEngine::System::GetInput()->PushMouse(0);
+
+		leftClickOverlaySpr_->SetColor({
+			1.0f,
+			1.0f,
+			1.0f,
+			isLeftClickDown ? 1.0f : 0.0f
+			});
+		leftClickOverlaySpr_->Update();
+	}
+
 	toPauseSpr_->Update();
+
+	// -----------------------------
+	// 操作説明UIレイアウト反映
+	// -----------------------------
+	if (controlGuideSprite_) {
+		controlGuideSprite_->SetPosition(controlGuide1Pos_);
+		controlGuideSprite_->SetSize(controlGuide1Size_);
+	}
+
+	if (controlGuideSprite2_) {
+		controlGuideSprite2_->SetPosition(controlGuide2Pos_);
+		controlGuideSprite2_->SetSize(controlGuide2Size_);
+	}
+
+	if (toPauseSpr_) {
+		toPauseSpr_->SetPosition(toPausePos_);
+		toPauseSpr_->SetSize(toPauseSize_);
+	}
+
+	if (chargeGaugeFrameSpr_) {
+		chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
+		chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
+	}
 
 	UpdateBossIntroGlint(dt);
 
@@ -562,7 +691,20 @@ void BossTestScene::Draw() {
 
 	// 
 	controlGuideSprite_->Draw();
-	controlGuideSprite2_->Draw();
+	// controlGuideSprite2_->Draw();
+
+	if (player_ && player_->IsCharging()) {
+		if (chargeGaugeFillSpr_) {
+			chargeGaugeFillSpr_->Draw();
+		}
+		if (chargeGaugeFrameSpr_) {
+			chargeGaugeFrameSpr_->Draw();
+		}
+	}
+
+	if (leftClickOverlaySpr_) {
+		leftClickOverlaySpr_->Draw();
+	}
 
 	toPauseSpr_->Draw();
 
@@ -643,6 +785,28 @@ void BossTestScene::ImGuiDebug() {
 	}
 
 	ImGui::Separator();
+
+	ImGui::Text("Guide UI Layout");
+
+	ImGui::DragFloat2("Guide1 Pos", &controlGuide1Pos_.x, 1.0f);
+	ImGui::DragFloat2("Guide1 Size", &controlGuide1Size_.x, 1.0f, 1.0f, 2000.0f);
+
+	ImGui::DragFloat2("Guide2 Pos", &controlGuide2Pos_.x, 1.0f);
+	ImGui::DragFloat2("Guide2 Size", &controlGuide2Size_.x, 1.0f, 1.0f, 2000.0f);
+
+	ImGui::DragFloat2("Pause Pos", &toPausePos_.x, 1.0f);
+	ImGui::DragFloat2("Pause Size", &toPauseSize_.x, 1.0f, 1.0f, 2000.0f);
+
+	ImGui::Separator();
+	ImGui::Text("Charge Gauge UI");
+
+	ImGui::DragFloat2("Gauge Pos", &chargeGaugePos_.x, 1.0f);
+	ImGui::DragFloat2("Gauge Frame Size", &chargeGaugeFrameSize_.x, 1.0f, 1.0f, 2000.0f);
+	ImGui::DragFloat2("Gauge Fill Size", &chargeGaugeFillBaseSize_.x, 1.0f, 1.0f, 2000.0f);
+	ImGui::DragFloat2("Gauge Fill Offset", &chargeGaugeFillOffset_.x, 1.0f);
+
+	ImGui::DragFloat("Gauge Max Time", &chargeGaugeMaxTime_, 0.01f, 0.1f, 10.0f);
+	ImGui::Text("Gauge Timer: %.2f", chargeGaugeTimer_);
 
 	ImGui::End();
 

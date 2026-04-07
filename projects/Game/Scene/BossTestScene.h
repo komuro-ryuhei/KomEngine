@@ -133,8 +133,35 @@ private:
 	// 操作方法スプライト
 	std::unique_ptr<Sprite> controlGuideSprite_ = nullptr;
 	std::unique_ptr<Sprite> controlGuideSprite2_ = nullptr;
+
+	Vector2 controlGuide1Pos_{ 1120.0f, 480.0f };
+	Vector2 controlGuide1Size_{ 256.0f, 256.0f };
+
+	Vector2 controlGuide2Pos_{ 1120.0f, 480.0f };
+	Vector2 controlGuide2Size_{ 220.0f, 240.0f };
+
+	// チャージ説明用ゲージ
+	std::unique_ptr<Sprite> chargeGaugeFrameSpr_ = nullptr;
+	std::unique_ptr<Sprite> chargeGaugeFillSpr_ = nullptr;
+
+	Vector2 chargeGaugePos_{ 1120, 640.0f };
+	Vector2 chargeGaugeFrameSize_{ 180.0f, 34.0f };
+	Vector2 chargeGaugeFillBaseSize_{ 150.0f, 18.0f };
+	Vector2 chargeGaugeFillOffset_{ -75.0f, 0.0f };
+	Vector2 chargeGaugeMouseOffset_{ 0.0f, 64.0f };
+
+	std::unique_ptr<Sprite> leftClickOverlaySpr_ = nullptr;
+
+	Vector2 leftClickOverlayOffset_{ 0.0f, 0.0f };
+	Vector2 leftClickOverlaySize_{ 256.0f, 256.0f };
+
+	float chargeGaugeMaxTime_ = 3.0f;
+	float chargeGaugeTimer_ = 0.0f;
+
 	// 
 	std::unique_ptr<Sprite> toPauseSpr_;
+	Vector2 toPausePos_{ 1180.0f, 100.0f };
+	Vector2 toPauseSize_{ 64.0f, 64.0f };
 
 	// リザルトのスプライト
 	std::unique_ptr<ResultImage> result_ = nullptr;

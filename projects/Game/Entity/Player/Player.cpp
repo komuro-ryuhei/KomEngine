@@ -356,7 +356,7 @@ void Player::SpawnBullet(int damage) {
 	float power = 1.0f + t * 2.0f; // 1.0〜3.0
 
 	// 見た目
-	float visualScale = 0.1f * power;
+	float visualScale = 0.05f;
 	newBullet->SetScale({ visualScale, visualScale, visualScale });
 
 	// 当たり判定

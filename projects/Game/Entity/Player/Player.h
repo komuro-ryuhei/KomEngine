@@ -72,6 +72,14 @@ public:
 
 	bool IsAlive() const { return IsActive(); }
 
+	bool IsCharging() const { return isCharging_; }
+	float GetChargeRatio() const {
+		if (chargeFullTime_ <= 0.0f) {
+			return 0.0f;
+		}
+		return std::clamp(chargeTimer_ / chargeFullTime_, 0.0f, 1.0f);
+	}
+
 private:
 
 	// 攻撃

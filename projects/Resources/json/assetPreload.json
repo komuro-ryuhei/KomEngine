@@ -24,6 +24,10 @@
     "./Resources/images/inner.png",
     "./Resources/images/mouseLeftClickWithText.png",
     "./Resources/images/mouseLightClickWithText.png",
+    "./Resources/images/mouseLeftClick.png",
+    "./Resources/images/mouseRightClick.png",
+    "./Resources/images/mouseLeftClickRed.png",
+    "./Resources/images/escape.png",
     "./Resources/images/outer.png",
     "./Resources/images/pause.png",
     "./Resources/images/reticle.png",
@@ -36,7 +40,9 @@
     "./Resources/images/streak.png",
     "./Resources/images/enemyChargeCore.png",
     "./Resources/images/exclamationMark.png",
-    "./Resources/images/dust.png"
+    "./Resources/images/dust.png",
+    "./Resources/images/ChargeBlueGueage.png",
+    "./Resources/images/ChargeGueage.png"
   ],
   "models": [
     "plane.obj",
