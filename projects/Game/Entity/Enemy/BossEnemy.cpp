@@ -190,64 +190,12 @@ void BossEnemy::Update() {
 
 	if (hp_ <= 0) {
 
-		if (!fallStarted_) {
-			fallStarted_ = true;
-			fallVelY_ = 0.0f;
-
-			// 開始姿勢の保存
-			fallRotateStart_ = transform_.rotate.x;
-
-			// 重力を弱くする（ゆっくり落下）
-			// gravityY_ = -0.01f;
-
-			// シェイクタイマー初期化
-			fallShakeTime_ = 0.0f;
+		if (!deathEffectStarted_) {
+			StartDeathEffect();
 		}
 
 		if (!hasLanded_) {
-
-			fallShakeTime_ += dt;
-
-			// ---- 落下 ----
-			fallVelY_ += gravityY_;
-			transform_.translate.y += fallVelY_;
-
-			// ---- 回転（前に倒れる）----
-			//   落下の進行度で角度をなめらかに変化
-			float fallProgress = (transform_.translate.y - groundY_) / (2.0f - groundY_);
-			fallProgress = std::clamp(1.0f - fallProgress, 0.0f, 1.0f);
-
-			// イージング（顔から落ちる時ちょっと速くする）
-			float ease = fallProgress * fallProgress;
-
-			transform_.rotate.x = MyMath::Lerp(fallRotateStart_, fallRotateEnd_, ease);
-
-			// ---- 地面に到達したら停止 ----
-			if (transform_.translate.y <= groundY_) {
-				transform_.translate.y = groundY_;
-				fallVelY_ = 0.0f;
-				hasLanded_ = true;
-
-				//　落下時カメラシェイク
-				if (!landingShakeDone_ && camera_) {
-					camera_->StartShake(CameraShakeType::Large);
-					landingShakeDone_ = true;
-				}
-				if (transform_.translate.y <= groundY_) {
-					transform_.translate.y = groundY_;
-					fallVelY_ = 0.0f;
-					hasLanded_ = true;
-
-					// 着地時シェイク（なんか同じ処理あるから後で確認）
-					if (!landingShakeDone_ && camera_) {
-						camera_->StartShake(CameraShakeType::Large);
-						landingShakeDone_ = true;
-					}
-					// 撃破後の着地時に砂ぼこりパーティクル発生
-					KomEngine::System::GetParticleManager()->Emit("dust", transform_.translate, 80);
-				}
-
-			}
+			UpdateDeathEffect(dt);
 		}
 	}
 	else {
@@ -257,7 +205,6 @@ void BossEnemy::Update() {
 			pushEnter_ = true;
 		}
 
-		// 退避中は腕攻撃は止める（奥で別攻撃する想定）
 		if (IsRetreating()) {
 			// 退避中は通常攻撃をしない
 		}
@@ -267,7 +214,6 @@ void BossEnemy::Update() {
 			}
 		}
 
-		// TitleScene用移動
 		if (pushEnter_) {
 			if (isInTitleScene_) {
 				TitleSceneMove();
@@ -1441,10 +1387,27 @@ void BossEnemy::DamageShake() {
 
 	// 落下シェイク（撃破演出）
 	if (hp_ <= 0 && !hasLanded_) {
-		float sx = std::sin(fallShakeTime_ * 40.0f) * fallShakeAmplitude_;
-		float sz = std::cos(fallShakeTime_ * 55.0f) * fallShakeAmplitude_;
-		bodyPos.x += sx;
-		bodyPos.z += sz;
+
+		if (deathPhase_ == DeathPhase::PreFall) {
+			float sx = std::sin(fallShakeTime_ * 85.0f) * 0.12f;
+			float sy = std::cos(fallShakeTime_ * 110.0f) * 0.06f;
+			float sz = std::cos(fallShakeTime_ * 95.0f) * 0.12f;
+			bodyPos.x += sx;
+			bodyPos.y += sy;
+			bodyPos.z += sz;
+		}
+		else if (deathPhase_ == DeathPhase::FinalExplosion) {
+			float sx = std::sin(fallShakeTime_ * 45.0f) * 0.25f;
+			float sz = std::cos(fallShakeTime_ * 52.0f) * 0.25f;
+			bodyPos.x += sx;
+			bodyPos.z += sz;
+		}
+		else {
+			float sx = std::sin(fallShakeTime_ * 40.0f) * fallShakeAmplitude_;
+			float sz = std::cos(fallShakeTime_ * 55.0f) * fallShakeAmplitude_;
+			bodyPos.x += sx;
+			bodyPos.z += sz;
+		}
 	}
 
 	// 胴体 被弾シェイク
@@ -2182,6 +2145,171 @@ void BossEnemy::ChargeEffect(float dt) {
 		chargeFxRibbonTimer_ = 0.0f;
 		chargeFxRingTimer_ = 0.0f;
 		chargeFxCylinderTimer_ = 0.0f;
+	}
+}
+
+void BossEnemy::StartDeathEffect() {
+
+	deathEffectStarted_ = true;
+	deathPhase_ = DeathPhase::PreFall;
+
+	deathEffectTimer_ = 0.0f;
+	finalExplosionTimer_ = 0.0f;
+	deathSparkTimer_ = 0.0f;
+
+	finalExplosionDone_ = false;
+
+	fallStarted_ = true;
+	fallVelY_ = 0.0f;
+	fallRotateStart_ = transform_.rotate.x;
+	fallShakeTime_ = 0.0f;
+
+	combatEnabled_ = false;
+	isAttack_ = false;
+	invulnerable_ = true;
+
+	CancelAllAttacks();
+}
+
+void BossEnemy::UpdateDeathEffect(float dt) {
+
+	// -----------------------------
+	// ビリビリ演出
+	// -----------------------------
+	if (deathPhase_ == DeathPhase::PreFall) {
+
+		deathEffectTimer_ += dt;
+		deathSparkTimer_ += dt;
+		fallShakeTime_ += dt;
+
+		if (deathSparkTimer_ >= deathSparkInterval_) {
+			deathSparkTimer_ = 0.0f;
+			EmitDeathElectricParticles();
+		}
+
+		// たまに軽い火花
+		if (std::fmod(deathEffectTimer_, 0.22f) < dt) {
+			auto* pm = KomEngine::System::GetParticleManager();
+			if (pm && pm->Exists("hit")) {
+				pm->Emit("hit", transform_.translate, 6);
+			}
+		}
+
+		if (deathEffectTimer_ >= deathEffectDuration_) {
+			deathPhase_ = DeathPhase::FinalExplosion;
+			finalExplosionTimer_ = 0.0f;
+			TriggerFinalExplosion();
+		}
+
+		return;
+	}
+
+	// -----------------------------
+	// 大爆発を少し見せる
+	// -----------------------------
+	if (deathPhase_ == DeathPhase::FinalExplosion) {
+
+		finalExplosionTimer_ += dt;
+		fallShakeTime_ += dt;
+
+		if (finalExplosionTimer_ >= finalExplosionDuration_) {
+			deathPhase_ = DeathPhase::Falling;
+		}
+		return;
+	}
+
+	// -----------------------------
+	// 落下
+	// -----------------------------
+	if (deathPhase_ == DeathPhase::Falling && !hasLanded_) {
+
+		fallShakeTime_ += dt;
+
+		fallVelY_ += gravityY_;
+		transform_.translate.y += fallVelY_;
+
+		float fallProgress = (transform_.translate.y - groundY_) / (2.0f - groundY_);
+		fallProgress = std::clamp(1.0f - fallProgress, 0.0f, 1.0f);
+
+		float ease = fallProgress * fallProgress;
+		transform_.rotate.x = MyMath::Lerp(fallRotateStart_, fallRotateEnd_, ease);
+
+		if (transform_.translate.y <= groundY_) {
+			transform_.translate.y = groundY_;
+			fallVelY_ = 0.0f;
+			hasLanded_ = true;
+			deathPhase_ = DeathPhase::Landed;
+
+			if (!landingShakeDone_ && camera_) {
+				camera_->StartShake(CameraShakeType::Large);
+				landingShakeDone_ = true;
+			}
+
+			auto* pm = KomEngine::System::GetParticleManager();
+			if (pm && pm->Exists("dust")) {
+				pm->Emit("dust", transform_.translate, 80);
+			}
+		}
+	}
+}
+
+void BossEnemy::EmitDeathElectricParticles() {
+
+	auto* pm = KomEngine::System::GetParticleManager();
+	if (!pm) {
+		return;
+	}
+
+	// 本体の周囲ランダム位置
+	Vector3 p{
+		transform_.translate.x + MyMath::Rand(-2.2f, 2.2f),
+		transform_.translate.y + MyMath::Rand(-1.2f, 2.0f),
+		transform_.translate.z + MyMath::Rand(-2.2f, 2.2f)
+	};
+
+	// 今ある粒子で代用
+	if (pm->Exists("hit")) {
+		pm->Emit("hit", p, 4);
+	}
+
+	// たまに少し強めの火花
+	if (pm->Exists("explosion") && MyMath::Rand(0.0f, 1.0f) < 0.25f) {
+		pm->Emit("explosion", p, 2);
+	}
+}
+
+void BossEnemy::TriggerFinalExplosion() {
+
+	if (finalExplosionDone_) {
+		return;
+	}
+	finalExplosionDone_ = true;
+
+	auto* pm = KomEngine::System::GetParticleManager();
+	if (pm) {
+		// 爆心
+		if (pm->Exists("explosion")) {
+			pm->Emit("explosion", transform_.translate, 120);
+		}
+
+		// 火花を強めに
+		if (pm->Exists("hit")) {
+			pm->Emit("hit", transform_.translate, 60);
+		}
+
+		// 衝撃波リング
+		if (pm->Exists("ring")) {
+			pm->Emit("ring", transform_.translate, 2);
+		}
+
+		// 爆発余韻
+		if (pm->Exists("dust")) {
+			pm->Emit("dust", transform_.translate, 35);
+		}
+	}
+
+	if (camera_) {
+		camera_->StartShake(CameraShakeType::Large);
 	}
 }
 

@@ -448,6 +448,30 @@ private:
 	bool leftExtending_ = true;
 	bool rightExtending_ = true;
 
+	// -------------------- 撃破演出 -------------------- //
+
+	enum class DeathPhase {
+		None,
+		PreFall,        // ビリビリして溜める
+		FinalExplosion, // 大爆発
+		Falling,        // 落下
+		Landed
+	};
+
+	DeathPhase deathPhase_ = DeathPhase::None;
+
+	bool deathEffectStarted_ = false;
+	bool finalExplosionDone_ = false;
+
+	float deathEffectTimer_ = 0.0f;
+	float deathEffectDuration_ = 1.0f;      // ビリビリ時間
+
+	float finalExplosionTimer_ = 0.0f;
+	float finalExplosionDuration_ = 0.20f;  // 爆発を見せる短い時間
+
+	float deathSparkTimer_ = 0.0f;
+	float deathSparkInterval_ = 0.06f;
+
 	// 撃破後の墜落制御
 	bool  fallStarted_ = false;   // 落下開始したか
 	bool  hasLanded_ = false;   // 地面に着いたか
@@ -653,4 +677,10 @@ private:
 
 	// チャージ時のエフェクト
 	void ChargeEffect(float dt);
+
+	// 撃破演出
+	void StartDeathEffect();
+	void UpdateDeathEffect(float dt);
+	void EmitDeathElectricParticles();
+	void TriggerFinalExplosion();
 };
