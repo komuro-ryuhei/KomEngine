@@ -372,8 +372,7 @@ Particle ParticleManager::MakeDustParticle(std::mt19937& randomEngine, const Vec
 	p.velocity = {
 		distVelX(randomEngine),
 		distVelY(randomEngine),
-		distVelZ(randomEngine)
-	};
+		distVelZ(randomEngine) };
 
 	// 砂っぽい薄い色
 	p.color = { 0.6f, 0.55f, 0.45f, 1.0f };
