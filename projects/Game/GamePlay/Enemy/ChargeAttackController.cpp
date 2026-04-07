@@ -97,7 +97,7 @@ void ChargeAttackController::InterruptCharge() {
 
 	if (boss_) {
 		boss_->SetChargeActive(false);
-		boss_->DeactivateChargeCore();
+		// boss_->DeactivateChargeCore();  // ←消す
 	}
 	state_ = State::End;
 }
@@ -119,7 +119,10 @@ void ChargeAttackController::FireShot() {
 void ChargeAttackController::Finish() {
 
 	if (boss_) {
-		boss_->DeactivateChargeCore();
+		// 崩壊中でなければ通常終了として消す
+		if (!boss_->IsChargeCoreBroken()) {
+			boss_->DeactivateChargeCore();
+		}
 		boss_->OnChargeAttackFinished();
 	}
 

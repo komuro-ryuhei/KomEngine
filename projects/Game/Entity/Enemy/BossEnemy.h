@@ -650,6 +650,14 @@ private:
 	Vector3 chargeCoreOffset_{ 0.0f, 4.2f, 0.0f };
 	int chargeCoreHp_ = 12;
 
+	bool coreBreakReactionActive_ = false;
+	float coreBreakReactionTimer_ = 0.0f;
+	float coreBreakKnockbackTime_ = 0.20f;
+	Vector3 coreBreakKnockbackStart_{};
+	Vector3 coreBreakKnockbackEnd_{};
+
+	bool coreBreakEffectPlayed_ = false;
+
 private:
 
 	void UpdateRetreat(float dt);
@@ -662,6 +670,9 @@ private:
 	// チャージビーム
 	void UpdateChargeBeamShot(float dt);
 	void UpdateChargeCrossPose(float dt);
+
+	void StartCoreBreakReaction();
+	void UpdateCoreBreakReaction(float dt);
 
 	// チャージ時のエフェクト
 	void ChargeEffect(float dt);

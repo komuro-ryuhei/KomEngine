@@ -114,6 +114,11 @@ void BossEnemy::Update() {
 		chargeCore_->Update(dt);
 	}
 
+	if (chargeCore_ && chargeCore_->ConsumeBrokenJustNow()) {
+		StartCoreBreakReaction();
+	}
+	UpdateCoreBreakReaction(dt);
+
 	if (chargeBeam_ && chargeBeam_->IsActive()) {
 		chargeBeam_->Update(dt);
 	}
@@ -2050,6 +2055,60 @@ void BossEnemy::UpdateChargeCrossPose(float dt) {
 
 	if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
 	if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
+}
+
+void BossEnemy::StartCoreBreakReaction() {
+
+	coreBreakReactionActive_ = true;
+	coreBreakReactionTimer_ = 0.0f;
+	coreBreakEffectPlayed_ = false;
+
+	coreBreakKnockbackStart_ = transform_.translate;
+	coreBreakKnockbackEnd_ = transform_.translate + Vector3{ 0.0f, 0.2f, 1.2f };
+
+	// チャージ攻撃中断
+	chargeActive_ = false;
+	if (chargeBeam_) {
+		chargeBeam_->Destroy();
+	}
+	if (chargeShot_.bullet && collisionManager_) {
+		collisionManager_->Unregister(chargeShot_.bullet.get());
+	}
+	chargeShot_.bullet.reset();
+	chargeShot_.obj.reset();
+
+	// パーティクル
+	auto* pm = KomEngine::System::GetParticleManager();
+	if (pm) {
+		const Vector3 pos = GetChargeCoreWorldPos();
+
+		if (pm->Exists("charge_pulse")) {
+			pm->Emit("charge_pulse", pos, 2);
+		}
+		if (pm->Exists("charge_core")) {
+			pm->Emit("charge_core", pos, 36);
+		}
+		if (pm->Exists("moonLight")) {
+			pm->Emit("moonLight", pos, 1);
+		}
+	}
+}
+
+void BossEnemy::UpdateCoreBreakReaction(float dt) {
+
+	if (!coreBreakReactionActive_) {
+		return;
+	}
+
+	coreBreakReactionTimer_ += dt;
+	float t = std::clamp(coreBreakReactionTimer_ / coreBreakKnockbackTime_, 0.0f, 1.0f);
+
+	float ease = 1.0f - (1.0f - t) * (1.0f - t);
+	transform_.translate = MyMath::Lerp(coreBreakKnockbackStart_, coreBreakKnockbackEnd_, ease);
+
+	if (t >= 1.0f) {
+		coreBreakReactionActive_ = false;
+	}
 }
 
 void BossEnemy::ChargeEffect(float dt) {

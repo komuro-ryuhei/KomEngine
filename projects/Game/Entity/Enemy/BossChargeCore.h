@@ -31,7 +31,22 @@ public:
 	CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyCore; }
 	void OnCollision(ICollisionObject* other) override;
 
-private:
+	enum class CollapsePhase {
+		None,
+		Flash,
+		Shrink,
+		Burst,
+		Done
+	};
+
+	CollapsePhase collapsePhase_ = CollapsePhase::None;
+	bool collapseStarted_ = false;
+	float collapseTimer_ = 0.0f;
+	float collapseFlashTime_ = 0.08f;
+	float collapseShrinkTime_ = 0.12f;
+	float collapseBurstTime_ = 0.18f;
+
+	bool brokenJustNow_ = false;
 
 private:
 	Camera* camera_ = nullptr;
@@ -49,4 +64,10 @@ private:
 
 	float rotY_ = 0.0f;
 	float pulseTime_ = 0.0f;
+
+public:
+
+	void StartCollapse();
+	bool IsCollapsing() const { return collapsePhase_ != CollapsePhase::None && collapsePhase_ != CollapsePhase::Done; }
+	bool ConsumeBrokenJustNow();
 };

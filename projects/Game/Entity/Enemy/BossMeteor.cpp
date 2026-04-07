@@ -93,8 +93,34 @@ void BossMeteor::OnHitGround() {
 
 void BossMeteor::Explode() {
 
+	if (!isAlive_) {
+		return;
+	}
+
 	isExploding_ = true;
 	isAlive_ = false;
+
+	// 軽い破壊パーティクル
+	auto* pm = KomEngine::System::GetParticleManager();
+	if (pm) {
+		const Vector3 pos = transform_.translate;
+
+		// 落下してきた向きの逆へ少し噴く
+		Vector3 forward = velocity_;
+		if (MyMath::Length(forward) < 0.0001f) {
+			forward = { 0.0f, -1.0f, 0.0f };
+		}
+		forward = MyMath::Normalize(forward);
+
+		if (pm->Exists("missile_flame")) {
+			pm->EmitMissileFlame(pos, forward, 8);
+		}
+
+		// ほんの少しだけ火花を足す
+		if (pm->Exists("hit")) {
+			pm->Emit("hit", pos, 4);
+		}
+	}
 
 	if (collisionManager_ && collisionRegistered_) {
 		collisionManager_->Unregister(this);

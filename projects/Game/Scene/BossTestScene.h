@@ -261,6 +261,11 @@ private:
 	// コアそのものだと少し低い場合の微調整
 	Vector3 chargeLookOffset_{ 0.0f, 1.2f, 0.0f };
 
+	bool chargeMarkerBreakActive_ = false;
+	float chargeMarkerBreakTimer_ = 0.0f;
+	float chargeMarkerBreakDuration_ = 0.18f;
+	Vector2 chargeMarkerBreakScreenPos_{};
+
 	// ポーズ用
 	std::unique_ptr<PauseMenu> pauseMenu_;
 
