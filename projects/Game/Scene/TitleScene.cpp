@@ -10,12 +10,12 @@ void TitleScene::Init() {
 	// Sprite
 	titleSprite_ = std::make_unique<Sprite>();
 	titleSprite_->Init("./Resources/images/Title.png", BlendType::BLEND_ADD);
-	titleSprite_->SetSize({ 640.0f,540.0f });
-	titleSprite_->SetPosition({ 400.0f,-30.0f });
+	titleSprite_->SetSize({ 960.0f,640.0f });
+	titleSprite_->SetPosition({ 50.0f,-150.0f });
 
 	enterSprite_ = std::make_unique<Sprite>();
 	enterSprite_->Init("./Resources/images/PushEnter.png", BlendType::BLEND_ADD);
-	enterSprite_->SetPosition({ 640.0f,500.0f });
+	enterSprite_->SetPosition({ 540.0f,320.0f });
 	enterSprite_->SetSize({ 400.0f,300.0f });
 	enterSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 
