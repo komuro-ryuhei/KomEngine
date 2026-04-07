@@ -72,6 +72,39 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 
 	StopAllAttacks(dt);
 
+	// メインフェーズ外（ボス死亡・クリア演出・ゲームオーバー演出など）は
+	// 攻撃コントローラを全部止める
+	if (flags.koActive || !flags.isMainPhase) {
+
+		if (desc_.boss) {
+			desc_.boss->CancelAllAttacks();
+		}
+
+		if (meteor_ && meteor_->IsActive()) {
+			meteor_->ForceEnd();
+		}
+		if (charge_ && charge_->IsActive()) {
+			charge_->ForceEnd();
+		}
+		if (retreat_ && retreat_->IsActive()) {
+			retreat_->ForceEnd();
+		}
+		if (missile_ && missile_->IsActive()) {
+			missile_->ForceEnd();
+		}
+
+		// 腕カメラだけ変な残り方をしないように更新だけ止める
+		if (arm_) {
+			arm_->Update(dt, false);
+		}
+
+		blockStarted_ = false;
+		waitingNextBlock_ = false;
+		nextBlockWaitTimer_ = 0.0f;
+
+		return;
+	}
+
 	// 怒り遷移中の一時停止
 	if (enragePauseActive_) {
 		enragePauseTimer_ += dt;
@@ -88,7 +121,8 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		if (arm_) {
 			if (waitingNextBlock_) {
 				arm_->Update(dt, false);
-			} else {
+			}
+			else {
 				arm_->Update(dt, CanArmControlCamera(flags));
 			}
 		}
@@ -117,13 +151,6 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	// 腕更新
 	if (arm_) {
 		arm_->Update(dt, CanArmControlCamera(flags));
-	}
-
-	// メテオ中にKO/フェーズ外なら強制終了
-	if (meteor_ && meteor_->IsActive()) {
-		if (flags.koActive || !flags.isMainPhase) {
-			meteor_->ForceEnd();
-		}
 	}
 
 	const bool armComboActive = (desc_.boss && desc_.boss->IsArmComboActive());
