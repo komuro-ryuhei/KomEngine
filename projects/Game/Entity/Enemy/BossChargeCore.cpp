@@ -194,16 +194,27 @@ void BossChargeCore::Activate(const Vector3& worldPos) {
 	pulseTime_ = 0.0f;
 	rotY_ = 0.0f;
 
+	collapseStarted_ = false;
+	collapsePhase_ = CollapsePhase::None;
+	collapseTimer_ = 0.0f;
+	brokenJustNow_ = false;
+
 	if (coreObj_) {
 		coreObj_->SetTranslate(worldPos_);
 		coreObj_->SetScale(coreScale_);
+		coreObj_->SetColor({ 0.82f, 0.93f, 1.0f, 1.0f });
 	}
 }
 
 void BossChargeCore::Deactivate() {
-	active_ = false;
-}
 
+	// 
+	active_ = false;
+	collapseStarted_ = false;
+	collapsePhase_ = CollapsePhase::None;
+	collapseTimer_ = 0.0f;
+	brokenJustNow_ = false;
+}
 void BossChargeCore::StartCollapse() {
 
 	collapseStarted_ = true;

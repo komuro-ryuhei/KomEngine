@@ -217,10 +217,10 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	}
 
 	// チャージが終わった瞬間にBossへ通知
-	const bool isChargeActive = (charge_ && charge_->IsActive());
+	/*const bool isChargeActive = (charge_ && charge_->IsActive());
 	if (wasChargeActive && !isChargeActive && desc_.boss) {
 		desc_.boss->OnChargeAttackFinished();
-	}
+	}*/
 
 	// ================== ブロック順制御（ランダム） ================== //
 	if (!queueInited_) {
