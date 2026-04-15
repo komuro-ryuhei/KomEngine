@@ -171,6 +171,31 @@ void ParticleManager::Update() {
 				particle.color.w = (1.0f - t) * 0.85f;
 			}
 
+			else if (name == "explosion") {
+
+				particle.transform.rotate.z += 0.08f;
+
+				// 最初少し広がって後半しぼむ
+				float scaleGrow = 1.0f + 0.45f * std::sin(t * 3.1415926f);
+				float sc = particle.transform.scale.x * scaleGrow;
+				particle.transform.scale.x = sc;
+				particle.transform.scale.y = sc;
+
+				// 少し減速
+				particle.velocity.x *= 0.965f;
+				particle.velocity.y *= 0.972f;
+				particle.velocity.z *= 0.965f;
+
+				// 白黄 → オレンジ → 暗く
+				Vector4 c;
+				c.x = 1.0f;
+				c.y = 0.20f + (1.0f - t) * 0.65f;
+				c.z = 0.02f + (1.0f - t) * 0.10f;
+				c.w = (1.0f - t) * 0.95f;
+
+				particle.color = c;
+			}
+
 			// 速度による移動
 			particle.transform.translate.x += particle.velocity.x;
 			particle.transform.translate.y += particle.velocity.y;
@@ -911,6 +936,42 @@ Particle ParticleManager::MakeMissileFlameParticle(std::mt19937& randomEngine, c
 	return p;
 }
 
+Particle ParticleManager::MakeExplosionParticle(std::mt19937& randomEngine, const Vector3& translate) {
+
+	std::uniform_real_distribution<float> distAngle(0.0f, 2.0f * std::numbers::pi_v<float>);
+	std::uniform_real_distribution<float> distY(-0.15f, 0.95f);
+	std::uniform_real_distribution<float> distSpeed(0.20f, 0.60f);
+	std::uniform_real_distribution<float> distLife(0.28f, 0.75f);
+	std::uniform_real_distribution<float> distScale(0.18f, 0.48f);
+	std::uniform_real_distribution<float> distAlpha(0.78f, 1.0f);
+	std::uniform_real_distribution<float> distG(0.45f, 0.95f);
+	std::uniform_real_distribution<float> distB(0.02f, 0.10f);
+
+	Particle p{};
+
+	float angle = distAngle(randomEngine);
+	Vector3 dir{
+		std::cos(angle),
+		distY(randomEngine),
+		std::sin(angle)
+	};
+	dir = MyMath::Normalize(dir);
+
+	float speed = distSpeed(randomEngine);
+	float sc = distScale(randomEngine);
+
+	p.transform.translate = translate;
+	p.transform.scale = { sc, sc, 1.0f };
+	p.transform.rotate = { 0.0f, 0.0f, angle };
+	p.velocity = dir * speed;
+
+	p.color = { 1.0f, distG(randomEngine), distB(randomEngine), distAlpha(randomEngine) };
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
 void ParticleManager::BuildEmitTable() {
 
 	emitTable_.clear();
@@ -974,7 +1035,7 @@ void ParticleManager::EmitExplosion(ParticleGroup& group, const Vector3& positio
 	std::mt19937 randomEngine(seedGenerator());
 
 	for (uint32_t i = 0; i < count; ++i) {
-		group.particles.push_back(MakeRandomParticle(randomEngine, position));
+		group.particles.push_back(MakeExplosionParticle(randomEngine, position));
 	}
 }
 

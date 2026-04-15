@@ -166,6 +166,21 @@ private:
 	// リザルトのスプライト
 	std::unique_ptr<ResultImage> result_ = nullptr;
 
+	// クリア演出
+	bool clearSequenceStarted_ = false;
+	bool clearResultStarted_ = false;
+	float clearSequenceTimer_ = 0.0f;
+
+	// 連鎖爆発
+	int clearExplosionStep_ = 0;
+	float clearExplosionTimer_ = 0.0f;
+	float clearExplosionInterval_ = 0.18f;
+
+	// 演出用
+	void StartClearSequence();
+	void UpdateClearSequence(float dt);
+	void TriggerClearExplosionStep(int step);
+
 	// target
 	std::unique_ptr<Sprite> leftTargetOuter_;
 	std::unique_ptr<Sprite> leftTargetInner_;

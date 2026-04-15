@@ -533,6 +533,8 @@ void BossTestScene::Update() {
 
 	UpdateBossIntroGlint(dt);
 
+	UpdateClearSequence(dt);
+
 	// リザルトスプライトの更新
 	result_->Update();
 
@@ -592,40 +594,30 @@ void BossTestScene::Update() {
 			phase_ = Phase::kFadeOut;
 		}
 
-		// ボスが死んでいて、着地済みならタイマー進行
+		// ボスが死んでいて、着地済みならクリア演出開始
 		if (boss_
 			&& boss_->GetHP() <= 0
 			&& boss_->HasLanded()
 			&& endReason_ == EndReason::None) {
 
-			// 撃破後はプレイヤーの射撃を無効化
 			if (player_) {
 				player_->SetCanShoot(false);
+				player_->SetControlEnabled(false);
 			}
 
-			bossDeathTimer_ += dt;
-
-			// 3秒経ったらリザルトスプライトをスライドイン開始
-			if (bossDeathTimer_ >= 3.0f) {
-				if (result_) {
-					result_->StartSlideIn();
-				}
-				endReason_ = EndReason::BossDeath; // 「クリア状態」になっただけ
+			if (!clearSequenceStarted_) {
+				StartClearSequence();
 			}
 		}
 		else {
-			// ボスが死んでいない or 未着地の時はタイマーリセット
 			bossDeathTimer_ = 0.0f;
 		}
 
-		// ResultImage がスライド完了したら SPACE でフェードアウト開始
+		// ResultImage が演出完了したら SPACE / ENTER でフェードアウト開始
 		if (result_ && result_->IsSlideFinished()) {
 			if (KomEngine::System::TriggerKey(DIK_SPACE) || KomEngine::System::TriggerKey(DIK_RETURN)) {
-
-				// フェードアウト開始
 				phase_ = Phase::kFadeOut;
 				endReason_ = EndReason::BossDeath;
-
 				return;
 			}
 		}
@@ -1702,4 +1694,93 @@ void BossTestScene::UpdateBossIntroGlint(float dt) {
 	bossIntroGlintSprite_->SetSize({ scale, scale });
 	bossIntroGlintSprite_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
 	bossIntroGlintSprite_->Update();
+}
+
+void BossTestScene::StartClearSequence() {
+
+	clearSequenceStarted_ = true;
+	clearResultStarted_ = false;
+
+	clearSequenceTimer_ = 0.0f;
+	clearExplosionTimer_ = 0.0f;
+	clearExplosionStep_ = 0;
+
+	if (camera_) {
+		camera_->StartShake(CameraShakeType::Large);
+	}
+}
+
+void BossTestScene::UpdateClearSequence(float dt) {
+
+	if (!clearSequenceStarted_) {
+		return;
+	}
+
+	clearSequenceTimer_ += dt;
+	clearExplosionTimer_ += dt;
+
+	// 連鎖爆発を3段階で出す
+	if (clearExplosionStep_ < 3 && clearExplosionTimer_ >= clearExplosionInterval_) {
+		clearExplosionTimer_ = 0.0f;
+		TriggerClearExplosionStep(clearExplosionStep_);
+		++clearExplosionStep_;
+	}
+
+	// 少し待ってから結果表示
+	if (!clearResultStarted_ && clearSequenceTimer_ >= 1.8f) {
+		clearResultStarted_ = true;
+
+		if (result_) {
+			result_->StartSlideIn();
+		}
+
+		endReason_ = EndReason::BossDeath;
+	}
+}
+
+void BossTestScene::TriggerClearExplosionStep(int step) {
+
+	if (!boss_) {
+		return;
+	}
+
+	auto* pm = KomEngine::System::GetParticleManager();
+	if (!pm) {
+		return;
+	}
+
+	Vector3 center = boss_->GetTranslate();
+	Vector3 left = boss_->GetLeftHandWorldPos();
+	Vector3 right = boss_->GetRightHandWorldPos();
+
+	switch (step) {
+	case 0:
+		if (pm->Exists("explosion")) pm->Emit("explosion", center, 120);
+		if (pm->Exists("hit"))       pm->Emit("hit", center, 60);
+		if (pm->Exists("ring"))      pm->Emit("ring", center, 2);
+		if (pm->Exists("dust"))      pm->Emit("dust", center, 30);
+		break;
+
+	case 1:
+		if (pm->Exists("explosion")) {
+			pm->Emit("explosion", left, 70);
+			pm->Emit("explosion", right, 70);
+		}
+		if (pm->Exists("hit")) {
+			pm->Emit("hit", left, 35);
+			pm->Emit("hit", right, 35);
+		}
+		break;
+
+	case 2:
+		if (pm->Exists("explosion")) pm->Emit("explosion", center, 180);
+		if (pm->Exists("hit"))       pm->Emit("hit", center, 90);
+		if (pm->Exists("dust"))      pm->Emit("dust", center, 70);
+		if (pm->Exists("cylinder"))  pm->Emit("cylinder", center, 8);
+
+		if (camera_) {
+			camera_->StartShake(CameraShakeType::Large);
+		}
+		break;
+	}
 }

@@ -128,6 +128,9 @@ public:
 	// missile flame
 	Particle MakeMissileFlameParticle(std::mt19937& randomEngine, const Vector3& pos, const Vector3& forward);
 
+	// 爆発エフェクトのパーティクル
+	Particle MakeExplosionParticle(std::mt19937& randomEngine, const Vector3& translate);
+
 	// 弾道専用 Emit
 	void EmitTrail(const Vector3& pos, const Vector3& dir);
 
