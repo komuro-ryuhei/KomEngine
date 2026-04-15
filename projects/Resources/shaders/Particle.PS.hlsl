@@ -11,8 +11,16 @@ SamplerState gSampler : register(s0);
 PixelShaderOutput main(VertexShaderOutput input)
 {
     PixelShaderOutput output;
+
     float4 textureColor = gTexture.Sample(gSampler, input.texcoord);
-    output.color = input.color * textureColor;
-    
+    float4 color = input.color * textureColor;
+
+    // ほぼ透明な外周を捨てる
+    if (color.a < 0.08f)
+    {
+        discard;
+    }
+
+    output.color = color;
     return output;
 }

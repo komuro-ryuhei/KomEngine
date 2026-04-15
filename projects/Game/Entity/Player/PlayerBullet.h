@@ -63,7 +63,7 @@ private:
 	bool  isAlive_ = true;   // 生存フラグ
 	bool pendingKill_ = false;
 
-	int damage_ = 1;
+	int damage_ = 20;
 
 	std::unique_ptr<ParticleEmitter> trailEmitter_ = nullptr;
 };
