@@ -694,7 +694,15 @@ void BossTestScene::Draw() {
 		leftClickOverlaySpr_->Draw();
 	}
 
-	toPauseSpr_->Draw();
+	const bool isClearUi = (clearSequenceStarted_ || (result_ && result_->IsSlideFinished()));
+
+	if (!isClearUi) {
+		controlGuideSprite_->Draw();
+		if (leftClickOverlaySpr_) {
+			leftClickOverlaySpr_->Draw();
+		}
+		toPauseSpr_->Draw();
+	}
 
 	/*if (bossIntroGlintActive_ && bossIntroGlintSprite_) {
 		bossIntroGlintSprite_->Draw();
