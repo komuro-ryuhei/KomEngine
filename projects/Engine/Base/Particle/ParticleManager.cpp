@@ -173,25 +173,25 @@ void ParticleManager::Update() {
 
 			else if (name == "explosion") {
 
-				particle.transform.rotate.z += 0.08f;
+				particle.transform.rotate.z += 0.04f;
 
-				// 最初少し広がって後半しぼむ
-				float scaleGrow = 1.0f + 0.45f * std::sin(t * 3.1415926f);
-				float sc = particle.transform.scale.x * scaleGrow;
+				// 膨らみを控えめに
+				float baseScale = particle.transform.scale.x;
+				float scaleGrow = 1.0f + 0.18f * std::sin(t * 3.1415926f);
+				float sc = baseScale * scaleGrow;
 				particle.transform.scale.x = sc;
 				particle.transform.scale.y = sc;
 
-				// 少し減速
-				particle.velocity.x *= 0.965f;
-				particle.velocity.y *= 0.972f;
-				particle.velocity.z *= 0.965f;
+				// 早めに減速して手前に来にくくする
+				particle.velocity.x *= 0.90f;
+				particle.velocity.y *= 0.92f;
+				particle.velocity.z *= 0.90f;
 
-				// 白黄 → オレンジ → 暗く
 				Vector4 c;
 				c.x = 1.0f;
-				c.y = 0.20f + (1.0f - t) * 0.65f;
-				c.z = 0.02f + (1.0f - t) * 0.10f;
-				c.w = (1.0f - t) * 0.95f;
+				c.y = 0.22f + (1.0f - t) * 0.55f;
+				c.z = 0.02f + (1.0f - t) * 0.08f;
+				c.w = (1.0f - t) * 0.85f;
 
 				particle.color = c;
 			}
@@ -939,13 +939,13 @@ Particle ParticleManager::MakeMissileFlameParticle(std::mt19937& randomEngine, c
 Particle ParticleManager::MakeExplosionParticle(std::mt19937& randomEngine, const Vector3& translate) {
 
 	std::uniform_real_distribution<float> distAngle(0.0f, 2.0f * std::numbers::pi_v<float>);
-	std::uniform_real_distribution<float> distY(-0.15f, 0.95f);
-	std::uniform_real_distribution<float> distSpeed(0.20f, 0.60f);
-	std::uniform_real_distribution<float> distLife(0.28f, 0.75f);
-	std::uniform_real_distribution<float> distScale(0.18f, 0.48f);
-	std::uniform_real_distribution<float> distAlpha(0.78f, 1.0f);
-	std::uniform_real_distribution<float> distG(0.45f, 0.95f);
-	std::uniform_real_distribution<float> distB(0.02f, 0.10f);
+	std::uniform_real_distribution<float> distY(-0.05f, 0.45f);
+	std::uniform_real_distribution<float> distSpeed(0.08f, 0.22f);
+	std::uniform_real_distribution<float> distLife(0.22f, 0.55f);
+	std::uniform_real_distribution<float> distScale(0.08f, 0.22f);
+	std::uniform_real_distribution<float> distAlpha(0.70f, 0.95f);
+	std::uniform_real_distribution<float> distG(0.45f, 0.90f);
+	std::uniform_real_distribution<float> distB(0.02f, 0.08f);
 
 	Particle p{};
 

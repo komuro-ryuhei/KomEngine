@@ -11,7 +11,7 @@ void ResultImage::Init() {
 	blackBGSprite_->SetSize({ 1280.0f, 720.0f });
 	blackBGSprite_->SetAnchorPoint({ 0.5f, 0.5f });
 	blackBGSprite_->SetPosition(blackStartPos_);
-	blackBGSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+	blackBGSprite_->SetColor({ 0.92f, 0.96f, 1.0f, 1.0f });
 
 	gameClearSprite_ = std::make_unique<Sprite>();
 	gameClearSprite_->Init("./Resources/images/gameClear.png", BlendType::BLEND_ALPHA);
@@ -69,16 +69,16 @@ void ResultImage::Update() {
 		float t = std::clamp(timer_ / popDuration_, 0.0f, 1.0f);
 
 		float scale = 1.0f;
-		if (t < 0.65f) {
-			float u = t / 0.65f;
-			scale = MyMath::Lerp(0.45f, 1.12f, u);
+		if (t < 0.75f) {
+			float u = t / 0.75f;
+			scale = MyMath::Lerp(0.72f, 1.04f, u);
 		}
 		else {
-			float u = (t - 0.65f) / 0.35f;
-			scale = MyMath::Lerp(1.12f, 1.0f, std::clamp(u, 0.0f, 1.0f));
+			float u = (t - 0.75f) / 0.25f;
+			scale = MyMath::Lerp(1.04f, 1.0f, std::clamp(u, 0.0f, 1.0f));
 		}
 
-		float alpha = std::min(1.0f, t * 1.8f);
+		float alpha = std::min(1.0f, t * 1.15f);
 
 		gameClearSprite_->SetPosition(clearBasePos_);
 		gameClearSprite_->SetSize({

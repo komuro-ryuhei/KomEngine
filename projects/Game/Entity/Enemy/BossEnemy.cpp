@@ -2288,9 +2288,9 @@ void BossEnemy::UpdateDeathEffect(float dt) {
 			if (pm && pm->Exists("dust")) {
 				pm->Emit("dust", transform_.translate, 120);
 			}
-			if (pm && pm->Exists("ring")) {
+			/*if (pm && pm->Exists("ring")) {
 				pm->Emit("ring", transform_.translate, 1);
-			}
+			}*/
 		}
 	}
 }
@@ -2329,36 +2329,30 @@ void BossEnemy::TriggerFinalExplosion() {
 
 	auto* pm = KomEngine::System::GetParticleManager();
 	if (pm) {
-		// 爆心
 		if (pm->Exists("explosion")) {
-			pm->Emit("explosion", transform_.translate, 220);
+			pm->Emit("explosion", transform_.translate, 110);
 		}
 
-		// 火花
 		if (pm->Exists("hit")) {
-			pm->Emit("hit", transform_.translate, 100);
+			pm->Emit("hit", transform_.translate, 55);
 		}
 
-		// 衝撃波リング
-		if (pm->Exists("ring")) {
-			pm->Emit("ring", transform_.translate, 2);
-		}
+		/*if (pm->Exists("ring")) {
+			pm->Emit("ring", transform_.translate, 1);
+		}*/
 
-		// 爆風柱
 		if (pm->Exists("cylinder")) {
-			pm->Emit("cylinder", transform_.translate, 8);
+			pm->Emit("cylinder", transform_.translate, 4);
 		}
 
-		// 爆発余韻
 		if (pm->Exists("dust")) {
-			pm->Emit("dust", transform_.translate, 70);
+			pm->Emit("dust", transform_.translate, 36);
 		}
 
-		// 少し位置をずらした追撃爆発
 		if (pm->Exists("explosion")) {
-			pm->Emit("explosion", transform_.translate + Vector3{ 1.2f, 0.6f, 0.0f }, 60);
-			pm->Emit("explosion", transform_.translate + Vector3{ -1.1f, 0.2f, 0.8f }, 60);
-			pm->Emit("explosion", transform_.translate + Vector3{ 0.4f, 1.0f, -1.0f }, 50);
+			pm->Emit("explosion", transform_.translate + Vector3{ 0.8f, 0.4f, 0.0f }, 26);
+			pm->Emit("explosion", transform_.translate + Vector3{ -0.7f, 0.2f, 0.5f }, 24);
+			pm->Emit("explosion", transform_.translate + Vector3{ 0.3f, 0.7f, -0.6f }, 20);
 		}
 	}
 

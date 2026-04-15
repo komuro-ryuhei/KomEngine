@@ -44,5 +44,5 @@ private:
     Vector2 clearBaseSize_{ 800.0f, 300.0f };
 
     Vector2 pressKeyPos_{ 640.0f, 520.0f };
-    Vector2 pressKeySize_{ 420.0f, 64.0f };
+    Vector2 pressKeySize_{ 400.0f, 150.0f };
 };

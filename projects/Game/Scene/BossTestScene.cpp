@@ -1726,8 +1726,8 @@ void BossTestScene::UpdateClearSequence(float dt) {
 		++clearExplosionStep_;
 	}
 
-	// 少し待ってから結果表示
-	if (!clearResultStarted_ && clearSequenceTimer_ >= 1.8f) {
+	// 少し長めに待ってから結果表示
+	if (!clearResultStarted_ && clearSequenceTimer_ >= 2.8f) {
 		clearResultStarted_ = true;
 
 		if (result_) {
@@ -1755,28 +1755,28 @@ void BossTestScene::TriggerClearExplosionStep(int step) {
 
 	switch (step) {
 	case 0:
-		if (pm->Exists("explosion")) pm->Emit("explosion", center, 120);
-		if (pm->Exists("hit"))       pm->Emit("hit", center, 60);
-		if (pm->Exists("ring"))      pm->Emit("ring", center, 2);
-		if (pm->Exists("dust"))      pm->Emit("dust", center, 30);
+		if (pm->Exists("explosion")) pm->Emit("explosion", center, 55);
+		if (pm->Exists("hit"))       pm->Emit("hit", center, 24);
+		if (pm->Exists("ring"))      pm->Emit("ring", center, 1);
+		if (pm->Exists("dust"))      pm->Emit("dust", center, 16);
 		break;
 
 	case 1:
 		if (pm->Exists("explosion")) {
-			pm->Emit("explosion", left, 70);
-			pm->Emit("explosion", right, 70);
+			pm->Emit("explosion", left, 24);
+			pm->Emit("explosion", right, 24);
 		}
 		if (pm->Exists("hit")) {
-			pm->Emit("hit", left, 35);
-			pm->Emit("hit", right, 35);
+			pm->Emit("hit", left, 12);
+			pm->Emit("hit", right, 12);
 		}
 		break;
 
 	case 2:
-		if (pm->Exists("explosion")) pm->Emit("explosion", center, 180);
-		if (pm->Exists("hit"))       pm->Emit("hit", center, 90);
-		if (pm->Exists("dust"))      pm->Emit("dust", center, 70);
-		if (pm->Exists("cylinder"))  pm->Emit("cylinder", center, 8);
+		if (pm->Exists("explosion")) pm->Emit("explosion", center, 70);
+		if (pm->Exists("hit"))       pm->Emit("hit", center, 30);
+		if (pm->Exists("dust"))      pm->Emit("dust", center, 26);
+		if (pm->Exists("cylinder"))  pm->Emit("cylinder", center, 3);
 
 		if (camera_) {
 			camera_->StartShake(CameraShakeType::Large);
