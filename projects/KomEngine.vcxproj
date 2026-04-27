@@ -176,6 +176,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClCompile Include="Game\Entity\Player\Player.cpp" />
     <ClCompile Include="Game\Entity\Player\PlayerBullet.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
+    <ClCompile Include="ParticleEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetPreloader.h" />
@@ -247,6 +248,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClInclude Include="Game\UI\Fade.h" />
     <ClInclude Include="Game\UI\PauseMenu.h" />
     <ClInclude Include="Game\UI\ResultImage.h" />
+    <ClInclude Include="ParticleEditor.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="Game\Scene\TitleScene.h" />
   </ItemGroup>

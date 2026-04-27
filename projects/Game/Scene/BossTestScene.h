@@ -5,6 +5,7 @@
 #include "Game/Scene/SceneManager.h"
 #include "Engine/Base/Particle/ParticleManager.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
+#include "Engine/Base/Particle/ParticleEditor.h"
 #include "Engine/Base/Debug/LineRenderer.h"
 
 // Object
@@ -191,6 +192,9 @@ private:
 
 	// Particle・Effect
 	std::unique_ptr<ParticleEmitter> emitter_ = nullptr;
+
+	ParticleEditor particleEditor_;
+	bool showParticleEditor_ = false;
 
 	// 当たり判定管理
 	CollisionManager collisionManager_;

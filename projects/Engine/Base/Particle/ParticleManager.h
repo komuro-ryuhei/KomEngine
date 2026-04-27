@@ -3,6 +3,9 @@
 // C++
 #include <Random>
 #include <functional>
+#include <fstream>
+#include <filesystem>
+#include "externals/nlohmann/json.hpp"
 
 // MyClass
 #include "Engine/Base/Camera/Camera.h"
@@ -39,6 +42,44 @@ struct ParticleGroup {
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 
 	uint32_t instanceCount = 0;
+};
+
+
+struct RangeF {
+	float min = 0.0f;
+	float max = 0.0f;
+};
+
+enum class ParticleBehaviorType {
+	Default,
+	Explosion,
+	Hit,
+	Dust,
+	Ring,
+	MissileFlame,
+	ChargeCore,
+	ChargePulse,
+	PlayerChargeLine,
+	ChargeAura
+};
+
+struct ParticlePreset {
+	std::string name;
+
+	std::string textureFilePath;
+	std::string meshType;        // "a", "ring", "cylinder" みたいなやつ
+	ParticleBehaviorType behaviorType = ParticleBehaviorType::Default;
+
+	RangeF lifeTime;
+	RangeF speed;
+	RangeF scale;
+	RangeF angle;
+	RangeF velocityY;
+
+	Vector4 colorMin{ 1,1,1,1 };
+	Vector4 colorMax{ 1,1,1,1 };
+
+	bool billboard = true;
 };
 
 struct SpiralEmitter {
@@ -89,9 +130,17 @@ public:
 	/// <param name="name"> 生成するパーティクルの名前 </param>
 	/// <param name="position"> 生成する座標 </param>
 	/// <param name="count"> 生成数 </param>
-	void Emit(const std::string name, const Vector3& position, uint32_t count);
+	void Emit(const std::string& name, const Vector3& position, uint32_t count);
 
 	void CreateParticleGeoup(const std::string name, const std::string textureFilePath, const std::string& particleType);
+
+	// プリセットからパーティクルグループを作成して登録
+	bool CreateParticleGroupFromPreset(const std::string& presetName);
+
+	// プリセットの保存と読み込み
+	bool SavePresetToJson(const std::string& name, const std::string& filePath) const;
+	bool LoadPresetFromJson(const std::string& filePath);
+	bool LoadPresetFromJson(const std::string& filePath, std::string* outLoadedPresetName);
 
 	// ランダムで拡散するパーティクル
 	Particle MakeRandomParticle(std::mt19937& randomEngine, const Vector3& translate);
@@ -148,6 +197,16 @@ public:
 		chargePulseColor_ = pulse;
 	}
 
+	// プリセット関連
+	bool HasPreset(const std::string& name) const;
+	ParticlePreset* FindPreset(const std::string& name);
+	const ParticlePreset* FindPreset(const std::string& name) const;
+
+	void RegisterPreset(const ParticlePreset& preset);
+	bool RemovePreset(const std::string& name);
+
+	const std::unordered_map<std::string, ParticlePreset>& GetPresets() const { return presets_; }
+
 private:
 
 	Camera* camera_ = nullptr;
@@ -164,6 +223,9 @@ private:
 	// 
 	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
 
+	// プリセットデータ
+	std::unordered_map<std::string, ParticlePreset> presets_;
+
 	// チャージエフェクトの色
 	Vector4 chargeCoreColor_{ 0.65f, 0.90f, 1.00f, 1.0f };
 	Vector4 chargePulseColor_{ 0.75f, 0.90f, 1.00f, 1.0f };
@@ -176,6 +238,12 @@ private:
 	/// <param name="group">　グループ　</param>
 	/// <param name="particleType"> パーティクルのタイプ </param>
 	void MakeVertexData(ParticleGroup& group, const std::string& particleType);
+
+	// デフォルトのプリセット登録
+	void RegisterDefaultPresets();
+
+	// プリセットからパーティクルを作成
+	Particle MakeParticleFromPreset(std::mt19937& randomEngine, const ParticlePreset& preset, const Vector3& translate);
 
 	/// <summary>
 	/// 渦巻きエミッター更新

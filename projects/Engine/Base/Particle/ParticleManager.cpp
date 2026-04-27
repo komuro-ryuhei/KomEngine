@@ -5,6 +5,39 @@
 
 #include <numbers>
 
+namespace {
+
+	std::string BehaviorTypeToString(ParticleBehaviorType type) {
+		switch (type) {
+		case ParticleBehaviorType::Default:          return "Default";
+		case ParticleBehaviorType::Explosion:        return "Explosion";
+		case ParticleBehaviorType::Hit:              return "Hit";
+		case ParticleBehaviorType::Dust:             return "Dust";
+		case ParticleBehaviorType::Ring:             return "Ring";
+		case ParticleBehaviorType::MissileFlame:     return "MissileFlame";
+		case ParticleBehaviorType::ChargeCore:       return "ChargeCore";
+		case ParticleBehaviorType::ChargePulse:      return "ChargePulse";
+		case ParticleBehaviorType::PlayerChargeLine: return "PlayerChargeLine";
+		case ParticleBehaviorType::ChargeAura:       return "ChargeAura";
+		default:                                     return "Default";
+		}
+	}
+
+	ParticleBehaviorType StringToBehaviorType(const std::string& str) {
+		if (str == "Explosion")        return ParticleBehaviorType::Explosion;
+		if (str == "Hit")              return ParticleBehaviorType::Hit;
+		if (str == "Dust")             return ParticleBehaviorType::Dust;
+		if (str == "Ring")             return ParticleBehaviorType::Ring;
+		if (str == "MissileFlame")     return ParticleBehaviorType::MissileFlame;
+		if (str == "ChargeCore")       return ParticleBehaviorType::ChargeCore;
+		if (str == "ChargePulse")      return ParticleBehaviorType::ChargePulse;
+		if (str == "PlayerChargeLine") return ParticleBehaviorType::PlayerChargeLine;
+		if (str == "ChargeAura")       return ParticleBehaviorType::ChargeAura;
+		return ParticleBehaviorType::Default;
+	}
+
+}
+
 void ParticleManager::Init(BlendType type) {
 
 	//
@@ -16,6 +49,9 @@ void ParticleManager::Init(BlendType type) {
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 
 	BuildEmitTable();
+
+	// 
+	RegisterDefaultPresets();
 }
 
 void ParticleManager::Update() {
@@ -256,21 +292,158 @@ void ParticleManager::Draw() {
 	}
 }
 
-void ParticleManager::Emit(const std::string name, const Vector3& position, uint32_t count) {
+void ParticleManager::Emit(const std::string& name, const Vector3& position, uint32_t count) {
 
 	auto groupIt = particleGroups.find(name);
 	if (groupIt == particleGroups.end()) {
-		assert(false && "Particle group not found.");
 		return;
 	}
 
+	// 1. まず Preset があるなら Preset から生成する
+	if (const ParticlePreset* preset = FindPreset(name)) {
+		std::random_device seedGenerator;
+		std::mt19937 randomEngine(seedGenerator());
+
+		for (uint32_t i = 0; i < count; ++i) {
+			groupIt->second.particles.push_back(
+				MakeParticleFromPreset(randomEngine, *preset, position)
+			);
+		}
+		return;
+	}
+
+	// 2. 従来の emitTable にフォールバック
 	auto emitIt = emitTable_.find(name);
-	if (emitIt == emitTable_.end()) {
-		assert(false && "Emit function not found.");
+	if (emitIt != emitTable_.end()) {
+		emitIt->second(groupIt->second, position, count);
+	}
+}
+
+bool ParticleManager::HasPreset(const std::string& name) const {
+
+	return presets_.find(name) != presets_.end();
+}
+
+ParticlePreset* ParticleManager::FindPreset(const std::string& name) {
+
+	auto it = presets_.find(name);
+	if (it == presets_.end()) {
+		return nullptr;
+	}
+	return &it->second;
+}
+
+const ParticlePreset* ParticleManager::FindPreset(const std::string& name) const {
+
+	auto it = presets_.find(name);
+	if (it == presets_.end()) {
+		return nullptr;
+	}
+	return &it->second;
+}
+
+void ParticleManager::RegisterPreset(const ParticlePreset& preset) {
+
+	if (preset.name.empty()) {
+		assert(false && "ParticlePreset name is empty.");
 		return;
 	}
 
-	emitIt->second(groupIt->second, position, count);
+	presets_[preset.name] = preset;
+}
+
+bool ParticleManager::RemovePreset(const std::string& name) {
+
+	auto it = presets_.find(name);
+	if (it == presets_.end()) {
+		return false;
+	}
+
+	presets_.erase(it);
+	return true;
+}
+
+void ParticleManager::RegisterDefaultPresets() {
+
+	// explosion
+	{
+		ParticlePreset p{};
+		p.name = "explosion";
+		p.textureFilePath = "./Resources/images/circle2.png";
+		p.meshType = "a";
+		p.behaviorType = ParticleBehaviorType::Explosion;
+
+		p.lifeTime = { 0.22f, 0.55f };
+		p.speed = { 0.08f, 0.22f };
+		p.scale = { 0.08f, 0.22f };
+		p.angle = { 0.0f, 6.28318f };
+		p.velocityY = { -0.05f, 0.45f };
+
+		p.colorMin = { 1.0f, 0.25f, 0.02f, 0.70f };
+		p.colorMax = { 1.0f, 0.85f, 0.08f, 0.95f };
+
+		RegisterPreset(p);
+	}
+
+	// hit
+	{
+		ParticlePreset p{};
+		p.name = "hit";
+		p.textureFilePath = "./Resources/images/circle2.png";
+		p.meshType = "a";
+		p.behaviorType = ParticleBehaviorType::Hit;
+
+		p.lifeTime = { 0.20f, 0.45f };
+		p.speed = { 0.10f, 0.35f };
+		p.scale = { 0.04f, 0.12f };
+		p.angle = { 0.0f, 6.28318f };
+		p.velocityY = { -0.02f, 0.20f };
+
+		p.colorMin = { 1.0f, 0.65f, 0.10f, 0.70f };
+		p.colorMax = { 1.0f, 1.00f, 0.40f, 1.00f };
+
+		RegisterPreset(p);
+	}
+
+	// dust
+	{
+		ParticlePreset p{};
+		p.name = "dust";
+		p.textureFilePath = "./Resources/images/dust.png";
+		p.meshType = "a";
+		p.behaviorType = ParticleBehaviorType::Dust;
+
+		p.lifeTime = { 0.50f, 1.20f };
+		p.speed = { 0.02f, 0.08f };
+		p.scale = { 0.20f, 0.55f };
+		p.angle = { 0.0f, 6.28318f };
+		p.velocityY = { 0.00f, 0.08f };
+
+		p.colorMin = { 0.35f, 0.35f, 0.35f, 0.25f };
+		p.colorMax = { 0.65f, 0.65f, 0.65f, 0.50f };
+
+		RegisterPreset(p);
+	}
+
+	// ring
+	{
+		ParticlePreset p{};
+		p.name = "ring";
+		p.textureFilePath = "./Resources/images/ring.png";
+		p.meshType = "ring";
+		p.behaviorType = ParticleBehaviorType::Ring;
+
+		p.lifeTime = { 0.25f, 0.40f };
+		p.speed = { 0.00f, 0.00f };
+		p.scale = { 0.50f, 0.80f };
+		p.angle = { 0.0f, 0.0f };
+		p.velocityY = { 0.00f, 0.00f };
+
+		p.colorMin = { 0.90f, 0.90f, 1.00f, 0.50f };
+		p.colorMax = { 1.00f, 1.00f, 1.00f, 0.80f };
+
+		RegisterPreset(p);
+	}
 }
 
 void ParticleManager::CreateParticleGeoup(const std::string name, const std::string textureFilePath, const std::string& particleType) {
@@ -304,6 +477,22 @@ void ParticleManager::CreateParticleGeoup(const std::string name, const std::str
 	particleGroups.emplace(name, std::move(newParticle));
 }
 
+bool ParticleManager::CreateParticleGroupFromPreset(const std::string& presetName) {
+
+	const ParticlePreset* preset = FindPreset(presetName);
+	if (!preset) {
+		return false;
+	}
+
+	// すでに同名グループがあるなら作らない
+	if (particleGroups.find(presetName) != particleGroups.end()) {
+		return true;
+	}
+
+	CreateParticleGeoup(presetName, preset->textureFilePath, preset->meshType);
+	return true;
+}
+
 // ランダムなパーティクル生成関数
 Particle ParticleManager::MakeRandomParticle(std::mt19937& randomEngine, const Vector3& translate) {
 
@@ -324,6 +513,214 @@ Particle ParticleManager::MakeRandomParticle(std::mt19937& randomEngine, const V
 	particle.currentTime = 0.0f;
 
 	return particle;
+}
+
+Particle ParticleManager::MakeParticleFromPreset(std::mt19937& randomEngine, const ParticlePreset& preset, const Vector3& translate) {
+
+	auto randRange = [&](float minValue, float maxValue) -> float {
+		if (minValue > maxValue) {
+			std::swap(minValue, maxValue);
+		}
+		std::uniform_real_distribution<float> dist(minValue, maxValue);
+		return dist(randomEngine);
+		};
+
+	auto randColor = [&](float minValue, float maxValue) -> float {
+		float v = randRange(minValue, maxValue);
+		return std::clamp(v, 0.0f, 1.0f);
+		};
+
+	Particle p{};
+
+	// 角度
+	float angle = randRange(preset.angle.min, preset.angle.max);
+
+	// 速度方向
+	Vector3 dir{
+		std::cos(angle),
+		randRange(preset.velocityY.min, preset.velocityY.max),
+		std::sin(angle)
+	};
+
+	// 方向ベクトルがゼロに近いときは上向きに逃がす
+	if (MyMath::Length(dir) < 0.0001f) {
+		dir = { 0.0f, 1.0f, 0.0f };
+	}
+	dir = MyMath::Normalize(dir);
+
+	// 速度
+	float speed = randRange(preset.speed.min, preset.speed.max);
+
+	// スケール
+	float scale = randRange(preset.scale.min, preset.scale.max);
+
+	// Transform
+	p.transform.translate = translate;
+	p.transform.scale = { scale, scale, 1.0f };
+	p.transform.rotate = { 0.0f, 0.0f, angle };
+
+	// 速度
+	p.velocity = dir * speed;
+
+	// 色
+	p.color = {
+		randColor(preset.colorMin.x, preset.colorMax.x),
+		randColor(preset.colorMin.y, preset.colorMax.y),
+		randColor(preset.colorMin.z, preset.colorMax.z),
+		randColor(preset.colorMin.w, preset.colorMax.w)
+	};
+
+	// 寿命
+	p.lifeTime = randRange(preset.lifeTime.min, preset.lifeTime.max);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+bool ParticleManager::SavePresetToJson(const std::string& name, const std::string& filePath) const {
+
+	const ParticlePreset* preset = FindPreset(name);
+	if (!preset) {
+		return false;
+	}
+
+	nlohmann::json j;
+
+	j["name"] = preset->name;
+	j["textureFilePath"] = preset->textureFilePath;
+	j["meshType"] = preset->meshType;
+	j["behaviorType"] = BehaviorTypeToString(preset->behaviorType);
+
+	j["lifeTime"] = {
+		{ "min", preset->lifeTime.min },
+		{ "max", preset->lifeTime.max }
+	};
+
+	j["speed"] = {
+		{ "min", preset->speed.min },
+		{ "max", preset->speed.max }
+	};
+
+	j["scale"] = {
+		{ "min", preset->scale.min },
+		{ "max", preset->scale.max }
+	};
+
+	j["angle"] = {
+		{ "min", preset->angle.min },
+		{ "max", preset->angle.max }
+	};
+
+	j["velocityY"] = {
+		{ "min", preset->velocityY.min },
+		{ "max", preset->velocityY.max }
+	};
+
+	j["colorMin"] = {
+		preset->colorMin.x,
+		preset->colorMin.y,
+		preset->colorMin.z,
+		preset->colorMin.w
+	};
+
+	j["colorMax"] = {
+		preset->colorMax.x,
+		preset->colorMax.y,
+		preset->colorMax.z,
+		preset->colorMax.w
+	};
+
+	j["billboard"] = preset->billboard;
+
+	std::filesystem::path path(filePath);
+	if (path.has_parent_path()) {
+		std::filesystem::create_directories(path.parent_path());
+	}
+
+	std::ofstream ofs(filePath);
+	if (!ofs.is_open()) {
+		return false;
+	}
+
+	ofs << j.dump(4);
+	return true;
+}
+
+bool ParticleManager::LoadPresetFromJson(const std::string& filePath) {
+
+	return LoadPresetFromJson(filePath, nullptr);
+}
+
+bool ParticleManager::LoadPresetFromJson(const std::string& filePath, std::string* outLoadedPresetName) {
+
+	std::ifstream ifs(filePath);
+	if (!ifs.is_open()) {
+		return false;
+	}
+
+	nlohmann::json j;
+	ifs >> j;
+
+	ParticlePreset p{};
+
+	p.name = j.value("name", "");
+	if (p.name.empty()) {
+		return false;
+	}
+
+	p.textureFilePath = j.value("textureFilePath", "./Resources/images/circle2.png");
+	p.meshType = j.value("meshType", "a");
+	p.behaviorType = StringToBehaviorType(j.value("behaviorType", "Default"));
+
+	if (j.contains("lifeTime")) {
+		p.lifeTime.min = j["lifeTime"].value("min", 0.1f);
+		p.lifeTime.max = j["lifeTime"].value("max", 0.3f);
+	}
+
+	if (j.contains("speed")) {
+		p.speed.min = j["speed"].value("min", 0.0f);
+		p.speed.max = j["speed"].value("max", 0.1f);
+	}
+
+	if (j.contains("scale")) {
+		p.scale.min = j["scale"].value("min", 0.1f);
+		p.scale.max = j["scale"].value("max", 0.3f);
+	}
+
+	if (j.contains("angle")) {
+		p.angle.min = j["angle"].value("min", 0.0f);
+		p.angle.max = j["angle"].value("max", 6.28318f);
+	}
+
+	if (j.contains("velocityY")) {
+		p.velocityY.min = j["velocityY"].value("min", 0.0f);
+		p.velocityY.max = j["velocityY"].value("max", 0.0f);
+	}
+
+	if (j.contains("colorMin") && j["colorMin"].is_array() && j["colorMin"].size() == 4) {
+		p.colorMin.x = j["colorMin"][0].get<float>();
+		p.colorMin.y = j["colorMin"][1].get<float>();
+		p.colorMin.z = j["colorMin"][2].get<float>();
+		p.colorMin.w = j["colorMin"][3].get<float>();
+	}
+
+	if (j.contains("colorMax") && j["colorMax"].is_array() && j["colorMax"].size() == 4) {
+		p.colorMax.x = j["colorMax"][0].get<float>();
+		p.colorMax.y = j["colorMax"][1].get<float>();
+		p.colorMax.z = j["colorMax"][2].get<float>();
+		p.colorMax.w = j["colorMax"][3].get<float>();
+	}
+
+	p.billboard = j.value("billboard", true);
+
+	RegisterPreset(p);
+	CreateParticleGroupFromPreset(p.name);
+
+	if (outLoadedPresetName) {
+		*outLoadedPresetName = p.name;
+	}
+
+	return true;
 }
 
 Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate) {

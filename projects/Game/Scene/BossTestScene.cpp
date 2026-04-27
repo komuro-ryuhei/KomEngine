@@ -263,6 +263,10 @@ void BossTestScene::Init() {
 	// ポーズメニュー
 	pauseMenu_ = std::make_unique<PauseMenu>();
 	pauseMenu_->Init();
+
+	particleEditor_.Init();
+	particleEditor_.SetEnabled(false);
+	showParticleEditor_ = false;
 }
 
 void BossTestScene::Update() {
@@ -635,6 +639,17 @@ void BossTestScene::Update() {
 		break;
 	}
 
+#ifdef USE_IMGUI
+	if (KomEngine::System::TriggerKey(DIK_F10)) {
+		showParticleEditor_ = !showParticleEditor_;
+		particleEditor_.SetEnabled(showParticleEditor_);
+	}
+
+	if (showParticleEditor_) {
+		particleEditor_.Update();
+	}
+#endif
+
 	ImGuiDebug();
 }
 
@@ -804,7 +819,14 @@ void BossTestScene::ImGuiDebug() {
 	ImGui::DragFloat("Gauge Max Time", &chargeGaugeMaxTime_, 0.01f, 0.1f, 10.0f);
 	ImGui::Text("Gauge Timer: %.2f", chargeGaugeTimer_);
 
+	ImGui::Checkbox("Show Particle Editor", &showParticleEditor_);
+	particleEditor_.SetEnabled(showParticleEditor_);
+
 	ImGui::End();
+
+	if (showParticleEditor_) {
+		particleEditor_.DrawImGui();
+	}
 
 #endif // _DEBUG
 }
