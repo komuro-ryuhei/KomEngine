@@ -1,7 +1,10 @@
-#include "ParticleEditor.h"
+#include "Engine/Base/Particle/ParticleEditor.h"
+
 #include "Engine/Base/System/System.h"
 #include "externals/imgui/imgui.h"
+
 #include <cstring>
+#include <cstdlib>
 
 namespace {
 	const char* BehaviorTypeItems[] = {
@@ -107,9 +110,9 @@ void ParticleEditor::DrawEditor() {
 	char texBuf[256]{};
 	char meshBuf[64]{};
 
-	std::strncpy(nameBuf, editingPreset_.name.c_str(), sizeof(nameBuf) - 1);
-	std::strncpy(texBuf, editingPreset_.textureFilePath.c_str(), sizeof(texBuf) - 1);
-	std::strncpy(meshBuf, editingPreset_.meshType.c_str(), sizeof(meshBuf) - 1);
+	strncpy_s(nameBuf, sizeof(nameBuf), editingPreset_.name.c_str(), _TRUNCATE);
+	strncpy_s(texBuf, sizeof(texBuf), editingPreset_.textureFilePath.c_str(), _TRUNCATE);
+	strncpy_s(meshBuf, sizeof(meshBuf), editingPreset_.meshType.c_str(), _TRUNCATE);
 
 	ImGui::Text("Editing Preset");
 
@@ -190,8 +193,8 @@ void ParticleEditor::DrawPreviewControls() {
 
 	char saveBuf[256]{};
 	char loadBuf[256]{};
-	std::strncpy(saveBuf, saveFilePath_.c_str(), sizeof(saveBuf) - 1);
-	std::strncpy(loadBuf, loadFilePath_.c_str(), sizeof(loadBuf) - 1);
+	strncpy_s(saveBuf, sizeof(saveBuf), saveFilePath_.c_str(), _TRUNCATE);
+	strncpy_s(loadBuf, sizeof(loadBuf), loadFilePath_.c_str(), _TRUNCATE);
 
 	ImGui::SeparatorText("Preview");
 
@@ -219,7 +222,9 @@ void ParticleEditor::DrawPreviewControls() {
 		loadFilePath_ = loadBuf;
 	}
 	if (ImGui::Button("Load Preset")) {
-		if (pm->LoadPresetFromJson(loadFilePath_)) {
+		std::string loadedName;
+		if (pm->LoadPresetFromJson(loadFilePath_, &loadedName)) {
+			LoadFromManager(loadedName);
 			isDirty_ = false;
 		}
 	}

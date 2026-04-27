@@ -6,6 +6,7 @@
 #include "Game/Scene/TitleScene.h"
 #include "Game/Scene/BossTestScene.h"
 #include "Game/Scene/GameOverScene.h"
+#include "Game/Scene/ParticleEditScene.h"
 
 class SceneFactory : public AbstractSceneFactory {
 

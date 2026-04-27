@@ -429,7 +429,7 @@ void ParticleManager::RegisterDefaultPresets() {
 	{
 		ParticlePreset p{};
 		p.name = "ring";
-		p.textureFilePath = "./Resources/images/ring.png";
+		p.textureFilePath = "./Resources/images/gradationLine.png";
 		p.meshType = "ring";
 		p.behaviorType = ParticleBehaviorType::Ring;
 

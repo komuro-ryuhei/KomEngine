@@ -111,6 +111,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AssetPreloader.cpp" />
+    <ClCompile Include="Engine\Base\Particle\ParticleEditor.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossChargeBeam.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossChargeCore.cpp" />
     <ClCompile Include="Game\GamePlay\Enemy\BossRetreatAttackController.cpp" />
@@ -149,6 +150,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClCompile Include="Engine\Base\ImGuiManager\ImGuiManager.cpp" />
     <ClCompile Include="Game\Scene\GameScene.cpp" />
     <ClCompile Include="Game\Scene\IScene.cpp" />
+    <ClCompile Include="Game\Scene\ParticleEditScene.cpp" />
     <ClCompile Include="Game\UI\Fade.cpp" />
     <ClCompile Include="Game\UI\PauseMenu.cpp" />
     <ClCompile Include="Game\UI\ResultImage.cpp" />
@@ -176,10 +178,10 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClCompile Include="Game\Entity\Player\Player.cpp" />
     <ClCompile Include="Game\Entity\Player\PlayerBullet.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
-    <ClCompile Include="ParticleEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetPreloader.h" />
+    <ClInclude Include="Engine\Base\Particle\ParticleEditor.h" />
     <ClInclude Include="Game\Entity\GameObject.h" />
     <ClInclude Include="Game\Entity\Enemy\BossChargeBeam.h" />
     <ClInclude Include="Game\Entity\Enemy\BossChargeCore.h" />
@@ -238,6 +240,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClInclude Include="Engine\Base\MyGame\MyGame.h" />
     <ClInclude Include="Game\Scene\GameScene.h" />
     <ClInclude Include="Game\Scene\IScene.h" />
+    <ClInclude Include="Game\Scene\ParticleEditScene.h" />
     <ClInclude Include="Game\Scene\SceneManager.h" />
     <ClInclude Include="Game\Scene\SceneFactory.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
@@ -248,7 +251,6 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClInclude Include="Game\UI\Fade.h" />
     <ClInclude Include="Game\UI\PauseMenu.h" />
     <ClInclude Include="Game\UI\ResultImage.h" />
-    <ClInclude Include="ParticleEditor.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="Game\Scene\TitleScene.h" />
   </ItemGroup>

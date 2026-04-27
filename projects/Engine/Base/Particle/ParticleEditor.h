@@ -13,6 +13,9 @@ public:
 	void SetEnabled(bool enabled) { isEnabled_ = enabled; }
 	bool IsEnabled() const { return isEnabled_; }
 
+	void SetPreviewPosition(const Vector3& pos) { previewPos_ = pos; }
+	const Vector3& GetPreviewPosition() const { return previewPos_; }
+
 private:
 
 	bool isEnabled_ = true;
