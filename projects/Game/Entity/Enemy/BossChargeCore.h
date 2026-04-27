@@ -49,6 +49,7 @@ public:
 	bool brokenJustNow_ = false;
 
 private:
+
 	Camera* camera_ = nullptr;
 
 	std::unique_ptr<Object3d> coreObj_;
