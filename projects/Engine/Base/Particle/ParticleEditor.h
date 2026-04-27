@@ -30,6 +30,10 @@ private:
 	uint32_t previewCount_ = 12;
 	Vector3 previewPos_ = { 0.0f, 2.0f, 0.0f };
 
+	bool autoPreviewEnabled_ = false;
+	float autoPreviewInterval_ = 1.0f;
+	float autoPreviewTimer_ = 0.0f;
+
 private:
 
 	void DrawPresetList();

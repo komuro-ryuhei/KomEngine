@@ -62,6 +62,28 @@ void ParticleEditor::Update() {
 	if (!isEnabled_) {
 		return;
 	}
+
+	if (!autoPreviewEnabled_) {
+		autoPreviewTimer_ = 0.0f;
+		return;
+	}
+
+	auto* pm = KomEngine::System::GetParticleManager();
+	if (!pm) {
+		return;
+	}
+
+	const float dt = 1.0f / 60.0f;
+	autoPreviewTimer_ += dt;
+
+	if (autoPreviewTimer_ >= autoPreviewInterval_) {
+		autoPreviewTimer_ = 0.0f;
+
+		if (!editingPreset_.name.empty()) {
+			ApplyToManager();
+			pm->Emit(editingPreset_.name, previewPos_, previewCount_);
+		}
+	}
 }
 
 void ParticleEditor::DrawImGui() {
@@ -207,6 +229,12 @@ void ParticleEditor::DrawPreviewControls() {
 			pm->Emit(editingPreset_.name, previewPos_, previewCount_);
 		}
 	}
+
+	if (ImGui::Checkbox("Auto Preview", &autoPreviewEnabled_)) {
+		autoPreviewTimer_ = autoPreviewInterval_;
+	}
+
+	ImGui::DragFloat("Auto Interval", &autoPreviewInterval_, 0.05f, 0.1f, 10.0f, "%.2f sec");
 
 	ImGui::SeparatorText("Save / Load");
 
