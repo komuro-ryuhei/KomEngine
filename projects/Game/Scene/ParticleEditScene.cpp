@@ -35,12 +35,12 @@ void ParticleEditScene::Update() {
 	Vector3 camPos = camera_->GetTranaslate();
 	Vector3 camRot = camera_->GetRotate();
 
-	if (KomEngine::System::PushKey(DIK_W)) { camPos.z += cameraMoveSpeed_; }
+	/*if (KomEngine::System::PushKey(DIK_W)) { camPos.z += cameraMoveSpeed_; }
 	if (KomEngine::System::PushKey(DIK_S)) { camPos.z -= cameraMoveSpeed_; }
 	if (KomEngine::System::PushKey(DIK_A)) { camPos.x -= cameraMoveSpeed_; }
 	if (KomEngine::System::PushKey(DIK_D)) { camPos.x += cameraMoveSpeed_; }
 	if (KomEngine::System::PushKey(DIK_Q)) { camPos.y -= cameraMoveSpeed_; }
-	if (KomEngine::System::PushKey(DIK_E)) { camPos.y += cameraMoveSpeed_; }
+	if (KomEngine::System::PushKey(DIK_E)) { camPos.y += cameraMoveSpeed_; }*/
 
 	if (KomEngine::System::PushKey(DIK_LEFT)) { camRot.y -= cameraRotSpeed_; }
 	if (KomEngine::System::PushKey(DIK_RIGHT)) { camRot.y += cameraRotSpeed_; }
