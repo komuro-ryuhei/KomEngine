@@ -3,6 +3,12 @@
 
 // getter,setter
 void OffscreenRendering::SetPostEffect(const std::string& effectName) {
+
+	if (currentPostEffect_ == effectName) {
+		return;
+	}
+
+	currentPostEffect_ = effectName;
 	pipelineManager_->PSOSetting("posteffect_" + effectName, BlendType::BLEND_NONE);
 }
 

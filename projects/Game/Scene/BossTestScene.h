@@ -54,6 +54,7 @@ public:
 		ChromaticAberration,
 		VHSNoise,
 		ColorInversion,
+		Bloom,
 	};
 
 	PostEffectDebugMode postEffectDebugMode_ = PostEffectDebugMode::Auto;

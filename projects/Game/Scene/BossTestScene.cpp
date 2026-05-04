@@ -267,6 +267,8 @@ void BossTestScene::Init() {
 	particleEditor_.Init();
 	particleEditor_.SetEnabled(false);
 	showParticleEditor_ = false;
+
+	KomEngine::System::GetOffscreenRendering()->SetPostEffect("Bloom");
 }
 
 void BossTestScene::Update() {
@@ -786,6 +788,7 @@ void BossTestScene::ImGuiDebug() {
 			"Chromatic Aberration",   // 11
 			"VHS Noise",              // 12
 			"Color Inversion",        // 13
+			"Bloom",                  // 14
 		};
 
 		int current = static_cast<int>(postEffectDebugMode_);
@@ -978,6 +981,9 @@ void BossTestScene::ChangePostEffect() {
 		break;
 	case PostEffectDebugMode::ColorInversion:
 		effectName = "ColorInversion";
+		break;
+	case PostEffectDebugMode::Bloom:
+		effectName = "Bloom";
 		break;
 	default:
 		effectName = "none";

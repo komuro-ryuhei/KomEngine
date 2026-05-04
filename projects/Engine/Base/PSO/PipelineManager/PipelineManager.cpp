@@ -19,6 +19,7 @@ const std::unordered_map<std::string, PipelineManager::ShaderPair> PipelineManag
 	{ "posteffect_Vignetting",     { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Vignette.PS.hlsl" } },
 	{ "posteffect_Smoothing",      { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/BoxFilter.PS.hlsl" } },
 	{ "posteffect_GaussinanFilter",{ L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/GaussianFilter.PS.hlsl" } },
+	{ "posteffect_Bloom",          { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Bloom.PS.hlsl" } },
 	{ "posteffect_RadialBlur",     { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/RadialBlur.PS.hlsl" } },
 	{ "posteffect_Random",         { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Random.PS.hlsl" } },
 	{ "posteffect_Outline",        { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/LuminanceBasedOutline.PS.hlsl" } },
