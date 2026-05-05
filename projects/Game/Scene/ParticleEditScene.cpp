@@ -1,7 +1,10 @@
 #include "ParticleEditScene.h"
 
 #include "Engine/Base/System/System.h"
+
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
+#endif // _DEBUG
 
 void ParticleEditScene::Init() {
 
@@ -86,6 +89,8 @@ void ParticleEditScene::Finalize() {
 
 void ParticleEditScene::ImGuiDebug() {
 
+#ifdef USE_IMGUI
+
 	ImGui::Begin("Particle Edit Scene");
 
 	ImGui::Checkbox("Show Editor", &showEditor_);
@@ -122,6 +127,8 @@ void ParticleEditScene::ImGuiDebug() {
 	if (showEditor_) {
 		particleEditor_.DrawImGui();
 	}
+
+#endif // _DEBUG
 }
 
 void ParticleEditScene::AddFloorGrid() {

@@ -1,7 +1,10 @@
 #include "Engine/Base/Particle/ParticleEditor.h"
 
 #include "Engine/Base/System/System.h"
+
+#ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
+#endif // _DEBUG
 
 #include <cstring>
 #include <cstdlib>
@@ -92,6 +95,9 @@ void ParticleEditor::DrawImGui() {
 		return;
 	}
 
+#ifdef USE_IMGUI
+
+
 	ImGui::Begin("Particle Editor", &isEnabled_);
 
 	DrawPresetList();
@@ -101,9 +107,13 @@ void ParticleEditor::DrawImGui() {
 	DrawPreviewControls();
 
 	ImGui::End();
+
+#endif // _DEBUG
 }
 
 void ParticleEditor::DrawPresetList() {
+
+#ifdef USE_IMGUI
 
 	auto* pm = KomEngine::System::GetParticleManager();
 	if (!pm) {
@@ -124,9 +134,13 @@ void ParticleEditor::DrawPresetList() {
 			LoadFromManager(name);
 		}
 	}
+
+#endif // _DEBUG
 }
 
 void ParticleEditor::DrawEditor() {
+
+#ifdef USE_IMGUI
 
 	char nameBuf[128]{};
 	char texBuf[256]{};
@@ -204,9 +218,13 @@ void ParticleEditor::DrawEditor() {
 	}
 
 	ImGui::Text("Dirty: %s", isDirty_ ? "Yes" : "No");
+
+#endif // _DEBUG
 }
 
 void ParticleEditor::DrawPreviewControls() {
+
+#ifdef USE_IMGUI
 
 	auto* pm = KomEngine::System::GetParticleManager();
 	if (!pm) {
@@ -256,6 +274,8 @@ void ParticleEditor::DrawPreviewControls() {
 			isDirty_ = false;
 		}
 	}
+
+#endif // _DEBUG
 }
 
 void ParticleEditor::LoadFromManager(const std::string& name) {
