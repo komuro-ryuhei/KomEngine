@@ -4,15 +4,7 @@
 #include "externals/DirectXTex/d3dx12.h"
 #include <vector>
 
-TextureManager* TextureManager::instance = nullptr;
 uint32_t TextureManager::kSRVIndexTop_ = 1;
-
-TextureManager* TextureManager::GetInstance() {
-	if (instance == nullptr) {
-		instance = new TextureManager;
-	}
-	return instance;
-}
 
 void TextureManager::Init(SrvManager* srvManager) {
 
@@ -22,22 +14,33 @@ void TextureManager::Init(SrvManager* srvManager) {
 	textureDatas.reserve(DirectXCommon::kMaxSRVCount);
 }
 
-void TextureManager::Finalize() {
+std::string TextureManager::PreferDDSPath(const std::string& requestPath)
+{
+	fs::path p(requestPath);
+	if (!p.has_extension()) return requestPath;
 
-	delete instance;
-	instance = nullptr;
+	fs::path dds = p;
+	dds.replace_extension(".dds");
+
+	if (fs::exists(dds)) {
+		return dds.string();
+	}
+	return requestPath;
 }
 
 void TextureManager::LoadTexture(const std::string& filePath) {
 
-	if (textureDatas.contains(filePath)) {
+	// ★追加：ddsがあればそっちに寄せる
+	const std::string actualPath = PreferDDSPath(filePath);
+
+	if (textureDatas.contains(actualPath)) {
 		return;
 	}
 
 	assert(srvManager_->CanAllocate());
 
 	TextureData textureData;
-	textureData.filePath = std::move(filePath); // ファイルパスをムーブ
+	textureData.filePath = actualPath;
 	std::wstring filePathW = StringUtility::ConvertString(textureData.filePath);
 
 	DirectX::ScratchImage image{};
@@ -56,29 +59,40 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	if (DirectX::IsCompressed(image.GetMetadata().format)) {
 		mipImage = std::move(image);
 	} else {
-		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 4, mipImage);
+		hr = DirectX::GenerateMipMaps(
+			image.GetImages(), image.GetImageCount(), image.GetMetadata(),
+			DirectX::TEX_FILTER_SRGB, 4, mipImage
+		);
+		assert(SUCCEEDED(hr));
 	}
 
-	assert(SUCCEEDED(hr));
-
 	textureData.metaData = mipImage.GetMetadata();
-	textureData.resource = CreateTextureResource(System::GetDxCommon()->GetDevice(), textureData.metaData);
+	textureData.resource = CreateTextureResource(KomEngine::System::GetDxCommon()->GetDevice(), textureData.metaData);
 
 	textureData.srvIndex = srvManager_->Allocate();
 	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
 	textureData.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(textureData.srvIndex);
 
-	bool isCubeMap = textureData.metaData.dimension == DirectX::TEX_DIMENSION_TEXTURE2D && textureData.metaData.arraySize == 6 && (textureData.metaData.miscFlags & DirectX::TEX_MISC_TEXTURECUBE);
+	const bool isCubeMap =
+		textureData.metaData.dimension == DirectX::TEX_DIMENSION_TEXTURE2D &&
+		textureData.metaData.arraySize == 6 &&
+		(textureData.metaData.miscFlags & DirectX::TEX_MISC_TEXTURECUBE);
 
 	if (isCubeMap) {
-		srvManager_->CreateSRVforTextureCube(textureData.srvIndex, textureData.resource.Get(), textureData.metaData.format, static_cast<UINT>(textureData.metaData.mipLevels));
+		srvManager_->CreateSRVforTextureCube(
+			textureData.srvIndex, textureData.resource.Get(),
+			textureData.metaData.format, static_cast<UINT>(textureData.metaData.mipLevels)
+		);
 	} else {
-		srvManager_->CreateSRVforTexture2D(textureData.srvIndex, textureData.resource.Get(), textureData.metaData.format, static_cast<UINT>(textureData.metaData.mipLevels));
+		srvManager_->CreateSRVforTexture2D(
+			textureData.srvIndex, textureData.resource.Get(),
+			textureData.metaData.format, static_cast<UINT>(textureData.metaData.mipLevels)
+		);
 	}
 
 	textureData.intermediateResource = UploadTextureData(textureData.resource.Get(), mipImage);
 
-	// ここでムーブ代入を使用
+	// キーも actualPath（= textureData.filePath）で統一
 	textureDatas[textureData.filePath] = std::move(textureData);
 }
 
@@ -118,10 +132,10 @@ ComPtr<ID3D12Resource> TextureManager::UploadTextureData(ID3D12Resource* texture
 
 	// 
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-	DirectX::PrepareUpload(System::GetDxCommon()->GetDevice(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
+	DirectX::PrepareUpload(KomEngine::System::GetDxCommon()->GetDevice(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
 	uint64_t intermediateSize = GetRequiredIntermediateSize(texture, 0, UINT(subresources.size()));
-	ComPtr<ID3D12Resource> intermediateResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), intermediateSize);
-	UpdateSubresources(System::GetDxCommon()->GetCommandList(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
+	ComPtr<ID3D12Resource> intermediateResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), intermediateSize);
+	UpdateSubresources(KomEngine::System::GetDxCommon()->GetCommandList(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
 	// Textureへの転送は後は利用できるよう、D3D12_RESOURCE_STATE_COPY_DESTからD3D12_RESOURCE_STATE_GENERIC_READへResourceStateを変更する
 	D3D12_RESOURCE_BARRIER barrier{};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -130,20 +144,19 @@ ComPtr<ID3D12Resource> TextureManager::UploadTextureData(ID3D12Resource* texture
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
-	System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &barrier);
+	KomEngine::System::GetDxCommon()->GetCommandList()->ResourceBarrier(1, &barrier);
 
 	return intermediateResource;
 }
 
 uint32_t TextureManager::GetTextureIndexByFilePath(const std::string& filePath) {
 
-	// テクスチャが存在するかをチェック
-	if (textureDatas.contains(filePath)) {
-		// 存在する場合、そのテクスチャのインデックスを返す
-		return textureDatas[filePath].srvIndex;
+	const std::string actualPath = PreferDDSPath(filePath);
+
+	if (textureDatas.contains(actualPath)) {
+		return textureDatas[actualPath].srvIndex;
 	}
 
-	// 存在しない場合
 	assert(0);
 	return 0;
 }
@@ -166,30 +179,30 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetGPUDescriptorHandle(Microsoft::WR
 
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(const std::string& filePath) {
 
-	// 範囲外指定違反チェック
-	assert(textureDatas.contains(filePath));
+	const std::string actualPath = PreferDDSPath(filePath);
 
-	TextureData& textureData = textureDatas[filePath];
+	assert(textureDatas.contains(actualPath));
 
+	TextureData& textureData = textureDatas[actualPath];
 	return textureData.srvHandleGPU;
 }
 
 const DirectX::TexMetadata& TextureManager::GetMetaData(const std::string& filePath) {
 
-	// 範囲外指定違反チェック
-	assert(textureDatas.contains(filePath));
+	const std::string actualPath = PreferDDSPath(filePath);
 
-	TextureData& textureData = textureDatas[filePath];
+	assert(textureDatas.contains(actualPath));
 
+	TextureData& textureData = textureDatas[actualPath];
 	return textureData.metaData;
 }
 
 uint32_t TextureManager::GetSrvIndex(const std::string& filePath) {
 
-	// 指定されたファイルパスが存在するかチェック
-	assert(textureDatas.contains(filePath));
+	const std::string actualPath = PreferDDSPath(filePath);
 
-	// 該当テクスチャデータを取得
-	TextureData& textureData = textureDatas[filePath];
+	assert(textureDatas.contains(actualPath));
+
+	TextureData& textureData = textureDatas[actualPath];
 	return textureData.srvIndex;
 }

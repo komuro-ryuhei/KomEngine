@@ -4,11 +4,14 @@
 #include <externals/DirectXTex/DirectXTex.h>
 #include <string>
 #include <unordered_map>
+#include <filesystem>
 
 // MyClass
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
 #include "Engine/Base/SrvManager/SrvManager.h"
 #include "Engine/lib/ComPtr/ComPtr.h"
+
+namespace fs = std::filesystem;
 
 /// <summary>
 /// テクスチャ管理クラス
@@ -16,8 +19,11 @@
 class TextureManager {
 
 public:
-	// シングルトンインスタンスの取得
-	static TextureManager* GetInstance();
+
+	TextureManager() = default;
+	~TextureManager() = default;
+	TextureManager(TextureManager&) = delete;
+	TextureManager& operator=(TextureManager&) = delete;
 
 	/// <summary>
 	/// 初期化処理
@@ -25,12 +31,6 @@ public:
 	/// <param name="srvManager"> SRVManager </param>
 	void Init(SrvManager* srvManager);
 
-	/// <summary>
-	/// 終了処理
-	/// </summary>
-	void Finalize();
-
-public:
 	/// <summary>
 	/// テクスチャファイルの読み込み
 	/// </summary>
@@ -65,16 +65,11 @@ public:
 	uint32_t GetSrvIndex(const std::string& filePath);
 
 public:
-	static TextureManager* instance;
 
 	// SRVインデックスの開始番号
 	static uint32_t kSRVIndexTop_;
 
 private:
-	TextureManager() = default;
-	~TextureManager() = default;
-	TextureManager(TextureManager&) = delete;
-	TextureManager& operator=(TextureManager&) = delete;
 
 	// テクスチャ1枚分のデータ
 	struct TextureData {
@@ -93,4 +88,9 @@ private:
 	// std::vector<TextureData> textureDatas;
 
 	std::unordered_map<std::string, TextureData> textureDatas;
+
+	/// <summary>
+	/// 
+	/// </summary>
+	static std::string PreferDDSPath(const std::string& requestPath);
 };

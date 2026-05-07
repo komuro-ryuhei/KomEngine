@@ -5,6 +5,7 @@
 #endif
 
 #include "Engine/Base/System/System.h"
+#include "Engine/Base/Particle/ParticleManager.h"
 
 #include <iostream>
 #include <algorithm>
@@ -31,7 +32,14 @@ int Player::GetHP() const { return hp_; }
 
 bool Player::GetInvincible() const { return isInvincible_; }
 
-void Player::Damage(int amount) { hp_ -= amount; }
+void Player::Damage(int amount) {
+
+	hp_ -= amount;
+
+	if (camera_) {
+		camera_->StartShake(CameraShakeType::Medium);
+	}
+}
 
 bool Player::IsLowHP(int hp) const { return hp_ <= hp; }
 
@@ -64,22 +72,78 @@ void Player::Init(Camera* camera) {
 	reticleSprite_->SetAnchorPoint({ 0.5f, 0.5f });
 	reticleSprite_->SetPosition({ 1280.0f * 0.5f, 720.0f * 0.5f });
 
+	// 手元Gun
+	gun_ = std::make_unique<Object3d>();
+	gun_->Init(BlendType::BLEND_NONE);
+	gun_->SetModel("cube.obj");
+	gun_->SetDefaultCamera(camera_);
+	gun_->SetScale(gunScale_);
+	gun_->SetRotate(gunRotate_);
+	gun_->SetTranslate(gunTranslate_);
+
 	// マズルフラッシュ用エミッターの初期化
 	muzzleEmitter_ = std::make_unique<ParticleEmitter>();
 	// 名前 "muzzle"、初期座標はとりあえず原点、1回に出す粒の数はお好みで（ここでは12）
 	muzzleEmitter_->Init("muzzle", { 0.0f, 0.0f, 0.0f }, 12);
+
+	// チャージ用エミッター
+	chargeCoreEmitter_ = std::make_unique<ParticleEmitter>();
+	chargeCoreEmitter_->Init("charge_core", { 0.0f, 0.0f, 0.0f }, 6);   // 常時キラキラ
+	chargePulseEmitter_ = std::make_unique<ParticleEmitter>();
+	chargePulseEmitter_->Init("charge_pulse", { 0.0f, 0.0f, 0.0f }, 1); // たまにリング
+
+	chargeLineEmitter_ = std::make_unique<ParticleEmitter>();
+	chargeLineEmitter_->Init("player_charge_line", { 0.0f, 0.0f, 0.0f }, 8);
+
+	// オーバーヒートゲージのスプライト
+	heatGaugeBg_ = std::make_unique<Sprite>();
+	heatGaugeBg_->Init("./Resources/images/blackBG.png", BlendType::BLEND_ALPHA);
+	heatGaugeBg_->SetSize({ heatGaugeMaxWidth_, heatGaugeHeight_ });
+	heatGaugeBg_->SetAnchorPoint({ 0.0f, 1.0f });
+	heatGaugeBg_->SetPosition(heatGaugePos_);
+
+	heatGaugeFill_ = std::make_unique<Sprite>();
+	heatGaugeFill_->Init("./Resources/images/gauge.png", BlendType::BLEND_ALPHA);
+	heatGaugeFill_->SetSize({ heatGaugeMaxWidth_, heatGaugeHeight_ });
+	heatGaugeFill_->SetAnchorPoint({ 0.0f, 1.0f });
+	heatGaugeFill_->SetPosition(heatGaugePos_);
 }
 
 void Player::Update() {
 
-	// 連射タイマーを減算
-	autofireTimer_ = std::max(0.0f, autofireTimer_ - 1.0f / 60.0f);
+	const float dt = KomEngine::System::GetDeltaTime();
 
-	Attack();
+	firedThisFrame_ = false;
+
+	// 連射タイマーを減算
+	autofireTimer_ = std::max(0.0f, autofireTimer_ - dt);
+
+	if (controlEnabled_) {
+		Attack(dt);
+	}
+
+	ChargeEffect(dt);
+
+	// ----------------------- オーバーヒート冷却処理 ----------------------- //
+	{
+		// 撃ったフレームは冷却しない
+		if (!firedThisFrame_) {
+			const float coolPerSec = isCharging_ ? heatCoolWhileCharge_ : heatCoolPerSec_;
+			heat_ = std::max(0.0f, heat_ - coolPerSec * dt);
+		}
+
+		// 復帰判定
+		if (isOverheated_ && heat_ <= heatRecover_) {
+			isOverheated_ = false;
+			canShoot_ = true;
+		}
+		// 念のための上限
+		heat_ = std::clamp(heat_, 0.0f, heatMax_);
+	}
 
 	// 無敵タイマー処理
 	if (isInvincible_) {
-		invincibleTimer_ -= 1.0f / 60.0f; // 毎フレーム減少
+		invincibleTimer_ -= dt; // 毎フレーム減少
 		if (invincibleTimer_ <= 0.0f) {
 			isInvincible_ = false;
 			invincibleTimer_ = 0.0f;
@@ -91,17 +155,32 @@ void Player::Update() {
 		(*it)->Update();
 		(*it)->ImGuiDebug();
 		if (!(*it)->IsAlive()) {
+
+			if (collisionManager_) {
+				collisionManager_->Unregister(it->get());
+			}
+
 			it = bulletObjects_.erase(it);
-		} else {
+		}
+		else {
 			++it;
 		}
 	}
 
-	object3d_->Update();
+	UpdateGun();
+
+	if (!controlEnabled_) {
+		// Intro中は弾も更新しない（発射もされない）
+		object3d_->Update();
+		return;
+	}
+
 	object3d_->SetTranslate(transform_.translate);
 	object3d_->SetRotate(transform_.rotate);
 
 	UpdateReticleSprite();
+
+	UpdateHeatGauge();
 }
 
 void Player::Draw() {
@@ -112,6 +191,13 @@ void Player::Draw() {
 	for (auto& bullet : bulletObjects_) {
 		bullet->Draw();
 	}
+
+	/*if (gun_) {
+		gun_->Draw();
+	}*/
+
+	if (heatGaugeBg_) { heatGaugeBg_->Draw(); }
+	if (heatGaugeFill_) { heatGaugeFill_->Draw(); }
 
 	reticleSprite_->Draw();
 
@@ -127,34 +213,91 @@ void Player::ImGuiDebug() {
 
 	ImGui::Begin("Player");
 
+	gun_->ImGuiDebug("gun");
+
 	ImGui::SliderAngle("rotateX", &transform_.rotate.x, 0.1f);
 	ImGui::SliderAngle("rotateY", &transform_.rotate.y, 0.1f);
 	ImGui::SliderAngle("rotateZ", &transform_.rotate.z, 0.1f);
 	ImGui::DragFloat3("translate", &transform_.translate.x, 0.1f);
 	ImGui::DragInt("HP", &hp_);
 
+	ImGui::Separator();
+	ImGui::Text("Heat");
+	ImGui::DragFloat("heat", &heat_, 0.1f, 0.0f, heatMax_);
+	ImGui::DragFloat("heatMax", &heatMax_, 0.1f, 1.0f, 999.0f);
+	ImGui::DragFloat("heatRecover", &heatRecover_, 0.1f, 0.0f, heatMax_);
+	ImGui::DragFloat("coolPerSec", &heatCoolPerSec_, 0.1f, 0.0f, 999.0f);
+	ImGui::DragFloat("coolWhileCharge", &heatCoolWhileCharge_, 0.1f, 0.0f, 999.0f);
+	ImGui::DragFloat("costNormal", &heatCostNormal_, 0.1f, 0.0f, 999.0f);
+	ImGui::DragFloat("costAutofire", &heatCostAutofire_, 0.1f, 0.0f, 999.0f);
+	ImGui::DragFloat("costCharged", &heatCostCharged_, 0.1f, 0.0f, 999.0f);
+	ImGui::Text("Overheated: %s", isOverheated_ ? "YES" : "NO");
+
+	ImGui::Separator();
+	ImGui::Text("Charge");
+	ImGui::Text("Charging: %s", isCharging_ ? "YES" : "NO");
+	ImGui::DragFloat("chargeTimer", &chargeTimer_, 0.01f, 0.0f, 10.0f);
+	ImGui::DragFloat("chargeMin", &chargeMinTime_, 0.01f, 0.0f, 10.0f);
+	ImGui::DragFloat("chargeFull", &chargeFullTime_, 0.01f, 0.0f, 10.0f);
+
 	ImGui::End();
 
 #endif // _DEBUG
 }
 
-void Player::Attack() {
+void Player::Attack(float dt) {
 
-	// ★ 追加：撃てない状態なら何もしない
-	if (!canShoot_) {
-		return;
+	if (!canShoot_) { return; }
+
+	auto* input = KomEngine::System::GetInput();
+
+	const bool mouse0Down = input->PushMouse(1); //左左クリック想定
+	const bool mouse1Down = input->PushMouse(0); // 右クリック長押し連射
+
+	// -------- チャージ（Mouse0：押し→離し）--------
+	if (mouse0Down && !prevMouse0Down_) {
+		isCharging_ = true;
+		chargeTimer_ = 0.0f;
 	}
 
-	// --- 右クリック：単発 --- //
-	if (System::GetInput()->TriggerMouse(1)) {
-		SpawnBullet();
+	if (mouse0Down && isCharging_) {
+		chargeTimer_ += dt;
 	}
 
-	// --- 左クリック：長押し連射 --- //
-	if (System::GetInput()->PushMouse(1) && autofireTimer_ <= 0.0f) {
-		SpawnBullet();
-		autofireTimer_ = autofireInterval_;
+	// 離した瞬間に発射
+	if (!mouse0Down && prevMouse0Down_ && isCharging_) {
+
+		// チャージ量を 0〜1 に正規化
+		float t = chargeTimer_ / chargeFullTime_;
+		t = std::clamp(t, 0.0f, 1.0f);
+
+		// 1〜5 に増やす（最大ダメージ5）
+		int damage = 1 + static_cast<int>(t * 4.0f);
+
+		SpawnBullet(damage);
+
+		isCharging_ = false;
+		chargeTimer_ = 0.0f;
 	}
+
+	// -------- 連射（Mouse1長押し）--------
+	if (mouse1Down && autofireTimer_ <= 0.0f) {
+
+		const float cost = heatCostAutofire_;
+
+		if (heat_ + cost >= heatMax_) {
+			heat_ = heatMax_;
+			isOverheated_ = true;
+			canShoot_ = false;
+		}
+		else {
+			heat_ += cost;
+			SpawnBullet(1);
+			autofireTimer_ = autofireInterval_;
+		}
+	}
+
+	prevMouse0Down_ = mouse0Down;
 }
 
 void Player::RailMove() { transform_.translate.z += velocity_; }
@@ -173,36 +316,64 @@ void Player::RotateY90() {
 	}
 }
 
-void Player::SpawnBullet() {
+void Player::SpawnBullet(int damage) {
 
+	damage = std::max(1, damage);
+
+	// マズルフラッシュ（位置は元のまま）
 	Vector3 muzzlePos = transform_.translate;
-	if (hasGunMuzzlePos_) {
-		muzzlePos = gunMuzzlePos_;
-	}
 
-	// ★ シーンと同様：座標セットして Update() で Emit させる
-	if (muzzleEmitter_) {
+	/*if (muzzleEmitter_) {
 		muzzleEmitter_->SetTranslate(muzzlePos);
-		muzzleEmitter_->Update();  // Update の中で Emit() が呼ばれる
-	}
+		muzzleEmitter_->Update();
+	}*/
 
-	// 弾の見た目（Object3d）を新規作成
+	// ----------------------------
+	// 弾オブジェクト生成
+	// ----------------------------
 	Object3d* bulletObject = new Object3d();
 	bulletObject->Init(BlendType::BLEND_NONE);
-	bulletObject->SetModel("sphere.obj");
+	bulletObject->SetModel("PlayerBullet.obj");
 	bulletObject->SetDefaultCamera(camera_);
 
 	auto newBullet = std::make_unique<PlayerBullet>();
 	newBullet->Init(camera_, bulletObject);
 
-	// ★ 元に戻す：プレイヤー（カメラ追従中）の位置から発射
-	Vector3 spawnPos = transform_.translate;
-	newBullet->SetTranlate(spawnPos);
+	// ダメージを弾に設定
+	newBullet->SetDamage(damage);
 
+	// ----------------------------
+	// damageから強さ(power)を作る
+	// ----------------------------
+	const int maxDamage = 5; // 好きに調整OK
+
+	float t = 0.0f;
+	if (maxDamage > 1) {
+		t = float(damage - 1) / float(maxDamage - 1);
+	}
+	t = std::clamp(t, 0.0f, 1.0f);
+
+	float power = 1.0f + t * 2.0f; // 1.0〜3.0
+
+	// 見た目
+	float visualScale = 0.05f;
+	newBullet->SetScale({ visualScale, visualScale, visualScale });
+
+	// 当たり判定
+	float radius = 0.08f * power;
+	newBullet->SetRadius(radius);
+
+	// 速度
+	float speed = 0.5f * (1.0f + 0.25f * (power - 1.0f));
+	newBullet->SetSpeed(speed);
+
+	// ----------------------------
+	// 発射方向（レティクル）
+	// ----------------------------
 	Vector3 direction;
 
 	if (reticleSprite_) {
-		// レティクル方向をレイで計算（ここは今のまま）
+
 		Matrix4x4 viewMatrix = camera_->GetViewMatrix();
 		Matrix4x4 projMatrix = camera_->GetProjectionMatrix();
 		Matrix4x4 vpMatrix = MyMath::Multiply(viewMatrix, projMatrix);
@@ -212,7 +383,8 @@ void Player::SpawnBullet() {
 			MyMath::MakeViewportMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f);
 		Matrix4x4 invViewportMatrix = MyMath::Inverse4x4(viewportMatrix);
 
-		Vector2 spritePos = reticleSprite_->GetCenterPosition();
+		Vector2 spritePos = reticleSprite_->GetPosition();
+
 		Vector3 screenNear = { spritePos.x, spritePos.y, 0.0f };
 		Vector3 screenFar = { spritePos.x, spritePos.y, 1.0f };
 
@@ -223,16 +395,91 @@ void Player::SpawnBullet() {
 		Vector3 worldFar = MyMath::Transform(ndcFar, invVPMatrix);
 
 		direction = worldFar - worldNear;
-	} else {
+	}
+	else {
 		direction = { 0.0f, 0.0f, 1.0f };
 	}
 
-	MyMath::Normalize(direction);
+	direction = MyMath::Normalize(direction);
 	newBullet->SetDirection(direction);
 
+	// 出現位置は元のプレイヤー中心
+	newBullet->SetTranlate(transform_.translate);
+
+	if (collisionManager_) {
+		collisionManager_->Register(newBullet.get());
+	}
+
 	bulletObjects_.emplace_back(std::move(newBullet));
+
+	firedThisFrame_ = true;
 }
 
+void Player::UpdateGun() {
+
+	if (!gun_ || !camera_) { return; }
+
+	// viewの逆行列からカメラ座標系を取得
+	Matrix4x4 view = camera_->GetViewMatrix();
+	Matrix4x4 invView = MyMath::Inverse4x4(view);
+
+	// カメラ原点をワールドへ
+	Vector3 camPos = MyMath::Transform({ 0.0f, 0.0f, 0.0f }, invView);
+
+	// カメラ基底（ワールド空間）
+	Vector3 camFwd = MyMath::Transform({ 0.0f, 0.0f, 1.0f }, invView) - camPos;
+	Vector3 camRight = MyMath::Transform({ 1.0f, 0.0f, 0.0f }, invView) - camPos;
+	Vector3 camUp = MyMath::Transform({ 0.0f, 1.0f, 0.0f }, invView) - camPos;
+
+	MyMath::Normalize(camFwd);
+	MyMath::Normalize(camRight);
+	MyMath::Normalize(camUp);
+
+	// 手元位置：前方 + 右 + 下
+	Vector3 gunPos = camPos + camFwd * gunDist_ + camRight * gunRight_ - camUp * gunDown_;
+
+	// Gunに反映
+	//gun_->SetTranslate(gunPos);
+	//gun_->SetScale(gunScale_);
+
+	// 回転：まずはカメラと同じ向き（見た目のズレがあればoffsetで調整）
+	// Cameraに GetRotate() があるならそれを使うのが簡単だが、ここでは view 由来で済ませたいので
+	// 「とりあえず回転は固定」でも成立する（Cubeなので）
+	// もし SetRotate が必要なら、camera_->GetRotate() が存在する前提で↓を有効化して調整してください。
+	//
+	// Vector3 r = camera_->GetRotate();
+	// r.x += gunRotOffset_.x;
+	// r.y += gunRotOffset_.y;
+	// r.z += gunRotOffset_.z;
+	// gun_->SetRotate(r);
+
+	gun_->Update();
+
+	// 銃口位置も更新して、弾/マズル/チャージ演出の起点にする
+	// Cubeの前方（+fwd方向）に少し出す
+	hasGunMuzzlePos_ = true;
+	gunMuzzlePos_ = gunPos + camFwd * 0.8f + camRight * 0.05f - camUp * 0.02f;
+}
+
+void Player::UpdateHeatGauge() {
+
+	if (!heatGaugeBg_ || !heatGaugeFill_) { return; }
+
+	float remain = 1.0f;
+	if (heatMax_ > 0.0f) {
+		remain = 1.0f - (heat_ / heatMax_);
+	}
+	remain = std::clamp(remain, 0.0f, 1.0f);
+
+	const float w = heatGaugeMaxWidth_ * remain;
+	heatGaugeFill_->SetSize({ w, heatGaugeHeight_ });
+
+	heatGaugeBg_->SetPosition(heatGaugePos_);
+	heatGaugeFill_->SetPosition(heatGaugePos_);
+
+	heatGaugeBg_->Update();
+	heatGaugeFill_->Update();
+}
 
 void Player::UpdateReticleSprite() {
 
@@ -241,7 +488,7 @@ void Player::UpdateReticleSprite() {
 	GetCursorPos(&pt);
 
 	// ゲームウィンドウのクライアント座標系に変換
-	HWND hwnd = System::GetWinApp()->GetHwnd();
+	HWND hwnd = KomEngine::System::GetWinApp()->GetHwnd();
 	ScreenToClient(hwnd, &pt);
 
 	// レティクルへ反映
@@ -253,4 +500,154 @@ void Player::UpdateReticleSprite() {
 
 	reticleSprite_->SetPosition(reticlePos);
 	reticleSprite_->Update();
+}
+
+void Player::ChargeEffect(float dt) {
+
+	// コントロール無効中は出さない（Intro等）
+	if (!controlEnabled_) {
+		chargeFxCoreTimer_ = 0.0f;
+		chargeFxPulseTimer_ = 0.0f;
+		return;
+	}
+
+	if (!camera_ || !chargeCoreEmitter_ || !chargePulseEmitter_ || !chargeLineEmitter_) { return; }
+
+	// チャージしてないならタイマーだけリセット
+	if (!isCharging_) {
+		chargeFxCoreTimer_ = 0.0f;
+		chargeFxPulseTimer_ = 0.0f;
+		return;
+	}
+
+	// 0..1 のチャージ率
+	float tCharge = chargeTimer_ / chargeFullTime_;
+	tCharge = std::clamp(tCharge, 0.0f, 1.0f);
+
+	// 青→黄→赤 のグラデ（2段補間）
+	auto Lerp4 = [](const Vector4& a, const Vector4& b, float t) {
+		return Vector4{
+			a.x + (b.x - a.x) * t,
+			a.y + (b.y - a.y) * t,
+			a.z + (b.z - a.z) * t,
+			a.w + (b.w - a.w) * t
+		};
+		};
+
+	const Vector4 blue{ 0.20f, 0.55f, 1.00f, 1.0f };
+	const Vector4 yellow{ 1.00f, 0.95f, 0.20f, 1.0f };
+	const Vector4 red{ 1.00f, 0.20f, 0.20f, 1.0f };
+
+	Vector4 coreColor;
+	if (tCharge < 0.5f) {
+		coreColor = Lerp4(blue, yellow, tCharge / 0.5f);
+	}
+	else {
+		coreColor = Lerp4(yellow, red, (tCharge - 0.5f) / 0.5f);
+	}
+
+	// pulseは少し薄め/明るめに
+	Vector4 pulseColor = coreColor;
+	pulseColor.w = 0.85f;
+
+	// ParticleManager に反映
+	KomEngine::System::GetParticleManager()->SetChargeEffectColor(coreColor, pulseColor);
+
+	// ----------------------------
+	// カメラ基準で「手元位置」を作る
+	// viewの逆行列でカメラの座標系を取得
+	// ----------------------------
+	Matrix4x4 view = camera_->GetViewMatrix();
+	Matrix4x4 invView = MyMath::Inverse4x4(view);
+
+	Vector3 camPos = MyMath::Transform({ 0.0f, 0.0f, 0.0f }, invView);
+	Vector3 camFwd = MyMath::Transform({ 0.0f, 0.0f, 1.0f }, invView) - camPos;
+	Vector3 camRight = MyMath::Transform({ 1.0f, 0.0f, 0.0f }, invView) - camPos;
+	Vector3 camUp = MyMath::Transform({ 0.0f, 1.0f, 0.0f }, invView) - camPos;
+
+	MyMath::Normalize(camFwd);
+	MyMath::Normalize(camRight);
+	MyMath::Normalize(camUp);
+
+	// 
+	const float handDist = 2.0f;  // 手元までの距離
+	const float rightOff = 0.35f; // 右に寄せる
+	const float downOff = 0.25f;  // 下に寄せる
+
+	Vector3 handPos = camPos + camFwd * handDist + camRight * rightOff - camUp * downOff;
+
+	// ----------------------------
+	// 集光コア：handPos の一点へ吸い込む粒を多めに出す
+	// ----------------------------
+	// 奥から手元へ飛び込むライン粒
+	chargeFxCoreTimer_ -= dt;
+	if (chargeFxCoreTimer_ <= 0.0f) {
+
+		int lineCount = 10 + static_cast<int>(tCharge * 18.0f); // 10〜28
+		chargeLineEmitter_->SetTranslate(handPos);
+		for (int i = 0; i < lineCount; ++i) {
+			chargeLineEmitter_->Update();
+		}
+
+		// ライン主体なので中心コアはいったん出さない
+
+		chargeFxCoreTimer_ = 0.035f - 0.018f * tCharge;
+	}
+
+	// ----------------------------
+	// 手元で脈動リング（低頻度）
+	// ----------------------------
+	chargeFxPulseTimer_ -= dt;
+	if (chargeFxPulseTimer_ <= 0.0f) {
+		chargePulseEmitter_->SetTranslate(handPos);
+		chargePulseEmitter_->Update();
+		chargeFxPulseTimer_ = 0.20f;
+	}
+}
+
+Vector3 Player::GetCollisionPosition() const { return GetTranslate(); }
+
+float Player::GetCollisionRadius() const { return GetRadius(); }
+
+CollisionLayer Player::GetCollisionLayer() const { return CollisionLayer::Player; }
+
+void Player::OnCollision(ICollisionObject* other) {
+
+	switch (other->GetCollisionLayer()) {
+		// 敵と当たった場合
+	case CollisionLayer::Enemy:
+		if (!GetInvincible()) {
+			Damage(1);
+			SetInvincible(true);
+		}
+		break;
+		// 敵弾と当たった場合
+	case CollisionLayer::EnemyBullet:
+		if (!GetInvincible()) {
+			Damage(1);
+			SetInvincible(true);
+		}
+		break;
+	case CollisionLayer::EnemyCharge:
+		if (!GetInvincible()) {
+			Damage(1);
+			SetInvincible(true);
+		}
+		break;
+	case CollisionLayer::EnemyMeteor:
+		if (!GetInvincible()) {
+			Damage(1);
+			SetInvincible(true);
+		}
+		break;
+	case CollisionLayer::EnemyMissile:
+		if (!GetInvincible()) {
+			Damage(1);
+			SetInvincible(true);
+		}
+		break;
+
+	default:
+		break;
+	}
 }

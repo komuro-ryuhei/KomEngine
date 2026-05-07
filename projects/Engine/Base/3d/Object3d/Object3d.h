@@ -5,6 +5,7 @@
 #include "sstream"
 #include <d3d12.h>
 #include <vector>
+#include <cstdint>
 
 // MyClass
 #include "Engine/Base/3d/Model/Model.h"
@@ -32,6 +33,8 @@ public: // メンバ関数
 	/// </summary>
 	/// <param name="type"> ブレンドタイプ </param>
 	void Init(BlendType type);
+	/// <param name="type"> シェーダータイプ </param>
+	void Init(const std::string& shaderType, BlendType type);
 
 	/// <summary>
 	/// 更新
@@ -58,6 +61,7 @@ public: // メンバ関数
 	void SetRotate(const Vector3& rotate); // 回転のセット
 	void SetTransform(const Transform& transform); // トランスフォームのセット
 	void SetRadius(float radius) { radius_ = radius; } // 半径のセット
+	void SetColor(const Vector4& color); // 色のセット
 
 	// ------------------- getter ------------------- //
 
@@ -67,6 +71,7 @@ public: // メンバ関数
 	float GetRadius() const; // 半径の取得
 	Vector3 GetWorldPosition() const; // ワールド座標の取得
 	Camera* GetDefaultCamera() const; // デフォルトカメラの取得
+	Vector4 GetColor() const; // 色の取得
 
 	// 親子関係の追加
 	void SetParent(Object3d* parent);
@@ -81,6 +86,7 @@ public: // メンバ関数
 	void SetFromBlender(bool flag);
 
 private:
+
 	// ウィンドウズアプリケーション
 	WinApp* winApp_ = nullptr;
 
@@ -100,9 +106,11 @@ private:
 
 	// 環境マップ用変数
 	struct ObjectParams {
-		bool useEnvironmentMap;
+		int32_t useEnvironmentMap;
 		Vector3 padding_;
+		Vector4 color;
 	};
+
 	ComPtr<ID3D12Resource> environmentTexture_ = nullptr;
 	D3D12_GPU_DESCRIPTOR_HANDLE  environmentGpuHandle_{};
 	ComPtr<ID3D12Resource> objectParamResource_;

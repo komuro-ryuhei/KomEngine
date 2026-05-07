@@ -29,34 +29,39 @@
 /*==================================================================================*/
 // システム全体の初期化
 
-// WindowsAPI
-std::unique_ptr<WinApp> winApp_ = nullptr;
-// DirectXCommon
-std::unique_ptr<DirectXCommon> dxCommon_ = nullptr;
-// Input
-std::unique_ptr<Input> input_ = nullptr;
-// Mesh
-std::unique_ptr<Light> light_ = nullptr;
-// SrvManager
-std::unique_ptr<SrvManager> srvManager_ = nullptr;
-// ImGuiManager
-std::unique_ptr<ImGuiManager> imguiManager_ = nullptr;
-// OffscreenRendering
-std::unique_ptr<OffscreenRendering> offscreenRendering_ = nullptr;
+namespace {
+	constexpr float kDeltaTime_ = 1.0f / 60.0f;
 
-DirectXCommon* System::GetDxCommon() { return dxCommon_.get(); }
+	std::unique_ptr<WinApp> winApp_;
+	std::unique_ptr<DirectXCommon> dxCommon_;
+	std::unique_ptr<Input> input_;
+	std::unique_ptr<Light> light_;
+	std::unique_ptr<SrvManager> srvManager_;
+	std::unique_ptr<TextureManager> textureManager_;
+	std::unique_ptr<ParticleManager> particleManager_;
+	std::unique_ptr<ImGuiManager> imguiManager_;
+	std::unique_ptr<OffscreenRendering> offscreenRendering_;
+}
 
-Input* System::GetInput() { return input_.get(); }
+float KomEngine::System::GetDeltaTime() { return kDeltaTime_; }
 
-SrvManager* System::GetSrvManager() { return srvManager_.get(); }
+DirectXCommon* KomEngine::System::GetDxCommon() { return dxCommon_.get(); }
 
-Light* System::GetLight() { return light_.get(); }
+Input* KomEngine::System::GetInput() { return input_.get(); }
 
-WinApp* System::GetWinApp() { return winApp_.get(); }
+SrvManager* KomEngine::System::GetSrvManager() { return srvManager_.get(); }
 
-OffscreenRendering* System::GetOffscreenRendering() { return offscreenRendering_.get(); }
+TextureManager* KomEngine::System::GetTextureManager() { return textureManager_.get(); }
 
-void System::Initialize(const char* title, int width, int height) {
+ParticleManager* KomEngine::System::GetParticleManager() { return particleManager_.get(); }
+
+Light* KomEngine::System::GetLight() { return light_.get(); }
+
+WinApp* KomEngine::System::GetWinApp() { return winApp_.get(); }
+
+OffscreenRendering* KomEngine::System::GetOffscreenRendering() { return offscreenRendering_.get(); }
+
+void KomEngine::System::Initialize(const char* title, int width, int height) {
 
 	winApp_ = std::make_unique<WinApp>();
 
@@ -82,7 +87,11 @@ void System::Initialize(const char* title, int width, int height) {
 	input_->Initialize(winApp_.get());
 
 	// TextureManager
-	TextureManager::GetInstance()->Init(srvManager_.get());
+	textureManager_ = std::make_unique<TextureManager>();
+	textureManager_->Init(srvManager_.get());
+
+	particleManager_ = std::make_unique<ParticleManager>();
+	particleManager_->Init(BlendType::BLEND_ADD);
 
 	ModelManager::GetInstance()->Init();
 
@@ -90,13 +99,14 @@ void System::Initialize(const char* title, int width, int height) {
 	light_ = std::make_unique<Light>();
 	light_->LightSetting();
 
+	// ImGuiManager
 	imguiManager_ = std::make_unique<ImGuiManager>();
 	imguiManager_->Init(winApp_.get());
 }
 
-bool System::ProcessMessage() { return winApp_->ProcessMessage(); }
+bool KomEngine::System::ProcessMessage() { return winApp_->ProcessMessage(); }
 
-void System::BeginFrame() {
+void KomEngine::System::BeginFrame() {
 
 	offscreenRendering_->RenderToTexture();
 
@@ -113,9 +123,9 @@ void System::BeginFrame() {
 #endif // _DEBUG
 }
 
-void System::Update() {}
+void KomEngine::System::Update() {}
 
-void System::EndFrame() {
+void KomEngine::System::EndFrame() {
 
 	// DirectX描画前処理
 	dxCommon_->PreDraw();
@@ -135,22 +145,19 @@ void System::EndFrame() {
 	dxCommon_->PostDraw();
 }
 
-void System::Finalize() {
+void KomEngine::System::Finalize() {
 
 	winApp_->TerminateGameWindow();
 
+	textureManager_.reset();
 	winApp_.reset();
 	dxCommon_.reset();
 	input_.reset();
 	light_.reset();
 
-	//
-	TextureManager::GetInstance()->Finalize();
-	ModelManager::GetInstance()->Finalize();
-
 	imguiManager_->Finalize();
 }
 
-bool System::PushKey(BYTE keyNumber) { return input_->PushKey(keyNumber); }
+bool KomEngine::System::PushKey(BYTE keyNumber) { return input_->PushKey(keyNumber); }
 
-bool System::TriggerKey(BYTE keyNumber) { return input_->TriggerKey(keyNumber); }
+bool KomEngine::System::TriggerKey(BYTE keyNumber) { return input_->TriggerKey(keyNumber); }

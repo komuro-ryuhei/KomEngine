@@ -12,9 +12,8 @@ void BossMeteor::Init(Camera* camera) {
 	camera_ = camera;
 
 	object3d_ = std::make_unique<Object3d>();
-	object3d_->Init(BlendType::BLEND_NONE);
-	// モデルは仮で sphere。
-	object3d_->SetModel("sphere.obj");
+	object3d_->Init("object3d_meteorError", BlendType::BLEND_NONE);
+	object3d_->SetModel("BossEnemyMeteor.obj");
 	object3d_->SetDefaultCamera(camera_);
 	object3d_->SetScale({ 0.9f, 0.9f, 0.9f });
 
@@ -35,9 +34,21 @@ void BossMeteor::Spawn(const Vector3& startPos, const Vector3& targetPos, float 
 	if (MyMath::Length(dir) > 0.0001f) { dir = MyMath::Normalize(dir); }
 	velocity_ = dir * speed;
 
+	isActive_ = true;
 	lifeTimer_ = 0.0f;
 	isExploding_ = false;
 	isAlive_ = true;
+
+	if (object3d_) {
+		object3d_->SetTranslate(transform_.translate);
+		object3d_->SetRotate(transform_.rotate);
+		object3d_->Update();
+	}
+
+	if (collisionManager_ && !collisionRegistered_) {
+		collisionManager_->Register(this);
+		collisionRegistered_ = true;
+	}
 }
 
 void BossMeteor::Update() {
@@ -82,9 +93,39 @@ void BossMeteor::OnHitGround() {
 
 void BossMeteor::Explode() {
 
-	// 
+	if (!isAlive_) {
+		return;
+	}
+
 	isExploding_ = true;
 	isAlive_ = false;
+
+	// 軽い破壊パーティクル
+	auto* pm = KomEngine::System::GetParticleManager();
+	if (pm) {
+		const Vector3 pos = transform_.translate;
+
+		// 落下してきた向きの逆へ少し噴く
+		Vector3 forward = velocity_;
+		if (MyMath::Length(forward) < 0.0001f) {
+			forward = { 0.0f, -1.0f, 0.0f };
+		}
+		forward = MyMath::Normalize(forward);
+
+		if (pm->Exists("missile_flame")) {
+			pm->EmitMissileFlame(pos, forward, 8);
+		}
+
+		// ほんの少しだけ火花を足す
+		if (pm->Exists("hit")) {
+			pm->Emit("hit", pos, 4);
+		}
+	}
+
+	if (collisionManager_ && collisionRegistered_) {
+		collisionManager_->Unregister(this);
+		collisionRegistered_ = false;
+	}
 }
 
 void BossMeteor::Draw() {
@@ -115,4 +156,39 @@ void BossMeteor::ImGuiDebug() {
 	}
 	ImGui::End();
 #endif
+}
+
+Vector3 BossMeteor::GetCollisionPosition() const {
+
+	// Object3d があれば正確なワールド座標を返す
+	if (object3d_) {
+		return object3d_->GetWorldPosition();
+	}
+	return transform_.translate;
+}
+
+float BossMeteor::GetCollisionRadius() const {
+
+	// 死んでいるメテオは判定 0 にして無効化
+	if (!isAlive_) {
+		return 0.0f;
+	}
+
+	if (object3d_) {
+		return object3d_->GetRadius();
+	}
+	return radius_;
+}
+
+void BossMeteor::OnCollision(ICollisionObject* other) {
+
+	if (!isAlive_) return;
+
+	if (other->GetCollisionLayer() == CollisionLayer::Player) {
+
+		Explode();   // メテオを消す
+	} else if (other->GetCollisionLayer() == CollisionLayer::PlayerBullet) {
+		// 消滅
+		Explode();
+	}
 }

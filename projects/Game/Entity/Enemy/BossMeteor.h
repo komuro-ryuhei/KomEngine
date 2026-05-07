@@ -1,13 +1,17 @@
 // BossMeteor.h
 #pragma once
 #include "Engine/Base/3d/Object3d/Object3d.h"
+#include "Engine/Base/Collision/ICollisionObject.h"
+#include "Game/Entity/Player/Player.h"
 
 class Camera;
 class Player;
 
-// ボスが落とす隕石。スポーン→落下（重力）→着弾で爆発→消滅 という最小機能。
-class BossMeteor {
+// ボスが落とす隕石。スポーン→落下（重力）→着弾で爆発→消滅 という最小機能
+class BossMeteor : public GameObject, public ICollisionObject {
+
 public:
+
 	BossMeteor() = default;
 	~BossMeteor() = default;
 
@@ -15,8 +19,19 @@ public:
 	void Init(Camera* camera);
 
 	// フレーム更新／描画
-	void Update();
-	void Draw();
+	void Update() override;
+	void Draw() override;
+
+	void Kill() override {
+		isActive_ = false;
+		isExploding_ = false;
+		lifeTimer_ = 0.0f;
+
+		if (collisionManager_ && collisionRegistered_) {
+			collisionManager_->Unregister(this);
+			collisionRegistered_ = false;
+		}
+	}
 
 	// デバッグUI
 	void ImGuiDebug();
@@ -39,15 +54,30 @@ public:
 	void SetRadius(float r) { radius_ = r; if (object3d_) object3d_->SetRadius(radius_ * object3d_->GetScale().x); }
 	void SetScale(const Vector3& s) { if (object3d_) { object3d_->SetScale(s); object3d_->SetRadius(radius_ * s.x); } }
 	void SetGravity(float g) { gravity_ = g; accel_ = { 0.0f, -gravity_, 0.0f }; }
+	void SetPlayer(Player* player) { player_ = player; }
+
+	// ----------------------- ICollisionObjectの実装 ----------------------- //
+	Vector3 GetCollisionPosition() const override;
+	float   GetCollisionRadius() const override;
+	CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyMeteor; }
+	void OnCollision(ICollisionObject* other) override;
+
+	CollisionManager* collisionManager_ = nullptr;
+	bool collisionRegistered_ = false;
+	void SetCollisionManager(CollisionManager* mgr) { collisionManager_ = mgr; }
 
 private:
+
 	void ApplyPhysics();
 	void OnHitGround();
 
 private:
+
 	// 描画
 	Camera* camera_ = nullptr;
 	std::unique_ptr<Object3d> object3d_ = nullptr;
+
+	Player* player_ = nullptr;
 
 	// 物理／状態
 	Transform transform_{};         // 平行移動はここがソース
@@ -56,11 +86,12 @@ private:
 	float gravity_ = 0.02f;         // 下向き加速度
 	float rotateSpeed_ = 0.05f;     // くるくる回転
 	float radius_ = 1.2f;           // 当たり判定（スケール前ベース）
+
 	bool  isAlive_ = false;
 	bool  isExploding_ = false;
 	float lifeTimer_ = 0.0f;        // 生存時間
 	float maxLife_ = 15.0f;         // 保険で自動消滅
 
-	// 地面レベル（暫定）。シーン側で合わせるならsetter用意してもOK
+	// 地面
 	float groundY_ = 0.0f;
 };
