@@ -81,14 +81,14 @@ void RootSignature::Create(const std::string& objectName) {
 		descriptionRootSignature.pStaticSamplers = staticSamplers;
 		descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 		descriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-		
+
 		hr = D3D12SerializeRootSignature(&descriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
 		if (FAILED(hr)) {
 			Logger::Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
 			assert(false);
 		}
 		// バイナリを元に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 	} else if (objectName == "particle") {
 
@@ -140,7 +140,7 @@ void RootSignature::Create(const std::string& objectName) {
 			assert(false);
 		}
 		// バイナリを元に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 	} else if (objectName == "sprite") {
 
@@ -149,7 +149,7 @@ void RootSignature::Create(const std::string& objectName) {
 		descriptorRange[0].NumDescriptors = 1;                                                       // 数は1つ
 		descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;                              // SRVを使う
 		descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; // Offsetを自動計算
-		
+
 		// RootParameter作成
 		D3D12_ROOT_PARAMETER rootParameters[3] = {};
 		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;    // CBVを使う
@@ -189,7 +189,7 @@ void RootSignature::Create(const std::string& objectName) {
 			assert(false);
 		}
 		// バイナリを元に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 	} else if (objectName == "posteffect") {
 
@@ -238,7 +238,7 @@ void RootSignature::Create(const std::string& objectName) {
 			assert(false);
 		}
 		// バイナリを元に生成
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 	} else if (objectName == "skybox") {
 
@@ -289,7 +289,41 @@ void RootSignature::Create(const std::string& objectName) {
 			Logger::Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
 			assert(false);
 		}
-		hr = System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
+		assert(SUCCEEDED(hr));
+	} else if (objectName == "line") {
+
+		// RootParameter: b0 (Camera用CBV) を VS から見るだけ
+		D3D12_ROOT_PARAMETER rootParameters[1] = {};
+
+		rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+		rootParameters[0].Descriptor.ShaderRegister = 0; // b0
+
+		descriptionRootSignature = {};
+		descriptionRootSignature.pParameters = rootParameters;
+		descriptionRootSignature.NumParameters = _countof(rootParameters);
+
+		// ラインはサンプラ不要
+		descriptionRootSignature.pStaticSamplers = nullptr;
+		descriptionRootSignature.NumStaticSamplers = 0;
+
+		descriptionRootSignature.Flags =
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+		hr = D3D12SerializeRootSignature(
+			&descriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1,
+			&signatureBlob, &errorBlob);
+		if (FAILED(hr)) {
+			Logger::Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
+			assert(false);
+		}
+
+		hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateRootSignature(
+			0,
+			signatureBlob->GetBufferPointer(),
+			signatureBlob->GetBufferSize(),
+			IID_PPV_ARGS(&rootSignature_));
 		assert(SUCCEEDED(hr));
 	}
 }

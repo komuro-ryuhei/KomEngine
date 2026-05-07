@@ -5,100 +5,80 @@
 
 void TitleScene::Init() {
 
-	System::GetOffscreenRendering()->SetPostEffect("none");
-
-	// テクスチャ、モデルの読み込み
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/uvChecker.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle2.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/Title.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/PushEnter.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/YOUDIE.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/hp.png");
-
-	ModelManager::GetInstance()->LoadModel("plane.obj");
-	ModelManager::GetInstance()->LoadModel("sphere.obj");
-	ModelManager::GetInstance()->LoadModel("axis.obj");
-	ModelManager::GetInstance()->LoadModel("cube.obj");
-	ModelManager::GetInstance()->LoadModel("Player.obj");
-	ModelManager::GetInstance()->LoadModel("Enemy.obj");
-	ModelManager::GetInstance()->LoadModel("ground.obj");
-	ModelManager::GetInstance()->LoadModel("hand.obj");
-	ModelManager::GetInstance()->LoadModel("BossEnemy.obj");
+	KomEngine::System::GetOffscreenRendering()->SetPostEffect("none");
 
 	// Sprite
 	titleSprite_ = std::make_unique<Sprite>();
-	titleSprite_->Init("./Resources/images/Title.png", BlendType::BLEND_NONE);
-	titleSprite_->SetSize({ 0.0f,200.0f });
-	titleSprite_->SetPosition({ 640.0f,256.0f });
+	titleSprite_->Init("./Resources/images/Title.png", BlendType::BLEND_ADD);
+	titleSprite_->SetSize({ 960.0f,640.0f });
+	titleSprite_->SetPosition({ 50.0f,-150.0f });
 
 	enterSprite_ = std::make_unique<Sprite>();
-	enterSprite_->Init("./Resources/images/PushEnter.png", BlendType::BLEND_NONE);
-	enterSprite_->SetPosition({ 640.0f,500.0f });
-	enterSprite_->SetSize({ 500.0f,256.0f });
+	enterSprite_->Init("./Resources/images/PushEnter.png", BlendType::BLEND_ADD);
+	enterSprite_->SetPosition({ 540.0f,320.0f });
+	enterSprite_->SetSize({ 400.0f,300.0f });
+	enterSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 
 	// camera
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
 	camera_->SetTranslate({ 0.0f, 0.0f, -10.0f });
+	KomEngine::System::GetParticleManager()->SetCamera(camera_.get());
 
 	// Skybox
 	skybox_ = std::make_unique<Skybox>();
 	skybox_->Init("./Resources/images/test.dds");
 	skybox_->SetDefaultCamera(camera_.get());
 
-	// --- フェード初期化（画面サイズは 1280x720）--- //
-	fade_ = std::make_unique<Fade>();
-	fade_->Initialize(1280, 720);
-	if (Fade::GetDefaultOpenModeSlash()) {
-		fade_->StartSlashOpen(0.6f, 60.0f, true);
-	} else {
-		fade_->Start(Fade::Status::FadeIn, 0.6f);  // 普通の黒フェードで明転
-	}
+	// --- フェード初期化 --- //
+
+	// Player
+	player_ = std::make_unique<Object3d>();
+	player_->Init(BlendType::BLEND_NONE);
+	player_->SetModel("human.obj");
+	player_->SetDefaultCamera(camera_.get());
+	player_->SetScale({ 2.0f, 2.0f, 2.0f });
+	player_->SetRotate({ 0.0f, 3.8f, 0.0f });
+	player_->SetTranslate({ -1.4f, -4.0f, -3.5 });
 
 	// boss
 	boss_ = std::make_unique<BossEnemy>();
 	boss_->Init(camera_.get());
 	boss_->SetTranslate({ 0.0f, 0.0f, 20.0f });
-	boss_->SetAttack(false);
-	boss_->SetInTitleScene(true);
-	boss_->InitTitleScenePos();
+	boss_->SetAttack(true);
+	boss_->SetRotate({ -0.3f,0.85f,0.0f });
+	boss_->SetTranslate({ 7.0f,4.0f,20.0f });
+
+	// マウスカーソルを中央に固定を解除
+	KomEngine::System::GetInput()->SetMouseCenterLock(false);
 }
 
 void TitleScene::Update() {
 
-	// Sprite描画前処理
-	// sprite_->PreDraw();
+	const float dt = KomEngine::System::GetDeltaTime();
 
 	// camera
 	camera_->Update();
 	// sprite
 	titleSprite_->Update();
 	titleSprite_->ImGuiDebug();
-	titleSprite_->SetSize(titleSpriteScale_);
 
 	// 
 	enterSprite_->Update();
 	enterSprite_->ImGuiDebug();
 
-	if (boss_->GetIsmoveRight()) {
-		if (titleSpriteScale_.x <= 500.0f) {
-			titleSpriteScale_.x += 9.0f;
-		} else {
-			isPushEnter_ = true;
-		}
-	}
-
 	// Skyboxの更新
 	skybox_->Update();
+
+	// Player
+	player_->Update();
+	player_->ImGuiDebug("player");
 
 	// boss
 	boss_->Update();
 	boss_->ImGuiDebug();
 
-	//if (System::TriggerKey(DIK_RETURN)) {
+	//if (KomEngine::System::TriggerKey(DIK_RETURN)) {
 	//	// ゲームシーンを生成
 	//	sceneManager_->ChangeScene("TEST");
 	//}
@@ -106,25 +86,28 @@ void TitleScene::Update() {
 	// 
 	switch (phase_) {
 	case Phase::kFadeIn:
-		fade_->Update();
-		if (fade_->IsFinished()) {
-			fade_->Stop();
-			phase_ = Phase::kMain;
-		}
+		phase_ = Phase::kMain;
 		break;
 
 	case Phase::kMain:
-		if (System::TriggerKey(DIK_RETURN) || System::TriggerKey(DIK_SPACE)) {
-			fade_->Start(Fade::Status::FadeOut, 0.6f);
+	{
+		// ---- PushEnter を徐々に点滅 ---- //
+		pushBlinkTime_ += dt;
+
+		const float omega = 2.0f * 3.14159265f / pushBlinkPeriod_;
+		const float s = 0.5f + 0.5f * std::sinf(pushBlinkTime_ * omega); // 0～1
+		const float a = pushBlinkMinA_ + (pushBlinkMaxA_ - pushBlinkMinA_) * s;
+
+		enterSprite_->SetColor({ 1.0f, 1.0f, 1.0f, a });
+
+		if (KomEngine::System::TriggerKey(DIK_RETURN) || KomEngine::System::TriggerKey(DIK_SPACE)) {
 			phase_ = Phase::kFadeOut;
 		}
-		break;
+	}
+	break;
 
 	case Phase::kFadeOut:
-		fade_->Update();
-		if (fade_->IsFinished()) {
-			sceneManager_->ChangeScene("TEST");   // ゲームへ
-		}
+		sceneManager_->ChangeScene("TEST");
 		break;
 	}
 }
@@ -140,6 +123,9 @@ void TitleScene::Draw() {
 
 	enterSprite_->Draw();
 
+	// Playerの描画
+	player_->Draw();
+
 	// Bossの描画
 	boss_->Draw();
 
@@ -147,7 +133,6 @@ void TitleScene::Draw() {
 	titleSprite_->Draw();
 
 	// フェード
-	fade_->Draw();
 }
 
 void TitleScene::Finalize() {}

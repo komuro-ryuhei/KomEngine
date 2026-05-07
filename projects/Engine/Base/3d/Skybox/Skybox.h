@@ -53,6 +53,8 @@ public:
 	// デフォルトカメラのセット
 	void SetDefaultCamera(Camera* camera);
 
+	void SetColor(Vector4 color);
+
 private:
 	// 座標初期化
 	void InitPosition();

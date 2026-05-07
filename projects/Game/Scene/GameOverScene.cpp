@@ -2,29 +2,11 @@
 
 void GameOverScene::Init() {
 
-	// テクスチャ、モデルの読み込み
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/uvChecker.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/circle2.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/YOUDIE.png");
-
-	ModelManager::GetInstance()->LoadModel("plane.obj");
-	ModelManager::GetInstance()->LoadModel("sphere.obj");
-	ModelManager::GetInstance()->LoadModel("axis.obj");
-	ModelManager::GetInstance()->LoadModel("cube.obj");
-	ModelManager::GetInstance()->LoadModel("Player.obj");
-	ModelManager::GetInstance()->LoadModel("Enemy.obj");
-	ModelManager::GetInstance()->LoadModel("ground.obj");
-	ModelManager::GetInstance()->LoadModel("hand.obj");
-	ModelManager::GetInstance()->LoadModel("BossEnemy.obj");
-	ModelManager::GetInstance()->LoadModel("downPlayer.obj");
-
 	// カメラ
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.6f, 0.0f, 0.0f });
 	camera_->SetTranslate({ 0.0f, 25.0f, -30.0f });
+	KomEngine::System::GetParticleManager()->SetCamera(camera_.get());
 
 	// スプライト
 	sprite_ = std::make_unique<Sprite>();
@@ -35,8 +17,9 @@ void GameOverScene::Init() {
 	// 倒れているプレイヤーのモデル
 	downPlayer_ = std::make_unique<Object3d>();
 	downPlayer_->Init(BlendType::BLEND_NONE);
-	downPlayer_->SetModel("downPlayer.obj");
+	downPlayer_->SetModel("downHuman.obj");
 	downPlayer_->SetDefaultCamera(camera_.get());
+	downPlayer_->SetScale({ 2.0f, 2.0f, 2.0f });
 	downPlayer_->SetTranslate({ 0.0f, 0.0f, 0.0f });
 
 	// --- フェード初期化（画面サイズは 1280x720）--- //
@@ -76,7 +59,7 @@ void GameOverScene::Update() {
 
 	case Phase::kMain:
 		// Enterでタイトルへ戻る
-		if (System::TriggerKey(DIK_RETURN) || (System::TriggerKey(DIK_SPACE))) {
+		if (KomEngine::System::TriggerKey(DIK_RETURN) || (KomEngine::System::TriggerKey(DIK_SPACE))) {
 			fade_->Start(Fade::Status::FadeOut, 0.6f);
 			phase_ = Phase::kFadeOut;
 		}
@@ -86,7 +69,7 @@ void GameOverScene::Update() {
 		fade_->Update();
 		if (fade_->IsFinished()) {
 			// 
-			System::GetOffscreenRendering()->SetPostEffect("none");
+			KomEngine::System::GetOffscreenRendering()->SetPostEffect("none");
 			// タイトルは斬撃で開きたい等、好みに応じて既定を設定
 			Fade::SetDefaultOpenModeSlash(false);
 			sceneManager_->ChangeScene("TITLE");

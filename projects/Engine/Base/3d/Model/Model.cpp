@@ -4,7 +4,7 @@ void Model::Init(const std::string& directoryPath, const std::string& filename) 
 
 	modelData = LoadObjFile(std::move(directoryPath), std::move(filename));
 
-	vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * modelData.vertices.size());
+	vertexResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(VertexData) * modelData.vertices.size());
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
 	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
@@ -12,20 +12,20 @@ void Model::Init(const std::string& directoryPath, const std::string& filename) 
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
 
-	materialResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(Material));
+	materialResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(Material));
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	materialData->enableLighting = false;
+	materialData->enableLighting = true;
 	materialData->uvTransform = MyMath::MakeIdentity4x4();
 	materialData->shininess = 48.3f;
 
-	TextureManager::GetInstance()->LoadTexture(std::move(modelData.material.textureFilePath));
-	modelData.material.textureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(modelData.material.textureFilePath);
+	KomEngine::System::GetTextureManager()->LoadTexture(modelData.material.textureFilePath);
+	modelData.material.textureIndex = KomEngine::System::GetTextureManager()->GetTextureIndexByFilePath(modelData.material.textureFilePath);
 }
 
 void Model::Draw() {
 
-	ComPtr<ID3D12GraphicsCommandList> commandList = System::GetDxCommon()->GetCommandList();
+	ComPtr<ID3D12GraphicsCommandList> commandList = KomEngine::System::GetDxCommon()->GetCommandList();
 
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
 
@@ -33,7 +33,7 @@ void Model::Draw() {
 
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 
-	commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(modelData.material.textureFilePath));
+	commandList->SetGraphicsRootDescriptorTable(2, KomEngine::System::GetTextureManager()->GetSrvHandleGPU(modelData.material.textureFilePath));
 
 	// Modelの描画
 	commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
@@ -102,30 +102,25 @@ ModelData Model::LoadObjFile(const std::string& directoryPath, const std::string
 			normals.push_back(normal);
 		} else if (identifer == "f") {
 			// 面は三角形限定
-			VertexData triangle[3];
 			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
 				std::string vertexDefinition;
 				s >> vertexDefinition;
-				// 頂点の要素へのIndexは「位置/UV/法線」で格納されているので、分解してIndexを取得する
+
 				std::istringstream v(vertexDefinition);
 				uint32_t elementIndices[3];
 				for (uint32_t element = 0; element < 3; ++element) {
 					std::string index;
-					std::getline(v, index, '/'); // 区切りでインデックスを読んでいく
+					std::getline(v, index, '/');
 					elementIndices[element] = std::stoi(index);
 				}
-				// 要素へのIndexから、実際の要素の値を取得して、頂点を構築する
+
 				Vector4 position = positions[elementIndices[0] - 1];
 				Vector2 texcoord = texcoords[elementIndices[1] - 1];
 				Vector3 normal = normals[elementIndices[2] - 1];
-				VertexData vertex = {position, texcoord, normal};
+
+				VertexData vertex = { position, texcoord, normal };
 				modelData.vertices.push_back(vertex);
-				triangle[faceVertex] = {position, texcoord, normal};
 			}
-			// 頂点を逆順で登録することで周り順を逆にする
-			modelData.vertices.push_back(triangle[2]);
-			modelData.vertices.push_back(triangle[1]);
-			modelData.vertices.push_back(triangle[0]);
 		} else if (identifer == "mtllib") {
 			// materialTempleteLibraryファイルの名前を取得する
 			std::string materialFilename;

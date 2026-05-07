@@ -38,7 +38,7 @@ public:
 	// 積(Vector3,Matrix4x4)
 	static Vector3 Multiply(const Vector3& vec, const Matrix4x4& mat);
 
-	// 　長さ(ノルム)(Vector3)
+	// 長さ(ノルム)(Vector3)
 	static float Length(const Vector3& v);
 
 	// 距離(Vector3同士)
@@ -115,4 +115,12 @@ public:
 
 	// ラジアンから度数へ
 	static float RadianToDegree(float radian);
+
+	// 長さの平方（距離^2）
+	static float LengthSquare(const Vector3& v);
+
+	// =================== Easing =================== //
+	static float EaseOutCubic(float t);
+	static float EaseInCubic(float t);
+	static float EaseInOutCubic(float t);
 };

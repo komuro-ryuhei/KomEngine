@@ -259,12 +259,28 @@
     <ClCompile Include="Engine\Base\WinApp\WinApp.cpp">
       <Filter>Engine\Base\WinApp</Filter>
     </ClCompile>
-    <ClCompile Include="Fade.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossMeteor.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossSword.cpp" />
-    <ClCompile Include="KnockoutCameraController.cpp" />
     <ClCompile Include="Game\Scene\GameOverScene.cpp" />
-    <ClCompile Include="ResultImage.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossArmController.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossAttackManager.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossMeteorController.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\ChargeAttackController.cpp" />
+    <ClCompile Include="Game\UI\Fade.cpp" />
+    <ClCompile Include="Game\UI\PauseMenu.cpp" />
+    <ClCompile Include="Game\UI\ResultImage.cpp" />
+    <ClCompile Include="Engine\Base\Debug\LineRenderer.cpp" />
+    <ClCompile Include="Engine\Base\Collision\CollisionManager.cpp" />
+    <ClCompile Include="Game\Camera\KnockoutCameraController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossMissile.cpp" />
+    <ClCompile Include="AssetPreloader.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossMissileController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossRetreatAttack.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossRetreatAttackController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossChargeCore.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossChargeBeam.cpp" />
+    <ClCompile Include="Game\Scene\ParticleEditScene.cpp" />
+    <ClCompile Include="Engine\Base\Particle\ParticleEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -406,13 +422,32 @@
     <ClInclude Include="Engine\lib\Vector\Vector.h">
       <Filter>lib\Vector</Filter>
     </ClInclude>
-    <ClInclude Include="Fade.h" />
     <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
     <ClInclude Include="Game\Entity\Enemy\BossSword.h" />
     <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
-    <ClInclude Include="KnockoutCameraController.h" />
     <ClInclude Include="Game\Scene\GameOverScene.h" />
-    <ClInclude Include="ResultImage.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossArmController.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossAttackManager.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossMeteorController.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\ChargeAttackController.h" />
+    <ClInclude Include="Game\UI\Fade.h" />
+    <ClInclude Include="Game\UI\PauseMenu.h" />
+    <ClInclude Include="Game\UI\ResultImage.h" />
+    <ClInclude Include="Engine\Base\Debug\LineRenderer.h" />
+    <ClInclude Include="Engine\Base\Collision\CollisionManager.h" />
+    <ClInclude Include="Engine\Base\Collision\CollisionTypes.h" />
+    <ClInclude Include="Engine\Base\Collision\ICollisionObject.h" />
+    <ClInclude Include="Game\Camera\KnockoutCameraController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossMissile.h" />
+    <ClInclude Include="AssetPreloader.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossMissileController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossRetreatAttack.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossRetreatAttackController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossChargeCore.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossChargeBeam.h" />
+    <ClInclude Include="Game\Entity\GameObject.h" />
+    <ClInclude Include="Game\Scene\ParticleEditScene.h" />
+    <ClInclude Include="Engine\Base\Particle\ParticleEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

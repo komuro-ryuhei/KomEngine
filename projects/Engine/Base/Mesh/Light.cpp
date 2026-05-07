@@ -18,21 +18,21 @@ ID3D12Resource* Light::GetSpotLightResource() const { return materialResourceSpo
 void Light::LightSetting() {
 
 	// Light用のマテリアルリソースを作る
-	materialResourceLight = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(DirectionalLight));
+	materialResourceLight = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(DirectionalLight));
 	materialResourceLight->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
-	directionalLightData->intensity = 0.0f;
+	directionalLightData->intensity = 4.0f;
 
 	// Phong用のマテリアルリソースを作る
-	materialResourcePhong = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(CameraForGPU));
+	materialResourcePhong = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(CameraForGPU));
 	materialResourcePhong->Map(0, nullptr, reinterpret_cast<void**>(&phongLightData));
 
 	phongLightData->worldPosition = { 0.0f, 4.0f, -10.0f };
 
 	// PointLight用のマテリアルリソースを作る
-	materialResourcePoint = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(PointLight));
+	materialResourcePoint = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(PointLight));
 	materialResourcePoint->Map(0, nullptr, reinterpret_cast<void**>(&pointLightData));
 
 	pointLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -42,14 +42,14 @@ void Light::LightSetting() {
 	pointLightData->decay = 2.0f;
 
 	// PointLight用のマテリアルリソースを作る
-	materialResourceSpot = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(SpotLight));
+	materialResourceSpot = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(SpotLight));
 	materialResourceSpot->Map(0, nullptr, reinterpret_cast<void**>(&spotLightData));
 
 	spotLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	spotLightData->position = { 2.0f, 1.25f, 0.0f };
 	spotLightData->distance = 7.0f;
 	spotLightData->direction = MyMath::Normalize({ -1.0f, -1.0f, 0.0f });
-	spotLightData->intensity = 4.0f;
+	spotLightData->intensity = 0.0f;
 	spotLightData->decay = 2.0f;
 	spotLightData->casAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
 	spotLightData->cosFalloffStart = 1.0f;

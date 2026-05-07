@@ -7,9 +7,12 @@
 #include "Engine/lib/Input/Input.h"
 #include "struct.h"
 
-class EnemyBullet {
+#include "Engine/Base/Collision/ICollisionObject.h"
 
-	public:
+class EnemyBullet : public ICollisionObject {
+
+public:
+
 	void Init(Camera* camera, Object3d* object3d);
 
 	void Update();
@@ -22,6 +25,19 @@ class EnemyBullet {
 	Vector3 GetTranslate() const;
 	void SetTranlate(Vector3 translate);
 	void SetDirection(const Vector3& direction);
+	void SetDestroyOnPlayerHit(bool enable) { destroyOnPlayerHit_ = enable; }
+
+	void SetSpeed(float speed);
+
+	bool IsDead() const { return isDead_; }
+	bool DidHitPlayer() const { return hitPlayer_; }
+	void Kill() { isDead_ = true; }
+
+	// ===== ICollisionObject =====
+	Vector3 GetCollisionPosition() const override { return transform_.translate; }
+	float GetCollisionRadius()   const override { return radius_; }
+	CollisionLayer GetCollisionLayer() const override { return CollisionLayer::EnemyBullet; }
+	void OnCollision(ICollisionObject* other) override;
 
 private:
 	Camera* camera_ = nullptr;
@@ -34,4 +50,10 @@ private:
 	Vector3 direction_;
 
 	float radius_ = 0.08f;
+
+	bool isDead_ = false;
+	bool hitPlayer_ = false;
+
+	// プレイヤーに当たったら消えるかどうか
+	bool destroyOnPlayerHit_ = true;
 };

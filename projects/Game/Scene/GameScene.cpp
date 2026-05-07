@@ -22,6 +22,7 @@ void GameScene::Init() {
 	// camera_->SetTranslate({0.0f, 7.0f, -30.0f});
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
 	camera_->SetTranslate({ 0.0f, 0.0f, -30.0f });
+	KomEngine::System::GetParticleManager()->SetCamera(camera_.get());
 
 	// テクスチャの読み込み
 	const std::string& uvTexture = "./Resources/images/uvChecker.png";
@@ -32,13 +33,13 @@ void GameScene::Init() {
 	const std::string& moonLight = "./Resources/images/moonLight.png";
 
 	// テクスチャ、モデルの読み込み
-	TextureManager::GetInstance()->LoadTexture(uvTexture);
-	TextureManager::GetInstance()->LoadTexture(circle);
-	TextureManager::GetInstance()->LoadTexture(circle2);
-	TextureManager::GetInstance()->LoadTexture(monsterBallTexture);
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/rostock_laage_airport_4k.dds");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/test.dds");
-	TextureManager::GetInstance()->LoadTexture("./Resources/images/ground.png");
+	KomEngine::System::GetTextureManager()->LoadTexture(uvTexture);
+	KomEngine::System::GetTextureManager()->LoadTexture(circle);
+	KomEngine::System::GetTextureManager()->LoadTexture(circle2);
+	KomEngine::System::GetTextureManager()->LoadTexture(monsterBallTexture);
+	KomEngine::System::GetTextureManager()->LoadTexture("./Resources/images/rostock_laage_airport_4k.dds");
+	KomEngine::System::GetTextureManager()->LoadTexture("./Resources/images/test.dds");
+	KomEngine::System::GetTextureManager()->LoadTexture("./Resources/images/ground.png");
 
 	ModelManager::GetInstance()->LoadModel("plane.obj");
 	ModelManager::GetInstance()->LoadModel("sphere.obj");
@@ -78,13 +79,13 @@ void GameScene::Init() {
 	// audio_->SoundPlayWave(audio_->GetXAudio2(), soundData);
 
 	// particle
-	ParticleManager::GetInstance()->Init(camera_.get(), BlendType::BLEND_ADD);
-	ParticleManager::GetInstance()->CreateParticleGeoup("hit", circle2, "a");
-	ParticleManager::GetInstance()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
-	ParticleManager::GetInstance()->CreateParticleGeoup("ring", ring, "ring");
-	ParticleManager::GetInstance()->CreateParticleGeoup("cylinder", ring, "cylinder");
-	ParticleManager::GetInstance()->CreateParticleGeoup("moonLight", moonLight, "moonLight");
-	ParticleManager::GetInstance()->CreateParticleGeoup("ribbon", moonLight, "ribbon");
+	KomEngine::System::GetParticleManager()->Init(BlendType::BLEND_ADD);
+	KomEngine::System::GetParticleManager()->CreateParticleGeoup("hit", circle2, "a");
+	KomEngine::System::GetParticleManager()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
+	KomEngine::System::GetParticleManager()->CreateParticleGeoup("ring", ring, "ring");
+	KomEngine::System::GetParticleManager()->CreateParticleGeoup("cylinder", ring, "cylinder");
+	KomEngine::System::GetParticleManager()->CreateParticleGeoup("moonLight", moonLight, "moonLight");
+	KomEngine::System::GetParticleManager()->CreateParticleGeoup("ribbon", moonLight, "ribbon");
 
 	emitter_ = std::make_unique<ParticleEmitter>();
 	emitter_->Init("hit", { 0.0f, 0.0f, 10.0f }, 8);
@@ -164,7 +165,7 @@ void GameScene::Update() {
 	// トリガーチェック
 	EnemySpawnTrigger();
 
-	if (System::GetInput()->TriggerKey(DIK_RETURN)) {
+	if (KomEngine::System::GetInput()->TriggerKey(DIK_RETURN)) {
 		sceneManager_->ChangeScene("TITLE");
 	}
 
@@ -208,10 +209,8 @@ void GameScene::Draw() {
 	// ステージエディターの描画
 	// loader_->Draw();
 
-	ParticleManager::GetInstance()->Draw();
+	KomEngine::System::GetParticleManager()->Draw();
 }
-
-void GameScene::Finalize() { ParticleManager::GetInstance()->Finalize(); }
 
 void GameScene::ImGuiDebug() {
 
@@ -230,7 +229,7 @@ void GameScene::ImGuiDebug() {
 	// **ランキングの描画**
 	// rankingManager.Render();
 	// シーン遷移のDebug処理
-	if (System::GetInput()->TriggerKey(DIK_RETURN)) {
+	if (KomEngine::System::GetInput()->TriggerKey(DIK_RETURN)) {
 		sceneManager_->ChangeScene("TEST");
 	}
 
@@ -253,9 +252,9 @@ void GameScene::ChangePostEffect() {
 		std::string selectedEffect = effectItems[selectedPostEffectIndex_];
 
 		if (selectedEffect == "None") {
-			System::GetOffscreenRendering()->SetPostEffect("none");
+			KomEngine::System::GetOffscreenRendering()->SetPostEffect("none");
 		} else {
-			System::GetOffscreenRendering()->SetPostEffect(selectedEffect);
+			KomEngine::System::GetOffscreenRendering()->SetPostEffect(selectedEffect);
 		}
 
 		if (ImGui::Button("Reload Scene JSON")) {
@@ -278,7 +277,7 @@ double GameScene::NowSec() {
 void GameScene::ParticleUpdate() {
 
 	// パーティクルの更新処理
-	ParticleManager::GetInstance()->Update();
+	KomEngine::System::GetParticleManager()->Update();
 
 #ifdef USE_IMGUI
 
@@ -304,10 +303,10 @@ void GameScene::ParticleUpdate() {
 
 #endif // _DEBUG
 
-	if (System::TriggerKey(DIK_1)) {
+	if (KomEngine::System::TriggerKey(DIK_1)) {
 		emitter_->Update();
 	}
-	if (System::TriggerKey(DIK_2)) {
+	if (KomEngine::System::TriggerKey(DIK_2)) {
 		emitter2_->Update();
 	}
 

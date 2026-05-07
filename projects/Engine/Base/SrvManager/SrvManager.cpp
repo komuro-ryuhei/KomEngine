@@ -5,8 +5,8 @@ const uint32_t SrvManager::kMaxSRVCount_ = 512;
 
 void SrvManager::Init() {
 
-	descriptorHeap_ = System::GetDxCommon()->CreateDescriptorHeap(System::GetDxCommon()->GetDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kMaxSRVCount_, true);
-	descriptorSize_ = System::GetDxCommon()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	descriptorHeap_ = KomEngine::System::GetDxCommon()->CreateDescriptorHeap(KomEngine::System::GetDxCommon()->GetDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kMaxSRVCount_, true);
+	descriptorSize_ = KomEngine::System::GetDxCommon()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void SrvManager::PreDraw() {
@@ -14,7 +14,7 @@ void SrvManager::PreDraw() {
 	assert(descriptorHeap_ != nullptr);
 	// 描画用のDescriptorHeapの設定
 	ID3D12DescriptorHeap* descriptorHeaps[] = {descriptorHeap_.Get()};
-	System::GetDxCommon()->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
+	KomEngine::System::GetDxCommon()->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
 }
 
 uint32_t SrvManager::Allocate() {
@@ -56,7 +56,7 @@ void SrvManager::CreateSRVforTexture2D(uint32_t srvIndex, ID3D12Resource* pResou
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D; // 2Dテクスチャ
 	srvDesc.Texture2D.MipLevels = UINT(mipLevels);
 
-	System::GetDxCommon()->GetDevice()->CreateShaderResourceView(pResource, &srvDesc, GetCPUDescriptorHandle(srvIndex));
+	KomEngine::System::GetDxCommon()->GetDevice()->CreateShaderResourceView(pResource, &srvDesc, GetCPUDescriptorHandle(srvIndex));
 }
 
 void SrvManager::CreateSRVforTextureCube(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT format, UINT mipLevels) {
@@ -70,7 +70,7 @@ void SrvManager::CreateSRVforTextureCube(uint32_t srvIndex, ID3D12Resource* pRes
 	srvDesc.TextureCube.MostDetailedMip = 0;
 	srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 
-	System::GetDxCommon()->GetDevice()->CreateShaderResourceView(pResource, &srvDesc, GetCPUDescriptorHandle(srvIndex));
+	KomEngine::System::GetDxCommon()->GetDevice()->CreateShaderResourceView(pResource, &srvDesc, GetCPUDescriptorHandle(srvIndex));
 }
 
 void SrvManager::CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride) {
@@ -86,13 +86,13 @@ void SrvManager::CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource*
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;        // 特殊なフラグなし
 
 	// SRVを作成
-	System::GetDxCommon()->GetDevice()->CreateShaderResourceView(pResource, &srvDesc, GetCPUDescriptorHandle(srvIndex));
+	KomEngine::System::GetDxCommon()->GetDevice()->CreateShaderResourceView(pResource, &srvDesc, GetCPUDescriptorHandle(srvIndex));
 }
 
 void SrvManager::SetGraphicsRootDescriptorTable(UINT RootParameterIndex, uint32_t srvIndex) {
 
 	// 
-	System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(RootParameterIndex, GetGPUDescriptorHandle(srvIndex));
+	KomEngine::System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(RootParameterIndex, GetGPUDescriptorHandle(srvIndex));
 }
 
 bool SrvManager::CanAllocate() const { return useIndex_ < SrvManager::kMaxSRVCount_; }

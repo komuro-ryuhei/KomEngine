@@ -5,6 +5,7 @@
 #include "Engine/lib/Math/MyMath.h"
 #include "externals/nlohmann/json.hpp"
 #include <map>
+#include <memory>
 
 /// <summary>
 /// レベルローダークラス
@@ -56,8 +57,8 @@ private:
 private:
 
 	// レベルデータ格納用インスタンスを生成
-	LevelData* levelData = nullptr;
+	std::unique_ptr<LevelData> levelData_;
 
-	std::vector<Object3d*> objects;
-	std::map<std::string, Model*> models;
+	std::vector<std::unique_ptr<Object3d>> objects_;
+	std::map<std::string, Model*> models_;
 };

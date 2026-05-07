@@ -6,6 +6,7 @@
 
 #include <d3d12.h>
 #include <memory>
+#include <string>
 
 class PipelineManager;
 
@@ -96,4 +97,6 @@ private:
 
 	// 画面をクリアする色
 	const Vector4 kRenderTargetClearValue_ = { 0.1f, 0.25f, 0.5f, 1.0f };
+
+	std::string currentPostEffect_ = "none";
 };

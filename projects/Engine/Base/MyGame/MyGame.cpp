@@ -6,7 +6,7 @@ const char kWindowTitle[] = "KomEngine";
 
 void MyGame::Run(const std::string& sceneName) {
 
-	System::Initialize(kWindowTitle, 1280, 720);
+	KomEngine::System::Initialize(kWindowTitle, 1280, 720);
 
 	// シーンファクトリーを作成
 	sceneFactory_ = std::make_unique<SceneFactory>();
@@ -19,17 +19,17 @@ void MyGame::Run(const std::string& sceneName) {
 	sceneManager_->ChangeScene(sceneName);
 
 	// ×が押されるまでループ
-	while (System::ProcessMessage() == 0) {
+	while (KomEngine::System::ProcessMessage() == 0) {
 
 		// フレームの開始
-		System::BeginFrame();
+		KomEngine::System::BeginFrame();
 
 		sceneManager_->Update();
 		sceneManager_->Draw();
 
 		// フレームの終了
-		System::EndFrame();
+		KomEngine::System::EndFrame();
 	}
 
-	System::Finalize();
+	KomEngine::System::Finalize();
 }

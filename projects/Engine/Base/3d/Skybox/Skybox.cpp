@@ -7,6 +7,8 @@
 
 void Skybox::SetDefaultCamera(Camera* camera) { defaultCamera_ = camera; }
 
+void Skybox::SetColor(Vector4 color) { materialData->color = color; }
+
 constexpr uint32_t kSkyboxVertexCount = 36;
 
 void Skybox::Init(const std::string& filename) {
@@ -17,24 +19,24 @@ void Skybox::Init(const std::string& filename) {
 	pipelineManager_ = std::make_unique<PipelineManager>();
 	pipelineManager_->PSOSetting("skybox", BlendType::BLEND_NONE);
 
-	vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * kSkyboxVertexCount);
+	vertexResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(VertexData) * kSkyboxVertexCount);
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
 	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * kSkyboxVertexCount);
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
 
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 
-	materialResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(Material));
+	materialResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(Material));
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	materialData->enableLighting = false;
 	materialData->uvTransform = MyMath::MakeIdentity4x4();
 	materialData->shininess = 48.3f;
 
-	TextureManager::GetInstance()->LoadTexture(std::move(filename));
+	KomEngine::System::GetTextureManager()->LoadTexture(std::move(filename));
 
 	// 座標変換用
-	transformationMatrixResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(TransformationMatrix));
+	transformationMatrixResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(TransformationMatrix));
 	transformationMatrixResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
 	// 単位行列を書き込む
 	transformationMatrixData->WVP = MyMath::MakeIdentity4x4();
@@ -80,7 +82,7 @@ void Skybox::Update() {
 
 void Skybox::Draw() {
 
-	ComPtr<ID3D12GraphicsCommandList> commandList = System::GetDxCommon()->GetCommandList();
+	ComPtr<ID3D12GraphicsCommandList> commandList = KomEngine::System::GetDxCommon()->GetCommandList();
 
 	// コマンド: ルートシグネチャを設定
 	commandList->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
@@ -95,7 +97,7 @@ void Skybox::Draw() {
 	// TransformationMatrixCBufferの場所を設定
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource->GetGPUVirtualAddress());
 
-	commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(filename_));
+	commandList->SetGraphicsRootDescriptorTable(2, KomEngine::System::GetTextureManager()->GetSrvHandleGPU(filename_));
 
 	// Modelの描画
 	commandList->DrawInstanced(kSkyboxVertexCount, 1, 0, 0);

@@ -75,7 +75,8 @@
     </Link>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
-copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"</Command>
+copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
+powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1" -Converter "$(ProjectDir)Tools\TextureConverter\TextureConverter.exe" -Root "$(ProjectDir)Resources\images"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -104,14 +105,29 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </Link>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
-copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"</Command>
+copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
+powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1" -Converter "$(ProjectDir)Tools\TextureConverter\TextureConverter.exe" -Root "$(ProjectDir)Resources\images"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AssetPreloader.cpp" />
+    <ClCompile Include="Engine\Base\Particle\ParticleEditor.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossChargeBeam.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossChargeCore.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossRetreatAttackController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossRetreatAttack.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossMissile.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossMissileController.cpp" />
+    <ClCompile Include="Engine\Base\Collision\CollisionManager.cpp" />
+    <ClCompile Include="Engine\Base\Debug\LineRenderer.cpp" />
+    <ClCompile Include="Game\Camera\KnockoutCameraController.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossArmController.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossAttackManager.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossMeteorController.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\ChargeAttackController.cpp" />
     <ClCompile Include="Game\Scene\GameOverScene.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossSword.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossMeteor.cpp" />
-    <ClCompile Include="Fade.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossEnemy.cpp" />
     <ClCompile Include="Game\Scene\BossTestScene.cpp" />
     <ClCompile Include="Game\Entity\Enemy\EnemyBullet.cpp" />
@@ -134,7 +150,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Base\ImGuiManager\ImGuiManager.cpp" />
     <ClCompile Include="Game\Scene\GameScene.cpp" />
     <ClCompile Include="Game\Scene\IScene.cpp" />
-    <ClCompile Include="KnockoutCameraController.cpp" />
+    <ClCompile Include="Game\Scene\ParticleEditScene.cpp" />
+    <ClCompile Include="Game\UI\Fade.cpp" />
+    <ClCompile Include="Game\UI\PauseMenu.cpp" />
+    <ClCompile Include="Game\UI\ResultImage.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Base\System\System.cpp" />
     <ClCompile Include="Engine\Base\WinApp\WinApp.cpp" />
@@ -159,14 +178,30 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Game\Entity\Player\Player.cpp" />
     <ClCompile Include="Game\Entity\Player\PlayerBullet.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
-    <ClCompile Include="ResultImage.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AssetPreloader.h" />
+    <ClInclude Include="Engine\Base\Particle\ParticleEditor.h" />
+    <ClInclude Include="Game\Entity\GameObject.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossChargeBeam.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossChargeCore.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossRetreatAttackController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossRetreatAttack.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossMissile.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossMissileController.h" />
+    <ClInclude Include="Engine\Base\Collision\CollisionManager.h" />
+    <ClInclude Include="Engine\Base\Collision\CollisionTypes.h" />
+    <ClInclude Include="Engine\Base\Collision\ICollisionObject.h" />
+    <ClInclude Include="Engine\Base\Debug\LineRenderer.h" />
     <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
+    <ClInclude Include="Game\Camera\KnockoutCameraController.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossArmController.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossAttackManager.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossMeteorController.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\ChargeAttackController.h" />
     <ClInclude Include="Game\Scene\GameOverScene.h" />
     <ClInclude Include="Game\Entity\Enemy\BossSword.h" />
     <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
-    <ClInclude Include="Fade.h" />
     <ClInclude Include="Game\Entity\Enemy\BossEnemy.h" />
     <ClInclude Include="Game\Scene\BossTestScene.h" />
     <ClInclude Include="Game\Entity\Enemy\EnemyBullet.h" />
@@ -205,6 +240,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Base\MyGame\MyGame.h" />
     <ClInclude Include="Game\Scene\GameScene.h" />
     <ClInclude Include="Game\Scene\IScene.h" />
+    <ClInclude Include="Game\Scene\ParticleEditScene.h" />
     <ClInclude Include="Game\Scene\SceneManager.h" />
     <ClInclude Include="Game\Scene\SceneFactory.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEmitter.h" />
@@ -212,8 +248,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Game\Entity\Player\Player.h" />
     <ClInclude Include="Game\Entity\Player\PlayerBullet.h" />
     <ClInclude Include="Engine\Base\OffscreenRendering\OffscreenRendering.h" />
-    <ClInclude Include="KnockoutCameraController.h" />
-    <ClInclude Include="ResultImage.h" />
+    <ClInclude Include="Game\UI\Fade.h" />
+    <ClInclude Include="Game\UI\PauseMenu.h" />
+    <ClInclude Include="Game\UI\ResultImage.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="Game\Scene\TitleScene.h" />
   </ItemGroup>

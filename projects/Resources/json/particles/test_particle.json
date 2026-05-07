@@ -1,0 +1,39 @@
+{
+    "angle": {
+        "max": 6.283180236816406,
+        "min": 0.0
+    },
+    "behaviorType": "Default",
+    "billboard": true,
+    "colorMax": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+    ],
+    "colorMin": [
+        1.0,
+        1.0,
+        1.0,
+        0.6000000238418579
+    ],
+    "lifeTime": {
+        "max": 0.6000000238418579,
+        "min": 0.30000001192092896
+    },
+    "meshType": "a",
+    "name": "crossLine",
+    "scale": {
+        "max": 0.25,
+        "min": 0.10000000149011612
+    },
+    "speed": {
+        "max": 0.15000000596046448,
+        "min": 0.05000000074505806
+    },
+    "textureFilePath": "./Resources\\EffectAssets\\Effect\\cross_particle_red.dds",
+    "velocityY": {
+        "max": 0.20000000298023224,
+        "min": 0.0
+    }
+}

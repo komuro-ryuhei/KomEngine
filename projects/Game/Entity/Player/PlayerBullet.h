@@ -7,23 +7,43 @@
 #include "Engine/lib/Input/Input.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "struct.h"
+#include "Engine/Base/Collision/ICollisionObject.h"
+#include "Game/Entity/GameObject.h"
 
-class PlayerBullet {
+class PlayerBullet : public GameObject, public ICollisionObject {
 
 public:
+
 	void Init(Camera* camera, Object3d* object3d);
 
-	void Update();
+	// ----------------------- GameObjectの実装 ----------------------- //
+	void Update() override;
+	void Draw() override;
 
-	void Draw();
+	void Kill() override {
+		isActive_ = false;
+		pendingKill_ = true;
+	}
 
 	void ImGuiDebug();
 
-	float GetRadius() const;
-	Vector3 GetTranslate() const;
 	void SetTranlate(Vector3 translate);
 	void SetDirection(const Vector3& direction);
-	bool IsAlive() const;
+	void SetSpeed(float s) { speed_ = s; }
+	void SetRadius(float r) { radius_ = r; }
+	void SetScale(const Vector3 & s);
+	void SetDamage(int d) { damage_ = d; }
+
+	float GetRadius() const;
+	Vector3 GetTranslate() const;
+	int  GetDamage() const { return damage_; }
+	bool IsAlive() const { return isAlive_; }
+
+	// ----------------------- ICollisionObjectの実装 ----------------------- //
+	Vector3 GetCollisionPosition() const override;
+	float   GetCollisionRadius() const override;
+	CollisionLayer GetCollisionLayer() const override;
+	void OnCollision(ICollisionObject* other) override;
 
 private:
 	Camera* camera_ = nullptr;
@@ -41,6 +61,9 @@ private:
 	float lifeTime_ = 5.0f;  // 寿命(秒)
 	float lifeTimer_ = 0.0f; // 経過時間(秒)
 	bool  isAlive_ = true;   // 生存フラグ
+	bool pendingKill_ = false;
+
+	int damage_ = 20;
 
 	std::unique_ptr<ParticleEmitter> trailEmitter_ = nullptr;
 };

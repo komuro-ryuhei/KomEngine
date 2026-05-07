@@ -10,6 +10,8 @@ std::unique_ptr<IScene> SceneFactory::CreateScene(const std::string& sceneName) 
 		return std::make_unique<BossTestScene>();
 	} else if (sceneName == "GAMEOVER") {
 		return std::make_unique<GameOverScene>();
+	} else if (sceneName == "PARTICLE") {
+		return std::make_unique<ParticleEditScene>();
 	}
 	return nullptr;
 }

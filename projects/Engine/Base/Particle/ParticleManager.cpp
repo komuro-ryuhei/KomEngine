@@ -5,20 +5,40 @@
 
 #include <numbers>
 
-ParticleManager* ParticleManager::instance = nullptr;
+namespace {
 
-ParticleManager* ParticleManager::GetInstance() {
-
-	if (instance == nullptr) {
-		instance = new ParticleManager;
+	std::string BehaviorTypeToString(ParticleBehaviorType type) {
+		switch (type) {
+		case ParticleBehaviorType::Default:          return "Default";
+		case ParticleBehaviorType::Explosion:        return "Explosion";
+		case ParticleBehaviorType::Hit:              return "Hit";
+		case ParticleBehaviorType::Dust:             return "Dust";
+		case ParticleBehaviorType::Ring:             return "Ring";
+		case ParticleBehaviorType::MissileFlame:     return "MissileFlame";
+		case ParticleBehaviorType::ChargeCore:       return "ChargeCore";
+		case ParticleBehaviorType::ChargePulse:      return "ChargePulse";
+		case ParticleBehaviorType::PlayerChargeLine: return "PlayerChargeLine";
+		case ParticleBehaviorType::ChargeAura:       return "ChargeAura";
+		default:                                     return "Default";
+		}
 	}
-	return instance;
+
+	ParticleBehaviorType StringToBehaviorType(const std::string& str) {
+		if (str == "Explosion")        return ParticleBehaviorType::Explosion;
+		if (str == "Hit")              return ParticleBehaviorType::Hit;
+		if (str == "Dust")             return ParticleBehaviorType::Dust;
+		if (str == "Ring")             return ParticleBehaviorType::Ring;
+		if (str == "MissileFlame")     return ParticleBehaviorType::MissileFlame;
+		if (str == "ChargeCore")       return ParticleBehaviorType::ChargeCore;
+		if (str == "ChargePulse")      return ParticleBehaviorType::ChargePulse;
+		if (str == "PlayerChargeLine") return ParticleBehaviorType::PlayerChargeLine;
+		if (str == "ChargeAura")       return ParticleBehaviorType::ChargeAura;
+		return ParticleBehaviorType::Default;
+	}
+
 }
 
-void ParticleManager::Init(Camera* camera, BlendType type) {
-
-	//
-	camera_ = camera;
+void ParticleManager::Init(BlendType type) {
 
 	//
 	pipelineManager_ = std::make_unique<PipelineManager>();
@@ -27,9 +47,18 @@ void ParticleManager::Init(Camera* camera, BlendType type) {
 	std::random_device seedGenerator;
 	std::mt19937 randomEngine(seedGenerator());
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+
+	BuildEmitTable();
+
+	// 
+	RegisterDefaultPresets();
 }
 
 void ParticleManager::Update() {
+
+	if (!camera_) {
+		return;
+	}
 
 	std::random_device seedGenerator;
 	std::mt19937 randomEngine(seedGenerator());
@@ -39,6 +68,9 @@ void ParticleManager::Update() {
 
 	UpdateSpiralEmitter();
 
+	// 今の実装は固定60fps進行なので、それを変えない
+	const float dt = 1.0f / 60.0f;
+
 	for (auto& [name, group] : particleGroups) {
 
 		size_t numInstance = 0;
@@ -47,16 +79,158 @@ void ParticleManager::Update() {
 			Particle& particle = *it;
 
 			// 時間経過
-			particle.currentTime += 1.0f / 60.0f;
+			particle.currentTime += dt;
 			if (particle.currentTime >= particle.lifeTime) {
-				it = group.particles.erase(it); // 寿命が尽きたパーティクルを削除
+				it = group.particles.erase(it);
 				continue;
 			}
 
+			// 寿命比
+			float t = particle.currentTime / particle.lifeTime;  // 0 -> 1
+			t = std::clamp(t, 0.0f, 1.0f);
+
 			// アルファ値を寿命に応じて減衰
-			float lifeRatio = 1.0f - (particle.currentTime / particle.lifeTime);
+			float lifeRatio = 1.0f - t;
 			lifeRatio = std::clamp(lifeRatio, 0.0f, 1.0f);
 			particle.color.w = lifeRatio;
+
+			// -----------------------------
+			// チャージ専用の見た目調整
+			// -----------------------------
+			if (name == "charge_core") {
+
+				particle.transform.rotate.z += 0.10f;
+
+				// 途中で少し膨らみ、最後に中心へ消える
+				float sc = 0.10f + std::sin(t * 3.1415926f) * 0.10f;
+				sc *= (1.0f - t * 0.55f);
+				sc = std::max(sc, 0.025f);
+
+				particle.transform.scale.x = sc;
+				particle.transform.scale.y = sc;
+
+				// 少しずつ中心へ引かれる感じ
+				particle.velocity.x *= 1.012f;
+				particle.velocity.y *= 1.012f;
+				particle.velocity.z *= 1.012f;
+
+				// 青白く、後半は白く抜ける
+				Vector4 c;
+				c.x = 0.72f + 0.25f * t;
+				c.y = 0.90f + 0.08f * t;
+				c.z = 1.00f;
+				c.w = (1.0f - t) * 0.95f;
+
+				particle.color = c;
+			}
+
+			else if (name == "charge_pulse") {
+
+				// 小さめから広がる青白リング
+				float baseScale = 0.65f + 2.4f * t; // 0.65 -> 3.05
+				baseScale = std::max(baseScale, 0.25f);
+
+				float pulse = 1.0f + 0.05f * std::sin(t * 10.0f);
+				float sc = baseScale * pulse;
+
+				particle.transform.scale.x = sc;
+				particle.transform.scale.y = sc;
+
+				particle.transform.rotate.z += 0.015f;
+
+				Vector4 c;
+				c.x = 0.80f + 0.15f * t;
+				c.y = 0.92f + 0.05f * t;
+				c.z = 1.00f;
+				c.w = (1.0f - t) * 0.75f;
+
+				particle.color = c;
+			}
+
+			else if (name == "missile_flame") {
+
+				// 少し回す
+				particle.transform.rotate.z += 0.06f;
+
+				// 最初大きめ、後半しぼむ
+				float k = 1.0f - t;
+				float sc = 0.10f + k * 0.28f;
+				particle.transform.scale.x = sc;
+				particle.transform.scale.y = sc * (1.2f + 0.6f * k);
+
+				// 少しずつ減速して煙っぽく
+				particle.velocity.x *= 0.95f;
+				particle.velocity.y *= 0.98f;
+				particle.velocity.z *= 0.95f;
+
+				// 白→黄→オレンジっぽく抜ける
+				Vector4 c;
+				c.x = 1.0f;
+				c.y = 0.18f + 0.22f * k;
+				c.z = 0.02f + 0.06f * k;
+				c.w = (1.0f - t) * 0.85f;
+
+				particle.color = c;
+			}
+
+			if (name == "charge_aura") {
+
+				float sc = 1.10f + 0.14f * std::sin(t * 6.28318f);
+				particle.transform.scale.x = sc;
+				particle.transform.scale.y = sc;
+
+				particle.transform.rotate.z += 0.003f;
+
+				Vector4 c;
+				c.x = 0.72f + 0.03f * t;
+				c.y = 0.88f + 0.02f * t;
+				c.z = 1.00f;
+				c.w = (1.0f - t) * 0.07f;
+
+				particle.color = c;
+			}
+
+			else if (name == "player_charge_line") {
+				float len = 2.8f * (1.0f - t) + 0.8f;
+				float wid = 0.14f * (1.0f - t) + 0.04f;
+
+				particle.transform.scale.x = wid;
+				particle.transform.scale.y = len;
+
+				particle.velocity.x *= 1.020f;
+				particle.velocity.y *= 1.020f;
+				particle.velocity.z *= 1.020f;
+
+				particle.color.x = 0.78f + 0.15f * t;
+				particle.color.y = 0.90f + 0.06f * t;
+				particle.color.z = 1.00f;
+				particle.color.w = (1.0f - t) * 0.85f;
+			}
+
+			else if (name == "explosion") {
+
+				particle.transform.rotate.z += 0.04f;
+
+				// 膨らみを控えめに
+				float baseScale = particle.transform.scale.x;
+				float scaleGrow = 1.0f + 0.18f * std::sin(t * 3.1415926f);
+				float sc = baseScale * scaleGrow;
+				particle.transform.scale.x = sc;
+				particle.transform.scale.y = sc;
+
+				// 早めに減速して手前に来にくくする
+				particle.velocity.x *= 0.90f;
+				particle.velocity.y *= 0.92f;
+				particle.velocity.z *= 0.90f;
+
+				Vector4 c;
+				c.x = 1.0f;
+				c.y = 0.22f + (1.0f - t) * 0.55f;
+				c.z = 0.02f + (1.0f - t) * 0.08f;
+				c.w = (1.0f - t) * 0.85f;
+
+				particle.color = c;
+			}
 
 			// 速度による移動
 			particle.transform.translate.x += particle.velocity.x;
@@ -66,15 +240,24 @@ void ParticleManager::Update() {
 			// GPUバッファの最大数 (kInstanceNum) を超えないようにする
 			if (numInstance < group.kInstanceNum) {
 
-				Matrix4x4 worldMatrix = MyMath::MakeAffineMatrix(particle.transform.scale, particle.transform.rotate, particle.transform.translate);
+				Matrix4x4 worldMatrix =
+					MyMath::MakeAffineMatrix(
+						particle.transform.scale,
+						particle.transform.rotate,
+						particle.transform.translate
+					);
+
 				group.instancingData[numInstance].World = worldMatrix;
-				group.instancingData[numInstance].WVP = MyMath::Multiply(MyMath::Multiply(worldMatrix, viewMatrix), projectionMatrix);
+				group.instancingData[numInstance].WVP =
+					MyMath::Multiply(MyMath::Multiply(worldMatrix, viewMatrix), projectionMatrix);
+
 				group.instancingData[numInstance].color = Vector4(particle.color);
 				++numInstance;
 			}
 
 			++it;
 		}
+
 		group.instanceCount = static_cast<uint32_t>(numInstance);
 	}
 }
@@ -82,16 +265,16 @@ void ParticleManager::Update() {
 void ParticleManager::Draw() {
 
 	// コマンド: ルートシグネチャを設定
-	System::GetDxCommon()->GetCommandList()->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
+	KomEngine::System::GetDxCommon()->GetCommandList()->SetGraphicsRootSignature(pipelineManager_->GetRootSignature());
 
 	// コマンド: PSO(Pipeline State Object)を設定
-	System::GetDxCommon()->GetCommandList()->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
+	KomEngine::System::GetDxCommon()->GetCommandList()->SetPipelineState(pipelineManager_->GetGraphicsPipelineState());
 
 	// コマンド: プリミティブトポロジーを設定 (三角形リスト)
-	System::GetDxCommon()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	KomEngine::System::GetDxCommon()->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// コマンド: VBV(Vertex Buffer View)を設定
-	// System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
+	// KomEngine::System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
 
 	for (auto& [name, group] : particleGroups) {
 
@@ -100,68 +283,166 @@ void ParticleManager::Draw() {
 			continue;
 		}
 
-		System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &group.vertexBufferView);
+		KomEngine::System::GetDxCommon()->GetCommandList()->IASetVertexBuffers(0, 1, &group.vertexBufferView);
 
-		System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(0, System::GetSrvManager()->GetGPUDescriptorHandle(group.instancingSrvIndex));
-		System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(1, System::GetSrvManager()->GetGPUDescriptorHandle(group.srvIndex));
+		KomEngine::System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(0, KomEngine::System::GetSrvManager()->GetGPUDescriptorHandle(group.instancingSrvIndex));
+		KomEngine::System::GetDxCommon()->GetCommandList()->SetGraphicsRootDescriptorTable(1, KomEngine::System::GetSrvManager()->GetGPUDescriptorHandle(group.srvIndex));
 
-		System::GetDxCommon()->GetCommandList()->DrawInstanced(static_cast<UINT>(group.vertices.size()), group.instanceCount, 0, 0);
+		KomEngine::System::GetDxCommon()->GetCommandList()->DrawInstanced(static_cast<UINT>(group.vertices.size()), group.instanceCount, 0, 0);
 	}
 }
 
-void ParticleManager::Finalize() {
+void ParticleManager::Emit(const std::string& name, const Vector3& position, uint32_t count) {
 
-	delete instance;
-	instance = nullptr;
-}
-
-void ParticleManager::Emit(const std::string name, const Vector3& position, uint32_t count) {
-
-	// 指定したパーティクルグループが存在するか確認
-	auto it = particleGroups.find(name);
-	if (it == particleGroups.end()) {
-		assert(false && "Particle group not found.");
+	auto groupIt = particleGroups.find(name);
+	if (groupIt == particleGroups.end()) {
 		return;
 	}
 
-	ParticleGroup& group = it->second;
+	// 1. まず Preset があるなら Preset から生成する
+	if (const ParticlePreset* preset = FindPreset(name)) {
+		std::random_device seedGenerator;
+		std::mt19937 randomEngine(seedGenerator());
 
-	if (name == "trail") {
-		// ★ 弾道用：ランダムは使わず、位置固定・短命の線を量産
-		for (int i = 0; i < count; ++i) {
-			group.particles.push_back(MakeTrailParticle(position));
+		for (uint32_t i = 0; i < count; ++i) {
+			groupIt->second.particles.push_back(
+				MakeParticleFromPreset(randomEngine, *preset, position)
+			);
 		}
 		return;
 	}
 
-	// ランダムエンジンの初期化
-	std::random_device seedGenerator;
-	std::mt19937 randomEngine(seedGenerator());
+	// 2. 従来の emitTable にフォールバック
+	auto emitIt = emitTable_.find(name);
+	if (emitIt != emitTable_.end()) {
+		emitIt->second(groupIt->second, position, count);
+	}
+}
 
-	// 指定した数だけパーティクルを発生
-	for (uint32_t i = 0; i < count; ++i) {
-		if (name == "explosion") {
-			group.particles.push_back(MakeRandomParticle(randomEngine, position));
-		} else if (name == "hit") {
-			group.particles.push_back(MakeNewParticle(randomEngine, position));
-		} else if (name == "muzzle") {
-			group.particles.push_back(MakeMuzzleFlashParticle(randomEngine, position));
-		} else if (name == "dust") {
-			group.particles.push_back(MakeDustParticle(randomEngine, position));
-		} else if (name == "ring") {
-			group.particles.push_back(MakeRingParticle(randomEngine, position));
-		} else if (name == "cylinder") {
-			group.particles.push_back(MakeCylinderParticle(randomEngine, position));
-		} else if (name == "moonLight") {
-			group.particles.push_back(MakeRingParticle(randomEngine, position));
-			group.particles.push_back(MakeMoonLightParticle(position, true));
-			group.particles.push_back(MakeMoonLightParticle(position, false));
-		} else if (name == "ribbon") {
-			spiralEmitter.position = position;
-			spiralEmitter.count = 0;
-			spiralEmitter.timer = 0.0f;
-			spiralEmitter.active = true;
-		}
+bool ParticleManager::HasPreset(const std::string& name) const {
+
+	return presets_.find(name) != presets_.end();
+}
+
+ParticlePreset* ParticleManager::FindPreset(const std::string& name) {
+
+	auto it = presets_.find(name);
+	if (it == presets_.end()) {
+		return nullptr;
+	}
+	return &it->second;
+}
+
+const ParticlePreset* ParticleManager::FindPreset(const std::string& name) const {
+
+	auto it = presets_.find(name);
+	if (it == presets_.end()) {
+		return nullptr;
+	}
+	return &it->second;
+}
+
+void ParticleManager::RegisterPreset(const ParticlePreset& preset) {
+
+	if (preset.name.empty()) {
+		assert(false && "ParticlePreset name is empty.");
+		return;
+	}
+
+	presets_[preset.name] = preset;
+}
+
+bool ParticleManager::RemovePreset(const std::string& name) {
+
+	auto it = presets_.find(name);
+	if (it == presets_.end()) {
+		return false;
+	}
+
+	presets_.erase(it);
+	return true;
+}
+
+void ParticleManager::RegisterDefaultPresets() {
+
+	// explosion
+	{
+		ParticlePreset p{};
+		p.name = "explosion";
+		p.textureFilePath = "./Resources/images/circle2.png";
+		p.meshType = "a";
+		p.behaviorType = ParticleBehaviorType::Explosion;
+
+		p.lifeTime = { 0.22f, 0.55f };
+		p.speed = { 0.08f, 0.22f };
+		p.scale = { 0.08f, 0.22f };
+		p.angle = { 0.0f, 6.28318f };
+		p.velocityY = { -0.05f, 0.45f };
+
+		p.colorMin = { 1.0f, 0.25f, 0.02f, 0.70f };
+		p.colorMax = { 1.0f, 0.85f, 0.08f, 0.95f };
+
+		RegisterPreset(p);
+	}
+
+	// hit
+	{
+		ParticlePreset p{};
+		p.name = "hit";
+		p.textureFilePath = "./Resources/images/circle2.png";
+		p.meshType = "a";
+		p.behaviorType = ParticleBehaviorType::Hit;
+
+		p.lifeTime = { 0.20f, 0.45f };
+		p.speed = { 0.10f, 0.35f };
+		p.scale = { 0.04f, 0.12f };
+		p.angle = { 0.0f, 6.28318f };
+		p.velocityY = { -0.02f, 0.20f };
+
+		p.colorMin = { 1.0f, 0.65f, 0.10f, 0.70f };
+		p.colorMax = { 1.0f, 1.00f, 0.40f, 1.00f };
+
+		RegisterPreset(p);
+	}
+
+	// dust
+	{
+		ParticlePreset p{};
+		p.name = "dust";
+		p.textureFilePath = "./Resources/images/dust.png";
+		p.meshType = "a";
+		p.behaviorType = ParticleBehaviorType::Dust;
+
+		p.lifeTime = { 0.50f, 1.20f };
+		p.speed = { 0.02f, 0.08f };
+		p.scale = { 0.20f, 0.55f };
+		p.angle = { 0.0f, 6.28318f };
+		p.velocityY = { 0.00f, 0.08f };
+
+		p.colorMin = { 0.35f, 0.35f, 0.35f, 0.25f };
+		p.colorMax = { 0.65f, 0.65f, 0.65f, 0.50f };
+
+		RegisterPreset(p);
+	}
+
+	// ring
+	{
+		ParticlePreset p{};
+		p.name = "ring";
+		p.textureFilePath = "./Resources/images/gradationLine.png";
+		p.meshType = "ring";
+		p.behaviorType = ParticleBehaviorType::Ring;
+
+		p.lifeTime = { 0.25f, 0.40f };
+		p.speed = { 0.00f, 0.00f };
+		p.scale = { 0.50f, 0.80f };
+		p.angle = { 0.0f, 0.0f };
+		p.velocityY = { 0.00f, 0.00f };
+
+		p.colorMin = { 0.90f, 0.90f, 1.00f, 0.50f };
+		p.colorMax = { 1.00f, 1.00f, 1.00f, 0.80f };
+
+		RegisterPreset(p);
 	}
 }
 
@@ -177,23 +458,39 @@ void ParticleManager::CreateParticleGeoup(const std::string name, const std::str
 
 	MakeVertexData(newParticle, particleType);
 
-	TextureManager::GetInstance()->LoadTexture(textureFilePath);
-	uint32_t srvIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+	KomEngine::System::GetTextureManager()->LoadTexture(textureFilePath);
+	uint32_t srvIndex = KomEngine::System::GetTextureManager()->GetTextureIndexByFilePath(textureFilePath);
 	newParticle.srvIndex = srvIndex;
 
 	newParticle.kInstanceNum = 0xffff;
 	newParticle.instancingResource =
-		System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(),
+		KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(),
 			sizeof(ParticleForGPU) * newParticle.kInstanceNum);
 	newParticle.instancingResource->Map(0, nullptr, reinterpret_cast<void**>(&newParticle.instancingData));
 
-	newParticle.instancingSrvIndex = System::GetSrvManager()->Allocate();
-	System::GetSrvManager()->CreateSRVforStructuredBuffer(newParticle.instancingSrvIndex,
+	newParticle.instancingSrvIndex = KomEngine::System::GetSrvManager()->Allocate();
+	KomEngine::System::GetSrvManager()->CreateSRVforStructuredBuffer(newParticle.instancingSrvIndex,
 		newParticle.instancingResource.Get(),
 		newParticle.kInstanceNum,
 		sizeof(ParticleForGPU));
 
 	particleGroups.emplace(name, std::move(newParticle));
+}
+
+bool ParticleManager::CreateParticleGroupFromPreset(const std::string& presetName) {
+
+	const ParticlePreset* preset = FindPreset(presetName);
+	if (!preset) {
+		return false;
+	}
+
+	// すでに同名グループがあるなら作らない
+	if (particleGroups.find(presetName) != particleGroups.end()) {
+		return true;
+	}
+
+	CreateParticleGeoup(presetName, preset->textureFilePath, preset->meshType);
+	return true;
 }
 
 // ランダムなパーティクル生成関数
@@ -203,31 +500,241 @@ Particle ParticleManager::MakeRandomParticle(std::mt19937& randomEngine, const V
 	std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
 	std::uniform_real_distribution<float> distTime(2.0f, 4.0f);
 
+	Vector4 color = { 1.0f, 0.0f, 0.0f , 1.0f };
+
 	Particle particle;
 	Vector3 randomTranslate{ distribution(randomEngine), distribution(randomEngine), distribution(randomEngine) };
-	particle.transform.scale = { 1.0f, 1.0f, 1.0f };
+	particle.transform.scale = { 0.3f, 0.3f, 0.3f };
 	particle.transform.rotate = { 0.0f, 0.0f, 0.0f };
 	particle.transform.translate = translate + randomTranslate;
 	particle.velocity = { distribution(randomEngine), distribution(randomEngine), distribution(randomEngine) };
-	particle.color = { distColor(randomEngine), distColor(randomEngine), distColor(randomEngine), 1.0f };
+	particle.color = { color };
 	particle.lifeTime = distTime(randomEngine);
 	particle.currentTime = 0.0f;
 
 	return particle;
 }
 
+Particle ParticleManager::MakeParticleFromPreset(std::mt19937& randomEngine, const ParticlePreset& preset, const Vector3& translate) {
+
+	auto randRange = [&](float minValue, float maxValue) -> float {
+		if (minValue > maxValue) {
+			std::swap(minValue, maxValue);
+		}
+		std::uniform_real_distribution<float> dist(minValue, maxValue);
+		return dist(randomEngine);
+		};
+
+	auto randColor = [&](float minValue, float maxValue) -> float {
+		float v = randRange(minValue, maxValue);
+		return std::clamp(v, 0.0f, 1.0f);
+		};
+
+	Particle p{};
+
+	// 角度
+	float angle = randRange(preset.angle.min, preset.angle.max);
+
+	// 速度方向
+	Vector3 dir{
+		std::cos(angle),
+		randRange(preset.velocityY.min, preset.velocityY.max),
+		std::sin(angle)
+	};
+
+	// 方向ベクトルがゼロに近いときは上向きに逃がす
+	if (MyMath::Length(dir) < 0.0001f) {
+		dir = { 0.0f, 1.0f, 0.0f };
+	}
+	dir = MyMath::Normalize(dir);
+
+	// 速度
+	float speed = randRange(preset.speed.min, preset.speed.max);
+
+	// スケール
+	float scale = randRange(preset.scale.min, preset.scale.max);
+
+	// Transform
+	p.transform.translate = translate;
+	p.transform.scale = { scale, scale, 1.0f };
+	p.transform.rotate = { 0.0f, 0.0f, angle };
+
+	// 速度
+	p.velocity = dir * speed;
+
+	// 色
+	p.color = {
+		randColor(preset.colorMin.x, preset.colorMax.x),
+		randColor(preset.colorMin.y, preset.colorMax.y),
+		randColor(preset.colorMin.z, preset.colorMax.z),
+		randColor(preset.colorMin.w, preset.colorMax.w)
+	};
+
+	// 寿命
+	p.lifeTime = randRange(preset.lifeTime.min, preset.lifeTime.max);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+bool ParticleManager::SavePresetToJson(const std::string& name, const std::string& filePath) const {
+
+	const ParticlePreset* preset = FindPreset(name);
+	if (!preset) {
+		return false;
+	}
+
+	nlohmann::json j;
+
+	j["name"] = preset->name;
+	j["textureFilePath"] = preset->textureFilePath;
+	j["meshType"] = preset->meshType;
+	j["behaviorType"] = BehaviorTypeToString(preset->behaviorType);
+
+	j["lifeTime"] = {
+		{ "min", preset->lifeTime.min },
+		{ "max", preset->lifeTime.max }
+	};
+
+	j["speed"] = {
+		{ "min", preset->speed.min },
+		{ "max", preset->speed.max }
+	};
+
+	j["scale"] = {
+		{ "min", preset->scale.min },
+		{ "max", preset->scale.max }
+	};
+
+	j["angle"] = {
+		{ "min", preset->angle.min },
+		{ "max", preset->angle.max }
+	};
+
+	j["velocityY"] = {
+		{ "min", preset->velocityY.min },
+		{ "max", preset->velocityY.max }
+	};
+
+	j["colorMin"] = {
+		preset->colorMin.x,
+		preset->colorMin.y,
+		preset->colorMin.z,
+		preset->colorMin.w
+	};
+
+	j["colorMax"] = {
+		preset->colorMax.x,
+		preset->colorMax.y,
+		preset->colorMax.z,
+		preset->colorMax.w
+	};
+
+	j["billboard"] = preset->billboard;
+
+	std::filesystem::path path(filePath);
+	if (path.has_parent_path()) {
+		std::filesystem::create_directories(path.parent_path());
+	}
+
+	std::ofstream ofs(filePath);
+	if (!ofs.is_open()) {
+		return false;
+	}
+
+	ofs << j.dump(4);
+	return true;
+}
+
+bool ParticleManager::LoadPresetFromJson(const std::string& filePath) {
+
+	return LoadPresetFromJson(filePath, nullptr);
+}
+
+bool ParticleManager::LoadPresetFromJson(const std::string& filePath, std::string* outLoadedPresetName) {
+
+	std::ifstream ifs(filePath);
+	if (!ifs.is_open()) {
+		return false;
+	}
+
+	nlohmann::json j;
+	ifs >> j;
+
+	ParticlePreset p{};
+
+	p.name = j.value("name", "");
+	if (p.name.empty()) {
+		return false;
+	}
+
+	p.textureFilePath = j.value("textureFilePath", "./Resources/images/circle2.png");
+	p.meshType = j.value("meshType", "a");
+	p.behaviorType = StringToBehaviorType(j.value("behaviorType", "Default"));
+
+	if (j.contains("lifeTime")) {
+		p.lifeTime.min = j["lifeTime"].value("min", 0.1f);
+		p.lifeTime.max = j["lifeTime"].value("max", 0.3f);
+	}
+
+	if (j.contains("speed")) {
+		p.speed.min = j["speed"].value("min", 0.0f);
+		p.speed.max = j["speed"].value("max", 0.1f);
+	}
+
+	if (j.contains("scale")) {
+		p.scale.min = j["scale"].value("min", 0.1f);
+		p.scale.max = j["scale"].value("max", 0.3f);
+	}
+
+	if (j.contains("angle")) {
+		p.angle.min = j["angle"].value("min", 0.0f);
+		p.angle.max = j["angle"].value("max", 6.28318f);
+	}
+
+	if (j.contains("velocityY")) {
+		p.velocityY.min = j["velocityY"].value("min", 0.0f);
+		p.velocityY.max = j["velocityY"].value("max", 0.0f);
+	}
+
+	if (j.contains("colorMin") && j["colorMin"].is_array() && j["colorMin"].size() == 4) {
+		p.colorMin.x = j["colorMin"][0].get<float>();
+		p.colorMin.y = j["colorMin"][1].get<float>();
+		p.colorMin.z = j["colorMin"][2].get<float>();
+		p.colorMin.w = j["colorMin"][3].get<float>();
+	}
+
+	if (j.contains("colorMax") && j["colorMax"].is_array() && j["colorMax"].size() == 4) {
+		p.colorMax.x = j["colorMax"][0].get<float>();
+		p.colorMax.y = j["colorMax"][1].get<float>();
+		p.colorMax.z = j["colorMax"][2].get<float>();
+		p.colorMax.w = j["colorMax"][3].get<float>();
+	}
+
+	p.billboard = j.value("billboard", true);
+
+	RegisterPreset(p);
+	CreateParticleGroupFromPreset(p.name);
+
+	if (outLoadedPresetName) {
+		*outLoadedPresetName = p.name;
+	}
+
+	return true;
+}
+
 Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate) {
 
-	// --- 乱数設定（弱めに調整） ---
-	std::uniform_real_distribution<float> distDir(-0.5f, 0.5f);     // 方向の散らばり小さく
-	std::uniform_real_distribution<float> distSpeed(0.15f, 0.35f); // ★速度小さめ
-	std::uniform_real_distribution<float> distLife(0.10f, 0.20f);  // ★かなり短命
+	// --- 乱数設定 --- //
+	std::uniform_real_distribution<float> distDir(-0.5f, 0.5f);    // 方向の散らばり小さく
+	std::uniform_real_distribution<float> distSpeed(0.15f, 0.35f); // 速度小さめ
+	std::uniform_real_distribution<float> distLife(0.10f, 0.20f);  // かなり短命
 	std::uniform_real_distribution<float> distScale(0.08f, 0.16f); // 粒を小さめに
 	std::uniform_real_distribution<float> distColor(0.85f, 1.0f);  // 黄色～オレンジ
 
 	Particle particle;
 
-	// --- 方向（狭い範囲に調整） ---
+	// --- 方向 --- //
 	Vector3 dir{
 		distDir(randomEngine),
 		distDir(randomEngine) * 0.2f,  // 上下の散らばりもっと小さく
@@ -267,7 +774,7 @@ Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vect
 	return particle;
 }
 
-Particle ParticleManager::MakeDustParticle(std::mt19937 &randomEngine, const Vector3 &translate)
+Particle ParticleManager::MakeDustParticle(std::mt19937& randomEngine, const Vector3& translate)
 {
 	std::uniform_real_distribution<float> distPos(-1.2f, 1.2f);   // 広めに散る
 	std::uniform_real_distribution<float> distVelX(-0.05f, 0.05f);
@@ -276,7 +783,7 @@ Particle ParticleManager::MakeDustParticle(std::mt19937 &randomEngine, const Vec
 	std::uniform_real_distribution<float> distLife(0.8f, 1.4f);
 
 	Particle p;
-	p.transform.scale = { 1.5f,1.5f,1.5f }; // 少し大きめ
+	p.transform.scale = { 0.3f,0.3f,0.3f }; // 少し大きめ
 	p.transform.rotate = { 0,0,0 };
 	p.transform.translate = {
 		translate.x + distPos(randomEngine),
@@ -287,8 +794,7 @@ Particle ParticleManager::MakeDustParticle(std::mt19937 &randomEngine, const Vec
 	p.velocity = {
 		distVelX(randomEngine),
 		distVelY(randomEngine),
-		distVelZ(randomEngine)
-	};
+		distVelZ(randomEngine) };
 
 	// 砂っぽい薄い色
 	p.color = { 0.6f, 0.55f, 0.45f, 1.0f };
@@ -495,7 +1001,8 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 				{0.0f, 0.0f, 1.0f}
 				});
 		}
-	} else if (particleType == "cylinder") {
+	}
+	else if (particleType == "cylinder") {
 
 		const uint32_t kLineCount = 32;
 		const float radius = 2.0f;
@@ -539,7 +1046,8 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 			vertices.push_back({ p1, uvBottom, normal });
 			vertices.push_back({ p3, uvTop, normal });
 		}
-	} else if (particleType == "moonLight") {
+	}
+	else if (particleType == "moonLight") {
 
 		const uint32_t kRingDivide = 32;
 		const float kOuterRadius = 2.0f;
@@ -585,7 +1093,8 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 				{0.0f, 0.0f, 1.0f}
 				});
 		}
-	} else {
+	}
+	else {
 		vertices = {
 			{{1.0f, 1.0f, 0.0f, 1.0f},   {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
 			{{-1.0f, 1.0f, 0.0f, 1.0f},  {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
@@ -598,7 +1107,7 @@ void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& pa
 
 	// 頂点リソース作成
 	group.vertices = vertices;
-	group.vertexResource = System::GetDxCommon()->CreateBufferResource(System::GetDxCommon()->GetDevice(), sizeof(VertexData) * group.vertices.size());
+	group.vertexResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(VertexData) * group.vertices.size());
 
 	void* mappedData = nullptr;
 	group.vertexResource->Map(0, nullptr, &mappedData);
@@ -634,4 +1143,430 @@ void ParticleManager::UpdateSpiralEmitter() {
 
 bool ParticleManager::Exists(const std::string& name) const {
 	return particleGroups.find(name) != particleGroups.end();
+}
+
+Particle ParticleManager::MakeChargeCoreParticle(std::mt19937& randomEngine, const Vector3& center) {
+
+	std::uniform_real_distribution<float> distAngle(0.0f, 2.0f * std::numbers::pi_v<float>);
+	std::uniform_real_distribution<float> distRadius(0.9f, 2.0f);
+	std::uniform_real_distribution<float> distHeight(-0.45f, 0.45f);
+	std::uniform_real_distribution<float> distSpeed(0.10f, 0.22f);
+	std::uniform_real_distribution<float> distLife(0.22f, 0.40f);
+	std::uniform_real_distribution<float> distScale(0.06f, 0.15f);
+
+	const float a = distAngle(randomEngine);
+	const float r = distRadius(randomEngine);
+	const float h = distHeight(randomEngine);
+
+	Vector3 offset{
+		std::cos(a) * r,
+		h,
+		std::sin(a) * r
+	};
+
+	Particle p;
+	p.transform.translate = center + offset;
+	p.transform.rotate = { 0.0f, 0.0f, a };
+
+	float sc = distScale(randomEngine);
+	p.transform.scale = { sc, sc, 1.0f };
+
+	// 中心へ向かう
+	Vector3 dir = MyMath::Normalize(center - p.transform.translate);
+
+	// 少しだけ回り込む成分を入れる
+	Vector3 tangent{
+		-dir.z,
+		0.0f,
+		dir.x
+	};
+
+	float spd = distSpeed(randomEngine);
+	p.velocity = dir * spd + tangent * 0.035f;
+
+	p.color = chargeCoreColor_;
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+Particle ParticleManager::MakeChargePulseRingParticle(std::mt19937& randomEngine, const Vector3& center) {
+
+	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+	std::uniform_real_distribution<float> distLife(0.40f, 0.65f);
+
+	Particle p;
+	p.transform.translate = center;
+	p.transform.rotate = { 0.0f, 0.0f, distRotate(randomEngine) };
+
+	// 小さく始める
+	p.transform.scale = { 0.65f, 0.65f, 1.0f };
+	p.velocity = { 0.0f, 0.0f, 0.0f };
+
+	p.color = chargePulseColor_;
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+Particle ParticleManager::MakeChargeAuraParticle(std::mt19937& randomEngine, const Vector3& center) {
+
+	std::uniform_real_distribution<float> distLife(0.28f, 0.42f);
+	std::uniform_real_distribution<float> distScale(1.8f, 2.6f);
+	std::uniform_real_distribution<float> distJitter(-0.08f, 0.08f);
+	std::uniform_real_distribution<float> distRot(-0.3f, 0.3f);
+
+	Particle p;
+
+	// ほぼ中心固定、少しだけ揺らす
+	p.transform.translate = {
+		center.x + distJitter(randomEngine),
+		center.y + distJitter(randomEngine),
+		center.z + distJitter(randomEngine)
+	};
+
+	float sc = distScale(randomEngine);
+	p.transform.scale = { sc, sc, 1.0f };
+
+	p.transform.rotate = { 0.0f, 0.0f, distRot(randomEngine) };
+
+	// ほぼ動かさない
+	p.velocity = { 0.0f, 0.0f, 0.0f };
+
+	// 青白い発光
+	p.color = { 0.78f, 0.92f, 1.00f, 0.72f };
+
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+Particle ParticleManager::MakePlayerChargeLineParticle(std::mt19937& randomEngine, const Vector3& center) {
+
+	std::uniform_real_distribution<float> distX(-12.0f, 12.0f);
+	std::uniform_real_distribution<float> distY(-7.0f, 7.0f);
+	std::uniform_real_distribution<float> distZ(16.0f, 34.0f);
+	std::uniform_real_distribution<float> distSpeed(0.70f, 1.35f);
+	std::uniform_real_distribution<float> distLife(0.10f, 0.18f);
+
+	Particle p;
+
+	Vector3 startOffset{
+		distX(randomEngine),
+		distY(randomEngine),
+		-distZ(randomEngine)
+	};
+
+	p.transform.translate = center + startOffset;
+
+	Vector3 dir = MyMath::Normalize(center - p.transform.translate);
+	float spd = distSpeed(randomEngine);
+	p.velocity = dir * spd;
+
+	// 進行方向を向かせる
+	float angle = std::atan2(dir.y, dir.x);
+
+	// 横長 streak.png を使うので +90度 回す
+	p.transform.rotate = { 0.0f, 0.0f, angle + 1.5707963f };
+
+	// scale は1回だけ
+	p.transform.scale = { 0.18f, 2.8f, 1.0f };
+
+	p.color = chargeCoreColor_;
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+Particle ParticleManager::MakeMissileFlameParticle(std::mt19937& randomEngine, const Vector3& pos, const Vector3& forward) {
+
+	std::uniform_real_distribution<float> distBack(0.15f, 0.55f);
+	std::uniform_real_distribution<float> distSide(-0.08f, 0.08f);
+	std::uniform_real_distribution<float> distUp(0.01f, 0.08f);
+	std::uniform_real_distribution<float> distScale(0.18f, 0.34f);
+	std::uniform_real_distribution<float> distLife(0.10f, 0.22f);
+	std::uniform_real_distribution<float> distG(0.08f, 0.25f);
+	std::uniform_real_distribution<float> distA(0.75f, 1.0f);
+
+	Particle p{};
+
+	Vector3 dir = MyMath::Normalize(forward);
+
+	// 後ろ方向
+	Vector3 back = dir * -1.0f;
+
+	// 横方向
+	Vector3 side = { dir.z, 0.0f, -dir.x };
+	if (MyMath::Length(side) < 0.0001f) {
+		side = { 1.0f, 0.0f, 0.0f };
+	}
+	side = MyMath::Normalize(side);
+
+	// 少しだけミサイル後方にずらして生成
+	p.transform.translate =
+		pos
+		+ back * distBack(randomEngine)
+		+ side * distSide(randomEngine)
+		+ Vector3{ 0.0f, distUp(randomEngine), 0.0f };
+
+	float sc = distScale(randomEngine);
+	p.transform.scale = { sc, sc, 1.0f };
+	p.transform.rotate = { 0.0f, 0.0f, 0.0f };
+
+	// 後方へ流れつつ、少し上に立ちのぼる
+	p.velocity =
+		back * MyMath::Rand(0.10f, 0.22f) +
+		side * distSide(randomEngine) * 0.25f +
+		Vector3{ 0.0f, MyMath::Rand(0.01f, 0.04f), 0.0f };
+
+	// 白黄〜オレンジ
+	float g = distG(randomEngine);
+	p.color = { 1.0f, distG(randomEngine), 0.03f, distA(randomEngine) };
+
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+Particle ParticleManager::MakeExplosionParticle(std::mt19937& randomEngine, const Vector3& translate) {
+
+	std::uniform_real_distribution<float> distAngle(0.0f, 2.0f * std::numbers::pi_v<float>);
+	std::uniform_real_distribution<float> distY(-0.05f, 0.45f);
+	std::uniform_real_distribution<float> distSpeed(0.08f, 0.22f);
+	std::uniform_real_distribution<float> distLife(0.22f, 0.55f);
+	std::uniform_real_distribution<float> distScale(0.08f, 0.22f);
+	std::uniform_real_distribution<float> distAlpha(0.70f, 0.95f);
+	std::uniform_real_distribution<float> distG(0.45f, 0.90f);
+	std::uniform_real_distribution<float> distB(0.02f, 0.08f);
+
+	Particle p{};
+
+	float angle = distAngle(randomEngine);
+	Vector3 dir{
+		std::cos(angle),
+		distY(randomEngine),
+		std::sin(angle)
+	};
+	dir = MyMath::Normalize(dir);
+
+	float speed = distSpeed(randomEngine);
+	float sc = distScale(randomEngine);
+
+	p.transform.translate = translate;
+	p.transform.scale = { sc, sc, 1.0f };
+	p.transform.rotate = { 0.0f, 0.0f, angle };
+	p.velocity = dir * speed;
+
+	p.color = { 1.0f, distG(randomEngine), distB(randomEngine), distAlpha(randomEngine) };
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
+}
+
+void ParticleManager::BuildEmitTable() {
+
+	emitTable_.clear();
+
+	emitTable_["explosion"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitExplosion(group, position, count);
+		};
+
+	emitTable_["hit"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitHit(group, position, count);
+		};
+
+	emitTable_["muzzle"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitMuzzle(group, position, count);
+		};
+
+	emitTable_["dust"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitDust(group, position, count);
+		};
+
+	emitTable_["ring"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitRing(group, position, count);
+		};
+
+	emitTable_["cylinder"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitCylinder(group, position, count);
+		};
+
+	emitTable_["moonLight"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitMoonLight(group, position, count);
+		};
+
+	emitTable_["charge_core"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitChargeCore(group, position, count);
+		};
+
+	emitTable_["charge_pulse"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitChargePulse(group, position, count);
+		};
+
+	emitTable_["ribbon"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitRibbon(group, position, count);
+		};
+
+	emitTable_["trail"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitTrailGroup(group, position, count);
+		};
+
+	emitTable_["player_charge_line"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitPlayerChargeLine(group, position, count);
+		};
+
+	emitTable_["charge_aura"] = [this](ParticleGroup& group, const Vector3& position, uint32_t count) {
+		EmitChargeAura(group, position, count);
+		};
+}
+
+void ParticleManager::EmitExplosion(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeExplosionParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitHit(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeNewParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitMuzzle(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeMuzzleFlashParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitDust(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeDustParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitRing(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeRingParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitCylinder(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeCylinderParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitMoonLight(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeRingParticle(randomEngine, position));
+		group.particles.push_back(MakeMoonLightParticle(position, true));
+		group.particles.push_back(MakeMoonLightParticle(position, false));
+	}
+}
+
+void ParticleManager::EmitChargeCore(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeChargeCoreParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitChargePulse(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeChargePulseRingParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitRibbon(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	(void)group;
+	(void)count;
+
+	spiralEmitter.position = position;
+	spiralEmitter.count = 0;
+	spiralEmitter.timer = 0.0f;
+	spiralEmitter.active = true;
+}
+
+void ParticleManager::EmitTrailGroup(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeTrailParticle(position));
+	}
+}
+
+void ParticleManager::EmitPlayerChargeLine(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakePlayerChargeLineParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitChargeAura(ParticleGroup& group, const Vector3& position, uint32_t count) {
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		group.particles.push_back(MakeChargeAuraParticle(randomEngine, position));
+	}
+}
+
+void ParticleManager::EmitMissileFlame(const Vector3& pos, const Vector3& forward, uint32_t count) {
+
+	auto it = particleGroups.find("missile_flame");
+	if (it == particleGroups.end()) {
+		return;
+	}
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		it->second.particles.push_back(MakeMissileFlameParticle(randomEngine, pos, forward));
+	}
 }

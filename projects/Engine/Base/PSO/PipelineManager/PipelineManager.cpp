@@ -5,119 +5,61 @@ ID3D12RootSignature* PipelineManager::GetRootSignature() const { return rootSign
 
 ID3D12PipelineState* PipelineManager::GetGraphicsPipelineState() const { return graphicsPipelineState.Get(); }
 
-PipelineManager* PipelineManager::GetInstance() {
-	static PipelineManager instance;
-	return &instance;
-}
+const std::unordered_map<std::string, PipelineManager::ShaderPair> PipelineManager::kShaderTable = {
+	{ "object3d",                  { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/Object3D.PS.hlsl" } },
+	{ "object3d_meteorError",      { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/MeteorError.PS.hlsl" } },
+	{ "object3d_chargeCore",       { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/ChargeCore.PS.hlsl" } },
+	{ "object3d_gridFloor",        { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/GridFloor.PS.hlsl" } },
+	{ "particle",                  { L"./Resources/shaders/Particle.VS.hlsl",   L"./Resources/shaders/Particle.PS.hlsl" } },
+	{ "sprite",                    { L"./Resources/shaders/Sprite.VS.hlsl",     L"./Resources/shaders/Sprite.PS.hlsl" } },
+	{ "skybox",                    { L"./Resources/shaders/Skybox.VS.hlsl",     L"./Resources/shaders/Skybox.PS.hlsl" } },
+	{ "line",                      { L"./Resources/shaders/Line.VS.hlsl",       L"./Resources/shaders/Line.PS.hlsl" } },
+	{ "posteffect_none",           { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Fullscreen.PS.hlsl" } },
+	{ "posteffect_Grayscale",      { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Grayscale.PS.hlsl" } },
+	{ "posteffect_Vignetting",     { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Vignette.PS.hlsl" } },
+	{ "posteffect_Smoothing",      { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/BoxFilter.PS.hlsl" } },
+	{ "posteffect_GaussinanFilter",{ L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/GaussianFilter.PS.hlsl" } },
+	{ "posteffect_Bloom",          { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Bloom.PS.hlsl" } },
+	{ "posteffect_RadialBlur",     { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/RadialBlur.PS.hlsl" } },
+	{ "posteffect_Random",         { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Random.PS.hlsl" } },
+	{ "posteffect_Outline",        { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/LuminanceBasedOutline.PS.hlsl" } },
+	{ "posteffect_Glitch",         { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/GlitchEffect.PS.hlsl" } },
+	{ "posteffect_Pixel",          { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/PixelationEffect.PS.hlsl" } },
+	{ "posteffect_ChromaticAberration",{ L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/ChromaticAberration.PS.hlsl" } },
+	{ "posteffect_VHSNoise",       { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/VHSNoise.PS.hlsl" } },
+	{ "posteffect_ColorInversion", { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/ColorInversion.PS.hlsl" } }
+};
 
 void PipelineManager::ShaderCompile(const std::string& objectType) {
 
-	if (objectType == "object3d") {
-		// objects用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Object3D.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/Object3D.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "particle") {
-		// particle用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Particle.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/Particle.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "sprite") {
-		// sprite用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Sprite.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/Sprite.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "skybox") {
-		// slybox用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Skybox.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/Skybox.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_none") {
-		// offscreen用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_Grayscale") {
-		// Grayscale用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/Grayscale.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_Vignetting") {
-		// Vignetting用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/Vignette.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_Smoothing") {
-		// Smoothing用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/BoxFilter.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_GaussinanFilter") {
-		// GaussinanFilter用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/GaussianFilter.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_RadialBlur") {
-		// RadialBlur用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/RadialBlur.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_Random") {
-		// Random用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/Random.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_Outline") {
-		// Random用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/LuminanceBasedOutline.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_Glitch") {
-		// Random用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/GlitchEffect.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_Pixel") {
-		// Random用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/PixelationEffect.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_ChromaticAberration") {
-		// Random用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/ChromaticAberration.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_VHSNoise") {
-		// Random用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/VHSNoise.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} else if (objectType == "posteffect_ColorInversion") {
-		// Random用Shaderをコンパイルする
-		vsBlob = compiler_->CompileShader(L"./Resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(vsBlob != nullptr);
-		psBlob = compiler_->CompileShader(L"./Resources/shaders/ColorInversion.PS.hlsl", L"ps_6_0", compiler_->GetDxcUtils(), compiler_->GetCompiler(), compiler_->GetIncludeHandler());
-		assert(psBlob != nullptr);
-	} 
+	auto it = kShaderTable.find(objectType);
+	if (it == kShaderTable.end()) {
+		assert(false && "Unknown shader objectType.");
+		return;
+	}
+
+	const ShaderPair& shader = it->second;
+
+	vsBlob = compiler_->CompileShader(
+		shader.vsPath.c_str(),
+		L"vs_6_0",
+		compiler_->GetDxcUtils(),
+		compiler_->GetCompiler(),
+		compiler_->GetIncludeHandler()
+	);
+	assert(vsBlob != nullptr);
+
+	psBlob = compiler_->CompileShader(
+		shader.psPath.c_str(),
+		L"ps_6_0",
+		compiler_->GetDxcUtils(),
+		compiler_->GetCompiler(),
+		compiler_->GetIncludeHandler()
+	);
+	assert(psBlob != nullptr);
 }
 
-void PipelineManager::CreatePSO(const std::string &objectType)
+void PipelineManager::CreatePSO(const std::string& objectType)
 {
 	HRESULT hr = S_OK;
 
@@ -154,11 +96,18 @@ void PipelineManager::CreatePSO(const std::string &objectType)
 		graphicsPipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 	} else {
 		// 通常3D(Object3D, Particle 等)：エンジン既定のDepth設定
-		graphicsPipelineStateDesc.DepthStencilState = System::GetDxCommon()->GetDepthStencilDesc();
+		graphicsPipelineStateDesc.DepthStencilState = KomEngine::System::GetDxCommon()->GetDepthStencilDesc();
+	}
+
+	// トポロジ設定：line だけ LINE、それ以外は TRIANGLE
+	if (objectType == "line") {
+		graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+	} else {
+		graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	}
 
 	// PSO生成（全分岐共通）
-	hr = System::GetDxCommon()->GetDevice()->CreateGraphicsPipelineState(
+	hr = KomEngine::System::GetDxCommon()->GetDevice()->CreateGraphicsPipelineState(
 		&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&graphicsPipelineState)
 	);
@@ -175,6 +124,12 @@ void PipelineManager::PSOSetting(const std::string& objectType, BlendType type) 
 	std::string baseType = objectType;
 	if (objectType.find("posteffect_") == 0) {
 		baseType = "posteffect";
+	}
+	else if (
+		objectType == "object3d_meteorError" ||
+		objectType == "object3d_chargeCore" ||
+		objectType == "object3d_gridFloor") {
+		baseType = "object3d";
 	}
 
 	rootSignature_->Create(baseType);

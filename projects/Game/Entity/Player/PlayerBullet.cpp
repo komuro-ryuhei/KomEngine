@@ -6,9 +6,11 @@
 
 #endif
 
+#include "Engine/Base/Particle/ParticleManager.h"
+
 float PlayerBullet::GetRadius() const { return radius_; }
 
-void PlayerBullet::Init(Camera *camera, Object3d *object3d) {
+void PlayerBullet::Init(Camera* camera, Object3d* object3d) {
 
 	camera_ = camera;
 	object3d_ = object3d;
@@ -29,7 +31,7 @@ void PlayerBullet::Update() {
 	transform_.translate += direction_ * speed_;
 	object3d_->SetTranslate(transform_.translate);
 
-	// ★ ここを ParticleManager::EmitTrail から Emitter に変更
+	// ここを ParticleManager::EmitTrail から Emitter に変更
 	if (trailEmitter_) {
 		trailEmitter_->SetTranslate(transform_.translate);
 		trailEmitter_->Update();   // Update の中で Emit() が呼ばれてパーティクル生成
@@ -42,6 +44,10 @@ void PlayerBullet::Update() {
 	}
 
 	object3d_->Update();
+
+	if (pendingKill_) {
+		isAlive_ = false;
+	}
 }
 
 void PlayerBullet::Draw() { object3d_->Draw(); }
@@ -64,6 +70,7 @@ void PlayerBullet::ImGuiDebug() {
 Vector3 PlayerBullet::GetTranslate() const { return transform_.translate; }
 
 void PlayerBullet::SetTranlate(Vector3 translate) {
+
 	transform_.translate = translate;
 	if (object3d_) {
 		object3d_->SetTranslate(translate);
@@ -74,6 +81,73 @@ void PlayerBullet::SetTranlate(Vector3 translate) {
 	}
 }
 
-void PlayerBullet::SetDirection(const Vector3 &direction) { direction_ = direction; }
+void PlayerBullet::SetDirection(const Vector3& direction) { direction_ = direction; }
 
-bool PlayerBullet::IsAlive() const { return isAlive_; }
+void PlayerBullet::SetScale(const Vector3& s) {
+
+	if (object3d_) {
+		object3d_->SetScale(s);
+	}
+}
+
+// ================= ICollisionObject の実装 ================= //
+
+Vector3 PlayerBullet::GetCollisionPosition() const {
+
+	// 弾の中心＝現在のワールド座標
+	// Object3d を使ってもいいけど、今は transform を真とする
+	return transform_.translate;
+}
+
+float PlayerBullet::GetCollisionRadius() const {
+
+	// 既存の radius_ をそのまま利用
+	return radius_;
+}
+
+CollisionLayer PlayerBullet::GetCollisionLayer() const {
+
+	// プレイヤーの弾として扱う
+	return CollisionLayer::PlayerBullet;
+}
+
+void PlayerBullet::OnCollision(ICollisionObject* other) {
+
+	// 何に当たったかで処理を分ける
+	switch (other->GetCollisionLayer()) {
+
+	case CollisionLayer::Enemy:
+
+		isAlive_ = false;
+		break;
+
+	case CollisionLayer::EnemyBullet:
+
+		pendingKill_ = true;
+		break;
+
+	case CollisionLayer::EnemyMeteor:
+
+		pendingKill_ = true;
+		break;
+
+	case CollisionLayer::EnemyCore:
+
+		pendingKill_ = true;
+		break;
+
+	case CollisionLayer::EnemyMissile:
+
+		pendingKill_ = true;
+		break;
+
+	case CollisionLayer::Environment:
+
+		// 敵やステージに当たったら弾は消える
+		isAlive_ = false;
+		break;
+
+	default:
+		break;
+	}
+}

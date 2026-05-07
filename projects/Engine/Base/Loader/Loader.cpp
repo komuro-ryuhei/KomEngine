@@ -27,7 +27,7 @@ void Loader::Init(Camera* camera) {
 	std::string sceneName = deserialized["name"].get<std::string>();
 	assert(sceneName.compare("scene") == 0);
 
-	levelData = new LevelData();
+	levelData_ = std::make_unique<LevelData>();
 
 	for (nlohmann::json& object : deserialized["objects"]) {
 		assert(object.contains("type"));
@@ -41,8 +41,8 @@ void Loader::Init(Camera* camera) {
 		}
 
 		if (type.compare("MESH") == 0) {
-			levelData->objects.emplace_back(LevelData::JsonObjectData{});
-			LevelData::JsonObjectData& objectData = levelData->objects.back();
+			levelData_->objects.emplace_back(LevelData::JsonObjectData{});
+			LevelData::JsonObjectData& objectData = levelData_->objects.back();
 
 			std::string name = object.contains("name") ? object["name"].get<std::string>() : "";
 
@@ -82,14 +82,14 @@ void Loader::Init(Camera* camera) {
 		}
 	}
 
-	for (auto& objectData : levelData->objects) {
+	for (auto& objectData : levelData_->objects) {
 		Model* model = nullptr;
-		auto it = models.find(objectData.fileName);
-		if (it != models.end()) {
+		auto it = models_.find(objectData.fileName);
+		if (it != models_.end()) {
 			model = it->second;
 		}
 
-		Object3d* newObject = new Object3d();
+		auto newObject = std::make_unique<Object3d>();
 		newObject->Init(BlendType::BLEND_NONE);
 		newObject->SetTranslate(objectData.translate);
 		newObject->SetRotate(objectData.rotate);
@@ -102,32 +102,25 @@ void Loader::Init(Camera* camera) {
 			newObject->SetModel("sphere.obj");
 		}
 		newObject->SetDefaultCamera(camera);
-		objects.push_back(newObject);
+		objects_.push_back(std::move(newObject));
 	}
 }
 
 void Loader::Update() {
-	for (auto& object : objects) {
+	for (auto& object : objects_) {
 		object->Update();
 	}
 }
 
 void Loader::Draw() {
-	for (auto& object : objects) {
+	for (auto& object : objects_) {
 		object->Draw();
 	}
 }
 
 void Loader::Clear() {
-	for (auto& object : objects) {
-		delete object;
-	}
-	objects.clear();
-
-	if (levelData) {
-		delete levelData;
-		levelData = nullptr;
-	}
+	objects_.clear();
+	levelData_.reset();
 }
 
 void Loader::Reload(Camera* camera) {
