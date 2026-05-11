@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <memory>
 
 class Camera;
 class Player;
@@ -9,6 +10,9 @@ class BossEnemy;
 class ChargeAttackController {
 
 public:
+
+	ChargeAttackController();
+	~ChargeAttackController();
 
 	enum class State {
 		None,
@@ -33,7 +37,7 @@ public:
 	void ForceEnd();
 
 	bool IsActive() const { return active_; }
-	State GetState() const { return state_; }
+	State GetState() const;
 
 	// 調整用
 	void SetChargeTime(float t) { chargeTime_ = t; }
@@ -41,6 +45,12 @@ public:
 
 private:
 
+	class IChargeState;
+	class ChargeStartState;
+	class ChargingState;
+	class WaitShotEndState;
+
+	void ChangeState(std::unique_ptr<IChargeState> nextState);
 	void BeginCharge();
 	void InterruptCharge();
 	void FireShot();
@@ -52,7 +62,7 @@ private:
 	BossEnemy* boss_ = nullptr;
 
 	bool active_ = false;
-	State state_ = State::None;
+	std::unique_ptr<IChargeState> state_;
 
 	// どちらの腕をターゲットにするか
 	bool targetLeft_ = false;

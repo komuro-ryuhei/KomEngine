@@ -27,8 +27,8 @@ public:
 
 	};
 
-	BossMissileController() = default;
-	~BossMissileController() = default;
+	BossMissileController();
+	~BossMissileController();
 
 	void Init();
 
@@ -42,13 +42,13 @@ public:
 	void Start();
 	void ForceEnd();
 
-	bool IsActive() const { return phase_ != Phase::None; }
+	bool IsActive() const { return state_ != nullptr; }
 	bool DidHitPlayer() const { return hitPlayer_; }
 
 	Params& GetParams() { return params_; }
 	const Params& GetParams() const { return params_; }
 
-	bool IsTelegraphing() const { return phase_ == Phase::Telegraph; }
+	bool IsTelegraphing() const;
 	int GetTelegraphCount() const {
 		return missiles_ ? static_cast<int>(std::min<size_t>(4, missiles_->size())) : 0;
 	}
@@ -56,14 +56,15 @@ public:
 
 private:
 
-	enum class Phase {
-		None,
-		Telegraph,
-		Launch,
-	};
+	class IMissileState;
+	class TelegraphState;
+	class LaunchState;
+
+	void ChangeState(std::unique_ptr<IMissileState> nextState);
+	void UpdateLaunch(float dt);
+	void BeginLaunch();
 
 	void UpdateTelegraph(float dt);
-	void UpdateLaunch(float dt);
 
 private:
 
@@ -72,7 +73,7 @@ private:
 	BossEnemy* boss_ = nullptr;
 	std::vector<std::unique_ptr<BossMissile>>* missiles_ = nullptr;
 
-	Phase phase_ = Phase::None;
+	std::unique_ptr<IMissileState> state_;
 	float timer_ = 0.0f;
 	bool hitPlayer_ = false;
 

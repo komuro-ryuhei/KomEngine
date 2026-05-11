@@ -1,10 +1,58 @@
 #include "ChargeAttackController.h"
 #include "Game/Entity/Enemy/BossEnemy.h"
+#include <utility>
+
+class ChargeAttackController::IChargeState {
+public:
+	virtual ~IChargeState() = default;
+	virtual void Update(ChargeAttackController& owner, float dt) = 0;
+	virtual State GetType() const = 0;
+};
+
+class ChargeAttackController::ChargeStartState final : public IChargeState {
+public:
+	void Update(ChargeAttackController& owner, float dt) override {
+		owner.t_ += dt;
+		if (owner.t_ >= owner.telegraphTime_) {
+			owner.BeginCharge();
+		}
+	}
+	State GetType() const override { return State::ChargeStart; }
+};
+
+class ChargeAttackController::ChargingState final : public IChargeState {
+public:
+	void Update(ChargeAttackController& owner, float dt) override {
+		owner.t_ += dt;
+		if (owner.boss_->IsChargeCoreBroken()) {
+			owner.InterruptCharge();
+			return;
+		}
+		if (owner.t_ >= owner.chargeTime_) {
+			owner.FireShot();
+		}
+	}
+	State GetType() const override { return State::Charging; }
+};
+
+class ChargeAttackController::WaitShotEndState final : public IChargeState {
+public:
+	void Update(ChargeAttackController& owner, float dt) override {
+		owner.t_ += dt;
+		if (!owner.boss_->IsChargeBeamShotActive()) {
+			owner.Finish();
+		}
+	}
+	State GetType() const override { return State::WaitShotEnd; }
+};
+
+ChargeAttackController::ChargeAttackController() = default;
+ChargeAttackController::~ChargeAttackController() = default;
 
 void ChargeAttackController::Init() {
 
 	active_ = false;
-	state_ = State::None;
+	state_.reset();
 	t_ = 0.0f;
 	targetLeft_ = false;
 }
@@ -17,8 +65,7 @@ void ChargeAttackController::Start() {
 	targetLeft_ = boss_->IsChargeTargetLeft();
 
 	active_ = true;
-	state_ = State::ChargeStart;
-	t_ = 0.0f;
+	ChangeState(std::make_unique<ChargeStartState>());
 
 	boss_->SetChargeTargetLeft(targetLeft_);
 	boss_->SetChargeActive(true);
@@ -35,7 +82,7 @@ void ChargeAttackController::ForceEnd() {
 	}
 
 	active_ = false;
-	state_ = State::None;
+	state_.reset();
 	t_ = 0.0f;
 }
 
@@ -43,68 +90,33 @@ void ChargeAttackController::Update(float dt) {
 
 	if (!active_) return;
 	if (!boss_) { ForceEnd(); return; }
-
-	t_ += dt;
-
-	switch (state_) {
-
-	case State::ChargeStart:
-
-		if (t_ >= telegraphTime_) {
-			BeginCharge();
-		}
-		break;
-
-	case State::Charging:
-
-		if (boss_->IsChargeCoreBroken()) {
-			InterruptCharge();
-			break;
-		}
-
-		if (t_ >= chargeTime_) {
-			FireShot();
-		}
-		break;
-
-	case State::Fire:
-		// 
-		break;
-
-	case State::WaitShotEnd:
-		// 弾が消えたら終了
-		if (!boss_->IsChargeBeamShotActive()) {
-			Finish();
-		}
-		break;
-
-	case State::End:
-		Finish();
-		break;
-
-	default:
-		break;
+	if (state_) {
+		state_->Update(*this, dt);
 	}
 }
 
-void ChargeAttackController::BeginCharge() {
+ChargeAttackController::State ChargeAttackController::GetState() const {
+	return state_ ? state_->GetType() : State::None;
+}
 
-	state_ = State::Charging;
+void ChargeAttackController::ChangeState(std::unique_ptr<IChargeState> nextState) {
+	state_ = std::move(nextState);
 	t_ = 0.0f;
+}
+
+void ChargeAttackController::BeginCharge() { 
+	ChangeState(std::make_unique<ChargingState>());
 }
 
 void ChargeAttackController::InterruptCharge() {
 
 	if (boss_) {
 		boss_->SetChargeActive(false);
-		// boss_->DeactivateChargeCore();  // ←消す
 	}
-	state_ = State::End;
+	Finish();
 }
 
 void ChargeAttackController::FireShot() {
-
-	state_ = State::Fire;
 
 	if (boss_) {
 		boss_->DeactivateChargeCore();
@@ -112,8 +124,7 @@ void ChargeAttackController::FireShot() {
 		boss_->SetChargeActive(false);
 	}
 
-	state_ = State::WaitShotEnd;
-	t_ = 0.0f;
+	ChangeState(std::make_unique<WaitShotEndState>());
 }
 
 void ChargeAttackController::Finish() {
@@ -127,6 +138,6 @@ void ChargeAttackController::Finish() {
 	}
 
 	active_ = false;
-	state_ = State::None;
+	state_.reset();
 	t_ = 0.0f;
 }

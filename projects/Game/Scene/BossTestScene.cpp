@@ -268,7 +268,7 @@ void BossTestScene::Init() {
 	particleEditor_.SetEnabled(false);
 	showParticleEditor_ = false;
 
-	KomEngine::System::GetOffscreenRendering()->SetPostEffect("Bloom");
+	// KomEngine::System::GetOffscreenRendering()->SetPostEffect("Bloom");
 }
 
 void BossTestScene::Update() {

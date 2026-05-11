@@ -22,7 +22,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 
     // 明るい部分だけ抽出
     float brightness = dot(baseColor.rgb, float3(0.299f, 0.587f, 0.114f));
-    float threshold = 0.65f;
+    float threshold = 0.35f;
     float bloomMask = saturate((brightness - threshold) * 3.0f);
 
     // 周囲をぼかして発光っぽくする
@@ -41,8 +41,8 @@ PixelShaderOutput main(VertexShaderOutput input)
     blur *= 1.0f / 8.0f;
 
     // 明るいところだけ発光を乗せる
-    float bloomIntensity = 0.45f;
-    float3 color = baseColor.rgb + blur * bloomMask * bloomIntensity;
+    float bloomIntensity = 1.2f;
+    float3 color = baseColor.rgb + blur * bloomIntensity;
 
     // 少しだけ青寄せして近未来感を足す
     color *= float3(0.92f, 1.03f, 1.12f);

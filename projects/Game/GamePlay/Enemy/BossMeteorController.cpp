@@ -7,9 +7,51 @@
 #include "Game/Entity/Enemy/BossMeteor.h"
 #include "Engine/lib/Math/MyMath.h"
 
+#include <utility>
+#include <fstream>
+#include <iomanip>
+#include <algorithm>
+#include <cmath>
+
+class BossMeteorController::IMeteorPhaseState {
+public:
+	virtual ~IMeteorPhaseState() = default;
+	virtual void Update(BossMeteorController& owner, float dt) = 0;
+	virtual bool IsWarning() const { return false; }
+};
+
+class BossMeteorController::WarningState final : public IMeteorPhaseState {
+public:
+	void Update(BossMeteorController& owner, float dt) override { owner.UpdateWarning(dt); }
+	bool IsWarning() const override { return true; }
+};
+
+class BossMeteorController::IntroState final : public IMeteorPhaseState {
+public:
+	void Update(BossMeteorController& owner, float dt) override { owner.UpdateIntro(dt); }
+};
+
+class BossMeteorController::ShowerState final : public IMeteorPhaseState {
+public:
+	void Update(BossMeteorController& owner, float dt) override { owner.UpdateShower(dt); }
+};
+
+class BossMeteorController::WaitClearState final : public IMeteorPhaseState {
+public:
+	void Update(BossMeteorController& owner, float dt) override { owner.UpdateWaitClear(dt); }
+};
+
+class BossMeteorController::OutroState final : public IMeteorPhaseState {
+public:
+	void Update(BossMeteorController& owner, float dt) override { owner.UpdateOutro(dt); }
+};
+
+BossMeteorController::BossMeteorController() = default;
+BossMeteorController::~BossMeteorController() = default;
+
 void BossMeteorController::Init() {
 
-	phase_ = Phase::kIdle;
+	state_.reset();
 	meteorModeTimer_ = 0.0f;
 	spawnTimer_ = 0.0f;
 	camLerp_ = 0.0f;
@@ -37,7 +79,7 @@ void BossMeteorController::Start() {
 	}
 
 	// まず警告フェーズへ
-	phase_ = Phase::kWarning;
+	ChangeState(std::make_unique<WarningState>());
 
 	meteorModeTimer_ = 0.0f;
 	spawnTimer_ = 0.0f;
@@ -52,24 +94,15 @@ void BossMeteorController::Start() {
 
 void BossMeteorController::Update(float dt) {
 
-	if (phase_ == Phase::kIdle) return;
+	if (!state_) return;
 	if (!camera_ || !player_) return;
 
-	switch (phase_) {
-	case Phase::kWarning:   UpdateWarning(dt);   break;
-	case Phase::kIntro:     UpdateIntro(dt);     break;
-	case Phase::kShower:    UpdateShower(dt);    break;
-	case Phase::kWaitClear: UpdateWaitClear(dt); break;
-	case Phase::kOutro:     UpdateOutro(dt);     break;
-	case Phase::kIdle:
-	default:
-		break;
-	}
+	state_->Update(*this, dt);
 }
 
 void BossMeteorController::Draw() {
 
-	if (phase_ == Phase::kWarning && warningSprite_ && warningVisible_) {
+	if (IsWarningState() && warningSprite_ && warningVisible_) {
 		warningSprite_->Draw();
 	}
 }
@@ -91,14 +124,13 @@ void BossMeteorController::UpdateWarning(float dt) {
 	// 2秒経過後に本来のメテオ導入へ
 	if (warningTimer_ >= warningDuration_) {
 		warningVisible_ = false;
-		phase_ = Phase::kIntro;
-		meteorModeTimer_ = 0.0f;
+		ChangeState(std::make_unique<IntroState>());
 	}
 }
 
 void BossMeteorController::ForceEnd() {
 
-	if (phase_ == Phase::kIdle) return;
+	if (!state_) return;
 	EndInternal();
 }
 
@@ -126,12 +158,10 @@ void BossMeteorController::SaveParamsToJson(const std::string& path)
 		if (!ifs.fail()) {
 			try {
 				ifs >> j;
-			}
-			catch (...) {
+			} catch (...) {
 				j = nlohmann::json::object();
 			}
-		}
-		else {
+		} else {
 			j = nlohmann::json::object();
 		}
 	}
@@ -159,10 +189,9 @@ void BossMeteorController::UpdateIntro(float dt) {
 	camera_->SetRotate(MyMath::Lerp(savedCamRot_, targetRot, camLerp_));
 
 	if (camLerp_ >= 1.0f) {
-		phase_ = Phase::kShower;
-		meteorModeTimer_ = 0.0f;
 		showerCamInited_ = false;
 		showerCamT_ = 0.0f;
+		ChangeState(std::make_unique<ShowerState>());
 	}
 }
 
@@ -197,8 +226,7 @@ void BossMeteorController::UpdateShower(float dt) {
 		if (t < 1.0f) {
 			camera_->SetTranslate(MyMath::Lerp(showerCamStartPos_, targetPos, ease));
 			camera_->SetRotate(MyMath::Lerp(showerCamStartRot_, targetRot, ease));
-		}
-		else {
+		} else {
 			const Vector3 curPos = camera_->GetTranaslate();
 			const Vector3 curRot = camera_->GetRotate();
 
@@ -258,16 +286,14 @@ void BossMeteorController::UpdateShower(float dt) {
 	}
 
 	if (!canSpawn) {
-		phase_ = Phase::kWaitClear;
-		clearWaitTimer_ = 0.0f;
+		ChangeState(std::make_unique<WaitClearState>());
 	}
 }
 
 void BossMeteorController::UpdateWaitClear(float dt) {
 
 	if (!meteors_) {
-		phase_ = Phase::kOutro;
-		meteorModeTimer_ = 0.0f;
+		ChangeState(std::make_unique<OutroState>());
 		camLerp_ = 0.0f;
 		return;
 	}
@@ -301,8 +327,7 @@ void BossMeteorController::UpdateWaitClear(float dt) {
 
 	clearWaitTimer_ += dt;
 	if (clearWaitTimer_ >= clearWaitDuration_) {
-		phase_ = Phase::kOutro;
-		meteorModeTimer_ = 0.0f;
+		ChangeState(std::make_unique<OutroState>());
 		camLerp_ = 0.0f;
 	}
 }
@@ -340,11 +365,23 @@ void BossMeteorController::EndInternal() {
 		boss_->OnMeteorFinished();
 	}
 
-	phase_ = Phase::kIdle;
+	state_.reset();
 	camLerp_ = 0.0f;
 	meteorModeTimer_ = 0.0f;
 	spawnTimer_ = 0.0f;
 
 	warningTimer_ = 0.0f;
 	warningVisible_ = false;
+}
+
+void BossMeteorController::ChangeState(std::unique_ptr<IMeteorPhaseState> nextState) {
+
+	state_ = std::move(nextState);
+	meteorModeTimer_ = 0.0f;
+	spawnTimer_ = 0.0f;
+	clearWaitTimer_ = 0.0f;
+}
+
+bool BossMeteorController::IsWarningState() const {
+	return state_ ? state_->IsWarning() : false;
 }

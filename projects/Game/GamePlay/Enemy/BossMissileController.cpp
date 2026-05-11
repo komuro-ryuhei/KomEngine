@@ -4,29 +4,40 @@
 #include "Game/Entity/Enemy/BossEnemy.h"
 #include "Game/Entity/Player/Player.h"
 #include "Engine/lib/Math/MyMath.h"
+#include <utility>
+
+class BossMissileController::IMissileState {
+public:
+	virtual ~IMissileState() = default;
+	virtual void Update(BossMissileController& owner, float dt) = 0;
+	virtual bool IsTelegraphing() const { return false; }
+};
+
+class BossMissileController::TelegraphState final : public IMissileState {
+public:
+	void Update(BossMissileController& owner, float dt) override { owner.UpdateTelegraph(dt); }
+	bool IsTelegraphing() const override { return true; }
+};
+
+class BossMissileController::LaunchState final : public IMissileState {
+public:
+	void Update(BossMissileController& owner, float dt) override { owner.UpdateLaunch(dt); }
+};
+
+BossMissileController::BossMissileController() = default;
+BossMissileController::~BossMissileController() = default;
 
 void BossMissileController::Init() {
 
-	phase_ = Phase::None;
+	state_.reset();
 	timer_ = 0.0f;
 	hitPlayer_ = false;
 }
 
 void BossMissileController::Update(float dt) {
 
-	if (phase_ == Phase::None) {
-		return;
-	}
-
-	switch (phase_) {
-	case Phase::Telegraph:
-		UpdateTelegraph(dt);
-		break;
-	case Phase::Launch:
-		UpdateLaunch(dt);
-		break;
-	default:
-		break;
+	if (state_) {
+		state_->Update(*this, dt);
 	}
 }
 
@@ -36,8 +47,7 @@ void BossMissileController::Start() {
 		return;
 	}
 
-	phase_ = Phase::Telegraph;
-	timer_ = 0.0f;
+	ChangeState(std::make_unique<TelegraphState>());
 	hitPlayer_ = false;
 
 	const Vector3 bossPos = boss_->GetTranslate();
@@ -66,7 +76,7 @@ void BossMissileController::ForceEnd() {
 		}
 	}
 
-	phase_ = Phase::None;
+	state_.reset();
 	timer_ = 0.0f;
 }
 
@@ -96,8 +106,7 @@ void BossMissileController::UpdateTelegraph(float dt) {
 	}
 
 	if (timer_ >= params_.telegraphTime) {
-		phase_ = Phase::Launch;
-		timer_ = 0.0f;
+		BeginLaunch();
 
 		const Vector3 playerPos = player_->GetTransform().translate;
 
@@ -165,6 +174,20 @@ void BossMissileController::UpdateLaunch(float dt) {
 	if (hitPlayer_ || aliveCount <= 0 || timer_ >= params_.launchTimeout) {
 		ForceEnd();
 	}
+}
+
+bool BossMissileController::IsTelegraphing() const {
+	return state_ ? state_->IsTelegraphing() : false;
+}
+
+void BossMissileController::ChangeState(std::unique_ptr<IMissileState> nextState) {
+
+	state_ = std::move(nextState);
+	timer_ = 0.0f;
+}
+
+void BossMissileController::BeginLaunch() {
+	ChangeState(std::make_unique<LaunchState>());
 }
 
 bool BossMissileController::GetTelegraphWorldPos(int index, Vector3& outPos) const {

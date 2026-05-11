@@ -66,8 +66,8 @@ class BossMeteorController {
 
 public:
 
-	BossMeteorController() = default;
-	~BossMeteorController() = default;
+	BossMeteorController();
+	~BossMeteorController();
 
 	void Init();
 
@@ -79,7 +79,7 @@ public:
 
 	void ForceEnd();
 
-	bool IsActive() const { return phase_ != Phase::kIdle; }
+	bool IsActive() const { return state_ != nullptr; }
 
 public:
 
@@ -100,15 +100,16 @@ public:
 
 private:
 
-	// 内部状態管理
-	enum class Phase {
-		kIdle,
-		kWarning,
-		kIntro,
-		kWaitClear,
-		kShower,
-		kOutro
-	};
+	// メテオ攻撃専用の State Pattern インターフェイス
+	class IMeteorPhaseState;
+	class WarningState;
+	class IntroState;
+	class ShowerState;
+	class WaitClearState;
+	class OutroState;
+
+	void ChangeState(std::unique_ptr<IMeteorPhaseState> nextState);
+	bool IsWarningState() const;
 
 	void UpdateWarning(float dt);
 	void UpdateIntro(float dt);
@@ -125,7 +126,7 @@ private:
 	BossEnemy* boss_ = nullptr;
 	std::vector<std::unique_ptr<BossMeteor>>* meteors_ = nullptr;
 
-	Phase phase_ = Phase::kIdle;
+	std::unique_ptr<IMeteorPhaseState> state_;
 
 	Vector3 savedCamPos_{};
 	Vector3 savedCamRot_{};

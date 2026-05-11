@@ -1,6 +1,7 @@
 #pragma once
 #include "Engine/Base/Collision/ICollisionObject.h"
 #include "Engine/lib/Math/MyMath.h"
+#include <memory>
 
 class BossRetreatAttack : public ICollisionObject {
 
@@ -20,8 +21,8 @@ public:
 		float minScaleY = 0.9f;
 	};
 
-	BossRetreatAttack() = default;
-	~BossRetreatAttack() override = default;
+	BossRetreatAttack();
+	~BossRetreatAttack() override;
 
 	void Init();
 
@@ -31,8 +32,8 @@ public:
 	void ForceEnd();
 	void RequestReturn();
 
-	bool IsActive() const { return phase_ != Phase::None; }
-	bool IsHolding() const { return phase_ == Phase::StayHold; }
+	bool IsActive() const { return state_ != nullptr; }
+	bool IsHolding() const;
 	bool ConsumeHoldEntered();
 	bool ConsumeFinished();
 
@@ -53,13 +54,18 @@ public:
 
 private:
 
-	enum class Phase {
-		None,
-		MoveOut,
-		StayUnflatten,
-		StayHold,
-		Return,
-	};
+	class IRetreatState;
+	class MoveOutState;
+	class StayUnflattenState;
+	class StayHoldState;
+	class ReturnState;
+
+	void ChangeState(std::unique_ptr<IRetreatState> nextState);
+	void FinishReturn();
+	void UpdateMoveOut(float dt);
+	void UpdateStayUnflatten(float dt);
+	void UpdateStayHold(float dt);
+	void UpdateReturn(float dt);
 
 	void ApplyScaleFactor(float factorXZ, float factorY);
 
@@ -67,7 +73,8 @@ private:
 
 	Params params_{};
 
-	Phase phase_ = Phase::None;
+	std::unique_ptr<IRetreatState> state_;
+
 	float timer_ = 0.0f;
 
 	Vector3 startPos_{};
