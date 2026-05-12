@@ -695,7 +695,6 @@ void BossTestScene::Draw() {
 	}
 
 	// 
-	controlGuideSprite_->Draw();
 	// controlGuideSprite2_->Draw();
 
 	if (player_ && player_->IsCharging()) {
