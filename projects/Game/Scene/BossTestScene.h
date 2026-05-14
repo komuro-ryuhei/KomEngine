@@ -110,6 +110,36 @@ public:
 
 
 private:
+
+	// StatePatternでシーンの状態管理
+	class SceneState {
+	public:
+		virtual ~SceneState() = default;
+
+		virtual void Enter(BossTestScene&) {}
+		virtual void Update(BossTestScene& scene, float dt) = 0;
+		virtual void Exit(BossTestScene&) {}
+
+		virtual const char* GetName() const = 0;
+	};
+
+	class FadeInState;
+	class IntroState;
+	class PlayState;
+	class FadeOutState;
+
+	std::unique_ptr<SceneState> state_ = nullptr;
+
+	void ChangeState(std::unique_ptr<SceneState> nextState);
+
+	void ChangeToFadeIn();
+	void ChangeToIntro();
+	void ChangeToPlay();
+	void ChangeToFadeOut();
+
+		// 既存の Update() の Play 中処理を移す用
+		void UpdatePlay(float dt);
+
 	// Camera
 	std::unique_ptr<Camera> camera_ = nullptr;
 	// 
@@ -213,13 +243,9 @@ private:
 	// Cameraをプレイヤーに追従させるかのフラグ
 	bool isCameraFollowPlayer_ = true;
 
-	// フェード
-	// std::unique_ptr<Fade> fade_ = nullptr;
-	enum class Phase { kFadeIn, kMain, kFadeOut };
-	Phase phase_ = Phase::kFadeIn;
-
-	enum class GameFlowState { Intro, Play };
-	GameFlowState flowState_ = GameFlowState::Intro;
+	// StatePattern用フラグ
+	bool introFinished_ = false;
+	bool fadeOutRequested_ = false;
 
 	// シーン終了理由
 	enum class EndReason {
@@ -229,6 +255,8 @@ private:
 		GoTitle,
 	};
 	EndReason endReason_ = EndReason::None;
+
+	void RequestFadeOut(EndReason reason);
 
 private:
 
@@ -294,7 +322,7 @@ private:
 	float landingWaitTime_ = 0.35f;
 
 	bool collisionEnabled_ = false;
-	
+
 	// カメラ追従の強さ（0.0f なら即座にプレイヤー位置、1.0f なら追従なし）
 	float cameraPosLerp_ = 0.10f;
 	float cameraRotLerp_ = 0.15f;

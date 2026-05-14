@@ -9,14 +9,136 @@
 #include <memory>
 #include <vector>
 
-void BossTestScene::Init() {
+class BossTestScene::FadeInState : public BossTestScene::SceneState {
 
-	const std::string& uvTexture = "./Resources/images/uvChecker.png";
-	const std::string& circle = "./Resources/images/circle.png";
-	const std::string& circle2 = "./Resources/images/circle2.png";
-	const std::string& monsterBallTexture = "./Resources/images/monsterBall.png";
-	const std::string& ring = "./Resources/images/gradationLine.png";
-	const std::string& moonLight = "./Resources/images/moonLight.png";
+public:
+
+	void Enter(BossTestScene& scene) override {
+		scene.fadeOutRequested_ = false;
+		scene.introFinished_ = false;
+	}
+
+	void Update(BossTestScene& scene, float dt) override {
+		(void)dt;
+
+		scene.InitIntro();
+		scene.ChangeToIntro();
+	}
+
+	const char* GetName() const override {
+		return "FadeInState";
+	}
+};
+
+class BossTestScene::IntroState : public BossTestScene::SceneState {
+
+public:
+
+	void Enter(BossTestScene& scene) override {
+		scene.introFinished_ = false;
+	}
+
+	void Update(BossTestScene& scene, float dt) override {
+
+		scene.UpdateIntro(dt);
+
+		// 見た目の更新だけはやっておく
+		if (scene.camera_) {
+			scene.camera_->Update();
+		}
+
+		if (scene.skybox_) {
+			scene.skybox_->Update();
+		}
+
+		if (scene.glassObject_) {
+			scene.glassObject_->Update();
+		}
+
+		if (scene.player_) {
+			scene.player_->Update();
+		}
+
+		if (scene.boss_) {
+			scene.boss_->Update();
+		}
+
+		scene.ImGuiDebug();
+
+		// BeginPlay() が呼ばれると introFinished_ が true になる
+		if (scene.introFinished_) {
+			scene.ChangeToPlay();
+		}
+	}
+
+	const char* GetName() const override {
+		return "IntroState";
+	}
+};
+
+class BossTestScene::PlayState : public BossTestScene::SceneState {
+
+public:
+
+	void Enter(BossTestScene& scene) override {
+		scene.fadeOutRequested_ = false;
+	}
+
+	void Update(BossTestScene& scene, float dt) override {
+
+		scene.UpdatePlay(dt);
+
+		// UpdatePlay 内でフェードアウト要求が出たら State を切り替える
+		if (scene.fadeOutRequested_) {
+			scene.ChangeToFadeOut();
+		}
+	}
+
+	const char* GetName() const override {
+		return "PlayState";
+	}
+};
+
+class BossTestScene::FadeOutState : public BossTestScene::SceneState {
+
+public:
+
+	void Enter(BossTestScene& scene) override {
+		scene.fadeOutRequested_ = false;
+	}
+
+	void Update(BossTestScene& scene, float dt) override {
+		(void)dt;
+
+		if (scene.endReason_ == EndReason::BossDeath || scene.endReason_ == EndReason::GoTitle) {
+			scene.sceneManager_->ChangeScene("TITLE");
+		} else if (scene.endReason_ == EndReason::PlayerDeath) {
+			scene.sceneManager_->ChangeScene("GAMEOVER");
+		}
+	}
+
+	const char* GetName() const override {
+		return "FadeOutState";
+	}
+};
+
+void BossTestScene::ChangeToFadeIn() {
+	ChangeState(std::unique_ptr<SceneState>(new FadeInState()));
+}
+
+void BossTestScene::ChangeToIntro() {
+	ChangeState(std::unique_ptr<SceneState>(new IntroState()));
+}
+
+void BossTestScene::ChangeToPlay() {
+	ChangeState(std::unique_ptr<SceneState>(new PlayState()));
+}
+
+void BossTestScene::ChangeToFadeOut() {
+	ChangeState(std::unique_ptr<SceneState>(new FadeOutState()));
+}
+
+void BossTestScene::Init() {
 
 	// カメラ
 	camera_ = std::make_unique<Camera>();
@@ -41,8 +163,6 @@ void BossTestScene::Init() {
 	glassObject_->SetTranslate({ 0.0f, -5.0f, 0.0f });
 	glassObject_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 
-	// --- フェード初期化（画面サイズは 1280x720）--- //
-	phase_ = Phase::kFadeIn;
 
 	// Player
 	player_ = std::make_unique<Player>();
@@ -112,9 +232,9 @@ void BossTestScene::Init() {
 	}
 
 	// メテオを CollisionManager に登録
-	for (auto& m : meteors_) {
-		// collisionManager_.Register(m.get());
-	}
+	//for (auto& m : meteors_) {
+	//	// collisionManager_.Register(m.get());
+	//}
 
 	// ボスのミサイル
 	missiles_.clear();
@@ -127,9 +247,9 @@ void BossTestScene::Init() {
 	}
 
 	// ミサイルを CollisionManager に登録
-	for (auto& m : missiles_) {
-		// collisionManager_.Register(m.get());
-	}
+	//for (auto& m : missiles_) {
+	//	// collisionManager_.Register(m.get());
+	//}
 
 	// ボスの攻撃管理
 	attackManager_ = std::make_unique<BossAttackManager>();
@@ -206,18 +326,18 @@ void BossTestScene::Init() {
 	auto* pm = KomEngine::System::GetParticleManager();
 	pm->Init(BlendType::BLEND_ADD);
 
-	pm->CreateParticleGeoup("hit", circle2, "a");
-	pm->CreateParticleGeoup("explosion", circle2, "a");
-	pm->CreateParticleGeoup("ring", ring, "ring");
-	pm->CreateParticleGeoup("cylinder", ring, "cylinder");
-	pm->CreateParticleGeoup("moonLight", moonLight, "moonLight");
-	pm->CreateParticleGeoup("ribbon", moonLight, "ribbon");
+	pm->CreateParticleGeoup("hit", "./Resources/images/circle2.png", "a");
+	pm->CreateParticleGeoup("explosion", "./Resources/images/circle2.png", "a");
+	pm->CreateParticleGeoup("ring", "./Resources/images/gradationLine.png", "ring");
+	pm->CreateParticleGeoup("cylinder", "./Resources/images/gradationLine.png", "cylinder");
+	pm->CreateParticleGeoup("moonLight", "./Resources/images/moonLight.png", "moonLight");
+	pm->CreateParticleGeoup("ribbon", "./Resources/images/moonLight.png", "ribbon");
 	pm->CreateParticleGeoup("dust", "./Resources/images/dust.png", "a");
-	pm->CreateParticleGeoup("muzzle", circle2, "a");
+	pm->CreateParticleGeoup("muzzle", "./Resources/images/circle2.png", "a");
 	pm->CreateParticleGeoup("trail", "./Resources/images/circle.png", "a");
 	pm->CreateParticleGeoup("charge_core", "./Resources/images/circle2.png", "a");
-	pm->CreateParticleGeoup("charge_pulse", ring, "ring");
-	pm->CreateParticleGeoup("charge_pulse", ring, "a");
+	pm->CreateParticleGeoup("charge_pulse", "./Resources/images/gradationLine.png", "ring");
+	pm->CreateParticleGeoup("charge_pulse", "./Resources/images/gradationLine.png", "a");
 	pm->CreateParticleGeoup("player_charge_line", "./Resources/images/streak.png", "a");
 	pm->CreateParticleGeoup("charge_aura", "./Resources/images/circle2.png", "a");
 	pm->CreateParticleGeoup("missile_flame", "./Resources/images/circle2.png", "a");
@@ -268,6 +388,8 @@ void BossTestScene::Init() {
 	particleEditor_.SetEnabled(false);
 	showParticleEditor_ = false;
 
+	ChangeToFadeIn();
+
 	// KomEngine::System::GetOffscreenRendering()->SetPostEffect("Bloom");
 }
 
@@ -277,382 +399,9 @@ void BossTestScene::Update() {
 
 	markerAnimTimer_ += dt;
 
-	if (phase_ == Phase::kFadeIn) {
-		phase_ = Phase::kMain;
-		InitIntro();
-		return;
+	if (state_) {
+		state_->Update(*this, dt);
 	}
-
-	if (flowState_ == GameFlowState::Intro) {
-		UpdateIntro(dt);
-
-		// 見た目の更新だけはやっておく
-		camera_->Update();
-		skybox_->Update();
-
-		if (glassObject_) {
-			glassObject_->Update();
-		}
-
-		player_->Update();
-		boss_->Update(); // combatEnabled_ が false なら攻撃しない
-		ImGuiDebug();
-		return;
-	}
-
-	// ---------------- Pause (Play中だけ) ---------------- //
-	const bool canPause =
-		(phase_ == Phase::kMain) &&
-		(flowState_ == GameFlowState::Play) &&
-		!(result_ && result_->IsSlideFinished());
-
-	// Pキーでポーズメニューの表示
-	if (canPause && KomEngine::System::TriggerKey(DIK_ESCAPE) && pauseMenu_) {
-		pauseMenu_->Toggle();
-	}
-
-	if (pauseMenu_->IsPaused()) {
-		KomEngine::System::GetInput()->SetMouseCenterLock(false);
-	}
-
-	if (pauseMenu_ && pauseMenu_->IsPaused()) {
-
-		const auto r = pauseMenu_->Update(dt);
-
-		if (r == PauseMenu::Result::Resume) {
-			pauseMenu_->SetPaused(false);
-		}
-		else if (r == PauseMenu::Result::GoTitle) {
-
-			// ポーズ解除
-			pauseMenu_->SetPaused(false);
-			KomEngine::System::GetInput()->SetMouseCenterLock(true);
-
-			// フェードアウト開始
-			phase_ = Phase::kFadeOut;
-			endReason_ = EndReason::GoTitle;
-
-			return;
-		}
-
-		ImGuiDebug(); // ポーズ中もデバッグは出す
-		return;
-	}
-	// ---------------------------------------------------
-
-	UpdateMeteorControl();
-
-	// プレイヤー死亡処理
-	UpdatePlayerDeath(dt);
-
-	UpdateCamera(dt);
-
-	// デバッグ：Tで全攻撃停止ON/OFF
-	if (KomEngine::System::GetInput()->PushKey(DIK_T)) {
-		if (attackManager_) {
-			const bool next = !attackManager_->IsDebugPauseAllAttacks();
-			attackManager_->SetDebugPauseAllAttacks(next);
-		}
-	}
-
-	// デバッグ：Cで他攻撃を全部キャンセルしてチャージだけ開始
-	if (KomEngine::System::GetInput()->PushKey(DIK_C)) {
-		if (attackManager_ && boss_) {
-
-			bool targetLeft = !boss_->IsLeftArmBroken();
-			if (boss_->IsLeftArmBroken() && !boss_->IsRightArmBroken()) {
-				targetLeft = false;
-			}
-
-			attackManager_->RequestDebugChargeAttack(targetLeft);
-		}
-	}
-
-	// ----------------------- ゲームオブジェクトの更新 ----------------------- //
-
-	BossAttackManager::UpdateFlags f{};
-	f.koActive = koActive_;
-
-	// キラーン中 / 開始待ち中は攻撃を進めない
-	const bool bossAlive = (boss_ && boss_->GetHP() > 0);
-	const bool canStartBattle =
-		(flowState_ == GameFlowState::Play) &&
-		(!playStartPending_) &&
-		(!bossIntroGlintActive_);
-
-	f.isMainPhase =
-		(phase_ == Phase::kMain) &&
-		bossAlive &&
-		(endReason_ == EndReason::None) &&
-		canStartBattle;
-
-	f.isCameraFollowPlayer = isCameraFollowPlayer_;
-
-	if (attackManager_) {
-		attackManager_->Update(dt, f);
-	}
-
-	// ターゲットシェイク時間更新
-	if (leftTargetShakeTime_ > 0.0f) {
-		leftTargetShakeTime_ -= dt;
-		if (leftTargetShakeTime_ < 0.0f) leftTargetShakeTime_ = 0.0f;
-	}
-	if (rightTargetShakeTime_ > 0.0f) {
-		rightTargetShakeTime_ -= dt;
-		if (rightTargetShakeTime_ < 0.0f) rightTargetShakeTime_ = 0.0f;
-	}
-
-	// カメラの更新
-	camera_->Update();
-	// Skyboxの更新
-	skybox_->Update();
-	// 地面オブジェクトの更新
-	glassObject_->Update();
-
-	// ライン側でカメラ行列更新
-	debugLine_.Update();
-
-	// 
-	LineTarget();
-
-	// Playerの銃の更新
-	UpdateGun();
-	// Playerの更新()
-	player_->Update();
-	// PlayerのHP表示更新
-	for (auto& h : hpHearts_) {
-		if (h) { h->Update(); }
-	}
-
-	// ボス
-	boss_->Update();
-
-	// ボスのメテオ攻撃用
-	for (auto& m : meteors_) {
-		m->Update();
-	}
-
-	for (auto& m : missiles_) {
-		m->Update();
-	}
-
-	// 
-	controlGuideSprite_->Update();
-	controlGuideSprite2_->Update();
-
-	// -----------------------------
-	// チャージ説明用ゲージ更新
-	// -----------------------------
-	bool isPlayerCharging = (player_ && player_->IsCharging());
-
-	float chargeT = player_ ? player_->GetChargeRatio() : 0.0f;
-	chargeT = std::clamp(chargeT, 0.0f, 1.0f);
-
-	// ImGui表示用
-	chargeGaugeTimer_ = chargeT * chargeGaugeMaxTime_;
-
-	// チャージ中だけマウスの下へ移動
-	if (isPlayerCharging) {
-		POINT pt;
-		GetCursorPos(&pt);
-
-		HWND hwnd = KomEngine::System::GetWinApp()->GetHwnd();
-		ScreenToClient(hwnd, &pt);
-
-		chargeGaugePos_.x = static_cast<float>(pt.x) + chargeGaugeMouseOffset_.x;
-		chargeGaugePos_.y = static_cast<float>(pt.y) + chargeGaugeMouseOffset_.y;
-
-		// 画面外にはみ出しにくくする
-		chargeGaugePos_.x = std::clamp(chargeGaugePos_.x, 100.0f, 1180.0f);
-		chargeGaugePos_.y = std::clamp(chargeGaugePos_.y, 40.0f, 680.0f);
-	}
-
-	if (chargeGaugeFillSpr_) {
-		chargeGaugeFillSpr_->SetSize({
-			chargeGaugeFillBaseSize_.x * chargeT,
-			chargeGaugeFillBaseSize_.y
-			});
-
-		chargeGaugeFillSpr_->SetPosition({
-			chargeGaugePos_.x + chargeGaugeFillOffset_.x,
-			chargeGaugePos_.y + chargeGaugeFillOffset_.y
-			});
-
-		float alpha = isPlayerCharging ? 1.0f : 0.0f;
-		chargeGaugeFillSpr_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
-		chargeGaugeFillSpr_->Update();
-	}
-
-	if (chargeGaugeFrameSpr_) {
-		chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
-		chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
-
-		float alpha = isPlayerCharging ? 1.0f : 0.0f;
-		chargeGaugeFrameSpr_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
-		chargeGaugeFrameSpr_->Update();
-	}
-
-	// 左クリック説明用の赤オーバーレイ
-	if (leftClickOverlaySpr_) {
-		leftClickOverlaySpr_->SetPosition({
-			controlGuide1Pos_.x + leftClickOverlayOffset_.x,
-			controlGuide1Pos_.y + leftClickOverlayOffset_.y
-			});
-		leftClickOverlaySpr_->SetSize(leftClickOverlaySize_);
-
-		// Player::Attack と同じく PushMouse(1) を左クリック扱いに合わせる
-		const bool isLeftClickDown = KomEngine::System::GetInput()->PushMouse(0);
-
-		leftClickOverlaySpr_->SetColor({
-			1.0f,
-			1.0f,
-			1.0f,
-			isLeftClickDown ? 1.0f : 0.0f
-			});
-		leftClickOverlaySpr_->Update();
-	}
-
-	toPauseSpr_->Update();
-
-	// -----------------------------
-	// 操作説明UIレイアウト反映
-	// -----------------------------
-	if (controlGuideSprite_) {
-		controlGuideSprite_->SetPosition(controlGuide1Pos_);
-		controlGuideSprite_->SetSize(controlGuide1Size_);
-	}
-
-	if (controlGuideSprite2_) {
-		controlGuideSprite2_->SetPosition(controlGuide2Pos_);
-		controlGuideSprite2_->SetSize(controlGuide2Size_);
-	}
-
-	if (toPauseSpr_) {
-		toPauseSpr_->SetPosition(toPausePos_);
-		toPauseSpr_->SetSize(toPauseSize_);
-	}
-
-	if (chargeGaugeFrameSpr_) {
-		chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
-		chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
-	}
-
-	UpdateBossIntroGlint(dt);
-
-	UpdateClearSequence(dt);
-
-	// リザルトスプライトの更新
-	result_->Update();
-
-	// 当たり判定
-	if (collisionEnabled_) {
-		collisionManager_.Update();
-	}
-
-	// 狙う弱点マーカーの更新
-	UpdateArmTargetMarker();
-	UpdateMissileTelegraphMarkers();
-
-	leftTargetOuter_->Update();
-	leftTargetInner_->Update();
-	rightTargetOuter_->Update();
-	rightTargetInner_->Update();
-
-	for (auto& sp : missileTelegraphMarkers_) {
-		if (sp) { sp->Update(); }
-	}
-
-	// ボス怒り状態チェック
-	if (boss_ && !boss_->IsEnraged()) {
-		int hp = boss_->GetHP();
-		int maxHp = boss_->GetMaxHp();
-
-		if (maxHp > 0 && hp <= maxHp / 2) {
-			boss_->SetEnraged(true);
-
-			if (attackManager_) {
-				attackManager_->StartEnragePause(2.5f);
-			}
-
-			if (skybox_) {
-				skybox_->SetColor({ 1.0f, 0.3f, 0.3f, 1.0f });
-			}
-		}
-	}
-
-	// パーティクルの更新処理
-	KomEngine::System::GetParticleManager()->Update();
-
-	// ポストエフェクトの変更
-	ChangePostEffect();
-
-	// -------------------------------------------------------------------- //
-
-	switch (phase_) {
-
-	case Phase::kFadeIn:
-		phase_ = Phase::kMain;
-		break;
-
-	case Phase::kMain:
-
-		if (KomEngine::System::PushKey(DIK_T)) {
-			phase_ = Phase::kFadeOut;
-		}
-
-		// ボスが死んでいて、着地済みならクリア演出開始
-		if (boss_
-			&& boss_->GetHP() <= 0
-			&& boss_->HasLanded()
-			&& endReason_ == EndReason::None) {
-
-			if (player_) {
-				player_->SetCanShoot(false);
-				player_->SetControlEnabled(false);
-			}
-
-			if (!clearSequenceStarted_) {
-				StartClearSequence();
-			}
-		}
-		else {
-			bossDeathTimer_ = 0.0f;
-		}
-
-		// ResultImage が演出完了したら SPACE / ENTER でフェードアウト開始
-		if (result_ && result_->IsSlideFinished()) {
-			if (KomEngine::System::TriggerKey(DIK_SPACE) || KomEngine::System::TriggerKey(DIK_RETURN)) {
-				phase_ = Phase::kFadeOut;
-				endReason_ = EndReason::BossDeath;
-				return;
-			}
-		}
-
-		break;
-
-	case Phase::kFadeOut:
-
-		if (endReason_ == EndReason::BossDeath || endReason_ == EndReason::GoTitle) {
-			sceneManager_->ChangeScene("TITLE");
-		}
-		else if (endReason_ == EndReason::PlayerDeath) {
-			sceneManager_->ChangeScene("GAMEOVER");
-		}
-		break;
-	}
-
-#ifdef USE_IMGUI
-	if (KomEngine::System::TriggerKey(DIK_F10)) {
-		showParticleEditor_ = !showParticleEditor_;
-		particleEditor_.SetEnabled(showParticleEditor_);
-	}
-
-	if (showParticleEditor_) {
-		particleEditor_.Update();
-	}
-#endif
-
-	ImGuiDebug();
 }
 
 void BossTestScene::Draw() {
@@ -833,6 +582,349 @@ void BossTestScene::ImGuiDebug() {
 #endif // _DEBUG
 }
 
+void BossTestScene::ChangeState(std::unique_ptr<SceneState> nextState) {
+
+	if (state_) {
+		state_->Exit(*this);
+	}
+
+	state_ = std::move(nextState);
+
+	if (state_) {
+		state_->Enter(*this);
+	}
+}
+
+void BossTestScene::RequestFadeOut(EndReason reason) {
+
+	if (endReason_ == EndReason::None) {
+		endReason_ = reason;
+	}
+
+	fadeOutRequested_ = true;
+}
+
+
+void BossTestScene::UpdatePlay(float dt) {
+
+	// ---------------- Pause (Play中だけ) ---------------- //
+	const bool canPause = !(result_ && result_->IsSlideFinished());
+
+	if (canPause && KomEngine::System::TriggerKey(DIK_ESCAPE) && pauseMenu_) {
+		pauseMenu_->Toggle();
+	}
+
+	if (pauseMenu_ && pauseMenu_->IsPaused()) {
+		KomEngine::System::GetInput()->SetMouseCenterLock(false);
+	}
+
+	if (pauseMenu_ && pauseMenu_->IsPaused()) {
+
+		const auto r = pauseMenu_->Update(dt);
+
+		if (r == PauseMenu::Result::Resume) {
+			pauseMenu_->SetPaused(false);
+		} else if (r == PauseMenu::Result::GoTitle) {
+
+			pauseMenu_->SetPaused(false);
+			KomEngine::System::GetInput()->SetMouseCenterLock(true);
+
+			RequestFadeOut(EndReason::GoTitle);
+
+			return;
+		}
+
+		ImGuiDebug();
+		return;
+	}
+
+	UpdateMeteorControl();
+
+	UpdatePlayerDeath(dt);
+
+	UpdateCamera(dt);
+
+	if (KomEngine::System::GetInput()->PushKey(DIK_T)) {
+		if (attackManager_) {
+			const bool next = !attackManager_->IsDebugPauseAllAttacks();
+			attackManager_->SetDebugPauseAllAttacks(next);
+		}
+	}
+
+	if (KomEngine::System::GetInput()->PushKey(DIK_C)) {
+		if (attackManager_ && boss_) {
+
+			bool targetLeft = !boss_->IsLeftArmBroken();
+			if (boss_->IsLeftArmBroken() && !boss_->IsRightArmBroken()) {
+				targetLeft = false;
+			}
+
+			attackManager_->RequestDebugChargeAttack(targetLeft);
+		}
+	}
+
+	BossAttackManager::UpdateFlags f{};
+	f.koActive = koActive_;
+
+	const bool bossAlive = (boss_ && boss_->GetHP() > 0);
+	const bool canStartBattle =
+		(!playStartPending_) &&
+		(!bossIntroGlintActive_);
+
+	f.isMainPhase =
+		bossAlive &&
+		(endReason_ == EndReason::None) &&
+		canStartBattle;
+
+	f.isCameraFollowPlayer = isCameraFollowPlayer_;
+
+	if (attackManager_) {
+		attackManager_->Update(dt, f);
+	}
+
+	if (leftTargetShakeTime_ > 0.0f) {
+		leftTargetShakeTime_ -= dt;
+		if (leftTargetShakeTime_ < 0.0f) leftTargetShakeTime_ = 0.0f;
+	}
+
+	if (rightTargetShakeTime_ > 0.0f) {
+		rightTargetShakeTime_ -= dt;
+		if (rightTargetShakeTime_ < 0.0f) rightTargetShakeTime_ = 0.0f;
+	}
+
+	if (camera_) {
+		camera_->Update();
+	}
+
+	if (skybox_) {
+		skybox_->Update();
+	}
+
+	if (glassObject_) {
+		glassObject_->Update();
+	}
+
+	debugLine_.Update();
+
+	LineTarget();
+
+	UpdateGun();
+
+	if (player_) {
+		player_->Update();
+	}
+
+	for (auto& h : hpHearts_) {
+		if (h) {
+			h->Update();
+		}
+	}
+
+	if (boss_) {
+		boss_->Update();
+	}
+
+	for (auto& m : meteors_) {
+		if (m) {
+			m->Update();
+		}
+	}
+
+	for (auto& m : missiles_) {
+		if (m) {
+			m->Update();
+		}
+	}
+
+	if (controlGuideSprite_) {
+		controlGuideSprite_->Update();
+	}
+
+	if (controlGuideSprite2_) {
+		controlGuideSprite2_->Update();
+	}
+
+	// -----------------------------
+	// チャージ説明用ゲージ更新
+	// -----------------------------
+	bool isPlayerCharging = (player_ && player_->IsCharging());
+
+	float chargeT = player_ ? player_->GetChargeRatio() : 0.0f;
+	chargeT = std::clamp(chargeT, 0.0f, 1.0f);
+
+	chargeGaugeTimer_ = chargeT * chargeGaugeMaxTime_;
+
+	if (isPlayerCharging) {
+		POINT pt;
+		GetCursorPos(&pt);
+
+		HWND hwnd = KomEngine::System::GetWinApp()->GetHwnd();
+		ScreenToClient(hwnd, &pt);
+
+		chargeGaugePos_.x = static_cast<float>(pt.x) + chargeGaugeMouseOffset_.x;
+		chargeGaugePos_.y = static_cast<float>(pt.y) + chargeGaugeMouseOffset_.y;
+
+		chargeGaugePos_.x = std::clamp(chargeGaugePos_.x, 100.0f, 1180.0f);
+		chargeGaugePos_.y = std::clamp(chargeGaugePos_.y, 40.0f, 680.0f);
+	}
+
+	if (chargeGaugeFillSpr_) {
+		chargeGaugeFillSpr_->SetSize({
+			chargeGaugeFillBaseSize_.x * chargeT,
+			chargeGaugeFillBaseSize_.y
+			});
+
+		chargeGaugeFillSpr_->SetPosition({
+			chargeGaugePos_.x + chargeGaugeFillOffset_.x,
+			chargeGaugePos_.y + chargeGaugeFillOffset_.y
+			});
+
+		float alpha = isPlayerCharging ? 1.0f : 0.0f;
+		chargeGaugeFillSpr_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+		chargeGaugeFillSpr_->Update();
+	}
+
+	if (chargeGaugeFrameSpr_) {
+		chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
+		chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
+
+		float alpha = isPlayerCharging ? 1.0f : 0.0f;
+		chargeGaugeFrameSpr_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+		chargeGaugeFrameSpr_->Update();
+	}
+
+	if (leftClickOverlaySpr_) {
+		leftClickOverlaySpr_->SetPosition({
+			controlGuide1Pos_.x + leftClickOverlayOffset_.x,
+			controlGuide1Pos_.y + leftClickOverlayOffset_.y
+			});
+		leftClickOverlaySpr_->SetSize(leftClickOverlaySize_);
+
+		const bool isLeftClickDown = KomEngine::System::GetInput()->PushMouse(0);
+
+		leftClickOverlaySpr_->SetColor({
+			1.0f,
+			1.0f,
+			1.0f,
+			isLeftClickDown ? 1.0f : 0.0f
+			});
+
+		leftClickOverlaySpr_->Update();
+	}
+
+	if (toPauseSpr_) {
+		toPauseSpr_->Update();
+	}
+
+	if (controlGuideSprite_) {
+		controlGuideSprite_->SetPosition(controlGuide1Pos_);
+		controlGuideSprite_->SetSize(controlGuide1Size_);
+	}
+
+	if (controlGuideSprite2_) {
+		controlGuideSprite2_->SetPosition(controlGuide2Pos_);
+		controlGuideSprite2_->SetSize(controlGuide2Size_);
+	}
+
+	if (toPauseSpr_) {
+		toPauseSpr_->SetPosition(toPausePos_);
+		toPauseSpr_->SetSize(toPauseSize_);
+	}
+
+	if (chargeGaugeFrameSpr_) {
+		chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
+		chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
+	}
+
+	UpdateBossIntroGlint(dt);
+
+	UpdateClearSequence(dt);
+
+	if (result_) {
+		result_->Update();
+	}
+
+	if (collisionEnabled_) {
+		collisionManager_.Update();
+	}
+
+	UpdateArmTargetMarker();
+	UpdateMissileTelegraphMarkers();
+
+	if (leftTargetOuter_) leftTargetOuter_->Update();
+	if (leftTargetInner_) leftTargetInner_->Update();
+	if (rightTargetOuter_) rightTargetOuter_->Update();
+	if (rightTargetInner_) rightTargetInner_->Update();
+
+	for (auto& sp : missileTelegraphMarkers_) {
+		if (sp) {
+			sp->Update();
+		}
+	}
+
+	if (boss_ && !boss_->IsEnraged()) {
+		int hp = boss_->GetHP();
+		int maxHp = boss_->GetMaxHp();
+
+		if (maxHp > 0 && hp <= maxHp / 2) {
+			boss_->SetEnraged(true);
+
+			if (attackManager_) {
+				attackManager_->StartEnragePause(2.5f);
+			}
+
+			if (skybox_) {
+				skybox_->SetColor({ 1.0f, 0.3f, 0.3f, 1.0f });
+			}
+		}
+	}
+
+	KomEngine::System::GetParticleManager()->Update();
+
+	ChangePostEffect();
+
+	// -----------------------------
+	// PlayState 固有の終了判定
+	// -----------------------------
+
+	if (boss_
+		&& boss_->GetHP() <= 0
+		&& boss_->HasLanded()
+		&& endReason_ == EndReason::None) {
+
+		if (player_) {
+			player_->SetCanShoot(false);
+			player_->SetControlEnabled(false);
+		}
+
+		if (!clearSequenceStarted_) {
+			StartClearSequence();
+		}
+	} else {
+		bossDeathTimer_ = 0.0f;
+	}
+
+	if (result_ && result_->IsSlideFinished()) {
+		if (KomEngine::System::TriggerKey(DIK_SPACE) || KomEngine::System::TriggerKey(DIK_RETURN)) {
+			RequestFadeOut(EndReason::BossDeath);
+			return;
+		}
+	}
+
+#ifdef USE_IMGUI
+	if (KomEngine::System::TriggerKey(DIK_F10)) {
+		showParticleEditor_ = !showParticleEditor_;
+		particleEditor_.SetEnabled(showParticleEditor_);
+	}
+
+	if (showParticleEditor_) {
+		particleEditor_.Update();
+	}
+#endif
+
+	ImGuiDebug();
+}
+
 void BossTestScene::UpdateCamera(float dt) {
 
 	if (koActive_) {
@@ -873,8 +965,7 @@ void BossTestScene::UpdateCamera(float dt) {
 	if (focusBoss) {
 		// 退避中などは従来通りボスを向く
 		targetRot = CalcLookAtRotation(newCamPos, boss_->GetCameraFocusPos());
-	}
-	else if (isCameraFollowPlayer_) {
+	} else if (isCameraFollowPlayer_) {
 		// 通常はプレイヤー向き
 		targetRot = player_->GetTransform().rotate;
 	}
@@ -888,8 +979,7 @@ void BossTestScene::UpdateCamera(float dt) {
 		if (chargeLookBlend_ > 1.0f) {
 			chargeLookBlend_ = 1.0f;
 		}
-	}
-	else {
+	} else {
 		chargeLookActive_ = false;
 		chargeLookBlend_ -= dt * chargeLookOutSpeed_;
 		if (chargeLookBlend_ < 0.0f) {
@@ -928,8 +1018,7 @@ void BossTestScene::ChangePostEffect() {
 		if (nowLow && !lowHpVfxOn_) {
 			offscreen->SetPostEffect("Vignetting");
 			lowHpVfxOn_ = true;
-		}
-		else if (!nowLow && lowHpVfxOn_) {
+		} else if (!nowLow && lowHpVfxOn_) {
 			// 低HPを脱したら元に戻す
 			offscreen->SetPostEffect("none");
 			lowHpVfxOn_ = false;
@@ -1040,10 +1129,7 @@ void BossTestScene::UpdatePlayerDeath(float dt) {
 		if (ko_.IsDone()) {
 			koFrozen_ = true;
 
-			phase_ = Phase::kFadeOut;
-			if (endReason_ == EndReason::None) {
-				endReason_ = EndReason::PlayerDeath;
-			}
+			RequestFadeOut(EndReason::PlayerDeath);
 		}
 	}
 }
@@ -1099,8 +1185,7 @@ void BossTestScene::UpdateMeteorControl() {
 
 void BossTestScene::InitIntro() {
 
-	// ゲームフロー状態を Intro に
-	flowState_ = GameFlowState::Intro;
+	introFinished_ = false;
 
 	// ゲーム処理停止
 	collisionEnabled_ = false;
@@ -1261,8 +1346,7 @@ void BossTestScene::UpdateArmTargetMarker() {
 			leftTargetOuter_->SetColor({ 1,1,1,1 });
 			leftTargetInner_->SetColor({ 1,1,1,1 });
 		}
-	}
-	else {
+	} else {
 		leftTargetOuter_->SetColor({ 1,1,1,0 });
 		leftTargetInner_->SetColor({ 1,1,1,0 });
 	}
@@ -1299,8 +1383,7 @@ void BossTestScene::UpdateArmTargetMarker() {
 			rightTargetOuter_->SetColor({ 1,1,1,1 });
 			rightTargetInner_->SetColor({ 1,1,1,1 });
 		}
-	}
-	else {
+	} else {
 		rightTargetOuter_->SetColor({ 1,1,1,0 });
 		rightTargetInner_->SetColor({ 1,1,1,0 });
 	}
@@ -1542,8 +1625,7 @@ void BossTestScene::UpdateIntro(float dt) {
 		if (!landed) {
 			// 着地前：今まで通り（メテオ式）
 			camera_->SetTranslate(targetPos);
-		}
-		else {
+		} else {
 			// 着地後：プレイヤー位置へ寄せる（ズレ防止）
 			Vector3 cur = camera_->GetTranaslate();
 			Vector3 goal = player_->GetTranslate();
@@ -1607,7 +1689,7 @@ void BossTestScene::UpdateIntro(float dt) {
 
 void BossTestScene::BeginPlay() {
 
-	flowState_ = GameFlowState::Play;
+	introFinished_ = true;
 
 	// まだ戦闘開始しない
 	collisionEnabled_ = false;
@@ -1711,8 +1793,7 @@ void BossTestScene::UpdateBossIntroGlint(float dt) {
 	float scale = 220.0f;
 	if (t < 0.25f) {
 		scale = 220.0f * (t / 0.25f); // 0 -> 220
-	}
-	else {
+	} else {
 		float u = (t - 0.25f) / 0.75f;
 		scale = 220.0f - 100.0f * u;  // 220 -> 120
 	}
@@ -1720,8 +1801,7 @@ void BossTestScene::UpdateBossIntroGlint(float dt) {
 	float alpha = 1.0f;
 	if (t < 0.2f) {
 		alpha = t / 0.2f; // フェードイン
-	}
-	else {
+	} else {
 		alpha = 1.0f - ((t - 0.2f) / 0.8f); // フェードアウト
 	}
 	alpha = std::clamp(alpha, 0.0f, 1.0f);
