@@ -281,6 +281,8 @@
     <ClCompile Include="Game\Entity\Enemy\BossChargeBeam.cpp" />
     <ClCompile Include="Game\Scene\ParticleEditScene.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleEditor.cpp" />
+    <ClCompile Include="BossRushAttack.cpp" />
+    <ClCompile Include="BossRushAttackController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -448,6 +450,9 @@
     <ClInclude Include="Game\Entity\GameObject.h" />
     <ClInclude Include="Game\Scene\ParticleEditScene.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEditor.h" />
+    <ClInclude Include="BossRushAttack.h" />
+    <ClInclude Include="BossRushAttackController.h" />
+    <ClInclude Include="BossRushAttackParams.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />
