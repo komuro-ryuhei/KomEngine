@@ -7,6 +7,7 @@
 #include "ChargeAttackController.h"
 #include "BossMissileController.h"
 #include "BossRetreatAttackController.h"
+#include "BossRushAttackController.h"
 #include "Game/Entity/Enemy/BossRetreatAttack.h"
 
 class Camera;
@@ -19,6 +20,7 @@ class BossMissile;
 class BossMissileController;
 class BossRetreatAttack;
 class BossRetreatAttackController;
+class BossRushAttackController;
 
 class BossAttackManager {
 
@@ -28,6 +30,7 @@ public:
 		ArmCombo,
 		Charge,
 		Meteor,
+		Rush,
 	};
 
 	// 初期化用構造体
@@ -88,6 +91,7 @@ public:
 	ChargeAttackController* GetCharge() { return charge_.get(); }
 	BossMissileController* GetMissile() { return missile_.get(); }
 	BossRetreatAttackController* GetRetreat() { return retreat_.get(); }
+	BossRushAttackController* GetRush() { return rush_.get(); }
 
 private:
 
@@ -103,6 +107,7 @@ private:
 	std::unique_ptr<BossMissileController> missile_;
 	std::unique_ptr<BossRetreatAttack> retreatAttack_;
 	std::unique_ptr<BossRetreatAttackController> retreat_;
+	std::unique_ptr<BossRushAttackController> rush_;
 
 	// 前フレームの腕攻撃アクティブ状態
 	bool prevArmActive_ = false;

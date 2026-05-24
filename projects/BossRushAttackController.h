@@ -1,14 +1,10 @@
-// BossRushAttackController.h
 #pragma once
 #include <memory>
 #include <string>
 
-#include "externals/nlohmann/json.hpp"
-
-#include "Engine/lib/Math/MyMath.h"
-#include "BossRushAttackParams.h"
 #include "Engine/Base/2d/Sprite/Sprite.h"
 #include "BossRushAttack.h"
+#include "BossRushAttackParams.h"
 
 class Camera;
 class Player;

@@ -1,11 +1,13 @@
 #include "BossRushAttack.h"
+#include "BossRushAttackController.h"
+
 #include "Game/Entity/Enemy/BossEnemy.h"
 #include "Game/Entity/Player/Player.h"
 
+#include <algorithm>
 #include <cmath>
 
 void BossRushAttack::Init(BossEnemy* boss, Player* player) {
-
 	boss_ = boss;
 	player_ = player;
 	active_ = false;
@@ -34,11 +36,15 @@ void BossRushAttack::Start(const RushAttackParams& params) {
 		rushDir_ = MyMath::Normalize(toPlayer);
 	}
 
-	// 溜め中に少し後ろへ引く位置
-	backPos_ = MyMath::Subtract(basePos_, MyMath::Multiply(params.backAmount, rushDir_));
+	backPos_ = MyMath::Subtract(
+		basePos_,
+		MyMath::Multiply(params.backAmount, rushDir_)
+	);
 
-	// 突進先。プレイヤー位置に直接突っ込ませるより、方向固定 + 距離指定の方が暴れにくい。
-	targetPos_ = MyMath::Add(basePos_, MyMath::Multiply(params.rushDistance, rushDir_));
+	targetPos_ = MyMath::Add(
+		basePos_,
+		MyMath::Multiply(params.rushDistance, rushDir_)
+	);
 }
 
 bool BossRushAttack::UpdateCharge(float dt, const RushAttackParams& params) {
@@ -54,7 +60,6 @@ bool BossRushAttack::UpdateCharge(float dt, const RushAttackParams& params) {
 
 	Vector3 pos = MyMath::Lerp(basePos_, backPos_, ease);
 
-	// 溜め中の震え。後ろへ引きながら少し振動させる。
 	const float shake = std::sin(timer_ * params.chargeShakeSpeed) * params.chargeShakePower;
 	pos.x += shake;
 

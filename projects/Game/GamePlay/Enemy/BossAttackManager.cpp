@@ -47,6 +47,12 @@ void BossAttackManager::Init(const InitDesc& desc) {
 	retreat_->SetRetreat(retreatAttack_.get());
 	retreat_->SetMissileController(missile_.get());
 
+	rush_ = std::make_unique<BossRushAttackController>();
+	rush_->Init();
+	rush_->SetCamera(desc_.camera);
+	rush_->SetPlayer(desc_.player);
+	rush_->SetBoss(desc_.boss);
+
 	// 乱数初期化
 	std::random_device rd;
 	rng_ = std::mt19937(rd());
@@ -64,6 +70,7 @@ bool BossAttackManager::CanArmControlCamera(const UpdateFlags& flags) const {
 		&& !waitingNextBlock_
 		&& !IsMeteorActive()
 		&& !IsChargeActive()
+		&& !(rush_ && rush_->IsActive())
 		&& !flags.swordCamActive
 		&& flags.isCameraFollowPlayer;
 }
@@ -92,6 +99,9 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		if (missile_ && missile_->IsActive()) {
 			missile_->ForceEnd();
 		}
+		if (rush_ && rush_->IsActive()) {
+			rush_->ForceEnd();
+		}
 
 		// 腕カメラだけ変な残り方をしないように更新だけ止める
 		if (arm_) {
@@ -114,6 +124,9 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		}
 		if (missile_ && missile_->IsActive()) {
 			missile_->ForceEnd();
+		}
+		if (rush_ && rush_->IsActive()) {
+			rush_->ForceEnd();
 		}
 
 		// 腕コントローラだけ見た目更新が必要なら残す
@@ -163,6 +176,7 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		!(meteor_ && meteor_->IsActive()) &&
 		!(retreat_ && retreat_->IsActive()) &&
 		!(charge_ && charge_->IsActive()) &&
+		!(rush_ && rush_->IsActive()) &&
 		!armComboActive;
 
 	if (canStartMeteor && desc_.boss && desc_.boss->ConsumeMeteorRequest()) {
@@ -177,6 +191,7 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		!(charge_ && charge_->IsActive()) &&
 		!(meteor_ && meteor_->IsActive()) &&
 		!(retreat_ && retreat_->IsActive()) &&
+		!(rush_ && rush_->IsActive()) &&
 		!armComboActive;
 
 	if (canStartCharge && desc_.boss && desc_.boss->ConsumeChargeRequest()) {
@@ -190,7 +205,8 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		!waitingNextBlock_ &&
 		!(meteor_ && meteor_->IsActive()) &&
 		!(charge_ && charge_->IsActive()) &&
-		!(retreat_ && retreat_->IsActive());
+		!(retreat_ && retreat_->IsActive()) &&
+		!(rush_ && rush_->IsActive());
 
 	if (canStartRetreat && desc_.boss && desc_.boss->ConsumeRetreatRequest()) {
 		retreat_->Start();
@@ -214,6 +230,11 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	// チャージ更新
 	if (charge_ && charge_->IsActive()) {
 		charge_->Update(dt);
+	}
+
+	// 突進更新
+	if (rush_ && rush_->IsActive()) {
+		rush_->Update(dt);
 	}
 
 	// チャージが終わった瞬間にBossへ通知
@@ -258,7 +279,11 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 	case BossAttackBlock::Meteor:
 		finished = blockStarted_ && (meteor_ && !meteor_->IsActive());
 		break;
+	case BossAttackBlock::Rush:
+		finished = blockStarted_ && (rush_ && !rush_->IsActive());
+		break;
 	}
+
 
 	if (finished) {
 
@@ -338,12 +363,13 @@ void BossAttackManager::RebuildBlockQueue() {
 	blockQueue_.clear();
 	blockIndex_ = 0;
 
-	// まずは「腕塊 + チャージ + メテオ」を1周分としてシャッフル
+	// 1周分の攻撃候補
 	blockQueue_.push_back(BossAttackBlock::ArmCombo);
 	blockQueue_.push_back(BossAttackBlock::Charge);
 	blockQueue_.push_back(BossAttackBlock::Meteor);
+	blockQueue_.push_back(BossAttackBlock::Rush);
 
-	// ランダム化（ブロック順だけ）
+	// ランダム化
 	std::shuffle(blockQueue_.begin(), blockQueue_.end(), rng_);
 
 	queueInited_ = true;
@@ -354,10 +380,16 @@ bool BossAttackManager::IsBlockActive(BossAttackBlock b) const {
 	switch (b) {
 	case BossAttackBlock::ArmCombo:
 		return desc_.boss && desc_.boss->IsArmComboActive();
+
 	case BossAttackBlock::Charge:
 		return charge_ && charge_->IsActive();
+
 	case BossAttackBlock::Meteor:
 		return meteor_ && meteor_->IsActive();
+
+	case BossAttackBlock::Rush:
+		return rush_ && rush_->IsActive();
+
 	default:
 		return false;
 	}
@@ -368,7 +400,9 @@ bool BossAttackManager::StartBlock(BossAttackBlock b) {
 	currentBlock_ = b;
 	blockStarted_ = false;
 
-	if (!desc_.boss) return false;
+	if (!desc_.boss) {
+		return false;
+	}
 
 	// 退避中は開始しない
 	if (desc_.boss->IsRetreating()) {
@@ -378,7 +412,10 @@ bool BossAttackManager::StartBlock(BossAttackBlock b) {
 	switch (b) {
 
 	case BossAttackBlock::ArmCombo:
-		if (!IsMeteorActive() && !IsChargeActive()) {
+		if (!IsMeteorActive() &&
+			!IsChargeActive() &&
+			!(rush_ && rush_->IsActive())) {
+
 			desc_.boss->StartArmCombo();
 			blockStarted_ = true;
 			return true;
@@ -387,6 +424,7 @@ bool BossAttackManager::StartBlock(BossAttackBlock b) {
 
 	case BossAttackBlock::Charge:
 		if (!IsMeteorActive() &&
+			!(rush_ && rush_->IsActive()) &&
 			charge_ && !charge_->IsActive()) {
 
 			charge_->Start();
@@ -397,9 +435,22 @@ bool BossAttackManager::StartBlock(BossAttackBlock b) {
 
 	case BossAttackBlock::Meteor:
 		if (!IsChargeActive() &&
+			!(rush_ && rush_->IsActive()) &&
 			meteor_ && !meteor_->IsActive()) {
 
 			meteor_->Start();
+			blockStarted_ = true;
+			return true;
+		}
+		break;
+
+	case BossAttackBlock::Rush:
+		if (!IsMeteorActive() &&
+			!IsChargeActive() &&
+			!(retreat_ && retreat_->IsActive()) &&
+			rush_ && !rush_->IsActive()) {
+
+			rush_->Start();
 			blockStarted_ = true;
 			return true;
 		}
@@ -434,6 +485,9 @@ void BossAttackManager::StopAllAttacks(float dt) {
 		}
 		if (missile_ && missile_->IsActive()) {
 			missile_->ForceEnd();
+		}
+		if (rush_ && rush_->IsActive()) {
+			rush_->ForceEnd();
 		}
 
 		// 腕カメラ演出だけ残したくないので false 更新だけ
@@ -473,6 +527,9 @@ void BossAttackManager::SetDebugPauseAllAttacks(bool pause) {
 	if (missile_ && missile_->IsActive()) {
 		missile_->ForceEnd();
 	}
+	if (rush_ && rush_->IsActive()) {
+		rush_->ForceEnd();
+	}
 
 	blockStarted_ = false;
 }
@@ -500,6 +557,9 @@ void BossAttackManager::RequestDebugChargeAttack(bool targetLeft) {
 	if (missile_ && missile_->IsActive()) {
 		missile_->ForceEnd();
 	}
+	if (rush_ && rush_->IsActive()) {
+		rush_->ForceEnd();
+	}
 
 	// 次フレームの自動開始判定が暴れないようにする
 	blockStarted_ = false;
@@ -519,6 +579,7 @@ bool BossAttackManager::IsChargeActive() const {
 bool BossAttackManager::IsAnyAttackActive() const {
 	return IsMeteorActive()
 		|| IsChargeActive()
+		|| (rush_ && rush_->IsActive())
 		|| (arm_ && arm_->IsActive())
 		|| (missile_ && missile_->IsActive())
 		|| (retreat_ && retreat_->IsActive());

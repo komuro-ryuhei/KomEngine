@@ -1,4 +1,3 @@
-// BossRushAttack.h
 #pragma once
 
 #include "Engine/lib/Math/MyMath.h"
