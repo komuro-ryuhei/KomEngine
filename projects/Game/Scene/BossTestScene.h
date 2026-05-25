@@ -40,12 +40,12 @@ public:
 
 	// ポストエフェクトのデバッグモード
 	enum class PostEffectDebugMode {
-		Auto = 0,            // 低HP時だけビネット（今までの挙動）
+		Auto = 0,
 		None,
 		Grayscale,
 		Vignetting,
 		Smoothing,
-		GaussinanFilter,     // 綴りは PipelineManager に合わせる
+		GaussinanFilter,
 		RadialBlur,
 		Random,
 		Outline,
@@ -55,6 +55,7 @@ public:
 		VHSNoise,
 		ColorInversion,
 		Bloom,
+		HexBarrier,
 	};
 
 	PostEffectDebugMode postEffectDebugMode_ = PostEffectDebugMode::Auto;
@@ -365,6 +366,21 @@ private:
 	// マーカー演出用
 	float markerAnimTimer_ = 0.0f;
 
+	// 六角形バリア演出
+	bool hexBarrierActive_ = false;
+	bool prevRightMouseDownForBarrier_ = false;
+
+	float hexBarrierTimer_ = 0.0f;
+	float hexBarrierDuration_ = 0.65f;
+	float hexBarrierHoldTime_ = 0.15f;
+	float hexBarrierFadeTime_ = 0.25f;
+	float hexBarrierTotalTime_ = 1.05f;
+
+	float hexBarrierProgress_ = 0.0f;
+	float hexBarrierAlpha_ = 0.0f;
+	float hexBarrierScale_ = 12.0f;
+	float hexBarrierLineWidth_ = 0.035f;
+
 private:
 
 	void InitIntro();
@@ -390,6 +406,9 @@ private:
 
 	// 仮の床グリッド描画
 	void AddFloorGrid();
+
+	// 
+	void UpdateHexBarrier(float dt);
 
 	Vector3 CalcLookAtRotation(const Vector3& camPos, const Vector3& targetPos);
 

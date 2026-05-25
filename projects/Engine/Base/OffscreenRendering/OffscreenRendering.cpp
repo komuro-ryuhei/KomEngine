@@ -12,6 +12,18 @@ void OffscreenRendering::SetPostEffect(const std::string& effectName) {
 	pipelineManager_->PSOSetting("posteffect_" + effectName, BlendType::BLEND_NONE);
 }
 
+void OffscreenRendering::SetPostEffectParam(float param0, float param1, float param2, float param3) {
+
+	if (!materialBufferData_) {
+		return;
+	}
+
+	materialBufferData_->param0 = param0;
+	materialBufferData_->param1 = param1;
+	materialBufferData_->param2 = param2;
+	materialBufferData_->param3 = param3;
+}
+
 void OffscreenRendering::Init() {
 
 	// PointLight用のマテリアルリソースを作る
@@ -20,9 +32,20 @@ void OffscreenRendering::Init() {
 
 	materialBufferData_->time = 0.0f;
 
+	materialBufferData_->param0 = 0.0f;
+	materialBufferData_->param1 = 0.0f;
+	materialBufferData_->param2 = 0.0f;
+	materialBufferData_->param3 = 0.0f;
+
 	// PSOの初期化
 	pipelineManager_ = std::make_unique<PipelineManager>();
+
+	// 起動時に一度HexBarrierを生成して、クリック中の初回生成を避ける
+	pipelineManager_->PSOSetting("posteffect_HexBarrier", BlendType::BLEND_NONE);
+
+	// 最後に通常のposteffect_noneへ戻す
 	pipelineManager_->PSOSetting("posteffect_none", BlendType::BLEND_NONE);
+	currentPostEffect_ = "none";
 
 	OffScreeenRenderTargetView();
 }

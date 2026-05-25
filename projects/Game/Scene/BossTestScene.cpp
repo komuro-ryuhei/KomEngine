@@ -537,6 +537,7 @@ void BossTestScene::ImGuiDebug() {
 			"VHS Noise",              // 12
 			"Color Inversion",        // 13
 			"Bloom",                  // 14
+			"Hex Barrier",            // 15
 		};
 
 		int current = static_cast<int>(postEffectDebugMode_);
@@ -643,6 +644,8 @@ void BossTestScene::UpdatePlay(float dt) {
 	UpdatePlayerDeath(dt);
 
 	UpdateCamera(dt);
+
+	UpdateHexBarrier(dt);
 
 	if (KomEngine::System::GetInput()->PushKey(DIK_T)) {
 		if (attackManager_) {
@@ -1009,6 +1012,20 @@ void BossTestScene::ChangePostEffect() {
 		return;
 	}
 
+	// バリア演出中は最優先
+	if (hexBarrierActive_) {
+		offscreen->SetPostEffect("HexBarrier");
+
+		offscreen->SetPostEffectParam(
+			hexBarrierProgress_,
+			hexBarrierAlpha_,
+			hexBarrierScale_,
+			hexBarrierLineWidth_
+		);
+
+		return;
+	}
+
 	// --- Auto モード：今まで通り「低HPのときだけビネット」 --- //
 	if (postEffectDebugMode_ == PostEffectDebugMode::Auto) {
 
@@ -1073,12 +1090,23 @@ void BossTestScene::ChangePostEffect() {
 	case PostEffectDebugMode::Bloom:
 		effectName = "Bloom";
 		break;
+	case PostEffectDebugMode::HexBarrier:
+		effectName = "HexBarrier";
+		break;
 	default:
 		effectName = "none";
 		break;
 	}
 
 	offscreen->SetPostEffect(effectName);
+	if (postEffectDebugMode_ == PostEffectDebugMode::HexBarrier) {
+		offscreen->SetPostEffectParam(
+			1.0f,
+			1.0f,
+			hexBarrierScale_,
+			hexBarrierLineWidth_
+		);
+	}
 
 	// 手動モード中は lowHpVfxOn_ フラグは使わない
 	lowHpVfxOn_ = false;
@@ -1897,5 +1925,66 @@ void BossTestScene::TriggerClearExplosionStep(int step) {
 			camera_->StartShake(CameraShakeType::Large);
 		}
 		break;
+	}
+}
+
+void BossTestScene::UpdateHexBarrier(float dt) {
+
+	auto* input = KomEngine::System::GetInput();
+	if (!input) {
+		return;
+	}
+
+	// 今のPlayer.cppのコメント上では PushMouse(0) が右クリック扱い
+	const bool rightMouseDown = input->PushMouse(1);
+
+	// 押した瞬間にバリア開始
+	if (rightMouseDown && !prevRightMouseDownForBarrier_) {
+		hexBarrierActive_ = true;
+		hexBarrierTimer_ = 0.0f;
+		hexBarrierProgress_ = 0.0f;
+		hexBarrierAlpha_ = 1.0f;
+	}
+
+	prevRightMouseDownForBarrier_ = rightMouseDown;
+
+	if (!hexBarrierActive_) {
+		hexBarrierProgress_ = 0.0f;
+		hexBarrierAlpha_ = 0.0f;
+		return;
+	}
+
+	hexBarrierTimer_ += dt;
+
+	// 広がる
+	if (hexBarrierTimer_ <= hexBarrierDuration_) {
+		float t = hexBarrierTimer_ / hexBarrierDuration_;
+		t = std::clamp(t, 0.0f, 1.0f);
+
+		// easeOut
+		hexBarrierProgress_ = 1.0f - (1.0f - t) * (1.0f - t);
+		hexBarrierAlpha_ = 1.0f;
+	}
+	// 少し維持
+	else if (hexBarrierTimer_ <= hexBarrierDuration_ + hexBarrierHoldTime_) {
+		hexBarrierProgress_ = 1.0f;
+		hexBarrierAlpha_ = 1.0f;
+	}
+	// フェードアウト
+	else {
+		float fadeT =
+			(hexBarrierTimer_ - hexBarrierDuration_ - hexBarrierHoldTime_) / hexBarrierFadeTime_;
+
+		fadeT = std::clamp(fadeT, 0.0f, 1.0f);
+
+		hexBarrierProgress_ = 1.0f;
+		hexBarrierAlpha_ = 1.0f - fadeT;
+	}
+
+	if (hexBarrierTimer_ >= hexBarrierTotalTime_) {
+		hexBarrierActive_ = false;
+		hexBarrierTimer_ = 0.0f;
+		hexBarrierProgress_ = 0.0f;
+		hexBarrierAlpha_ = 0.0f;
 	}
 }

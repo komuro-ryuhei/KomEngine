@@ -74,6 +74,7 @@ public:
 
 	// getter,setter
 	void SetPostEffect(const std::string& effectName); // postEffectのセット
+	void SetPostEffectParam(float param0, float param1, float param2, float param3);
 
 private:
 	// DxCommon

@@ -41,5 +41,11 @@ struct ModelData {
 };
 
 struct MaterialBuffer {
-	float time;
+	float time = 0.0f;
+	float padding0[3]{};
+
+	float param0 = 0.0f;
+	float param1 = 0.0f;
+	float param2 = 0.0f;
+	float param3 = 0.0f;
 };
