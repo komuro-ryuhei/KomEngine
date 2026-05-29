@@ -611,24 +611,38 @@ void BossTestScene::UpdatePlay(float dt) {
 	// ---------------- Pause (Play中だけ) ---------------- //
 	const bool canPause = !(result_ && result_->IsSlideFinished());
 
-	if (canPause && KomEngine::System::TriggerKey(DIK_ESCAPE) && pauseMenu_) {
-		pauseMenu_->Toggle();
+	// ポーズしていない時だけ、Scene側のESCでポーズを開く
+	if (pauseMenu_ && !pauseMenu_->IsPaused()) {
+
+		if (canPause && KomEngine::System::TriggerKey(DIK_ESCAPE)) {
+			pauseMenu_->SetPaused(true);
+			KomEngine::System::GetInput()->SetMouseCenterLock(false);
+
+			// 開いた瞬間にPauseMenu側のESC判定まで走らせない
+			ImGuiDebug();
+			return;
+		}
 	}
 
+	// ポーズ中だけ、PauseMenu側の更新を有効にする
 	if (pauseMenu_ && pauseMenu_->IsPaused()) {
+
 		KomEngine::System::GetInput()->SetMouseCenterLock(false);
-	}
-
-	if (pauseMenu_ && pauseMenu_->IsPaused()) {
 
 		const auto r = pauseMenu_->Update(dt);
 
 		if (r == PauseMenu::Result::Resume) {
 			pauseMenu_->SetPaused(false);
+
+			// ポーズを閉じてもカーソルを中央固定しない
+			KomEngine::System::GetInput()->SetMouseCenterLock(false);
+
 		} else if (r == PauseMenu::Result::GoTitle) {
 
 			pauseMenu_->SetPaused(false);
-			KomEngine::System::GetInput()->SetMouseCenterLock(true);
+
+			// タイトルへ戻る時もカーソル固定しない
+			KomEngine::System::GetInput()->SetMouseCenterLock(false);
 
 			RequestFadeOut(EndReason::GoTitle);
 
@@ -644,8 +658,6 @@ void BossTestScene::UpdatePlay(float dt) {
 	UpdatePlayerDeath(dt);
 
 	UpdateCamera(dt);
-
-	UpdateHexBarrier(dt);
 
 	if (KomEngine::System::GetInput()->PushKey(DIK_T)) {
 		if (attackManager_) {

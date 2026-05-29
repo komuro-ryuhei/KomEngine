@@ -3,7 +3,7 @@
 Texture2D<float4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
 
-cbuffer MaterialBuffer : register(b0)
+cbuffer MaterialBuffer : register(b1)
 {
     float gTime;
     float3 padding0;

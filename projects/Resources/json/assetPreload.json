@@ -42,7 +42,8 @@
     "./Resources/images/exclamationMark.png",
     "./Resources/images/dust.png",
     "./Resources/images/ChargeBlueGueage.png",
-    "./Resources/images/ChargeGueage.png"
+    "./Resources/images/ChargeGueage.png",
+    "./Resources/images/PauseToTitle.png"
   ],
   "models": [
     "plane.obj",

@@ -111,8 +111,8 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AssetPreloader.cpp" />
-    <ClCompile Include="BossRushAttack.cpp" />
-    <ClCompile Include="BossRushAttackController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossRushAttack.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossRushAttackController.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleEditor.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossChargeBeam.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossChargeCore.cpp" />
@@ -183,9 +183,9 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetPreloader.h" />
-    <ClInclude Include="BossRushAttack.h" />
-    <ClInclude Include="BossRushAttackController.h" />
-    <ClInclude Include="BossRushAttackParams.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossRushAttack.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossRushAttackController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossRushAttackParams.h" />
     <ClInclude Include="Engine\Base\Particle\ParticleEditor.h" />
     <ClInclude Include="Game\Entity\GameObject.h" />
     <ClInclude Include="Game\Entity\Enemy\BossChargeBeam.h" />

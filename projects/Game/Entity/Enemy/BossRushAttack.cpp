@@ -1,5 +1,5 @@
 #include "BossRushAttack.h"
-#include "BossRushAttackController.h"
+#include "Game/GamePlay/Enemy/BossRushAttackController.h"
 
 #include "Game/Entity/Enemy/BossEnemy.h"
 #include "Game/Entity/Player/Player.h"

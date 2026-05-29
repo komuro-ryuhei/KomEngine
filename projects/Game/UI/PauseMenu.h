@@ -42,6 +42,12 @@ private:
     std::unique_ptr<Sprite> pauseSpr_;
 
     Vector2 resumeBaseSize_ = { 320.0f, 64.0f };
-    Vector2 titleBaseSize_ = { 320.0f, 64.0f };
+    Vector2 titleBaseSize_ = { 480.0f, 192.0f };
     float hoverScale_ = 1.08f;
+
+    // 選択中の項目をふわふわさせる用
+    float selectedAnimTimer_ = 0.0f;
+    float selectedBaseScale_ = 1.06f;
+    float selectedScaleAmplitude_ = 0.04f;
+    float selectedScaleSpeed_ = 5.0f;
 };

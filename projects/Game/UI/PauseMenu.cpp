@@ -1,7 +1,9 @@
 #include "PauseMenu.h"
 
 #include "Engine/Base/System/System.h"
-#include "Engine/Base/2d/Sprite/Sprite.h" 
+#include "Engine/Base/2d/Sprite/Sprite.h"
+
+#include <cmath>
 
 void PauseMenu::Init() {
 
@@ -23,13 +25,13 @@ void PauseMenu::Init() {
 	// 項目画像 
 	itemResume_ = std::make_unique<Sprite>();
 	itemResume_->Init("./Resources/images/returnGame.png", BlendType::BLEND_ALPHA);
-	itemResume_->SetSize({ 320.0f, 64.0f });
+	itemResume_->SetSize({ 480.0f, 192.0f });
 	itemResume_->SetAnchorPoint({ 0.5f, 0.5f });
 	itemResume_->SetPosition({ 640.0f, 320.0f });
 
 	itemTitle_ = std::make_unique<Sprite>();
-	itemTitle_->Init("./Resources/images/toTitle.png", BlendType::BLEND_ALPHA);
-	itemTitle_->SetSize({ 320.0f, 64.0f });
+	itemTitle_->Init("./Resources/images/PauseToTitle.png", BlendType::BLEND_ALPHA);
+	itemTitle_->SetSize({ 320.0f, 128.0f });
 	itemTitle_->SetAnchorPoint({ 0.5f, 0.5f });
 	itemTitle_->SetPosition({ 640.0f, 480.0f });
 }
@@ -46,9 +48,26 @@ PauseMenu::Result PauseMenu::Update(float dt) {
 	const bool hoverResume = itemResume_ && itemResume_->HitTest(mouse);
 	const bool hoverTitle = itemTitle_ && itemTitle_->HitTest(mouse);
 
-	// ---- ホバー中のスプライトを少し大きくする ----
+	// ホバーで選択中の項目を決める
+	if (hoverResume) {
+		cursor_ = 0;
+	} else if (hoverTitle) {
+		cursor_ = 1;
+	}
+
+	// 選択中アニメーション時間更新
+	selectedAnimTimer_ += dt;
+
+	const float wave =
+		std::sin(selectedAnimTimer_ * selectedScaleSpeed_) * selectedScaleAmplitude_;
+
+	const float selectedScale = selectedBaseScale_ + wave;
+
+	// ---- 選択中の項目だけふわふわ拡大縮小 ----
 	if (itemResume_) {
-		const float scale = hoverResume ? hoverScale_ : 1.0f;
+
+		const float scale = (cursor_ == 0) ? selectedScale : 1.0f;
+
 		itemResume_->SetSize({
 			resumeBaseSize_.x * scale,
 			resumeBaseSize_.y * scale
@@ -56,24 +75,27 @@ PauseMenu::Result PauseMenu::Update(float dt) {
 	}
 
 	if (itemTitle_) {
-		const float scale = hoverTitle ? hoverScale_ : 1.0f;
+
+		const float scale = (cursor_ == 1) ? selectedScale : 1.0f;
+
 		itemTitle_->SetSize({
 			titleBaseSize_.x * scale,
 			titleBaseSize_.y * scale
 			});
 	}
 
-	// ホバーでカーソルを合わせる（見た目・決定を統一できる）
-	if (hoverResume) cursor_ = 0;
-	else if (hoverTitle) cursor_ = 1;
-
 	// 左クリック決定
 	if (input->TriggerMouse(0)) {
-		if (hoverResume) return Result::Resume;
-		if (hoverTitle)  return Result::GoTitle;
+		if (hoverResume) {
+			return Result::Resume;
+		}
+
+		if (hoverTitle) {
+			return Result::GoTitle;
+		}
 	}
 
-	// Escで閉じる（任意）
+	// Escで閉じる
 	if (input->TriggerKey(DIK_ESCAPE)) {
 		return Result::Resume;
 	}

@@ -3,8 +3,8 @@
 #include <string>
 
 #include "Engine/Base/2d/Sprite/Sprite.h"
-#include "BossRushAttack.h"
-#include "BossRushAttackParams.h"
+#include "Game/Entity/Enemy/BossRushAttack.h"
+#include "Game/Entity/Enemy/BossRushAttackParams.h"
 
 class Camera;
 class Player;
