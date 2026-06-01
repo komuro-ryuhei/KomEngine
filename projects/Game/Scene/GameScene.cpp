@@ -146,7 +146,7 @@ void GameScene::Update() {
 	player_->Update();
 
 	if (!isFighting_) {
-		player_->RailMove();
+		// player_->RailMove();
 	}
 
 	// Enemy

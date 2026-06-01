@@ -728,6 +728,8 @@ void BossTestScene::UpdatePlay(float dt) {
 	if (player_) {
 		player_->Update();
 	}
+	// 
+	UpdateHexBarrier(dt);
 
 	for (auto& h : hpHearts_) {
 		if (h) {
@@ -2014,7 +2016,7 @@ void BossTestScene::UpdateHexBarrier(float dt) {
 		return;
 	}
 
-	// 今のPlayer.cppのコメント上では PushMouse(0) が右クリック扱い
+	// 
 	const bool rightMouseDown = input->PushMouse(1);
 
 	// 押した瞬間にバリア開始

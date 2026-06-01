@@ -122,14 +122,11 @@ void Player::Update() {
 		Attack(dt);
 	}
 
-	ChargeEffect(dt);
-
 	// ----------------------- オーバーヒート冷却処理 ----------------------- //
 	{
 		// 撃ったフレームは冷却しない
 		if (!firedThisFrame_) {
-			const float coolPerSec = isCharging_ ? heatCoolWhileCharge_ : heatCoolPerSec_;
-			heat_ = std::max(0.0f, heat_ - coolPerSec * dt);
+			heat_ = std::max(0.0f, heat_ - heatCoolPerSec_ * dt);
 		}
 
 		// 復帰判定
@@ -137,6 +134,7 @@ void Player::Update() {
 			isOverheated_ = false;
 			canShoot_ = true;
 		}
+
 		// 念のための上限
 		heat_ = std::clamp(heat_, 0.0f, heatMax_);
 	}
@@ -234,11 +232,6 @@ void Player::ImGuiDebug() {
 	ImGui::Text("Overheated: %s", isOverheated_ ? "YES" : "NO");
 
 	ImGui::Separator();
-	ImGui::Text("Charge");
-	ImGui::Text("Charging: %s", isCharging_ ? "YES" : "NO");
-	ImGui::DragFloat("chargeTimer", &chargeTimer_, 0.01f, 0.0f, 10.0f);
-	ImGui::DragFloat("chargeMin", &chargeMinTime_, 0.01f, 0.0f, 10.0f);
-	ImGui::DragFloat("chargeFull", &chargeFullTime_, 0.01f, 0.0f, 10.0f);
 
 	ImGui::End();
 
@@ -247,73 +240,34 @@ void Player::ImGuiDebug() {
 
 void Player::Attack(float dt) {
 
-	if (!canShoot_) { return; }
+	if (!canShoot_) {
+		return;
+	}
 
 	auto* input = KomEngine::System::GetInput();
 
-	const bool mouse0Down = input->PushMouse(1); //左左クリック想定
-	const bool mouse1Down = input->PushMouse(0); // 右クリック長押し連射
+	const bool leftMouseDown = input->PushMouse(0);
 
-	// -------- チャージ（Mouse0：押し→離し）--------
-	if (mouse0Down && !prevMouse0Down_) {
-		isCharging_ = true;
-		chargeTimer_ = 0.0f;
-	}
+	// ----------------------------
+	// 左クリック：通常ショット
+	// ----------------------------
+	if (leftMouseDown && !prevMouse0Down_) {
 
-	if (mouse0Down && isCharging_) {
-		chargeTimer_ += dt;
-	}
-
-	// 離した瞬間に発射
-	if (!mouse0Down && prevMouse0Down_ && isCharging_) {
-
-		// チャージ量を 0〜1 に正規化
-		float t = chargeTimer_ / chargeFullTime_;
-		t = std::clamp(t, 0.0f, 1.0f);
-
-		// 1〜5 に増やす（最大ダメージ5）
-		int damage = 1 + static_cast<int>(t * 4.0f);
-
-		SpawnBullet(damage);
-
-		isCharging_ = false;
-		chargeTimer_ = 0.0f;
-	}
-
-	// -------- 連射（Mouse1長押し）--------
-	if (mouse1Down && autofireTimer_ <= 0.0f) {
-
-		const float cost = heatCostAutofire_;
+		const float cost = heatCostNormal_;
 
 		if (heat_ + cost >= heatMax_) {
 			heat_ = heatMax_;
 			isOverheated_ = true;
 			canShoot_ = false;
-		}
-		else {
+		} else {
 			heat_ += cost;
 			SpawnBullet(1);
-			autofireTimer_ = autofireInterval_;
 		}
 	}
 
-	prevMouse0Down_ = mouse0Down;
-}
-
-void Player::RailMove() { transform_.translate.z += velocity_; }
-
-void Player::RotateY90() {
-	transform_.rotate.y += 90.0f;
-
-	// 360度を超えないように正規化
-	if (transform_.rotate.y >= 360.0f) {
-		transform_.rotate.y -= 360.0f;
-	}
-
-	// Object3Dにも反映
-	if (object3d_) {
-		object3d_->SetRotate(transform_.rotate);
-	}
+	// 右クリックはバリア用
+	prevMouse0Down_ = leftMouseDown;
+	prevMouse1Down_ = false;
 }
 
 void Player::SpawnBullet(int damage) {
