@@ -109,7 +109,6 @@ public:
 
 	void ImGuiDebug();
 
-
 private:
 
 	// StatePatternでシーンの状態管理
@@ -417,4 +416,7 @@ private:
 
 	// 演出開始
 	void StartBossIntroGlint();
+
+	// 
+	void BossAttackSelectImGui();
 };

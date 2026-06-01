@@ -938,6 +938,7 @@ void BossTestScene::UpdatePlay(float dt) {
 #endif
 
 	ImGuiDebug();
+	BossAttackSelectImGui();
 }
 
 void BossTestScene::UpdateCamera(float dt) {
@@ -1762,6 +1763,72 @@ void BossTestScene::StartBossIntroGlint() {
 
 	bossIntroGlintSprite_->SetSize({ 0.0f, 0.0f });
 	bossIntroGlintSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+}
+
+void BossTestScene::BossAttackSelectImGui() {
+
+#ifdef USE_IMGUI
+	if (attackManager_) {
+
+		ImGui::Separator();
+		ImGui::Text("Boss Attack Debug");
+
+		bool fixedMode = attackManager_->IsDebugFixedAttackMode();
+		if (ImGui::Checkbox("Fixed Attack Mode", &fixedMode)) {
+			attackManager_->SetDebugFixedAttackMode(fixedMode);
+		}
+
+		const char* attackNames[] = {
+			"Arm Combo",
+			"Charge",
+			"Meteor",
+			"Rush"
+		};
+
+		int currentAttack = 0;
+
+		switch (attackManager_->GetDebugFixedAttackBlock()) {
+		case BossAttackManager::BossAttackBlock::ArmCombo:
+			currentAttack = 0;
+			break;
+		case BossAttackManager::BossAttackBlock::Charge:
+			currentAttack = 1;
+			break;
+		case BossAttackManager::BossAttackBlock::Meteor:
+			currentAttack = 2;
+			break;
+		case BossAttackManager::BossAttackBlock::Rush:
+			currentAttack = 3;
+			break;
+		}
+
+		if (ImGui::Combo("Fixed Attack", &currentAttack, attackNames, IM_ARRAYSIZE(attackNames))) {
+
+			BossAttackManager::BossAttackBlock selectedBlock =
+				BossAttackManager::BossAttackBlock::Rush;
+
+			switch (currentAttack) {
+			case 0:
+				selectedBlock = BossAttackManager::BossAttackBlock::ArmCombo;
+				break;
+			case 1:
+				selectedBlock = BossAttackManager::BossAttackBlock::Charge;
+				break;
+			case 2:
+				selectedBlock = BossAttackManager::BossAttackBlock::Meteor;
+				break;
+			case 3:
+				selectedBlock = BossAttackManager::BossAttackBlock::Rush;
+				break;
+			}
+
+			attackManager_->SetDebugFixedAttackBlock(selectedBlock);
+		}
+
+		ImGui::Text("Current Fixed Attack: %s",
+			attackManager_->GetAttackBlockName(attackManager_->GetDebugFixedAttackBlock()));
+	}
+#endif
 }
 
 void BossTestScene::UpdateBossIntroGlint(float dt) {

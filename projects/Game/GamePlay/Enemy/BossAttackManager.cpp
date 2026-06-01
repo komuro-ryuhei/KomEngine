@@ -237,6 +237,12 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		rush_->Update(dt);
 	}
 
+	// ================== デバッグ固定攻撃モード ==================
+	if (debugFixedAttackMode_) {
+		UpdateDebugFixedAttack(dt, flags);
+		return;
+	}
+
 	// チャージが終わった瞬間にBossへ通知
 	/*const bool isChargeActive = (charge_ && charge_->IsActive());
 	if (wasChargeActive && !isChargeActive && desc_.boss) {
@@ -583,4 +589,163 @@ bool BossAttackManager::IsAnyAttackActive() const {
 		|| (arm_ && arm_->IsActive())
 		|| (missile_ && missile_->IsActive())
 		|| (retreat_ && retreat_->IsActive());
+}
+
+void BossAttackManager::SetDebugFixedAttackMode(bool enable) {
+
+	if (debugFixedAttackMode_ == enable) {
+		return;
+	}
+
+	debugFixedAttackMode_ = enable;
+
+	// 固定攻撃モードに入る時は一回全部止める
+	ForceEndAllAttacks();
+
+	debugFixedBlockStarted_ = false;
+	debugFixedWaiting_ = true;
+	debugFixedWaitTimer_ = 0.0f;
+
+	// 通常ランダム制御側もリセット
+	blockStarted_ = false;
+	waitingNextBlock_ = false;
+	nextBlockWaitTimer_ = 0.0f;
+
+	// 全停止デバッグとは同時に使わない
+	if (enable) {
+		debugPauseAllAttacks_ = false;
+	}
+}
+
+void BossAttackManager::SetDebugFixedAttackBlock(BossAttackBlock block) {
+
+	if (debugFixedAttackBlock_ == block) {
+		return;
+	}
+
+	debugFixedAttackBlock_ = block;
+
+	// 攻撃種類を変えたら、今出ている攻撃を止めて次から選択攻撃にする
+	ForceEndAllAttacks();
+
+	debugFixedBlockStarted_ = false;
+	debugFixedWaiting_ = true;
+	debugFixedWaitTimer_ = 0.0f;
+
+	blockStarted_ = false;
+	waitingNextBlock_ = false;
+	nextBlockWaitTimer_ = 0.0f;
+}
+
+const char* BossAttackManager::GetAttackBlockName(BossAttackBlock block) const {
+
+	switch (block) {
+	case BossAttackBlock::ArmCombo:
+		return "Arm Combo";
+	case BossAttackBlock::Charge:
+		return "Charge";
+	case BossAttackBlock::Meteor:
+		return "Meteor";
+	case BossAttackBlock::Rush:
+		return "Rush";
+	default:
+		return "Unknown";
+	}
+}
+
+void BossAttackManager::UpdateDebugFixedAttack(float dt, const UpdateFlags& flags) {
+
+	if (flags.koActive || !flags.isMainPhase) {
+		ForceEndAllAttacks();
+
+		debugFixedBlockStarted_ = false;
+		debugFixedWaiting_ = true;
+		debugFixedWaitTimer_ = 0.0f;
+		return;
+	}
+
+	// 固定攻撃中の待機
+	if (debugFixedWaiting_) {
+		debugFixedWaitTimer_ += dt;
+
+		if (debugFixedWaitTimer_ >= debugFixedWaitDuration_) {
+			debugFixedWaiting_ = false;
+			debugFixedWaitTimer_ = 0.0f;
+		}
+
+		return;
+	}
+
+	// まだ開始していなければ、選択中の攻撃を開始
+	if (!debugFixedBlockStarted_) {
+
+		currentBlock_ = debugFixedAttackBlock_;
+
+		if (StartBlock(debugFixedAttackBlock_)) {
+			debugFixedBlockStarted_ = true;
+		}
+
+		return;
+	}
+
+	// 開始済みの攻撃が終わったら、少し待って同じ攻撃をまた開始
+	if (IsCurrentBlockFinished(debugFixedAttackBlock_)) {
+
+		debugFixedBlockStarted_ = false;
+		debugFixedWaiting_ = true;
+		debugFixedWaitTimer_ = 0.0f;
+
+		blockStarted_ = false;
+	}
+}
+
+bool BossAttackManager::IsCurrentBlockFinished(BossAttackBlock block) const {
+
+	switch (block) {
+	case BossAttackBlock::ArmCombo:
+		return desc_.boss && desc_.boss->ConsumeArmComboFinished();
+
+	case BossAttackBlock::Charge:
+		return charge_ && !charge_->IsActive();
+
+	case BossAttackBlock::Meteor:
+		return meteor_ && !meteor_->IsActive();
+
+	case BossAttackBlock::Rush:
+		return rush_ && !rush_->IsActive();
+
+	default:
+		return true;
+	}
+}
+
+void BossAttackManager::ForceEndAllAttacks() {
+
+	if (desc_.boss) {
+		desc_.boss->CancelAllAttacks();
+	}
+
+	if (meteor_ && meteor_->IsActive()) {
+		meteor_->ForceEnd();
+	}
+
+	if (charge_ && charge_->IsActive()) {
+		charge_->ForceEnd();
+	}
+
+	if (retreat_ && retreat_->IsActive()) {
+		retreat_->ForceEnd();
+	}
+
+	if (missile_ && missile_->IsActive()) {
+		missile_->ForceEnd();
+	}
+
+	if (rush_ && rush_->IsActive()) {
+		rush_->ForceEnd();
+	}
+
+	blockStarted_ = false;
+	waitingNextBlock_ = false;
+	nextBlockWaitTimer_ = 0.0f;
 }

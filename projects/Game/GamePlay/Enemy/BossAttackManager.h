@@ -81,6 +81,15 @@ public:
 
 	// 全攻撃を一回止めて、チャージだけ出したいときに使う
 	void RequestDebugChargeAttack(bool targetLeft);
+
+	// ---------------- デバッグ固定攻撃モード ----------------
+	void SetDebugFixedAttackMode(bool enable);
+	bool IsDebugFixedAttackMode() const { return debugFixedAttackMode_; }
+
+	void SetDebugFixedAttackBlock(BossAttackBlock block);
+	BossAttackBlock GetDebugFixedAttackBlock() const { return debugFixedAttackBlock_; }
+
+	const char* GetAttackBlockName(BossAttackBlock block) const;
 	// ----------------------------------------------- //
 
 public:
@@ -138,6 +147,17 @@ private:
 
 	// ---------------- デバッグ用追加 ----------------
 	bool debugPauseAllAttacks_ = false;
+
+
+	// ---------------- デバッグ固定攻撃モード ----------------
+	bool debugFixedAttackMode_ = false;
+	BossAttackBlock debugFixedAttackBlock_ = BossAttackBlock::Rush;
+
+	bool debugFixedBlockStarted_ = false;
+	bool debugFixedWaiting_ = false;
+	float debugFixedWaitTimer_ = 0.0f;
+	float debugFixedWaitDuration_ = 1.0f;
+
 	// -----------------------------------------------
 
 private:
@@ -151,6 +171,11 @@ private:
 	// ブロック開始
 	bool StartBlock(BossAttackBlock b);
 
-	// 
+	// すべての攻撃を止める
 	void StopAllAttacks(float dt);
+
+	// デバッグ固定攻撃モードの更新
+	void UpdateDebugFixedAttack(float dt, const UpdateFlags& flags);
+	bool IsCurrentBlockFinished(BossAttackBlock block) const;
+	void ForceEndAllAttacks();
 };
