@@ -32,6 +32,9 @@ public:
 	// スタン状態かどうか
 	bool IsStunned() const { return isStunned_; }
 
+	bool IsRushSlowEffectActive() const { return rushSlowEffectActive_; }
+	float GetRushSlowEffectIntensity() const { return rushSlowEffectIntensity_; }
+
 public:
 
 	RushAttackParams& GetParams() { return params_; }
@@ -63,6 +66,9 @@ private:
 	void UpdateKnockback(float dt);
 	void UpdateStun(float dt);
 	void UpdateReturn(float dt);
+
+	bool ShouldStartRushSlowMotion() const;
+	void ResetRushSlowEffect();
 
 	bool CheckBarrierGuard() const;
 	void StartKnockback();
@@ -122,5 +128,21 @@ private:
 	float stunShakeSpeed_ = 55.0f;
 	float stunRotateSpeed_ = 1.6f;
 	float stunRotateAmount_ = 0.45f;
-	// ------------------------------------------------------------------------- //
+
+	// ----------------------- 突進直前スロー演出 ----------------------- //
+	bool rushSlowTriggered_ = false;
+	bool rushSlowEffectActive_ = false;
+
+	float rushSlowEffectTimer_ = 0.0f;
+	float rushSlowEffectDuration_ = 1.5f;
+
+	// 敵だけ遅くする倍率
+	float rushSlowScale_ = 0.012f;
+
+	// この距離以内に入ったらスロー開始
+	float rushSlowStartDistance_ = 12.0f;
+
+	// ポストエフェクト用
+	float rushSlowEffectIntensity_ = 0.0f;
+	// ---------------------------------------------------------------- //
 };

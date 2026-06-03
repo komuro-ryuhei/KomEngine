@@ -393,6 +393,8 @@ void BossTestScene::Init() {
 
 	ChangeToFadeIn();
 
+	InitRushRightClickGuide();
+
 	// KomEngine::System::GetOffscreenRendering()->SetPostEffect("Bloom");
 }
 
@@ -475,6 +477,8 @@ void BossTestScene::Draw() {
 		}
 		toPauseSpr_->Draw();
 	}
+
+	DrawRushRightClickGuide();
 
 	/*if (bossIntroGlintActive_ && bossIntroGlintSprite_) {
 		bossIntroGlintSprite_->Draw();
@@ -706,6 +710,9 @@ void BossTestScene::UpdatePlay(float dt) {
 	if (attackManager_) {
 		attackManager_->Update(dt, f);
 	}
+
+	UpdateRushSpeedLine(dt);
+	UpdateRushRightClickGuide(dt);
 
 	if (leftTargetShakeTime_ > 0.0f) {
 		leftTargetShakeTime_ -= dt;
@@ -1035,7 +1042,9 @@ void BossTestScene::ChangePostEffect() {
 		return;
 	}
 
-	// バリア演出中は最優先
+	// ============================================================
+	// 1. バリア演出中は最優先
+	// ============================================================
 	if (hexBarrierActive_) {
 		offscreen->SetPostEffect("HexBarrier");
 
@@ -1050,7 +1059,9 @@ void BossTestScene::ChangePostEffect() {
 		return;
 	}
 
-	// 直前までバリアだった場合は、解除時に必ずポストエフェクトを戻す
+	// ============================================================
+	// 2. 直前までバリアだった場合は、解除時に必ず戻す
+	// ============================================================
 	if (prevHexBarrierActive_) {
 
 		prevHexBarrierActive_ = false;
@@ -1063,13 +1074,31 @@ void BossTestScene::ChangePostEffect() {
 				offscreen->SetPostEffect("none");
 				lowHpVfxOn_ = false;
 			}
-		} else {
-			// 手動モードの場合は、今選択されているポストエフェクトを次の処理で再適用する
-			// ここでは return しない
 		}
+		// 手動モードの場合は、この下の手動モード処理で再適用する
 	}
 
-	// --- Auto モード：今まで通り「低HPのときだけビネット」 --- //
+	// ============================================================
+	// 3. 突進直前の集中線演出
+	// バリアより優先度は低いが、Auto/手動ポストエフェクトより優先
+	// ============================================================
+	if (speedLineActive_ && speedLineIntensity_ > 0.01f) {
+		offscreen->SetPostEffect("SpeedLine");
+
+		offscreen->SetPostEffectParam(
+			speedLineIntensity_,   // 濃さ
+			speedLineLineCount_,   // 線の数
+			speedLineLineWidth_,   // 線の太さ
+			2.5f                   // 流れる速さ
+		);
+
+		return;
+	}
+
+	// ============================================================
+	// 4. Auto モード
+	// 低HPなら Vignetting、そうでなければ毎フレーム none に戻す
+	// ============================================================
 	if (postEffectDebugMode_ == PostEffectDebugMode::Auto) {
 
 		constexpr int LOW_HP_THRESHOLD = 1;
@@ -1086,61 +1115,80 @@ void BossTestScene::ChangePostEffect() {
 		return;
 	}
 
-	// --- 手動モード：ImGui で選んだエフェクトを常に適用 --- //
+	// ============================================================
+	// 5. 手動モード：ImGui で選んだエフェクトを適用
+	// ============================================================
 	const char* effectName = "none";
 
 	switch (postEffectDebugMode_) {
 	case PostEffectDebugMode::None:
 		effectName = "none";
 		break;
+
 	case PostEffectDebugMode::Grayscale:
 		effectName = "Grayscale";
 		break;
+
 	case PostEffectDebugMode::Vignetting:
 		effectName = "Vignetting";
 		break;
+
 	case PostEffectDebugMode::Smoothing:
 		effectName = "Smoothing";
 		break;
+
 	case PostEffectDebugMode::GaussinanFilter:
 		effectName = "GaussinanFilter";
 		break;
+
 	case PostEffectDebugMode::RadialBlur:
 		effectName = "RadialBlur";
 		break;
+
 	case PostEffectDebugMode::Random:
 		effectName = "Random";
 		break;
+
 	case PostEffectDebugMode::Outline:
 		effectName = "Outline";
 		break;
+
 	case PostEffectDebugMode::Glitch:
 		effectName = "Glitch";
 		break;
+
 	case PostEffectDebugMode::Pixel:
 		effectName = "Pixel";
 		break;
+
 	case PostEffectDebugMode::ChromaticAberration:
 		effectName = "ChromaticAberration";
 		break;
+
 	case PostEffectDebugMode::VHSNoise:
 		effectName = "VHSNoise";
 		break;
+
 	case PostEffectDebugMode::ColorInversion:
 		effectName = "ColorInversion";
 		break;
+
 	case PostEffectDebugMode::Bloom:
 		effectName = "Bloom";
 		break;
+
 	case PostEffectDebugMode::HexBarrier:
 		effectName = "HexBarrier";
 		break;
+
 	default:
 		effectName = "none";
 		break;
 	}
 
 	offscreen->SetPostEffect(effectName);
+
+	// 手動で HexBarrier を選んでいる場合だけ、HexBarrier 用パラメータを渡す
 	if (postEffectDebugMode_ == PostEffectDebugMode::HexBarrier) {
 		offscreen->SetPostEffectParam(
 			1.0f,
@@ -1150,7 +1198,6 @@ void BossTestScene::ChangePostEffect() {
 		);
 	}
 
-	// 手動モード中は lowHpVfxOn_ フラグは使わない
 	lowHpVfxOn_ = false;
 }
 
@@ -2088,4 +2135,187 @@ void BossTestScene::UpdateHexBarrier(float dt) {
 	hexBarrierProgress_ = 0.0f;
 	hexBarrierAlpha_ = 0.0f;
 	prevRightMouseDownForBarrier_ = false;
+}
+
+void BossTestScene::UpdateRushSpeedLine(float dt) {
+
+	if (!attackManager_ || !attackManager_->GetRush()) {
+		speedLineActive_ = false;
+		speedLineTimer_ = 0.0f;
+		speedLineIntensity_ = 0.0f;
+		return;
+	}
+
+	auto* rush = attackManager_->GetRush();
+
+	if (rush->IsRushSlowEffectActive()) {
+		speedLineActive_ = true;
+		speedLineTimer_ += dt;
+		speedLineIntensity_ = rush->GetRushSlowEffectIntensity();
+		return;
+	}
+
+	speedLineActive_ = false;
+	speedLineTimer_ = 0.0f;
+	speedLineIntensity_ = 0.0f;
+}
+
+void BossTestScene::InitRushRightClickGuide() {
+
+	// 背景のびっくりマーク
+	rushRightClickTogetoge_ = std::make_unique<Sprite>();
+	rushRightClickTogetoge_->Init("./Resources/images/togetoge.png", BlendType::BLEND_ALPHA);
+	rushRightClickTogetoge_->SetAnchorPoint({ 0.5f, 0.5f });
+	rushRightClickTogetoge_->SetPosition({
+		rushRightClickGuidePos_.x + rushRightClickTogetogeOffset_.x,
+		rushRightClickGuidePos_.y + rushRightClickTogetogeOffset_.y
+		});
+	rushRightClickTogetoge_->SetSize(rushRightClickTogetogeBaseSize_);
+	rushRightClickTogetoge_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+	rushRightClickTogetoge_->Update();
+
+	// 右クリック画像
+	rushRightClickGuide_ = std::make_unique<Sprite>();
+	rushRightClickGuide_->Init("./Resources/images/mouseRightClick.png", BlendType::BLEND_ALPHA);
+	rushRightClickGuide_->SetAnchorPoint({ 0.5f, 0.5f });
+	rushRightClickGuide_->SetPosition(rushRightClickGuidePos_);
+	rushRightClickGuide_->SetSize(rushRightClickGuideBaseSize_);
+	rushRightClickGuide_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+	rushRightClickGuide_->Update();
+
+	rushRightClickGuideVisible_ = false;
+	rushRightClickGuideTimer_ = 0.0f;
+	rushRightClickGuideAlpha_ = 0.0f;
+}
+
+void BossTestScene::UpdateRushRightClickGuide(float dt) {
+
+	if (!rushRightClickGuide_) {
+		return;
+	}
+
+	bool shouldShow = false;
+
+	if (attackManager_ && attackManager_->GetRush()) {
+		shouldShow = attackManager_->GetRush()->IsRushSlowEffectActive();
+	}
+
+	rushRightClickGuideVisible_ = shouldShow;
+
+	if (rushRightClickGuideVisible_) {
+		rushRightClickGuideTimer_ += dt;
+
+		rushRightClickGuideAlpha_ += dt * rushRightClickGuideFadeInSpeed_;
+		if (rushRightClickGuideAlpha_ > 1.0f) {
+			rushRightClickGuideAlpha_ = 1.0f;
+		}
+	} else {
+		rushRightClickGuideAlpha_ -= dt * rushRightClickGuideFadeOutSpeed_;
+		if (rushRightClickGuideAlpha_ < 0.0f) {
+			rushRightClickGuideAlpha_ = 0.0f;
+			rushRightClickGuideTimer_ = 0.0f;
+		}
+	}
+
+	// 表示していないなら透明のまま更新
+	if (rushRightClickGuideAlpha_ <= 0.0f) {
+
+		rushRightClickGuide_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+		rushRightClickGuide_->Update();
+
+		if (rushRightClickTogetoge_) {
+			rushRightClickTogetoge_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+			rushRightClickTogetoge_->Update();
+		}
+
+		return;
+	}
+
+	// ----------------------------
+	// 右クリック画像
+	// ----------------------------
+	const float pulse =
+		1.0f +
+		std::sin(rushRightClickGuideTimer_ * rushRightClickGuidePulseSpeed_) *
+		rushRightClickGuidePulseScale_;
+
+	const float bobY =
+		std::sin(rushRightClickGuideTimer_ * 6.0f) *
+		rushRightClickGuideBobAmp_;
+
+	float flash =
+		0.85f +
+		0.15f *
+		(0.5f + 0.5f * std::sin(rushRightClickGuideTimer_ * 14.0f));
+
+	Vector2 guideSize = {
+		rushRightClickGuideBaseSize_.x * pulse,
+		rushRightClickGuideBaseSize_.y * pulse
+	};
+
+	Vector2 guidePos = rushRightClickGuidePos_;
+	guidePos.y += bobY;
+
+	rushRightClickGuide_->SetPosition(guidePos);
+	rushRightClickGuide_->SetSize(guideSize);
+	rushRightClickGuide_->SetColor({
+		1.0f,
+		1.0f,
+		1.0f,
+		rushRightClickGuideAlpha_ * flash
+		});
+	rushRightClickGuide_->Update();
+
+	// ----------------------------
+	// 背景の tog etoge
+	// ----------------------------
+	if (rushRightClickTogetoge_) {
+
+		const float togPulse =
+			1.0f +
+			std::sin(rushRightClickGuideTimer_ * 8.0f) *
+			rushRightClickTogetogePulseScale_;
+
+		Vector2 togPos = {
+			guidePos.x + rushRightClickTogetogeOffset_.x,
+			guidePos.y + rushRightClickTogetogeOffset_.y
+		};
+
+		Vector2 togSize = {
+			rushRightClickTogetogeBaseSize_.x * togPulse,
+			rushRightClickTogetogeBaseSize_.y * togPulse
+		};
+
+		const float togRot =
+			std::sin(rushRightClickGuideTimer_ * rushRightClickTogetogeRotateSpeed_) *
+			0.10f;
+
+		rushRightClickTogetoge_->SetPosition(togPos);
+		rushRightClickTogetoge_->SetSize(togSize);
+		rushRightClickTogetoge_->SetRotation(togRot);
+		rushRightClickTogetoge_->SetColor({
+			1.0f,
+			1.0f,
+			1.0f,
+			rushRightClickGuideAlpha_ * 0.9f
+			});
+		rushRightClickTogetoge_->Update();
+	}
+}
+
+void BossTestScene::DrawRushRightClickGuide() {
+
+	if (rushRightClickGuideAlpha_ <= 0.0f) {
+		return;
+	}
+
+	// 下地のびっくり画像
+	if (rushRightClickTogetoge_) {
+		rushRightClickTogetoge_->Draw();
+	}
+
+	// 右クリック画像
+	if (rushRightClickGuide_) {
+		rushRightClickGuide_->Draw();
+	}
 }

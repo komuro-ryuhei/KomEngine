@@ -75,6 +75,8 @@ void BossRushAttackController::Init() {
 	state_.reset();
 	warningTimer_ = 0.0f;
 	warningVisible_ = true;
+	
+	ResetRushSlowEffect();
 
 	isStunned_ = false;
 	knockbackTimer_ = 0.0f;
@@ -115,6 +117,8 @@ void BossRushAttackController::Start() {
 	knockbackDir_ = {};
 	stunBasePos_ = {};
 	stunBaseRotate_ = {};
+
+	ResetRushSlowEffect();
 
 	ChangeState(std::make_unique<WarningState>());
 }
@@ -218,8 +222,40 @@ void BossRushAttackController::UpdateCharge(float dt) {
 
 void BossRushAttackController::UpdateRush(float dt) {
 
-	// 先に突進移動を進める
-	const bool rushFinished = rushAttack_.UpdateRush(dt, params_);
+	// まだ発動していなくて、プレイヤーに近づいたらスロー開始
+	if (!rushSlowTriggered_ && ShouldStartRushSlowMotion()) {
+		rushSlowTriggered_ = true;
+		rushSlowEffectActive_ = true;
+		rushSlowEffectTimer_ = 0.0f;
+		rushSlowEffectIntensity_ = 1.0f;
+	}
+
+	float rushDt = dt;
+
+	// スロー中は敵の突進だけ遅くする
+	if (rushSlowEffectActive_) {
+
+		rushSlowEffectTimer_ += dt;
+
+		float t = 0.0f;
+		if (rushSlowEffectDuration_ > 0.0f) {
+			t = rushSlowEffectTimer_ / rushSlowEffectDuration_;
+		}
+		t = MyMath::Clamp01(t);
+
+		// 集中線の濃さをだんだん弱くする
+		rushSlowEffectIntensity_ = 1.0f - MyMath::EaseInOutCubic(t);
+
+		// 敵の突進だけスローにする
+		rushDt = dt * rushSlowScale_;
+
+		if (rushSlowEffectTimer_ >= rushSlowEffectDuration_) {
+			rushSlowEffectActive_ = false;
+			rushSlowEffectIntensity_ = 0.0f;
+		}
+	}
+
+	const bool rushFinished = rushAttack_.UpdateRush(rushDt, params_);
 
 	// 突進中にプレイヤーがバリアを張っていて、距離が近ければ防御成功
 	if (CheckBarrierGuard()) {
@@ -230,6 +266,33 @@ void BossRushAttackController::UpdateRush(float dt) {
 	if (rushFinished) {
 		ChangeState(std::make_unique<ReturnState>());
 	}
+}
+
+bool BossRushAttackController::ShouldStartRushSlowMotion() const {
+
+	if (!boss_ || !player_) {
+		return false;
+	}
+
+	const Vector3 bossPos = boss_->GetTranslate();
+	const Vector3 playerPos = player_->GetTranslate();
+
+	Vector3 diff = MyMath::Subtract(bossPos, playerPos);
+
+	// 高さ差で暴発しないようにXZ平面だけで見る
+	diff.y = 0.0f;
+
+	const float distance = MyMath::Length(diff);
+
+	return distance <= rushSlowStartDistance_;
+}
+
+void BossRushAttackController::ResetRushSlowEffect() {
+
+	rushSlowTriggered_ = false;
+	rushSlowEffectActive_ = false;
+	rushSlowEffectTimer_ = 0.0f;
+	rushSlowEffectIntensity_ = 0.0f;
 }
 
 void BossRushAttackController::UpdateKnockback(float dt) {
@@ -391,6 +454,9 @@ void BossRushAttackController::StartKnockback() {
 		return;
 	}
 
+	// バリア成功したら突進直前スロー演出は終了
+	ResetRushSlowEffect();
+
 	knockbackTimer_ = 0.0f;
 
 	knockbackStartPos_ = boss_->GetTranslate();
@@ -463,6 +529,8 @@ void BossRushAttackController::EndInternal() {
 
 	stunBasePos_ = {};
 	stunBaseRotate_ = {};
+
+	ResetRushSlowEffect();
 }
 
 void BossRushAttackController::ChangeState(std::unique_ptr<IRushPhaseState> nextState) {

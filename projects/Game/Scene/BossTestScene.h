@@ -382,6 +382,37 @@ private:
 	float hexBarrierScale_ = 12.0f;
 	float hexBarrierLineWidth_ = 0.035f;
 
+	// 集中線演出
+	bool speedLineActive_ = false;
+	float speedLineTimer_ = 0.0f;
+	float speedLineIntensity_ = 0.0f;
+	float speedLineLineCount_ = 120.0f;
+	float speedLineLineWidth_ = 0.035f;
+
+	// 右クリックガイド
+	std::unique_ptr<Sprite> rushRightClickGuide_ = nullptr;
+
+	bool rushRightClickGuideVisible_ = false;
+	float rushRightClickGuideTimer_ = 0.0f;
+	float rushRightClickGuideAlpha_ = 0.0f;
+
+	Vector2 rushRightClickGuidePos_ = { 1100.0f, 220.0f };
+	Vector2 rushRightClickGuideBaseSize_ = { 180.0f, 180.0f };
+
+	float rushRightClickGuidePulseSpeed_ = 10.0f;
+	float rushRightClickGuidePulseScale_ = 0.12f;
+	float rushRightClickGuideBobAmp_ = 8.0f;
+	float rushRightClickGuideFadeInSpeed_ = 8.0f;
+	float rushRightClickGuideFadeOutSpeed_ = 10.0f;
+	
+	std::unique_ptr<Sprite> rushRightClickTogetoge_ = nullptr;
+
+	Vector2 rushRightClickTogetogeOffset_ = { 0.0f, 8.0f };
+	Vector2 rushRightClickTogetogeBaseSize_ = { 230.0f, 230.0f };
+
+	float rushRightClickTogetogePulseScale_ = 0.08f;
+	float rushRightClickTogetogeRotateSpeed_ = 1.6f;
+
 private:
 
 	void InitIntro();
@@ -421,4 +452,10 @@ private:
 
 	// 
 	void BossAttackSelectImGui();
+
+	void UpdateRushSpeedLine(float dt);
+
+	void InitRushRightClickGuide();
+	void UpdateRushRightClickGuide(float dt);
+	void DrawRushRightClickGuide();
 };
