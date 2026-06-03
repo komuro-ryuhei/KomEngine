@@ -134,7 +134,7 @@ private:
 	bool rushSlowEffectActive_ = false;
 
 	float rushSlowEffectTimer_ = 0.0f;
-	float rushSlowEffectDuration_ = 1.5f;
+	float rushSlowEffectDuration_ = 1.2f;
 
 	// 敵だけ遅くする倍率
 	float rushSlowScale_ = 0.012f;
