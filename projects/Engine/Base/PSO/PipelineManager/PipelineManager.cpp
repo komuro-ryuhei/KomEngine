@@ -28,7 +28,7 @@ const std::unordered_map<std::string, PipelineManager::ShaderPair> PipelineManag
 	{ "posteffect_Glitch",         { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/GlitchEffect.PS.hlsl" } },
 	{ "posteffect_Pixel",          { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/PixelationEffect.PS.hlsl" } },
 	{ "posteffect_ChromaticAberration",{ L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/ChromaticAberration.PS.hlsl" } },
-	{ "posteffect_VHSNoise",       { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/VHSNoise.PS.hlsl" } },
+	{ "posteffect_VHSNoise",       { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/ma-zi shaders/VHSNoise.PS.hlsl" } },
 	{ "posteffect_ColorInversion", { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/ColorInversion.PS.hlsl" } }
 };
 
@@ -40,8 +40,10 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 		return;
 	}
 
+	const ShaderPair& shader = it->second;
+
 	vsBlob = compiler_->CompileShader(
-		pipelineDesc->vsPath.c_str(),
+		shader.vsPath.c_str(),
 		L"vs_6_0",
 		compiler_->GetDxcUtils(),
 		compiler_->GetCompiler(),
@@ -50,7 +52,7 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 	assert(vsBlob != nullptr);
 
 	psBlob = compiler_->CompileShader(
-		pipelineDesc->psPath.c_str(),
+		shader.psPath.c_str(),
 		L"ps_6_0",
 		compiler_->GetDxcUtils(),
 		compiler_->GetCompiler(),
