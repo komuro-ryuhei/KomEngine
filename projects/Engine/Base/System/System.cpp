@@ -147,15 +147,23 @@ void KomEngine::System::EndFrame() {
 
 void KomEngine::System::Finalize() {
 
-	winApp_->TerminateGameWindow();
+	if (imguiManager_) {
+		imguiManager_->Finalize();
+	}
 
+	offscreenRendering_.reset();
+	particleManager_.reset();
 	textureManager_.reset();
-	winApp_.reset();
-	dxCommon_.reset();
-	input_.reset();
 	light_.reset();
+	input_.reset();
+	srvManager_.reset();
+	imguiManager_.reset();
+	dxCommon_.reset();
 
-	imguiManager_->Finalize();
+	if (winApp_) {
+		winApp_->TerminateGameWindow();
+		winApp_.reset();
+	}
 }
 
 bool KomEngine::System::PushKey(BYTE keyNumber) { return input_->PushKey(keyNumber); }

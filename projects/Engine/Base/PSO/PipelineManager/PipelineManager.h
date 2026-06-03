@@ -47,12 +47,14 @@ public:
 
 private:
 
-	struct ShaderPair {
+	struct PipelineDesc {
 		std::wstring vsPath;
 		std::wstring psPath;
+		std::string pipelineType;
 	};
 
-	static const std::unordered_map<std::string, ShaderPair> kShaderTable;
+	static const std::unordered_map<std::string, PipelineDesc> kPipelineTable;
+	static const PipelineDesc* FindPipelineDesc(const std::string& objectType);
 
 	std::unique_ptr<Compiler> compiler_ = std::make_unique<Compiler>();
 	std::unique_ptr<RootSignature> rootSignature_ = std::make_unique<RootSignature>();

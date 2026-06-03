@@ -132,7 +132,9 @@ public:
 	/// <param name="count"> 生成数 </param>
 	void Emit(const std::string& name, const Vector3& position, uint32_t count);
 
-	void CreateParticleGeoup(const std::string name, const std::string textureFilePath, const std::string& particleType);
+	void CreateParticleGroup(const std::string& name, const std::string& textureFilePath, const std::string& particleType);
+	[[deprecated("Use CreateParticleGroup instead.")]]
+	void CreateParticleGeoup(const std::string& name, const std::string& textureFilePath, const std::string& particleType);
 
 	// プリセットからパーティクルグループを作成して登録
 	bool CreateParticleGroupFromPreset(const std::string& presetName);

@@ -5,43 +5,50 @@ ID3D12RootSignature* PipelineManager::GetRootSignature() const { return rootSign
 
 ID3D12PipelineState* PipelineManager::GetGraphicsPipelineState() const { return graphicsPipelineState.Get(); }
 
-const std::unordered_map<std::string, PipelineManager::ShaderPair> PipelineManager::kShaderTable = {
-	{ "object3d",                  { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/Object3D.PS.hlsl" } },
-	{ "object3d_meteorError",      { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/MeteorError.PS.hlsl" } },
-	{ "object3d_chargeCore",       { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/ChargeCore.PS.hlsl" } },
-	{ "object3d_gridFloor",        { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/GridFloor.PS.hlsl" } },
-	{ "particle",                  { L"./Resources/shaders/Particle.VS.hlsl",   L"./Resources/shaders/Particle.PS.hlsl" } },
-	{ "sprite",                    { L"./Resources/shaders/Sprite.VS.hlsl",     L"./Resources/shaders/Sprite.PS.hlsl" } },
-	{ "skybox",                    { L"./Resources/shaders/Skybox.VS.hlsl",     L"./Resources/shaders/Skybox.PS.hlsl" } },
-	{ "line",                      { L"./Resources/shaders/Line.VS.hlsl",       L"./Resources/shaders/Line.PS.hlsl" } },
-	{ "posteffect_none",           { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Fullscreen.PS.hlsl" } },
-	{ "posteffect_Grayscale",      { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Grayscale.PS.hlsl" } },
-	{ "posteffect_Vignetting",     { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Vignette.PS.hlsl" } },
-	{ "posteffect_Smoothing",      { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/BoxFilter.PS.hlsl" } },
-	{ "posteffect_GaussinanFilter",{ L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/GaussianFilter.PS.hlsl" } },
-	{ "posteffect_Bloom",          { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Bloom.PS.hlsl" } },
-	{ "posteffect_RadialBlur",     { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/RadialBlur.PS.hlsl" } },
-	{ "posteffect_Random",         { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Random.PS.hlsl" } },
-	{ "posteffect_Outline",        { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/LuminanceBasedOutline.PS.hlsl" } },
-	{ "posteffect_Glitch",         { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/GlitchEffect.PS.hlsl" } },
-	{ "posteffect_Pixel",          { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/PixelationEffect.PS.hlsl" } },
-	{ "posteffect_ChromaticAberration",{ L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/ChromaticAberration.PS.hlsl" } },
-	{ "posteffect_VHSNoise",       { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/VHSNoise.PS.hlsl" } },
-	{ "posteffect_ColorInversion", { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/ColorInversion.PS.hlsl" } }
+const std::unordered_map<std::string, PipelineManager::PipelineDesc> PipelineManager::kPipelineTable = {
+	{ "object3d",                  { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/Object3D.PS.hlsl", "object3d" } },
+	{ "object3d_meteorError",      { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/MeteorError.PS.hlsl", "object3d" } },
+	{ "object3d_chargeCore",       { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/ChargeCore.PS.hlsl", "object3d" } },
+	{ "object3d_gridFloor",        { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/GridFloor.PS.hlsl", "object3d" } },
+	{ "particle",                  { L"./Resources/shaders/Particle.VS.hlsl",   L"./Resources/shaders/Particle.PS.hlsl", "particle" } },
+	{ "sprite",                    { L"./Resources/shaders/Sprite.VS.hlsl",     L"./Resources/shaders/Sprite.PS.hlsl", "sprite" } },
+	{ "skybox",                    { L"./Resources/shaders/Skybox.VS.hlsl",     L"./Resources/shaders/Skybox.PS.hlsl", "skybox" } },
+	{ "line",                      { L"./Resources/shaders/Line.VS.hlsl",       L"./Resources/shaders/Line.PS.hlsl", "line" } },
+	{ "posteffect_none",           { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Fullscreen.PS.hlsl", "posteffect" } },
+	{ "posteffect_Grayscale",      { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Grayscale.PS.hlsl", "posteffect" } },
+	{ "posteffect_Vignetting",     { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Vignette.PS.hlsl", "posteffect" } },
+	{ "posteffect_Smoothing",      { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/BoxFilter.PS.hlsl", "posteffect" } },
+	{ "posteffect_GaussinanFilter",{ L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/GaussianFilter.PS.hlsl", "posteffect" } },
+	{ "posteffect_Bloom",          { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Bloom.PS.hlsl", "posteffect" } },
+	{ "posteffect_RadialBlur",     { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/RadialBlur.PS.hlsl", "posteffect" } },
+	{ "posteffect_Random",         { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/Random.PS.hlsl", "posteffect" } },
+	{ "posteffect_Outline",        { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/LuminanceBasedOutline.PS.hlsl", "posteffect" } },
+	{ "posteffect_Glitch",         { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/GlitchEffect.PS.hlsl", "posteffect" } },
+	{ "posteffect_Pixel",          { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/PixelationEffect.PS.hlsl", "posteffect" } },
+	{ "posteffect_ChromaticAberration",{ L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/ChromaticAberration.PS.hlsl", "posteffect" } },
+	{ "posteffect_VHSNoise",       { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/VHSNoise.PS.hlsl", "posteffect" } },
+	{ "posteffect_ColorInversion", { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/ColorInversion.PS.hlsl", "posteffect" } }
 };
+
+const PipelineManager::PipelineDesc* PipelineManager::FindPipelineDesc(const std::string& objectType) {
+
+	auto it = kPipelineTable.find(objectType);
+	if (it == kPipelineTable.end()) {
+		return nullptr;
+	}
+	return &it->second;
+}
 
 void PipelineManager::ShaderCompile(const std::string& objectType) {
 
-	auto it = kShaderTable.find(objectType);
-	if (it == kShaderTable.end()) {
+	const PipelineDesc* pipelineDesc = FindPipelineDesc(objectType);
+	if (!pipelineDesc) {
 		assert(false && "Unknown shader objectType.");
 		return;
 	}
 
-	const ShaderPair& shader = it->second;
-
 	vsBlob = compiler_->CompileShader(
-		shader.vsPath.c_str(),
+		pipelineDesc->vsPath.c_str(),
 		L"vs_6_0",
 		compiler_->GetDxcUtils(),
 		compiler_->GetCompiler(),
@@ -50,7 +57,7 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 	assert(vsBlob != nullptr);
 
 	psBlob = compiler_->CompileShader(
-		shader.psPath.c_str(),
+		pipelineDesc->psPath.c_str(),
 		L"ps_6_0",
 		compiler_->GetDxcUtils(),
 		compiler_->GetCompiler(),
@@ -116,29 +123,23 @@ void PipelineManager::CreatePSO(const std::string& objectType)
 
 void PipelineManager::PSOSetting(const std::string& objectType, BlendType type) {
 
+	const PipelineDesc* pipelineDesc = FindPipelineDesc(objectType);
+	if (!pipelineDesc) {
+		assert(false && "Unknown shader objectType.");
+		return;
+	}
+
 	compiler_->Initialize();
 
 	ShaderCompile(objectType);
 
-	// shaderがposteffectの時にposteffectの設定に変更する
-	std::string baseType = objectType;
-	if (objectType.find("posteffect_") == 0) {
-		baseType = "posteffect";
-	}
-	else if (
-		objectType == "object3d_meteorError" ||
-		objectType == "object3d_chargeCore" ||
-		objectType == "object3d_gridFloor") {
-		baseType = "object3d";
-	}
+	rootSignature_->Create(pipelineDesc->pipelineType);
 
-	rootSignature_->Create(baseType);
-
-	inputLayout_->Setting(baseType);
+	inputLayout_->Setting(pipelineDesc->pipelineType);
 
 	rasterizer_->Setting();
 
 	blendState_->Setting(type);
 
-	CreatePSO(baseType);
+	CreatePSO(pipelineDesc->pipelineType);
 }

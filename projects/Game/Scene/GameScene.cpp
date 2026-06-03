@@ -80,12 +80,12 @@ void GameScene::Init() {
 
 	// particle
 	KomEngine::System::GetParticleManager()->Init(BlendType::BLEND_ADD);
-	KomEngine::System::GetParticleManager()->CreateParticleGeoup("hit", circle2, "a");
-	KomEngine::System::GetParticleManager()->CreateParticleGeoup("explosion", monsterBallTexture, "a");
-	KomEngine::System::GetParticleManager()->CreateParticleGeoup("ring", ring, "ring");
-	KomEngine::System::GetParticleManager()->CreateParticleGeoup("cylinder", ring, "cylinder");
-	KomEngine::System::GetParticleManager()->CreateParticleGeoup("moonLight", moonLight, "moonLight");
-	KomEngine::System::GetParticleManager()->CreateParticleGeoup("ribbon", moonLight, "ribbon");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("hit", circle2, "a");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("explosion", monsterBallTexture, "a");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("ring", ring, "ring");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("cylinder", ring, "cylinder");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("moonLight", moonLight, "moonLight");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("ribbon", moonLight, "ribbon");
 
 	emitter_ = std::make_unique<ParticleEmitter>();
 	emitter_->Init("hit", { 0.0f, 0.0f, 10.0f }, 8);
