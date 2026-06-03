@@ -40,10 +40,8 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 		return;
 	}
 
-	const ShaderPair& shader = it->second;
-
 	vsBlob = compiler_->CompileShader(
-		shader.vsPath.c_str(),
+		pipelineDesc->vsPath.c_str(),
 		L"vs_6_0",
 		compiler_->GetDxcUtils(),
 		compiler_->GetCompiler(),
@@ -52,7 +50,7 @@ void PipelineManager::ShaderCompile(const std::string& objectType) {
 	assert(vsBlob != nullptr);
 
 	psBlob = compiler_->CompileShader(
-		shader.psPath.c_str(),
+		pipelineDesc->psPath.c_str(),
 		L"ps_6_0",
 		compiler_->GetDxcUtils(),
 		compiler_->GetCompiler(),

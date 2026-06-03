@@ -44,10 +44,6 @@ void ParticleManager::Init(BlendType type) {
 	pipelineManager_ = std::make_unique<PipelineManager>();
 	pipelineManager_->PSOSetting("particle", type);
 
-	std::random_device seedGenerator;
-	std::mt19937 randomEngine(seedGenerator());
-	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
-
 	BuildEmitTable();
 
 	// 
@@ -59,9 +55,6 @@ void ParticleManager::Update() {
 	if (!camera_) {
 		return;
 	}
-
-	std::random_device seedGenerator;
-	std::mt19937 randomEngine(seedGenerator());
 
 	Matrix4x4 viewMatrix = camera_->GetViewMatrix();
 	Matrix4x4 projectionMatrix = camera_->GetProjectionMatrix();
@@ -446,7 +439,7 @@ void ParticleManager::RegisterDefaultPresets() {
 	}
 }
 
-void ParticleManager::CreateParticleGeoup(const std::string name, const std::string textureFilePath, const std::string& particleType) {
+void ParticleManager::CreateParticleGroup(const std::string& name, const std::string& textureFilePath, const std::string& particleType) {
 
 	auto it = particleGroups.find(name);
 	if (it != particleGroups.end()) {
@@ -489,8 +482,13 @@ bool ParticleManager::CreateParticleGroupFromPreset(const std::string& presetNam
 		return true;
 	}
 
-	CreateParticleGeoup(presetName, preset->textureFilePath, preset->meshType);
+	CreateParticleGroup(presetName, preset->textureFilePath, preset->meshType);
 	return true;
+}
+
+void ParticleManager::CreateParticleGeoup(const std::string& name, const std::string& textureFilePath, const std::string& particleType) {
+
+	CreateParticleGroup(name, textureFilePath, particleType);
 }
 
 // ランダムなパーティクル生成関数
@@ -1324,7 +1322,6 @@ Particle ParticleManager::MakeMissileFlameParticle(std::mt19937& randomEngine, c
 		Vector3{ 0.0f, MyMath::Rand(0.01f, 0.04f), 0.0f };
 
 	// 白黄〜オレンジ
-	float g = distG(randomEngine);
 	p.color = { 1.0f, distG(randomEngine), 0.03f, distA(randomEngine) };
 
 	p.lifeTime = distLife(randomEngine);

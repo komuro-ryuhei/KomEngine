@@ -10,7 +10,8 @@ const uint32_t DirectXCommon::kMaxSRVCount = 512;
 // getter
 ID3D12Device* DirectXCommon::GetDevice() const { return device_.Get(); }
 ID3D12GraphicsCommandList* DirectXCommon::GetCommandList() const { return commandList_.Get(); }
-ID3D12CommandQueue* DirectXCommon::GetCommsndQueue() const { return commandQueue_.Get(); }
+ID3D12CommandQueue* DirectXCommon::GetCommandQueue() const { return commandQueue_.Get(); }
+ID3D12CommandQueue* DirectXCommon::GetCommsndQueue() const { return GetCommandQueue(); }
 D3D12_VIEWPORT DirectXCommon::GetViewPort() const { return viewPort; }
 D3D12_RECT DirectXCommon::GetScissor() const { return scissorRect; }
 ID3D12DescriptorHeap* DirectXCommon::GetSrvDescriptorHeap() { return srvDescriptorHeap_.Get(); }
@@ -63,7 +64,7 @@ void DirectXCommon::PreDraw() {
 
 	TransitionBarrier();
 
-	CrearRenderTargets();
+	ClearRenderTargets();
 
 	// 描画用のDescriptorHeapの設定
 	ID3D12DescriptorHeap* descriptorHeaps[] = {srvDescriptorHeap_.Get()};
@@ -112,7 +113,7 @@ void DirectXCommon::PostDraw() {
 	assert(SUCCEEDED(hr));
 }
 
-void DirectXCommon::CrearRenderTargets() {
+void DirectXCommon::ClearRenderTargets() {
 
 	// 書き込むバックバッファのインデックスを取得
 	UINT bbIndex = swapChain_->GetCurrentBackBufferIndex();
@@ -577,3 +578,5 @@ ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(ID3D12Device* 
 
 	return resource;
 }
+
+void DirectXCommon::CrearRenderTargets() { ClearRenderTargets(); }

@@ -329,25 +329,25 @@ void BossTestScene::Init() {
 	auto* pm = KomEngine::System::GetParticleManager();
 	pm->Init(BlendType::BLEND_ADD);
 
-	pm->CreateParticleGeoup("hit", "./Resources/images/circle2.png", "a");
-	pm->CreateParticleGeoup("explosion", "./Resources/images/circle2.png", "a");
-	pm->CreateParticleGeoup("ring", "./Resources/images/gradationLine.png", "ring");
-	pm->CreateParticleGeoup("cylinder", "./Resources/images/gradationLine.png", "cylinder");
-	pm->CreateParticleGeoup("moonLight", "./Resources/images/moonLight.png", "moonLight");
-	pm->CreateParticleGeoup("ribbon", "./Resources/images/moonLight.png", "ribbon");
-	pm->CreateParticleGeoup("dust", "./Resources/images/dust.png", "a");
-	pm->CreateParticleGeoup("muzzle", "./Resources/images/circle2.png", "a");
-	pm->CreateParticleGeoup("trail", "./Resources/images/circle.png", "a");
-	pm->CreateParticleGeoup("charge_core", "./Resources/images/circle2.png", "a");
-	pm->CreateParticleGeoup("charge_pulse", "./Resources/images/gradationLine.png", "ring");
-	pm->CreateParticleGeoup("charge_pulse", "./Resources/images/gradationLine.png", "a");
-	pm->CreateParticleGeoup("player_charge_line", "./Resources/images/streak.png", "a");
-	pm->CreateParticleGeoup("charge_aura", "./Resources/images/circle2.png", "a");
-	pm->CreateParticleGeoup("missile_flame", "./Resources/images/circle2.png", "a");
+	pm->CreateParticleGroup("hit", "./Resources/images/circle2.png", "a");
+	pm->CreateParticleGroup("explosion", "./Resources/images/circle2.png", "a");
+	pm->CreateParticleGroup("ring", "./Resources/images/gradationLine.png", "ring");
+	pm->CreateParticleGroup("cylinder", "./Resources/images/gradationLine.png", "cylinder");
+	pm->CreateParticleGroup("moonLight", "./Resources/images/moonLight.png", "moonLight");
+	pm->CreateParticleGroup("ribbon", "./Resources/images/moonLight.png", "ribbon");
+	pm->CreateParticleGroup("dust", "./Resources/images/dust.png", "a");
+	pm->CreateParticleGroup("muzzle", "./Resources/images/circle2.png", "a");
+	pm->CreateParticleGroup("trail", "./Resources/images/circle.png", "a");
+	pm->CreateParticleGroup("charge_core", "./Resources/images/circle2.png", "a");
+	pm->CreateParticleGroup("charge_pulse", "./Resources/images/gradationLine.png", "ring");
+	pm->CreateParticleGroup("charge_pulse", "./Resources/images/gradationLine.png", "a");
+	pm->CreateParticleGroup("player_charge_line", "./Resources/images/streak.png", "a");
+	pm->CreateParticleGroup("charge_aura", "./Resources/images/circle2.png", "a");
+	pm->CreateParticleGroup("missile_flame", "./Resources/images/circle2.png", "a");
 
 	// グループが既にあれば作らない
 	if (!pm->Exists("hit")) {
-		pm->CreateParticleGeoup("hit", "./Resources/images/circle2.png", "hit");
+		pm->CreateParticleGroup("hit", "./Resources/images/circle2.png", "hit");
 	}
 
 	emitter_ = std::make_unique<ParticleEmitter>();

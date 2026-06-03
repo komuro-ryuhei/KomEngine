@@ -54,6 +54,8 @@ public: // 静的メンバ変数
 	/// <summary>
 	/// レンダーターゲットのクリア
 	/// </summary>
+	void ClearRenderTargets();
+	[[deprecated("Use ClearRenderTargets instead.")]]
 	void CrearRenderTargets();
 
 	/// <summary>
@@ -73,6 +75,8 @@ public: // 静的メンバ変数
 	/// </summary>
 	ID3D12Device* GetDevice() const; // デバイスの取得
 	ID3D12GraphicsCommandList* GetCommandList() const; // コマンドリストの取得
+	ID3D12CommandQueue* GetCommandQueue() const; // コマンドキューの取得
+	[[deprecated("Use GetCommandQueue instead.")]]
 	ID3D12CommandQueue* GetCommsndQueue() const; // コマンドキューの取得
 	D3D12_VIEWPORT GetViewPort() const; // ビューポートの取得
 	D3D12_RECT GetScissor() const; // シザー矩形の取得
