@@ -116,6 +116,9 @@ public:
 	void SetRotate(const Vector3& rotate);
 	void SetTranslate(Vector3 translate);
 
+	void SetDizzyEffectActive(bool active);
+	bool IsDizzyEffectActive() const { return dizzyEffectActive_; }
+
 	void SetPlayer(Player* player) { player_ = player; }
 
 	void SetAttack(bool isAttack) { isAttack_ = isAttack; }
@@ -659,6 +662,25 @@ private:
 
 	bool coreBreakEffectPlayed_ = false;
 
+	struct DizzyStar {
+		std::unique_ptr<Object3d> obj;
+		float angle = 0.0f;
+		float phaseOffset = 0.0f;
+	};
+
+	std::array<DizzyStar, 4> dizzyStars_;
+
+	bool dizzyEffectActive_ = false;
+	float dizzyStarTimer_ = 0.0f;
+
+	float dizzyStarOrbitRadiusX_ = 3.2f;
+	float dizzyStarOrbitRadiusZ_ = 1.2f;
+	float dizzyStarHeight_ = 2.4f;
+	float dizzyStarOrbitSpeed_ = 2.0f;
+	float dizzyStarFloatAmp_ = 0.25f;
+	float dizzyStarFloatSpeed_ = 3.0f;
+	float dizzyStarScale_ = 0.1f;
+
 private:
 
 	void UpdateRetreat(float dt);
@@ -683,4 +705,9 @@ private:
 	void UpdateDeathEffect(float dt);
 	void EmitDeathElectricParticles();
 	void TriggerFinalExplosion();
+
+	// 
+	void InitDizzyStars();
+	void UpdateDizzyStars(float dt);
+	void DrawDizzyStars();
 };

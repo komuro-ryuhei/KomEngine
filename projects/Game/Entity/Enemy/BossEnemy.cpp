@@ -14,7 +14,7 @@
 // モデル
 static const char* kBossCoreModel = "BossEnemyCore.obj";
 static const char* kBossArmorModel = "BossArmor.obj";
-
+static const char* kDizzyStarModel = "star.obj";
 
 void BossEnemy::SetTranslate(Vector3 translate) { transform_.translate = translate; }
 
@@ -87,6 +87,8 @@ void BossEnemy::Init(Camera* camera) {
 
 	// 装甲（周回）を生成
 	InitArmors();
+	// スタン中の星演出を生成
+	InitDizzyStars();
 
 	// 腕は攻撃時のみ表示
 	leftArmVisible_ = false;
@@ -127,6 +129,9 @@ void BossEnemy::Update() {
 	object3d_->Update();
 	leftArm_->Update();
 	rightArm_->Update();
+
+	// スタン中の星演出更新
+	UpdateDizzyStars(dt);
 
 	// 装甲（周回）更新
 	UpdateArmors(dt);
@@ -260,7 +265,11 @@ void BossEnemy::Draw() {
 
 	//
 	object3d_->Draw();
+	// 装甲
 	DrawArmors();
+	// スタン中の星
+	DrawDizzyStars();
+
 	if (leftArmVisible_) { leftArm_->Draw(); }
 	if (rightArmVisible_) { rightArm_->Draw(); }
 
@@ -2633,4 +2642,107 @@ bool BossEnemy::GetMissileTelegraphWorldPos(int index, Vector3& outPos) const {
 
 	outPos = m.bullet->GetTranslate();
 	return true;
+}
+
+void BossEnemy::InitDizzyStars() {
+
+	for (size_t i = 0; i < dizzyStars_.size(); ++i) {
+
+		auto& star = dizzyStars_[i];
+
+		star.obj = std::make_unique<Object3d>();
+		star.obj->Init(BlendType::BLEND_NONE);
+		star.obj->SetModel(kDizzyStarModel);
+		star.obj->SetDefaultCamera(camera_);
+		star.obj->SetScale({ dizzyStarScale_, dizzyStarScale_, dizzyStarScale_ });
+
+		const float count = static_cast<float>(dizzyStars_.size());
+		star.angle = (static_cast<float>(i) / count) * 6.2831853f;
+		star.phaseOffset = star.angle;
+
+		// 初期状態は非表示にしたいので、スケール0
+		star.obj->SetScale({ 0.0f, 0.0f, 0.0f });
+		star.obj->Update();
+	}
+}
+
+void BossEnemy::SetDizzyEffectActive(bool active) {
+
+	if (dizzyEffectActive_ == active) {
+		return;
+	}
+
+	dizzyEffectActive_ = active;
+
+	if (active) {
+		dizzyStarTimer_ = 0.0f;
+	} else {
+		for (auto& star : dizzyStars_) {
+			if (star.obj) {
+				star.obj->SetScale({ 0.0f, 0.0f, 0.0f });
+				star.obj->Update();
+			}
+		}
+	}
+}
+
+void BossEnemy::UpdateDizzyStars(float dt) {
+
+	if (!dizzyEffectActive_) {
+		return;
+	}
+
+	dizzyStarTimer_ += dt;
+
+	const float count = static_cast<float>(dizzyStars_.size());
+
+	for (size_t i = 0; i < dizzyStars_.size(); ++i) {
+
+		auto& star = dizzyStars_[i];
+
+		if (!star.obj) {
+			continue;
+		}
+
+		const float baseAngle = (static_cast<float>(i) / count) * 6.2831853f;
+		const float angle = baseAngle + dizzyStarTimer_ * dizzyStarOrbitSpeed_;
+
+		// ボス頭上の楕円軌道
+		Vector3 pos = transform_.translate;
+		pos.x += std::cos(angle) * dizzyStarOrbitRadiusX_;
+		pos.z += std::sin(angle) * dizzyStarOrbitRadiusZ_;
+		pos.y += dizzyStarHeight_;
+
+		// 少し上下にふわふわ
+		pos.y += std::sin(dizzyStarTimer_ * dizzyStarFloatSpeed_ + star.phaseOffset) * dizzyStarFloatAmp_;
+
+		star.obj->SetTranslate(pos);
+
+		// 星自体も回転させる
+		star.obj->SetRotate({
+			0.0f,
+			dizzyStarTimer_ * 2.5f + star.phaseOffset,
+			dizzyStarTimer_ * 4.0f + star.phaseOffset
+			});
+
+		// 奥側は少し小さく、手前側は少し大きくする
+		const float depthScale = 1.0f + std::sin(angle) * 0.18f;
+		const float scale = dizzyStarScale_ * depthScale;
+
+		star.obj->SetScale({ scale, scale, scale });
+		star.obj->Update();
+	}
+}
+
+void BossEnemy::DrawDizzyStars() {
+
+	if (!dizzyEffectActive_) {
+		return;
+	}
+
+	for (auto& star : dizzyStars_) {
+		if (star.obj) {
+			star.obj->Draw();
+		}
+	}
 }

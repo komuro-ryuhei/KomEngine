@@ -347,6 +347,9 @@ void BossRushAttackController::UpdateStun(float dt) {
 		if (boss_) {
 			boss_->SetTranslate(stunBasePos_);
 			boss_->SetRotate(stunBaseRotate_);
+
+			// スタン星演出終了
+			boss_->SetDizzyEffectActive(false);
 		}
 
 		EndInternal();
@@ -418,6 +421,9 @@ void BossRushAttackController::StartStun() {
 		stunBaseRotate_ = boss_->GetRotate();
 
 		boss_->SetTranslate(stunBasePos_);
+
+		// スタン星演出開始
+		boss_->SetDizzyEffectActive(true);
 	}
 
 	ChangeState(std::make_unique<StunState>());
@@ -431,6 +437,10 @@ void BossRushAttackController::UpdateReturn(float dt) {
 }
 
 void BossRushAttackController::EndInternal() {
+
+	if (boss_) {
+		boss_->SetDizzyEffectActive(false);
+	}
 
 	if (isStunned_ && boss_) {
 		boss_->SetTranslate(stunBasePos_);

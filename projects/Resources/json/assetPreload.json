@@ -43,6 +43,7 @@
     "./Resources/images/dust.png",
     "./Resources/images/ChargeBlueGueage.png",
     "./Resources/images/ChargeGueage.png",
+    "./Resources/images/star.png",
     "./Resources/images/PauseToTitle.png"
   ],
   "models": [
@@ -66,6 +67,7 @@
     "human.obj",
     "downHuman.obj",
     "EnemyChargeCore.obj",
+    "star.obj",
     "downPlayer.obj"
   ]
 }
