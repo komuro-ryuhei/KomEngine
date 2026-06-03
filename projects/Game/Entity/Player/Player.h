@@ -80,6 +80,14 @@ public:
 		return std::clamp(chargeTimer_ / chargeFullTime_, 0.0f, 1.0f);
 	}
 
+	// ----------------------- バリア ----------------------- //
+	void SetBarrierActive(bool active) { isBarrierActive_ = active; }
+	bool IsBarrierActive() const { return isBarrierActive_; }
+
+	float GetBarrierRadius() const { return barrierRadius_; }
+	Vector3 GetBarrierPosition() const { return GetTranslate(); }
+	// ---------------------------------------------------- //
+
 private:
 
 	// 攻撃
@@ -175,6 +183,13 @@ private:
 
 	// 射撃許可フラグ
 	bool canShoot_ = true;
+
+	// ----------------------- バリア ----------------------- //
+	bool isBarrierActive_ = false;
+
+	// 突進を防ぐ判定用の半径
+	float barrierRadius_ = 3.5f;
+	// ---------------------------------------------------- //
 
 	// 銃の先端のワールド座標
 	Vector3 gunMuzzlePos_{};

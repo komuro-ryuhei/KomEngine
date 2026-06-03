@@ -367,6 +367,8 @@ private:
 
 	// 六角形バリア演出
 	bool hexBarrierActive_ = false;
+	bool prevHexBarrierActive_ = false;
+
 	bool prevRightMouseDownForBarrier_ = false;
 
 	float hexBarrierTimer_ = 0.0f;

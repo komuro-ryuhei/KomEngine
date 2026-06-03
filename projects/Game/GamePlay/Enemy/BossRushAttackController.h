@@ -18,13 +18,19 @@ public:
 	~BossRushAttackController();
 
 	void Init();
+
 	void Update(float dt);
+
 	void Draw();
 
 	void Start();
 	void ForceEnd();
 
+	// アクティブかどうか
 	bool IsActive() const { return state_ != nullptr; }
+
+	// スタン状態かどうか
+	bool IsStunned() const { return isStunned_; }
 
 public:
 
@@ -44,6 +50,8 @@ private:
 	class WarningState;
 	class ChargeState;
 	class RushState;
+	class KnockbackState;
+	class StunState;
 	class ReturnState;
 
 	void ChangeState(std::unique_ptr<IRushPhaseState> nextState);
@@ -52,7 +60,13 @@ private:
 	void UpdateWarning(float dt);
 	void UpdateCharge(float dt);
 	void UpdateRush(float dt);
+	void UpdateKnockback(float dt);
+	void UpdateStun(float dt);
 	void UpdateReturn(float dt);
+
+	bool CheckBarrierGuard() const;
+	void StartKnockback();
+	void StartStun();
 
 	void EndInternal();
 
@@ -71,4 +85,42 @@ private:
 	bool warningVisible_ = true;
 
 	RushAttackParams params_;
+
+	// ----------------------- バリア成功時の弾かれ・スタン ----------------------- //
+	bool isStunned_ = false;
+
+	float knockbackTimer_ = 0.0f;
+	float knockbackTime_ = 1.2f;
+
+	float stunTimer_ = 0.0f;
+	float stunTime_ = 5.0f;
+
+	// バリア判定を少し甘くする追加半径
+	float barrierGuardExtraRadius_ = 1.5f;
+
+	Vector3 knockbackStartPos_{};
+	Vector3 knockbackEndPos_{};
+
+	// ノックバック演出用
+	Vector3 knockbackDir_{};
+
+	// ノックバックで少し行き過ぎる量
+	float knockbackOvershootAmount_ = 1.0f;
+
+	// 2〜3回跳ねるための設定
+	int knockbackBounceCount_ = 3;
+	float knockbackHopHeight_ = 1.2f;
+	float knockbackBounceDamping_ = 0.55f;
+
+	float knockbackShakePower_ = 0.08f;
+
+	// スタン演出用
+	Vector3 stunBasePos_{};
+	Vector3 stunBaseRotate_{};
+
+	float stunShakePower_ = 0.08f;
+	float stunShakeSpeed_ = 55.0f;
+	float stunRotateSpeed_ = 1.6f;
+	float stunRotateAmount_ = 0.45f;
+	// ------------------------------------------------------------------------- //
 };

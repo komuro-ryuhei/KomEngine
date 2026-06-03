@@ -1,10 +1,8 @@
 #include "BossRushAttack.h"
-#include "Game/GamePlay/Enemy/BossRushAttackController.h"
 
 #include "Game/Entity/Enemy/BossEnemy.h"
 #include "Game/Entity/Player/Player.h"
 
-#include <algorithm>
 #include <cmath>
 
 void BossRushAttack::Init(BossEnemy* boss, Player* player) {

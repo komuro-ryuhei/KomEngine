@@ -109,6 +109,7 @@ public:
 	// getter・setter
 	float GetRadius() const;
 	Transform GetTransform() const;
+	Vector3 GetRotate() const { return transform_.rotate; }
 	Vector3 GetTranslate() const;
 	bool GetIsmoveRight() const { return isMoveRight_; }
 

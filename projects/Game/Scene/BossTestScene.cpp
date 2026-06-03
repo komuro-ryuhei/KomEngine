@@ -266,6 +266,9 @@ void BossTestScene::Init() {
 	// jsonの読み込み
 	attackManager_->GetMeteor()->LoadParamsFromJson("Resources/json/bossAttacks.json");
 	attackManager_->GetArm()->LoadParamsFromJson("Resources/json/bossAttacks.json");
+	if (attackManager_->GetRush()) {
+		attackManager_->GetRush()->LoadParamsFromJson("Resources/json/bossAttacks.json");
+	}
 
 	// 
 	controlGuideSprite_ = std::make_unique<Sprite>();
@@ -425,6 +428,10 @@ void BossTestScene::Draw() {
 	// メテオの警戒表示
 	if (attackManager_ && attackManager_->GetMeteor()) {
 		attackManager_->GetMeteor()->Draw();
+	}
+
+	if (attackManager_ && attackManager_->GetRush()) {
+		attackManager_->GetRush()->Draw();
 	}
 
 	// Bossのミサイル描画
@@ -693,6 +700,9 @@ void BossTestScene::UpdatePlay(float dt) {
 
 	f.isCameraFollowPlayer = isCameraFollowPlayer_;
 
+	// 
+	UpdateHexBarrier(dt);
+
 	if (attackManager_) {
 		attackManager_->Update(dt, f);
 	}
@@ -728,8 +738,6 @@ void BossTestScene::UpdatePlay(float dt) {
 	if (player_) {
 		player_->Update();
 	}
-	// 
-	UpdateHexBarrier(dt);
 
 	for (auto& h : hpHearts_) {
 		if (h) {
@@ -1038,20 +1046,39 @@ void BossTestScene::ChangePostEffect() {
 			hexBarrierLineWidth_
 		);
 
+		prevHexBarrierActive_ = true;
 		return;
+	}
+
+	// 直前までバリアだった場合は、解除時に必ずポストエフェクトを戻す
+	if (prevHexBarrierActive_) {
+
+		prevHexBarrierActive_ = false;
+
+		if (postEffectDebugMode_ == PostEffectDebugMode::Auto) {
+			if (player_->IsLowHP(1)) {
+				offscreen->SetPostEffect("Vignetting");
+				lowHpVfxOn_ = true;
+			} else {
+				offscreen->SetPostEffect("none");
+				lowHpVfxOn_ = false;
+			}
+		} else {
+			// 手動モードの場合は、今選択されているポストエフェクトを次の処理で再適用する
+			// ここでは return しない
+		}
 	}
 
 	// --- Auto モード：今まで通り「低HPのときだけビネット」 --- //
 	if (postEffectDebugMode_ == PostEffectDebugMode::Auto) {
 
-		constexpr int LOW_HP_THRESHOLD = 1; // HP1以下
-		bool nowLow = player_->IsLowHP(LOW_HP_THRESHOLD);
+		constexpr int LOW_HP_THRESHOLD = 1;
+		const bool nowLow = player_->IsLowHP(LOW_HP_THRESHOLD);
 
-		if (nowLow && !lowHpVfxOn_) {
+		if (nowLow) {
 			offscreen->SetPostEffect("Vignetting");
 			lowHpVfxOn_ = true;
-		} else if (!nowLow && lowHpVfxOn_) {
-			// 低HPを脱したら元に戻す
+		} else {
 			offscreen->SetPostEffect("none");
 			lowHpVfxOn_ = false;
 		}
@@ -2013,59 +2040,52 @@ void BossTestScene::UpdateHexBarrier(float dt) {
 
 	auto* input = KomEngine::System::GetInput();
 	if (!input) {
-		return;
-	}
+		if (player_) {
+			player_->SetBarrierActive(false);
+		}
 
-	// 
-	const bool rightMouseDown = input->PushMouse(1);
-
-	// 押した瞬間にバリア開始
-	if (rightMouseDown && !prevRightMouseDownForBarrier_) {
-		hexBarrierActive_ = true;
-		hexBarrierTimer_ = 0.0f;
-		hexBarrierProgress_ = 0.0f;
-		hexBarrierAlpha_ = 1.0f;
-	}
-
-	prevRightMouseDownForBarrier_ = rightMouseDown;
-
-	if (!hexBarrierActive_) {
-		hexBarrierProgress_ = 0.0f;
-		hexBarrierAlpha_ = 0.0f;
-		return;
-	}
-
-	hexBarrierTimer_ += dt;
-
-	// 広がる
-	if (hexBarrierTimer_ <= hexBarrierDuration_) {
-		float t = hexBarrierTimer_ / hexBarrierDuration_;
-		t = std::clamp(t, 0.0f, 1.0f);
-
-		// easeOut
-		hexBarrierProgress_ = 1.0f - (1.0f - t) * (1.0f - t);
-		hexBarrierAlpha_ = 1.0f;
-	}
-	// 少し維持
-	else if (hexBarrierTimer_ <= hexBarrierDuration_ + hexBarrierHoldTime_) {
-		hexBarrierProgress_ = 1.0f;
-		hexBarrierAlpha_ = 1.0f;
-	}
-	// フェードアウト
-	else {
-		float fadeT =
-			(hexBarrierTimer_ - hexBarrierDuration_ - hexBarrierHoldTime_) / hexBarrierFadeTime_;
-
-		fadeT = std::clamp(fadeT, 0.0f, 1.0f);
-
-		hexBarrierProgress_ = 1.0f;
-		hexBarrierAlpha_ = 1.0f - fadeT;
-	}
-
-	if (hexBarrierTimer_ >= hexBarrierTotalTime_) {
 		hexBarrierActive_ = false;
 		hexBarrierTimer_ = 0.0f;
 		hexBarrierProgress_ = 0.0f;
 		hexBarrierAlpha_ = 0.0f;
+		prevRightMouseDownForBarrier_ = false;
+		return;
 	}
+
+	// DirectInputでは 0 = 左クリック, 1 = 右クリック
+	const bool rightMouseDown = input->PushMouse(1);
+
+	if (player_) {
+		player_->SetBarrierActive(rightMouseDown);
+	}
+
+	// 右クリックを押している間だけ表示
+	if (rightMouseDown) {
+
+		hexBarrierActive_ = true;
+
+		if (!prevRightMouseDownForBarrier_) {
+			hexBarrierTimer_ = 0.0f;
+			hexBarrierProgress_ = 0.0f;
+			hexBarrierAlpha_ = 1.0f;
+		}
+
+		hexBarrierTimer_ += dt;
+
+		float t = hexBarrierTimer_ / hexBarrierDuration_;
+		t = std::clamp(t, 0.0f, 1.0f);
+
+		hexBarrierProgress_ = 1.0f - (1.0f - t) * (1.0f - t);
+		hexBarrierAlpha_ = 1.0f;
+
+		prevRightMouseDownForBarrier_ = true;
+		return;
+	}
+
+	// 右クリックを離したら見た目も即消す
+	hexBarrierActive_ = false;
+	hexBarrierTimer_ = 0.0f;
+	hexBarrierProgress_ = 0.0f;
+	hexBarrierAlpha_ = 0.0f;
+	prevRightMouseDownForBarrier_ = false;
 }

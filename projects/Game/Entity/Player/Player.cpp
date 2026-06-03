@@ -245,7 +245,11 @@ void Player::Attack(float dt) {
 	}
 
 	auto* input = KomEngine::System::GetInput();
+	if (!input) {
+		return;
+	}
 
+	// DirectInputでは 0 = 左クリック, 1 = 右クリック
 	const bool leftMouseDown = input->PushMouse(0);
 
 	// ----------------------------
@@ -266,6 +270,9 @@ void Player::Attack(float dt) {
 	}
 
 	// 右クリックはバリア用
+	isCharging_ = false;
+	chargeTimer_ = 0.0f;
+
 	prevMouse0Down_ = leftMouseDown;
 	prevMouse1Down_ = false;
 }
