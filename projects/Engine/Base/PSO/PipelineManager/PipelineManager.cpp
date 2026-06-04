@@ -28,7 +28,7 @@ const std::unordered_map<std::string, PipelineManager::ShaderPair> PipelineManag
 	{ "posteffect_Glitch",         { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/GlitchEffect.PS.hlsl" } },
 	{ "posteffect_Pixel",          { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/PixelationEffect.PS.hlsl" } },
 	{ "posteffect_ChromaticAberration",{ L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/ChromaticAberration.PS.hlsl" } },
-	{ "posteffect_VHSNoise",       { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/ma-zi shaders/VHSNoise.PS.hlsl" } },
+	{ "posteffect_VHSNoise",       { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/VHSNoise.PS.hlsl" } },
 	{ "posteffect_ColorInversion", { L"./Resources/shaders/Fullscreen.VS.hlsl", L"./Resources/shaders/ColorInversion.PS.hlsl" } }
 };
 
