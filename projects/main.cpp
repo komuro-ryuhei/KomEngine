@@ -20,7 +20,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	MyGame game;
 
 	// 初期シーン決定
-	game.Run("TEST");
+	game.Run("TITLE");
 
 	return 0;
 }
