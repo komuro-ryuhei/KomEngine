@@ -19,8 +19,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	MyGame game;
 
-	// game.Run("PARTICLE");
-	game.Run("QR");
+	// 初期シーン決定
+	game.Run("TEST");
 
 	return 0;
 }
