@@ -111,6 +111,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AssetPreloader.cpp" />
+    <ClCompile Include="externals\QRCode\qrcodegen.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossRushAttack.cpp" />
     <ClCompile Include="Game\GamePlay\Enemy\BossRushAttackController.cpp" />
     <ClCompile Include="Engine\Base\Particle\ParticleEditor.cpp" />
@@ -180,9 +181,11 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClCompile Include="Game\Entity\Player\Player.cpp" />
     <ClCompile Include="Game\Entity\Player\PlayerBullet.cpp" />
     <ClCompile Include="Engine\Base\OffscreenRendering\OffscreenRendering.cpp" />
+    <ClCompile Include="Game\Scene\QRCodeScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetPreloader.h" />
+    <ClInclude Include="externals\QRCode\qrcodegen.hpp" />
     <ClInclude Include="Game\Entity\Enemy\BossRushAttack.h" />
     <ClInclude Include="Game\GamePlay\Enemy\BossRushAttackController.h" />
     <ClInclude Include="Game\Entity\Enemy\BossRushAttackParams.h" />
@@ -256,6 +259,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClInclude Include="Game\UI\Fade.h" />
     <ClInclude Include="Game\UI\PauseMenu.h" />
     <ClInclude Include="Game\UI\ResultImage.h" />
+    <ClInclude Include="Game\Scene\QRCodeScene.h" />
     <ClInclude Include="struct.h" />
     <ClInclude Include="Game\Scene\TitleScene.h" />
   </ItemGroup>

@@ -283,6 +283,8 @@
     <ClCompile Include="Engine\Base\Particle\ParticleEditor.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossRushAttack.cpp" />
     <ClCompile Include="Game\GamePlay\Enemy\BossRushAttackController.cpp" />
+    <ClCompile Include="Game\Scene\QRCodeScene.cpp" />
+    <ClCompile Include="externals\QRCode\qrcodegen.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -453,6 +455,8 @@
     <ClInclude Include="Game\Entity\Enemy\BossRushAttack.h" />
     <ClInclude Include="Game\GamePlay\Enemy\BossRushAttackController.h" />
     <ClInclude Include="Game\Entity\Enemy\BossRushAttackParams.h" />
+    <ClInclude Include="Game\Scene\QRCodeScene.h" />
+    <ClInclude Include="externals\QRCode\qrcodegen.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

@@ -20,7 +20,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	MyGame game;
 
 	// game.Run("PARTICLE");
-	game.Run("TITLE");
+	game.Run("QR");
 
 	return 0;
 }

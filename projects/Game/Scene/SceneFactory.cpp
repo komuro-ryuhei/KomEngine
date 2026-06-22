@@ -12,6 +12,8 @@ std::unique_ptr<IScene> SceneFactory::CreateScene(const std::string& sceneName) 
 		return std::make_unique<GameOverScene>();
 	} else if (sceneName == "PARTICLE") {
 		return std::make_unique<ParticleEditScene>();
+	} else if (sceneName == "QR") {
+		return std::make_unique<QRCodeScene>();
 	}
 	return nullptr;
 }
