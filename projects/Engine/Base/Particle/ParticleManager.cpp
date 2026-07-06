@@ -285,6 +285,22 @@ void ParticleManager::Draw() {
 	}
 }
 
+void ParticleManager::ClearParticles() {
+
+	for (auto& [name, group] : particleGroups) {
+		name;
+
+		group.particles.clear();
+		group.instanceCount = 0;
+	}
+
+	// 渦巻きエミッターも止める
+	spiralEmitter.active = false;
+	spiralEmitter.count = 0;
+	spiralEmitter.timer = 0.0f;
+	spiralEmitter.position = {};
+}
+
 void ParticleManager::Emit(const std::string& name, const Vector3& position, uint32_t count) {
 
 	auto groupIt = particleGroups.find(name);

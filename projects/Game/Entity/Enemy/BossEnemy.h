@@ -358,8 +358,17 @@ private:
 	bool leftArmVisible_ = false;
 	bool rightArmVisible_ = false;
 
-	// 
-	std::unique_ptr<Sprite> hpSprite_;
+	// HP用スプライト
+	std::unique_ptr<Sprite> hpSprite_;      // 中身
+	std::unique_ptr<Sprite> hpFrameSprite_; // 枠
+
+	// HP中身
+	Vector2 hpFillPosition_ = { 282.0f, 70.0f };
+	Vector2 hpFillBaseSize_ = { 720.0f, 54.0f };
+
+	// HP枠
+	Vector2 hpFramePosition_ = { 165.0f, 70.0f };
+	Vector2 hpFrameBaseSize_ = { 953.0f, 110.0f };
 
 	// 攻撃用のタイマーと状態
 	float attackTimer_ = 0.0f;

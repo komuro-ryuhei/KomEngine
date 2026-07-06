@@ -140,6 +140,11 @@ void BossTestScene::ChangeToFadeOut() {
 
 void BossTestScene::Init() {
 
+	// パーティクルのクリア
+	if (auto* particleManager = KomEngine::System::GetParticleManager()) {
+		particleManager->ClearParticles();
+	}
+
 	// カメラ
 	camera_ = std::make_unique<Camera>();
 	camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
@@ -290,13 +295,14 @@ void BossTestScene::Init() {
 	toPauseSpr_->SetSize(toPauseSize_);
 	toPauseSpr_->SetPosition(toPausePos_);
 
-	// チャージ説明用ゲージ
-	chargeGaugeFrameSpr_ = std::make_unique<Sprite>();
-	chargeGaugeFrameSpr_->Init("./Resources/images/ChargeGueage.png", BlendType::BLEND_ALPHA);
-	chargeGaugeFrameSpr_->SetAnchorPoint({ 0.5f, 0.5f });
-	chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
-	chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
-	chargeGaugeFrameSpr_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+	// particle
+	KomEngine::System::GetParticleManager()->Init(BlendType::BLEND_ADD);
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("hit", circle2, "a");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("explosion", monsterBallTexture, "a");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("ring", ring, "ring");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("cylinder", ring, "cylinder");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("moonLight", moonLight, "moonLight");
+	KomEngine::System::GetParticleManager()->CreateParticleGroup("ribbon", moonLight, "ribbon");
 
 	// チャージ説明用ゲージの中身
 	chargeGaugeFillSpr_ = std::make_unique<Sprite>();
@@ -355,6 +361,9 @@ void BossTestScene::Init() {
 
 	result_ = std::make_unique<ResultImage>();
 	result_->Init();
+	// AddComponent 的な登録
+	collisionManager_.Register(player_.get());
+	collisionManager_.Register(boss_.get());
 
 	// ---- CollisionManager 設定 ----
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::Enemy);
@@ -362,30 +371,24 @@ void BossTestScene::Init() {
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyMeteor);
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyCharge);
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyMissile);
+	player_->SetCollisionManager(&collisionManager_);
+	boss_->SetCollisionManager(&collisionManager_);
 
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::Enemy);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyBullet);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyMeteor);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyMissile);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyCore);
-
-
-	// AddComponent 的な登録
-	collisionManager_.Register(player_.get());
-	collisionManager_.Register(boss_.get());
-
-	player_->SetCollisionManager(&collisionManager_);
-	boss_->SetCollisionManager(&collisionManager_);
-
 	// Playで使う正規の位置を保存
 	playCameraPos_ = camera_->GetTranaslate();
 	playCameraRot_ = camera_->GetRotate();
 
 	bossPlayPos_ = boss_->GetTranslate();
 
-	// ポーズメニュー
-	pauseMenu_ = std::make_unique<PauseMenu>();
-	pauseMenu_->Init();
+	// 敵の出現トリガー
+	enemyTriggers_.push_back({ {0.0f, 0.0f, 5.0f}, false });
+	enemyTriggers_.push_back({ {0.0f, 0.0f, 10.0f}, false });
+	enemyTriggers_.push_back({ {0.0f, 0.0f, 15.0f}, false });
 
 	particleEditor_.Init();
 	particleEditor_.SetEnabled(false);
@@ -398,7 +401,8 @@ void BossTestScene::Init() {
 	// KomEngine::System::GetOffscreenRendering()->SetPostEffect("Bloom");
 }
 
-void BossTestScene::Update() {
+	// Playerは一人称視点なので非描画
+	player_->Draw();
 
 	const float dt = KomEngine::System::GetDeltaTime();
 
@@ -409,7 +413,7 @@ void BossTestScene::Update() {
 	}
 }
 
-void BossTestScene::Draw() {
+void GameScene::Draw() {
 
 	// Skyboxの描画
 	skybox_->Draw();
@@ -423,7 +427,15 @@ void BossTestScene::Draw() {
 
 	// Bossの描画
 	boss_->Draw();
-	boss_->HPDraw();
+	// イントロ終了後に描画
+	const bool showBossHp =
+		introFinished_ &&
+		!playStartPending_ &&
+		!bossIntroGlintActive_;
+
+	if (showBossHp) {
+		boss_->HPDraw();
+	}
 
 	// Bossのメテオ描画
 	for (auto& m : meteors_) m->Draw();
@@ -512,9 +524,14 @@ void BossTestScene::Draw() {
 
 }
 
-void BossTestScene::Finalize() {}
+void GameScene::Finalize() {
 
-void BossTestScene::ImGuiDebug() {
+	if (auto* particleManager = KomEngine::System::GetParticleManager()) {
+		particleManager->ClearParticles();
+	}
+}
+
+void GameScene::ImGuiDebug() {
 
 #ifdef USE_IMGUI
 
@@ -527,7 +544,7 @@ void BossTestScene::ImGuiDebug() {
 	controlGuideSprite_->ImGuiDebug();
 	controlGuideSprite2_->ImGuiDebug();
 
-	ImGui::Begin("BossTestScene");
+	ImGui::Begin("GameScene");
 
 	ImGui::Checkbox("isCameraFollowPlayer", &isCameraFollowPlayer_);
 
@@ -594,7 +611,7 @@ void BossTestScene::ImGuiDebug() {
 #endif // _DEBUG
 }
 
-void BossTestScene::ChangeState(std::unique_ptr<SceneState> nextState) {
+void GameScene::ChangeState(std::unique_ptr<SceneState> nextState) {
 
 	if (state_) {
 		state_->Exit(*this);
@@ -607,7 +624,7 @@ void BossTestScene::ChangeState(std::unique_ptr<SceneState> nextState) {
 	}
 }
 
-void BossTestScene::RequestFadeOut(EndReason reason) {
+void GameScene::RequestFadeOut(EndReason reason) {
 
 	if (endReason_ == EndReason::None) {
 		endReason_ = reason;
@@ -617,7 +634,7 @@ void BossTestScene::RequestFadeOut(EndReason reason) {
 }
 
 
-void BossTestScene::UpdatePlay(float dt) {
+void GameScene::UpdatePlay(float dt) {
 
 	// ---------------- Pause (Play中だけ) ---------------- //
 	const bool canPause = !(result_ && result_->IsSlideFinished());
@@ -958,7 +975,7 @@ void BossTestScene::UpdatePlay(float dt) {
 	BossAttackSelectImGui();
 }
 
-void BossTestScene::UpdateCamera(float dt) {
+void GameScene::UpdateCamera(float dt) {
 
 	if (koActive_) {
 		return;
@@ -1035,7 +1052,7 @@ void BossTestScene::UpdateCamera(float dt) {
 	camera_->SetRotate(newRot);
 }
 
-void BossTestScene::ChangePostEffect() {
+void GameScene::ChangePostEffect() {
 
 	auto* offscreen = KomEngine::System::GetOffscreenRendering();
 	if (!offscreen || !player_) {
@@ -1201,7 +1218,7 @@ void BossTestScene::ChangePostEffect() {
 	lowHpVfxOn_ = false;
 }
 
-void BossTestScene::StartKnockout(int fallSide) {
+void GameScene::StartKnockout(int fallSide) {
 
 	// すでにノックアウト中なら何もしない
 	if (koActive_) {
@@ -1225,7 +1242,7 @@ void BossTestScene::StartKnockout(int fallSide) {
 	}
 }
 
-void BossTestScene::UpdatePlayerDeath(float dt) {
+void GameScene::UpdatePlayerDeath(float dt) {
 
 	// --- ノックアウト開始トリガー --- //
 
@@ -1251,7 +1268,7 @@ void BossTestScene::UpdatePlayerDeath(float dt) {
 	}
 }
 
-void BossTestScene::UpdateGun() {
+void GameScene::UpdateGun() {
 
 	if (!gun_ || !camera_) return;
 
@@ -1289,7 +1306,7 @@ void BossTestScene::UpdateGun() {
 	}
 }
 
-void BossTestScene::UpdateMeteorControl() {
+void GameScene::UpdateMeteorControl() {
 
 	if (!attackManager_) return;
 
@@ -1300,7 +1317,7 @@ void BossTestScene::UpdateMeteorControl() {
 	}
 }
 
-void BossTestScene::InitIntro() {
+void GameScene::InitIntro() {
 
 	introFinished_ = false;
 
@@ -1327,7 +1344,7 @@ void BossTestScene::InitIntro() {
 	introSavedCamRot_ = camera_->GetRotate();
 }
 
-void BossTestScene::UpdateArmTargetMarker() {
+void GameScene::UpdateArmTargetMarker() {
 
 	if (!boss_ || !camera_) return;
 
@@ -1506,7 +1523,7 @@ void BossTestScene::UpdateArmTargetMarker() {
 	}
 }
 
-void BossTestScene::UpdateMissileTelegraphMarkers() {
+void GameScene::UpdateMissileTelegraphMarkers() {
 
 	if (!camera_ || !attackManager_ || !attackManager_->GetMissile()) {
 		return;
@@ -1589,7 +1606,7 @@ void BossTestScene::UpdateMissileTelegraphMarkers() {
 	}
 }
 
-void BossTestScene::LineTarget() {
+void GameScene::LineTarget() {
 
 	// 両腕と胴体を結ぶライン
 	if (boss_) {
@@ -1649,7 +1666,7 @@ void BossTestScene::LineTarget() {
 	}
 }
 
-void BossTestScene::AddFloorGrid() {
+void GameScene::AddFloorGrid() {
 
 	// まずは雰囲気確認用の仮グリッド
 	const float y = -4.95f;
@@ -1687,7 +1704,7 @@ void BossTestScene::AddFloorGrid() {
 	}
 }
 
-Vector3 BossTestScene::CalcLookAtRotation(const Vector3& camPos, const Vector3& targetPos) {
+Vector3 GameScene::CalcLookAtRotation(const Vector3& camPos, const Vector3& targetPos) {
 
 	Vector3 dir = targetPos - camPos;
 	dir = MyMath::Normalize(dir);
@@ -1699,7 +1716,7 @@ Vector3 BossTestScene::CalcLookAtRotation(const Vector3& camPos, const Vector3& 
 	return rot;
 }
 
-void BossTestScene::UpdateIntro(float dt) {
+void GameScene::UpdateIntro(float dt) {
 
 	// メテオのパラメータをそのまま流用
 	const auto& mp = attackManager_->GetMeteor()->GetParams();
@@ -1804,7 +1821,7 @@ void BossTestScene::UpdateIntro(float dt) {
 	}
 }
 
-void BossTestScene::BeginPlay() {
+void GameScene::BeginPlay() {
 
 	introFinished_ = true;
 
@@ -1828,7 +1845,7 @@ void BossTestScene::BeginPlay() {
 	}
 }
 
-void BossTestScene::StartBossIntroGlint() {
+void GameScene::StartBossIntroGlint() {
 
 	if (!bossIntroGlintSprite_) {
 		return;
@@ -1841,7 +1858,7 @@ void BossTestScene::StartBossIntroGlint() {
 	bossIntroGlintSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 }
 
-void BossTestScene::BossAttackSelectImGui() {
+void GameScene::BossAttackSelectImGui() {
 
 #ifdef USE_IMGUI
 	if (attackManager_) {
@@ -1907,7 +1924,7 @@ void BossTestScene::BossAttackSelectImGui() {
 #endif
 }
 
-void BossTestScene::UpdateBossIntroGlint(float dt) {
+void GameScene::UpdateBossIntroGlint(float dt) {
 
 	if (!bossIntroGlintActive_ || !bossIntroGlintSprite_ || !boss_ || !camera_) {
 		return;
@@ -1994,7 +2011,7 @@ void BossTestScene::UpdateBossIntroGlint(float dt) {
 	bossIntroGlintSprite_->Update();
 }
 
-void BossTestScene::StartClearSequence() {
+void GameScene::StartClearSequence() {
 
 	clearSequenceStarted_ = true;
 	clearResultStarted_ = false;
@@ -2008,7 +2025,7 @@ void BossTestScene::StartClearSequence() {
 	}
 }
 
-void BossTestScene::UpdateClearSequence(float dt) {
+void GameScene::UpdateClearSequence(float dt) {
 
 	if (!clearSequenceStarted_) {
 		return;
@@ -2036,7 +2053,7 @@ void BossTestScene::UpdateClearSequence(float dt) {
 	}
 }
 
-void BossTestScene::TriggerClearExplosionStep(int step) {
+void GameScene::TriggerClearExplosionStep(int step) {
 
 	if (!boss_) {
 		return;
@@ -2083,7 +2100,7 @@ void BossTestScene::TriggerClearExplosionStep(int step) {
 	}
 }
 
-void BossTestScene::UpdateHexBarrier(float dt) {
+void GameScene::UpdateHexBarrier(float dt) {
 
 	auto* input = KomEngine::System::GetInput();
 	if (!input) {
@@ -2137,7 +2154,7 @@ void BossTestScene::UpdateHexBarrier(float dt) {
 	prevRightMouseDownForBarrier_ = false;
 }
 
-void BossTestScene::UpdateRushSpeedLine(float dt) {
+void GameScene::UpdateRushSpeedLine(float dt) {
 
 	if (!attackManager_ || !attackManager_->GetRush()) {
 		speedLineActive_ = false;
@@ -2160,7 +2177,7 @@ void BossTestScene::UpdateRushSpeedLine(float dt) {
 	speedLineIntensity_ = 0.0f;
 }
 
-void BossTestScene::InitRushRightClickGuide() {
+void GameScene::InitRushRightClickGuide() {
 
 	// 背景のびっくりマーク
 	rushRightClickTogetoge_ = std::make_unique<Sprite>();
@@ -2188,7 +2205,7 @@ void BossTestScene::InitRushRightClickGuide() {
 	rushRightClickGuideAlpha_ = 0.0f;
 }
 
-void BossTestScene::UpdateRushRightClickGuide(float dt) {
+void GameScene::UpdateRushRightClickGuide(float dt) {
 
 	if (!rushRightClickGuide_) {
 		return;
@@ -2303,7 +2320,7 @@ void BossTestScene::UpdateRushRightClickGuide(float dt) {
 	}
 }
 
-void BossTestScene::DrawRushRightClickGuide() {
+void GameScene::DrawRushRightClickGuide() {
 
 	if (rushRightClickGuideAlpha_ <= 0.0f) {
 		return;

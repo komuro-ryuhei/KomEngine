@@ -32,7 +32,7 @@
 
 #include <vector>
 
-class BossTestScene : public IScene {
+class GameScene : public IScene {
 
 public:
 
@@ -96,6 +96,22 @@ public:
 		line.AddLine(v010, v011, color);
 	}
 
+	GameScene() = default;
+	~GameScene() = default;
+
+		// 上側の四角
+		line.AddLine(v001, v101, color);
+		line.AddLine(v101, v111, color);
+		line.AddLine(v111, v011, color);
+		line.AddLine(v011, v001, color);
+
+		// 縦の4本
+		line.AddLine(v000, v001, color);
+		line.AddLine(v100, v101, color);
+		line.AddLine(v110, v111, color);
+		line.AddLine(v010, v011, color);
+	}
+
 	BossTestScene() = default;
 	~BossTestScene() = default;
 
@@ -116,9 +132,9 @@ private:
 	public:
 		virtual ~SceneState() = default;
 
-		virtual void Enter(BossTestScene&) {}
-		virtual void Update(BossTestScene& scene, float dt) = 0;
-		virtual void Exit(BossTestScene&) {}
+		virtual void Enter(GameScene&) {}
+		virtual void Update(GameScene& scene, float dt) = 0;
+		virtual void Exit(GameScene&) {}
 
 		virtual const char* GetName() const = 0;
 	};
@@ -150,6 +166,76 @@ private:
 
 	// デバッグ用ライン描画
 	LineRenderer debugLine_;
+
+	// Player
+	std::unique_ptr<Player> player_ = nullptr;
+	// Playerが持つ銃
+	std::unique_ptr<Object3d> gun_ = nullptr;
+	// カメラからの相対位置・回転
+	Vector3 gunOffset_{ 0.0f, -1.0f, 3.0f }; // 右/左, 上下, 前
+	Vector3 gunRotOffset_{ 0.0f, 1.5f, 0.0f }; // カメラからの回転オフセット
+
+	// Boss
+	std::unique_ptr<BossEnemy> boss_ = nullptr;
+
+	// 操作方法スプライト
+	std::unique_ptr<Sprite> controlGuideSprite_ = nullptr;
+	std::unique_ptr<Sprite> controlGuideSprite2_ = nullptr;
+
+	Vector2 controlGuide1Pos_{ 1120.0f, 480.0f };
+	Vector2 controlGuide1Size_{ 256.0f, 256.0f };
+
+	Vector2 controlGuide2Pos_{ 1120.0f, 480.0f };
+	Vector2 controlGuide2Size_{ 220.0f, 240.0f };
+
+	// チャージ説明用ゲージ
+	std::unique_ptr<Sprite> chargeGaugeFrameSpr_ = nullptr;
+	std::unique_ptr<Sprite> chargeGaugeFillSpr_ = nullptr;
+
+	Vector2 chargeGaugePos_{ 1120, 640.0f };
+	Vector2 chargeGaugeFrameSize_{ 180.0f, 34.0f };
+	Vector2 chargeGaugeFillBaseSize_{ 150.0f, 18.0f };
+	Vector2 chargeGaugeFillOffset_{ -75.0f, 0.0f };
+	Vector2 chargeGaugeMouseOffset_{ 0.0f, 64.0f };
+
+	std::unique_ptr<Sprite> leftClickOverlaySpr_ = nullptr;
+
+	Vector2 leftClickOverlayOffset_{ 0.0f, 0.0f };
+	Vector2 leftClickOverlaySize_{ 256.0f, 256.0f };
+
+	float chargeGaugeMaxTime_ = 3.0f;
+	float chargeGaugeTimer_ = 0.0f;
+
+	// 
+	std::unique_ptr<Sprite> toPauseSpr_;
+	Vector2 toPausePos_{ 1180.0f, 100.0f };
+	Vector2 toPauseSize_{ 64.0f, 64.0f };
+
+	// リザルトのスプライト
+	std::unique_ptr<ResultImage> result_ = nullptr;
+
+	// クリア演出
+	bool clearSequenceStarted_ = false;
+	bool clearResultStarted_ = false;
+	float clearSequenceTimer_ = 0.0f;
+
+	// 連鎖爆発
+	int clearExplosionStep_ = 0;
+	float clearExplosionTimer_ = 0.0f;
+	float clearExplosionInterval_ = 0.18f;
+
+	// 演出用
+	void StartClearSequence();
+	void UpdateClearSequence(float dt);
+	void TriggerClearExplosionStep(int step);
+
+	// target
+	std::unique_ptr<Sprite> leftTargetOuter_;
+	std::unique_ptr<Sprite> leftTargetInner_;
+	std::unique_ptr<Sprite> rightTargetOuter_;
+	std::unique_ptr<Sprite> rightTargetInner_;
+
+	std::vector<std::unique_ptr<Sprite>> missileTelegraphMarkers_;
 
 	// Player
 	std::unique_ptr<Player> player_ = nullptr;

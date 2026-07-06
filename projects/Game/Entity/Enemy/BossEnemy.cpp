@@ -60,12 +60,23 @@ void BossEnemy::Init(Camera* camera) {
 	rightArm_->SetScale({ 0.0f, 0.0f, 0.0f });
 
 
-	// 
+	// ---------------- HPバー ----------------
+
+	// 中身
 	hpSprite_ = std::make_unique<Sprite>();
-	hpSprite_->Init("./Resources/images/hp.png", BlendType::BLEND_NONE);
+	hpSprite_->Init("./Resources/images/hp.png", BlendType::BLEND_ALPHA);
 	hpSprite_->SetAnchorPoint({ 0.0f, 0.5f });
-	hpSprite_->SetSize({ 700.0f,50.0f });
-	hpSprite_->SetPosition({ 200.0f,100.0f });
+	hpSprite_->SetSize(hpFillBaseSize_);
+	hpSprite_->SetPosition(hpFillPosition_);
+	hpSprite_->Update();
+
+	// 枠
+	hpFrameSprite_ = std::make_unique<Sprite>();
+	hpFrameSprite_->Init("./Resources/images/bossHpFrame.png", BlendType::BLEND_ALPHA);
+	hpFrameSprite_->SetAnchorPoint({ 0.0f, 0.5f });
+	hpFrameSprite_->SetSize(hpFrameBaseSize_);
+	hpFrameSprite_->SetPosition(hpFramePosition_);
+	hpFrameSprite_->Update();
 
 	// チャージコア、チャージビームの生成
 	chargeCore_ = std::make_unique<BossChargeCore>();
@@ -160,9 +171,16 @@ void BossEnemy::Update() {
 	if (hpSprite_) {
 		float hpRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 		hpRatio = std::clamp(hpRatio, 0.0f, 1.0f);
-		Vector2 baseSize = { 700.0f, 50.0f };
-		hpSprite_->SetSize({ baseSize.x * hpRatio, baseSize.y });
+
+		hpSprite_->SetPosition(hpFillPosition_);
+		hpSprite_->SetSize({ hpFillBaseSize_.x * hpRatio, hpFillBaseSize_.y });
 		hpSprite_->Update();
+	}
+
+	if (hpFrameSprite_) {
+		hpFrameSprite_->SetPosition(hpFramePosition_);
+		hpFrameSprite_->SetSize(hpFrameBaseSize_);
+		hpFrameSprite_->Update();
 	}
 
 	// ---------------------------- HPチップの更新 ---------------------------- //
@@ -308,6 +326,27 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::DragFloat("半径 (右腕)", &rightArmRadius_, 0.01f, 0.0f, 100.0f);
 
 	ImGui::DragInt("HP", &hp_);
+
+	ImGui::Separator();
+	ImGui::Text("Boss HP Bar");
+
+	// 中身
+	ImGui::Text("Fill");
+	ImGui::DragFloat2("HP Fill Position", &hpFillPosition_.x, 1.0f);
+	ImGui::DragFloat2("HP Fill Size", &hpFillBaseSize_.x, 1.0f, 1.0f, 2000.0f);
+
+	// 枠
+	ImGui::Text("Frame");
+	ImGui::DragFloat2("HP Frame Position", &hpFramePosition_.x, 1.0f);
+	ImGui::DragFloat2("HP Frame Size", &hpFrameBaseSize_.x, 1.0f, 1.0f, 2000.0f);
+
+	if (ImGui::Button("Reset HP Bar")) {
+		hpFillPosition_ = { 240.0f, 70.0f };
+		hpFillBaseSize_ = { 800.0f, 52.0f };
+
+		hpFramePosition_ = { 240.0f, 70.0f };
+		hpFrameBaseSize_ = { 800.0f, 52.0f };
+	}
 
 	ImGui::Checkbox("攻撃中", &isAttack_);
 	ImGui::Checkbox("怒り状態", &isEnraged_);
@@ -1087,10 +1126,17 @@ void BossEnemy::OnMeteorFinished() {
 
 void BossEnemy::HPDraw() {
 
-	// HPバーを描画
-	hpSprite_->Draw();
+	// HPの中身
+	if (hpSprite_) {
+		hpSprite_->Draw();
+	}
 
-	// HPチップを描画
+	// 枠を上から描画
+	if (hpFrameSprite_) {
+		hpFrameSprite_->Draw();
+	}
+
+	// HPチップ
 	for (auto& chip : hpChips_) {
 		if (chip.sprite) {
 			chip.sprite->Draw();
@@ -1206,14 +1252,15 @@ void BossEnemy::Damage(int v) {
 
 	float prevRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 	prevRatio = std::clamp(prevRatio, 0.0f, 1.0f);
-	float prevWidth = 700.0f * prevRatio;
+	float prevWidth = hpFillBaseSize_.x * prevRatio;
 
 	hp_ = std::max(0, hp_ - v);
 
 	float newRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
 	newRatio = std::clamp(newRatio, 0.0f, 1.0f);
-	float newWidth = 700.0f * newRatio;
+	float newWidth = hpFillBaseSize_.x * newRatio;
 
+	// 減った部分からHPチップを出す
 	if (hpSprite_ && prevWidth > newWidth) {
 		SpawnHpChips(prevWidth, newWidth);
 	}
@@ -1351,8 +1398,8 @@ void BossEnemy::SpawnHpChips(float prevWidth, float newWidth) {
 	int count = static_cast<int>(lost / 25.0f) + 1;
 	count = std::min(count, 30); // 上限 30 個くらい
 
-	// HPバーの左端（アンカーは左中央）
-	Vector2 basePos = hpSprite_->GetPosition();
+	// HPバーの左端
+	Vector2 basePos = hpFillPosition_;
 
 	// 出現X範囲：減ったところ (newWidth ~ prevWidth)
 	float xMin = basePos.x + newWidth;

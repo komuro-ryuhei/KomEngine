@@ -4,7 +4,7 @@
 
 #include "Game/Scene/GameScene.h"
 #include "Game/Scene/TitleScene.h"
-#include "Game/Scene/BossTestScene.h"
+#include "Game/Scene/GameScene.h"
 #include "Game/Scene/GameOverScene.h"
 #include "Game/Scene/ParticleEditScene.h"
 #include "Game/Scene/QRCodeScene.h"
