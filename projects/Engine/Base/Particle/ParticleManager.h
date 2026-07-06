@@ -119,6 +119,9 @@ public:
 	/// </summary>
 	void Draw();
 
+	// 発生中のパーティクルを全削除
+	void ClearParticles();
+
 public:
 
 	// setter

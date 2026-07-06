@@ -42,7 +42,7 @@ public:
 		std::vector<std::unique_ptr<BossMissile>>* missiles = nullptr;
 	};
 
-	// BossTestScene側で毎フレーム渡せるフラグ
+	// GameScene側で毎フレーム渡せるフラグ
 	struct UpdateFlags {
 		bool koActive = false;
 		bool isMainPhase = true;

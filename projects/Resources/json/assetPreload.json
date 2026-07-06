@@ -46,6 +46,8 @@
     "./Resources/images/star.png",
     "./Resources/images/togetoge.png",
     "./Resources/images/PauseToTitle.png",
+    "./Resources/images/bossHpFill.png",
+    "./Resources/images/bossHpFrame.png",
     "./Resources/images/white_1x1.png"
   ],
   "models": [

@@ -59,7 +59,6 @@ public:
 
 	void SetInvincible(bool flag);
 	void SetRotate(Vector3& rotate);
-	void SetHeatGaugePos(const Vector2& pos) { heatGaugePos_ = pos; }
 
 	bool IsInvincible() const;
 	void Damage(int amount);
@@ -105,9 +104,6 @@ private:
 	// 手元の銃の更新
 	void UpdateGun();
 
-	// オーバーヒートゲージの更新
-	void UpdateHeatGauge();
-
 public:
 
 	void RailMove();
@@ -148,23 +144,6 @@ private:
 	bool isInvincible_ = false;
 	float invincibleTimer_ = 0.0f;
 
-	// 連射制御
-	float autofireInterval_ = 0.10f;
-	float autofireTimer_ = 0.0f;
-
-	// ----------------------- オーバーヒート & チャージ ----------------------- //
-	float heat_ = 0.0f;
-	float heatMax_ = 100.0f;
-	float heatRecover_ = 30.0f; // ここまで冷えたら復帰（heatMax_の30%など）
-
-	float heatCoolPerSec_ = 35.0f;      // 何もしてない時の冷却速度
-	float heatCoolWhileCharge_ = 20.0f; // チャージ中の冷却速度
-
-	float heatCostNormal_ = 12.0f;   // 通常弾1発の熱量
-	float heatCostAutofire_ = 9.0f;  // 連射弾1発の熱量
-	float heatCostCharged_ = 30.0f;  // フルチャージ弾の熱量
-	bool  isOverheated_ = false;
-
 	// チャージショット（Mouse0押し→離した瞬間に発射）
 	bool  isCharging_ = false;
 	float chargeTimer_ = 0.0f;
@@ -183,6 +162,9 @@ private:
 
 	// 射撃許可フラグ
 	bool canShoot_ = true;
+	// 射撃間隔
+	float shotInterval_ = 0.12f;
+	float shotTimer_ = 0.0f;
 
 	// ----------------------- バリア ----------------------- //
 	bool isBarrierActive_ = false;
@@ -218,11 +200,4 @@ private:
 	Vector3 gunRotate_ = { 0.0f, 0.0f, 0.0f }; // 銃っぽい比率
 	Vector3 gunTranslate_ = { 0.2f, -0.2f, 1.5f }; // 銃っぽい比率
 	Vector3 gunRotOffset_ = { 0.0f, 0.0f, 0.0f }; // 必要なら傾ける
-
-	// ゲージ用スプライト
-	std::unique_ptr<Sprite> heatGaugeBg_ = nullptr;
-	std::unique_ptr<Sprite> heatGaugeFill_ = nullptr;
-	float heatGaugeMaxWidth_ = 256.0f;
-	float heatGaugeHeight_ = 32.0f;
-	Vector2 heatGaugePos_{ 40.0f, 620.0f };
 };

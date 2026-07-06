@@ -94,49 +94,14 @@ void Player::Init(Camera* camera) {
 
 	chargeLineEmitter_ = std::make_unique<ParticleEmitter>();
 	chargeLineEmitter_->Init("player_charge_line", { 0.0f, 0.0f, 0.0f }, 8);
-
-	// オーバーヒートゲージのスプライト
-	heatGaugeBg_ = std::make_unique<Sprite>();
-	heatGaugeBg_->Init("./Resources/images/blackBG.png", BlendType::BLEND_ALPHA);
-	heatGaugeBg_->SetSize({ heatGaugeMaxWidth_, heatGaugeHeight_ });
-	heatGaugeBg_->SetAnchorPoint({ 0.0f, 1.0f });
-	heatGaugeBg_->SetPosition(heatGaugePos_);
-
-	heatGaugeFill_ = std::make_unique<Sprite>();
-	heatGaugeFill_->Init("./Resources/images/gauge.png", BlendType::BLEND_ALPHA);
-	heatGaugeFill_->SetSize({ heatGaugeMaxWidth_, heatGaugeHeight_ });
-	heatGaugeFill_->SetAnchorPoint({ 0.0f, 1.0f });
-	heatGaugeFill_->SetPosition(heatGaugePos_);
 }
 
 void Player::Update() {
 
 	const float dt = KomEngine::System::GetDeltaTime();
 
-	firedThisFrame_ = false;
-
-	// 連射タイマーを減算
-	autofireTimer_ = std::max(0.0f, autofireTimer_ - dt);
-
 	if (controlEnabled_) {
 		Attack(dt);
-	}
-
-	// ----------------------- オーバーヒート冷却処理 ----------------------- //
-	{
-		// 撃ったフレームは冷却しない
-		if (!firedThisFrame_) {
-			heat_ = std::max(0.0f, heat_ - heatCoolPerSec_ * dt);
-		}
-
-		// 復帰判定
-		if (isOverheated_ && heat_ <= heatRecover_) {
-			isOverheated_ = false;
-			canShoot_ = true;
-		}
-
-		// 念のための上限
-		heat_ = std::clamp(heat_, 0.0f, heatMax_);
 	}
 
 	// 無敵タイマー処理
@@ -177,8 +142,6 @@ void Player::Update() {
 	object3d_->SetRotate(transform_.rotate);
 
 	UpdateReticleSprite();
-
-	UpdateHeatGauge();
 }
 
 void Player::Draw() {
@@ -193,9 +156,6 @@ void Player::Draw() {
 	/*if (gun_) {
 		gun_->Draw();
 	}*/
-
-	if (heatGaugeBg_) { heatGaugeBg_->Draw(); }
-	if (heatGaugeFill_) { heatGaugeFill_->Draw(); }
 
 	reticleSprite_->Draw();
 
@@ -220,18 +180,6 @@ void Player::ImGuiDebug() {
 	ImGui::DragInt("HP", &hp_);
 
 	ImGui::Separator();
-	ImGui::Text("Heat");
-	ImGui::DragFloat("heat", &heat_, 0.1f, 0.0f, heatMax_);
-	ImGui::DragFloat("heatMax", &heatMax_, 0.1f, 1.0f, 999.0f);
-	ImGui::DragFloat("heatRecover", &heatRecover_, 0.1f, 0.0f, heatMax_);
-	ImGui::DragFloat("coolPerSec", &heatCoolPerSec_, 0.1f, 0.0f, 999.0f);
-	ImGui::DragFloat("coolWhileCharge", &heatCoolWhileCharge_, 0.1f, 0.0f, 999.0f);
-	ImGui::DragFloat("costNormal", &heatCostNormal_, 0.1f, 0.0f, 999.0f);
-	ImGui::DragFloat("costAutofire", &heatCostAutofire_, 0.1f, 0.0f, 999.0f);
-	ImGui::DragFloat("costCharged", &heatCostCharged_, 0.1f, 0.0f, 999.0f);
-	ImGui::Text("Overheated: %s", isOverheated_ ? "YES" : "NO");
-
-	ImGui::Separator();
 
 	ImGui::End();
 
@@ -249,27 +197,22 @@ void Player::Attack(float dt) {
 		return;
 	}
 
-	// DirectInputでは 0 = 左クリック, 1 = 右クリック
-	const bool leftMouseDown = input->PushMouse(0);
-
-	// ----------------------------
-	// 左クリック：通常ショット
-	// ----------------------------
-	if (leftMouseDown && !prevMouse0Down_) {
-
-		const float cost = heatCostNormal_;
-
-		if (heat_ + cost >= heatMax_) {
-			heat_ = heatMax_;
-			isOverheated_ = true;
-			canShoot_ = false;
-		} else {
-			heat_ += cost;
-			SpawnBullet(1);
-		}
+	// 射撃タイマー更新
+	shotTimer_ -= dt;
+	if (shotTimer_ < 0.0f) {
+		shotTimer_ = 0.0f;
 	}
 
-	// 右クリックはバリア用
+	// DirectInputでは 0 = 左クリック
+	const bool leftMouseDown = input->PushMouse(0);
+
+	// 左クリック押しっぱなしで一定間隔ごとに発射
+	if (leftMouseDown && shotTimer_ <= 0.0f) {
+		SpawnBullet(1);
+		shotTimer_ = shotInterval_;
+	}
+
+	// 右クリックはバリア用なので、Player側では使わない
 	isCharging_ = false;
 	chargeTimer_ = 0.0f;
 
@@ -372,8 +315,6 @@ void Player::SpawnBullet(int damage) {
 	}
 
 	bulletObjects_.emplace_back(std::move(newBullet));
-
-	firedThisFrame_ = true;
 }
 
 void Player::UpdateGun() {
@@ -420,26 +361,6 @@ void Player::UpdateGun() {
 	// Cubeの前方（+fwd方向）に少し出す
 	hasGunMuzzlePos_ = true;
 	gunMuzzlePos_ = gunPos + camFwd * 0.8f + camRight * 0.05f - camUp * 0.02f;
-}
-
-void Player::UpdateHeatGauge() {
-
-	if (!heatGaugeBg_ || !heatGaugeFill_) { return; }
-
-	float remain = 1.0f;
-	if (heatMax_ > 0.0f) {
-		remain = 1.0f - (heat_ / heatMax_);
-	}
-	remain = std::clamp(remain, 0.0f, 1.0f);
-
-	const float w = heatGaugeMaxWidth_ * remain;
-	heatGaugeFill_->SetSize({ w, heatGaugeHeight_ });
-
-	heatGaugeBg_->SetPosition(heatGaugePos_);
-	heatGaugeFill_->SetPosition(heatGaugePos_);
-
-	heatGaugeBg_->Update();
-	heatGaugeFill_->Update();
 }
 
 void Player::UpdateReticleSprite() {

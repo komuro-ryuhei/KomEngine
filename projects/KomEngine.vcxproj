@@ -132,7 +132,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClCompile Include="Game\Entity\Enemy\BossSword.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossMeteor.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossEnemy.cpp" />
-    <ClCompile Include="Game\Scene\BossTestScene.cpp" />
+    <ClCompile Include="Game\Scene\GameScene.cpp" />
     <ClCompile Include="Game\Entity\Enemy\EnemyBullet.cpp" />
     <ClCompile Include="Game\Entity\Enemy\Enemy.cpp" />
     <ClCompile Include="Engine\Base\3d\Skybox\Skybox.cpp" />
@@ -151,7 +151,6 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClCompile Include="Engine\lib\Input\Input.cpp" />
     <ClCompile Include="Engine\lib\Logger\Logger.cpp" />
     <ClCompile Include="Engine\Base\ImGuiManager\ImGuiManager.cpp" />
-    <ClCompile Include="Game\Scene\GameScene.cpp" />
     <ClCompile Include="Game\Scene\IScene.cpp" />
     <ClCompile Include="Game\Scene\ParticleEditScene.cpp" />
     <ClCompile Include="Game\UI\Fade.cpp" />
@@ -211,7 +210,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClInclude Include="Game\Entity\Enemy\BossSword.h" />
     <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
     <ClInclude Include="Game\Entity\Enemy\BossEnemy.h" />
-    <ClInclude Include="Game\Scene\BossTestScene.h" />
+    <ClInclude Include="Game\Scene\GameScene.h" />
     <ClInclude Include="Game\Entity\Enemy\EnemyBullet.h" />
     <ClInclude Include="Game\Entity\Enemy\Enemy.h" />
     <ClInclude Include="Engine\Base\3d\Skybox\Skybox.h" />
@@ -246,7 +245,6 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClInclude Include="Engine\Base\SrvManager\SrvManager.h" />
     <ClInclude Include="Engine\Base\ImGuiManager\ImGuiManager.h" />
     <ClInclude Include="Engine\Base\MyGame\MyGame.h" />
-    <ClInclude Include="Game\Scene\GameScene.h" />
     <ClInclude Include="Game\Scene\IScene.h" />
     <ClInclude Include="Game\Scene\ParticleEditScene.h" />
     <ClInclude Include="Game\Scene\SceneManager.h" />
