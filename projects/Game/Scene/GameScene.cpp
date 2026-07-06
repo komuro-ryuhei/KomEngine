@@ -1,4 +1,4 @@
-#include "BossTestScene.h"
+#include "GameScene.h"
 
 #ifdef USE_IMGUI
 #include "externals/imgui/imgui.h"
@@ -9,16 +9,16 @@
 #include <memory>
 #include <vector>
 
-class BossTestScene::FadeInState : public BossTestScene::SceneState {
+class GameScene::FadeInState : public GameScene::SceneState {
 
 public:
 
-	void Enter(BossTestScene& scene) override {
+	void Enter(GameScene& scene) override {
 		scene.fadeOutRequested_ = false;
 		scene.introFinished_ = false;
 	}
 
-	void Update(BossTestScene& scene, float dt) override {
+	void Update(GameScene& scene, float dt) override {
 		(void)dt;
 
 		scene.InitIntro();
@@ -30,15 +30,15 @@ public:
 	}
 };
 
-class BossTestScene::IntroState : public BossTestScene::SceneState {
+class GameScene::IntroState : public GameScene::SceneState {
 
 public:
 
-	void Enter(BossTestScene& scene) override {
+	void Enter(GameScene& scene) override {
 		scene.introFinished_ = false;
 	}
 
-	void Update(BossTestScene& scene, float dt) override {
+	void Update(GameScene& scene, float dt) override {
 
 		scene.UpdateIntro(dt);
 
@@ -76,15 +76,15 @@ public:
 	}
 };
 
-class BossTestScene::PlayState : public BossTestScene::SceneState {
+class GameScene::PlayState : public GameScene::SceneState {
 
 public:
 
-	void Enter(BossTestScene& scene) override {
+	void Enter(GameScene& scene) override {
 		scene.fadeOutRequested_ = false;
 	}
 
-	void Update(BossTestScene& scene, float dt) override {
+	void Update(GameScene& scene, float dt) override {
 
 		scene.UpdatePlay(dt);
 
@@ -99,20 +99,21 @@ public:
 	}
 };
 
-class BossTestScene::FadeOutState : public BossTestScene::SceneState {
+class GameScene::FadeOutState : public GameScene::SceneState {
 
 public:
 
-	void Enter(BossTestScene& scene) override {
+	void Enter(GameScene& scene) override {
 		scene.fadeOutRequested_ = false;
 	}
 
-	void Update(BossTestScene& scene, float dt) override {
+	void Update(GameScene& scene, float dt) override {
 		(void)dt;
 
 		if (scene.endReason_ == EndReason::BossDeath || scene.endReason_ == EndReason::GoTitle) {
 			scene.sceneManager_->ChangeScene("TITLE");
-		} else if (scene.endReason_ == EndReason::PlayerDeath) {
+		}
+		else if (scene.endReason_ == EndReason::PlayerDeath) {
 			scene.sceneManager_->ChangeScene("GAMEOVER");
 		}
 	}
@@ -122,23 +123,23 @@ public:
 	}
 };
 
-void BossTestScene::ChangeToFadeIn() {
+void GameScene::ChangeToFadeIn() {
 	ChangeState(std::unique_ptr<SceneState>(new FadeInState()));
 }
 
-void BossTestScene::ChangeToIntro() {
+void GameScene::ChangeToIntro() {
 	ChangeState(std::unique_ptr<SceneState>(new IntroState()));
 }
 
-void BossTestScene::ChangeToPlay() {
+void GameScene::ChangeToPlay() {
 	ChangeState(std::unique_ptr<SceneState>(new PlayState()));
 }
 
-void BossTestScene::ChangeToFadeOut() {
+void GameScene::ChangeToFadeOut() {
 	ChangeState(std::unique_ptr<SceneState>(new FadeOutState()));
 }
 
-void BossTestScene::Init() {
+void GameScene::Init() {
 
 	// パーティクルのクリア
 	if (auto* particleManager = KomEngine::System::GetParticleManager()) {
@@ -167,7 +168,6 @@ void BossTestScene::Init() {
 	glassObject_->SetDefaultCamera(camera_.get());
 	glassObject_->SetTranslate({ 0.0f, -5.0f, 0.0f });
 	glassObject_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
-
 
 	// Player
 	player_ = std::make_unique<Player>();
@@ -295,14 +295,13 @@ void BossTestScene::Init() {
 	toPauseSpr_->SetSize(toPauseSize_);
 	toPauseSpr_->SetPosition(toPausePos_);
 
-	// particle
-	KomEngine::System::GetParticleManager()->Init(BlendType::BLEND_ADD);
-	KomEngine::System::GetParticleManager()->CreateParticleGroup("hit", circle2, "a");
-	KomEngine::System::GetParticleManager()->CreateParticleGroup("explosion", monsterBallTexture, "a");
-	KomEngine::System::GetParticleManager()->CreateParticleGroup("ring", ring, "ring");
-	KomEngine::System::GetParticleManager()->CreateParticleGroup("cylinder", ring, "cylinder");
-	KomEngine::System::GetParticleManager()->CreateParticleGroup("moonLight", moonLight, "moonLight");
-	KomEngine::System::GetParticleManager()->CreateParticleGroup("ribbon", moonLight, "ribbon");
+	// チャージ説明用ゲージ
+	chargeGaugeFrameSpr_ = std::make_unique<Sprite>();
+	chargeGaugeFrameSpr_->Init("./Resources/images/ChargeGueage.png", BlendType::BLEND_ALPHA);
+	chargeGaugeFrameSpr_->SetAnchorPoint({ 0.5f, 0.5f });
+	chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
+	chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
+	chargeGaugeFrameSpr_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 
 	// チャージ説明用ゲージの中身
 	chargeGaugeFillSpr_ = std::make_unique<Sprite>();
@@ -361,9 +360,6 @@ void BossTestScene::Init() {
 
 	result_ = std::make_unique<ResultImage>();
 	result_->Init();
-	// AddComponent 的な登録
-	collisionManager_.Register(player_.get());
-	collisionManager_.Register(boss_.get());
 
 	// ---- CollisionManager 設定 ----
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::Enemy);
@@ -371,24 +367,30 @@ void BossTestScene::Init() {
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyMeteor);
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyCharge);
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyMissile);
-	player_->SetCollisionManager(&collisionManager_);
-	boss_->SetCollisionManager(&collisionManager_);
 
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::Enemy);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyBullet);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyMeteor);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyMissile);
 	collisionManager_.AddPairRule(CollisionLayer::PlayerBullet, CollisionLayer::EnemyCore);
+
+
+	// AddComponent 的な登録
+	collisionManager_.Register(player_.get());
+	collisionManager_.Register(boss_.get());
+
+	player_->SetCollisionManager(&collisionManager_);
+	boss_->SetCollisionManager(&collisionManager_);
+
 	// Playで使う正規の位置を保存
 	playCameraPos_ = camera_->GetTranaslate();
 	playCameraRot_ = camera_->GetRotate();
 
 	bossPlayPos_ = boss_->GetTranslate();
 
-	// 敵の出現トリガー
-	enemyTriggers_.push_back({ {0.0f, 0.0f, 5.0f}, false });
-	enemyTriggers_.push_back({ {0.0f, 0.0f, 10.0f}, false });
-	enemyTriggers_.push_back({ {0.0f, 0.0f, 15.0f}, false });
+	// ポーズメニュー
+	pauseMenu_ = std::make_unique<PauseMenu>();
+	pauseMenu_->Init();
 
 	particleEditor_.Init();
 	particleEditor_.SetEnabled(false);
@@ -401,8 +403,7 @@ void BossTestScene::Init() {
 	// KomEngine::System::GetOffscreenRendering()->SetPostEffect("Bloom");
 }
 
-	// Playerは一人称視点なので非描画
-	player_->Draw();
+void GameScene::Update() {
 
 	const float dt = KomEngine::System::GetDeltaTime();
 
@@ -665,7 +666,8 @@ void GameScene::UpdatePlay(float dt) {
 			// ポーズを閉じてもカーソルを中央固定しない
 			KomEngine::System::GetInput()->SetMouseCenterLock(false);
 
-		} else if (r == PauseMenu::Result::GoTitle) {
+		}
+		else if (r == PauseMenu::Result::GoTitle) {
 
 			pauseMenu_->SetPaused(false);
 
@@ -949,7 +951,8 @@ void GameScene::UpdatePlay(float dt) {
 		if (!clearSequenceStarted_) {
 			StartClearSequence();
 		}
-	} else {
+	}
+	else {
 		bossDeathTimer_ = 0.0f;
 	}
 
@@ -1015,7 +1018,8 @@ void GameScene::UpdateCamera(float dt) {
 	if (focusBoss) {
 		// 退避中などは従来通りボスを向く
 		targetRot = CalcLookAtRotation(newCamPos, boss_->GetCameraFocusPos());
-	} else if (isCameraFollowPlayer_) {
+	}
+	else if (isCameraFollowPlayer_) {
 		// 通常はプレイヤー向き
 		targetRot = player_->GetTransform().rotate;
 	}
@@ -1029,7 +1033,8 @@ void GameScene::UpdateCamera(float dt) {
 		if (chargeLookBlend_ > 1.0f) {
 			chargeLookBlend_ = 1.0f;
 		}
-	} else {
+	}
+	else {
 		chargeLookActive_ = false;
 		chargeLookBlend_ -= dt * chargeLookOutSpeed_;
 		if (chargeLookBlend_ < 0.0f) {
@@ -1087,7 +1092,8 @@ void GameScene::ChangePostEffect() {
 			if (player_->IsLowHP(1)) {
 				offscreen->SetPostEffect("Vignetting");
 				lowHpVfxOn_ = true;
-			} else {
+			}
+			else {
 				offscreen->SetPostEffect("none");
 				lowHpVfxOn_ = false;
 			}
@@ -1124,7 +1130,8 @@ void GameScene::ChangePostEffect() {
 		if (nowLow) {
 			offscreen->SetPostEffect("Vignetting");
 			lowHpVfxOn_ = true;
-		} else {
+		}
+		else {
 			offscreen->SetPostEffect("none");
 			lowHpVfxOn_ = false;
 		}
@@ -1480,7 +1487,8 @@ void GameScene::UpdateArmTargetMarker() {
 			leftTargetOuter_->SetColor({ 1,1,1,1 });
 			leftTargetInner_->SetColor({ 1,1,1,1 });
 		}
-	} else {
+	}
+	else {
 		leftTargetOuter_->SetColor({ 1,1,1,0 });
 		leftTargetInner_->SetColor({ 1,1,1,0 });
 	}
@@ -1517,7 +1525,8 @@ void GameScene::UpdateArmTargetMarker() {
 			rightTargetOuter_->SetColor({ 1,1,1,1 });
 			rightTargetInner_->SetColor({ 1,1,1,1 });
 		}
-	} else {
+	}
+	else {
 		rightTargetOuter_->SetColor({ 1,1,1,0 });
 		rightTargetInner_->SetColor({ 1,1,1,0 });
 	}
@@ -1759,7 +1768,8 @@ void GameScene::UpdateIntro(float dt) {
 		if (!landed) {
 			// 着地前：今まで通り（メテオ式）
 			camera_->SetTranslate(targetPos);
-		} else {
+		}
+		else {
 			// 着地後：プレイヤー位置へ寄せる（ズレ防止）
 			Vector3 cur = camera_->GetTranaslate();
 			Vector3 goal = player_->GetTranslate();
@@ -1993,7 +2003,8 @@ void GameScene::UpdateBossIntroGlint(float dt) {
 	float scale = 220.0f;
 	if (t < 0.25f) {
 		scale = 220.0f * (t / 0.25f); // 0 -> 220
-	} else {
+	}
+	else {
 		float u = (t - 0.25f) / 0.75f;
 		scale = 220.0f - 100.0f * u;  // 220 -> 120
 	}
@@ -2001,7 +2012,8 @@ void GameScene::UpdateBossIntroGlint(float dt) {
 	float alpha = 1.0f;
 	if (t < 0.2f) {
 		alpha = t / 0.2f; // フェードイン
-	} else {
+	}
+	else {
 		alpha = 1.0f - ((t - 0.2f) / 0.8f); // フェードアウト
 	}
 	alpha = std::clamp(alpha, 0.0f, 1.0f);
@@ -2226,7 +2238,8 @@ void GameScene::UpdateRushRightClickGuide(float dt) {
 		if (rushRightClickGuideAlpha_ > 1.0f) {
 			rushRightClickGuideAlpha_ = 1.0f;
 		}
-	} else {
+	}
+	else {
 		rushRightClickGuideAlpha_ -= dt * rushRightClickGuideFadeOutSpeed_;
 		if (rushRightClickGuideAlpha_ < 0.0f) {
 			rushRightClickGuideAlpha_ = 0.0f;
