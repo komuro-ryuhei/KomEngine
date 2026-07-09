@@ -396,6 +396,10 @@ private:
 
 	float armRushSpeed_ = 0.15f;            // 突進速度
 
+	// 風切りエフェクト
+	float armWindSlashFxTimer_ = 0.0f;
+	float armWindSlashFxInterval_ = 0.03f;
+
 	Vector3 armTelegraphStartPos_{};        // 溜め開始時の腕位置
 	Vector3 armTelegraphTargetPos_{};       // 引いた先の位置
 

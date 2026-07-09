@@ -182,6 +182,9 @@ public:
 	// missile flame
 	Particle MakeMissileFlameParticle(std::mt19937& randomEngine, const Vector3& pos, const Vector3& forward);
 
+	// 腕の風切り
+	Particle MakeArmWindSlashParticle(std::mt19937& randomEngine, const Vector3& pos, const Vector3& forward);
+
 	// 爆発エフェクトのパーティクル
 	Particle MakeExplosionParticle(std::mt19937& randomEngine, const Vector3& translate);
 
@@ -190,6 +193,9 @@ public:
 
 	// ミサイルの炎専用 Emit
 	void EmitMissileFlame(const Vector3& pos, const Vector3& forward, uint32_t count);
+
+	// // 腕攻撃の風切り Emit
+	void EmitArmWindSlash(const Vector3& pos, const Vector3& forward, uint32_t count);
 
 	/// <summary>
 	/// 存在確認

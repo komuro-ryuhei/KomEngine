@@ -425,6 +425,9 @@ void BossEnemy::Attack() {
 		return;
 	}
 
+	auto* pm = KomEngine::System::GetParticleManager();
+	const float dt = KomEngine::System::GetDeltaTime();
+
 	switch (attackPhase_) {
 
 		// ================== 左右片手攻撃 ================== //
@@ -513,6 +516,14 @@ void BossEnemy::Attack() {
 		if (isExtending_) {
 			// 長めにグッと前へ出る
 			armPos += dir * armRushSpeed_;
+
+			armWindSlashFxTimer_ += dt;
+			if (pm && armWindSlashFxTimer_ >= armWindSlashFxInterval_) {
+				armWindSlashFxTimer_ = 0.0f;
+
+				const Vector3 armWorldPos = transform_.translate + armPos;
+				pm->EmitArmWindSlash(armWorldPos, dir, 2);
+			}
 
 			// 一定距離 or 規定ヒット数で戻りフェーズへ
 			if (MyMath::Length(armPos - baseLocalOffset) >= 22.0f ||
@@ -717,6 +728,21 @@ void BossEnemy::Attack() {
 			}
 		}
 
+		if (pm && (leftExtending_ || rightExtending_)) {
+			armWindSlashFxTimer_ += dt;
+
+			if (armWindSlashFxTimer_ >= armWindSlashFxInterval_) {
+				armWindSlashFxTimer_ = 0.0f;
+
+				if (leftExtending_) {
+					pm->EmitArmWindSlash(leftWorldPos, dirL, 2);
+				}
+				if (rightExtending_) {
+					pm->EmitArmWindSlash(rightWorldPos, dirR, 2);
+				}
+			}
+		}
+
 		Vector3 leftLocal = leftWorldPos - transform_.translate;
 		Vector3 rightLocal = rightWorldPos - transform_.translate;
 
@@ -831,6 +857,8 @@ void BossEnemy::StartArmCombo() {
 
 	if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
 	if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
+
+	armWindSlashFxTimer_ = 0.0f;
 }
 
 bool BossEnemy::ConsumeArmComboFinished() {
@@ -871,6 +899,8 @@ void BossEnemy::CancelAttacksForMeteor() {
 	if (chargeBeam_) {
 		chargeBeam_->Destroy();
 	}
+
+	armWindSlashFxTimer_ = 0.0f;
 }
 
 void BossEnemy::CancelAllAttacks() {
@@ -909,6 +939,8 @@ void BossEnemy::CancelAllAttacks() {
 	isExtending_ = true;
 	leftExtending_ = true;
 	rightExtending_ = true;
+
+	armWindSlashFxTimer_ = 0.0f;
 }
 
 void BossEnemy::StartEnrageTransition(float duration) {

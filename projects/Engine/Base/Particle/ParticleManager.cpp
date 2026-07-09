@@ -225,6 +225,27 @@ void ParticleManager::Update() {
 				particle.color = c;
 			}
 
+			else if (name == "arm_wind_slash") {
+
+				// 風が伸びる感じ
+				particle.transform.scale.x *= 0.98f;
+				particle.transform.scale.y *= 1.04f;
+
+				// 少し減速
+				particle.velocity.x *= 0.95f;
+				particle.velocity.y *= 0.96f;
+				particle.velocity.z *= 0.95f;
+
+				// 白っぽく抜ける
+				Vector4 c;
+				c.x = 0.92f + 0.08f * t;
+				c.y = 0.96f + 0.04f * t;
+				c.z = 1.00f;
+				c.w = (1.0f - t) * 0.75f;
+
+				particle.color = c;
+			}
+
 			// 速度による移動
 			particle.transform.translate.x += particle.velocity.x;
 			particle.transform.translate.y += particle.velocity.y;
@@ -450,6 +471,26 @@ void ParticleManager::RegisterDefaultPresets() {
 
 		p.colorMin = { 0.90f, 0.90f, 1.00f, 0.50f };
 		p.colorMax = { 1.00f, 1.00f, 1.00f, 0.80f };
+
+		RegisterPreset(p);
+	}
+
+	// arm_wind_slash
+	{
+		ParticlePreset p{};
+		p.name = "arm_wind_slash";
+		p.textureFilePath = "./Resources/EffectAssets/Effect/Wind.dds";
+		p.meshType = "a";
+		p.behaviorType = ParticleBehaviorType::Default;
+
+		p.lifeTime = { 0.08f, 0.14f };
+		p.speed = { 0.0f, 0.0f };
+		p.scale = { 0.15f, 0.35f };
+		p.angle = { 0.0f, 6.28318f };
+		p.velocityY = { 0.0f, 0.0f };
+
+		p.colorMin = { 0.88f, 0.95f, 1.00f, 0.55f };
+		p.colorMax = { 1.00f, 1.00f, 1.00f, 0.90f };
 
 		RegisterPreset(p);
 	}
@@ -963,6 +1004,70 @@ Particle ParticleManager::MakeSpiralParticle(const Vector3& translate, float ang
 	particle.currentTime = 0.0f;
 
 	return particle;
+}
+
+Particle ParticleManager::MakeArmWindSlashParticle(std::mt19937& randomEngine, const Vector3& pos, const Vector3& forward) {
+
+	std::uniform_real_distribution<float> distBack(0.05f, 0.20f);
+	std::uniform_real_distribution<float> distSide(-0.20f, 0.20f);
+	std::uniform_real_distribution<float> distUp(0.00f, 0.18f);
+
+	// サイズ
+	std::uniform_real_distribution<float> distScaleX(0.20f, 0.36f);
+	std::uniform_real_distribution<float> distScaleY(0.65f, 1.20f);
+
+	std::uniform_real_distribution<float> distLife(0.07f, 0.12f);
+	std::uniform_real_distribution<float> distAlpha(0.70f, 0.95f);
+
+	// 向きの微調整
+	std::uniform_real_distribution<float> distRotJitter(-0.22f, 0.22f);
+
+	// 90度回転版を混ぜる
+	std::bernoulli_distribution distRotate90(0.5);
+
+	Particle p{};
+
+	Vector3 dir = forward;
+	if (MyMath::Length(dir) < 0.0001f) {
+		dir = { 0.0f, 0.0f, 1.0f };
+	}
+	dir = MyMath::Normalize(dir);
+
+	Vector3 side = { dir.z, 0.0f, -dir.x };
+	if (MyMath::Length(side) < 0.0001f) {
+		side = { 1.0f, 0.0f, 0.0f };
+	}
+	side = MyMath::Normalize(side);
+
+	p.transform.translate =
+		pos
+		- dir * distBack(randomEngine)
+		+ side * distSide(randomEngine)
+		+ Vector3{ 0.0f, distUp(randomEngine), 0.0f };
+
+	float sx = distScaleX(randomEngine);
+	float sy = distScaleY(randomEngine);
+	p.transform.scale = { sx, sy, 1.0f };
+
+	// 0度 or 90度 をランダムで選ぶ
+	float baseRot = distRotate90(randomEngine)
+		? (std::numbers::pi_v<float> *0.5f)
+		: 0.0f;
+
+	float jitter = distRotJitter(randomEngine);
+	p.transform.rotate = { 0.0f, 0.0f, baseRot + jitter };
+
+	p.velocity =
+		dir * MyMath::Rand(0.18f, 0.32f) +
+		side * MyMath::Rand(-0.03f, 0.03f) +
+		Vector3{ 0.0f, MyMath::Rand(0.00f, 0.02f), 0.0f };
+
+	p.color = { 0.95f, 0.98f, 1.00f, distAlpha(randomEngine) };
+
+	p.lifeTime = distLife(randomEngine);
+	p.currentTime = 0.0f;
+
+	return p;
 }
 
 void ParticleManager::MakeVertexData(ParticleGroup& group, const std::string& particleType) {
@@ -1581,5 +1686,20 @@ void ParticleManager::EmitMissileFlame(const Vector3& pos, const Vector3& forwar
 
 	for (uint32_t i = 0; i < count; ++i) {
 		it->second.particles.push_back(MakeMissileFlameParticle(randomEngine, pos, forward));
+	}
+}
+
+void ParticleManager::EmitArmWindSlash(const Vector3& pos, const Vector3& forward, uint32_t count) {
+
+	auto it = particleGroups.find("arm_wind_slash");
+	if (it == particleGroups.end()) {
+		return;
+	}
+
+	std::random_device seedGenerator;
+	std::mt19937 randomEngine(seedGenerator());
+
+	for (uint32_t i = 0; i < count; ++i) {
+		it->second.particles.push_back(MakeArmWindSlashParticle(randomEngine, pos, forward));
 	}
 }

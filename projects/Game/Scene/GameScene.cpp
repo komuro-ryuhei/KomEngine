@@ -350,6 +350,9 @@ void GameScene::Init() {
 	pm->CreateParticleGroup("charge_aura", "./Resources/images/circle2.png", "a");
 	pm->CreateParticleGroup("missile_flame", "./Resources/images/circle2.png", "a");
 
+	// プリセットからパーティクルグループを作成
+	pm->CreateParticleGroupFromPreset("arm_wind_slash");
+
 	// グループが既にあれば作らない
 	if (!pm->Exists("hit")) {
 		pm->CreateParticleGroup("hit", "./Resources/images/circle2.png", "hit");
