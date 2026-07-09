@@ -111,6 +111,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AssetPreloader.cpp" />
+    <ClCompile Include="BossHpUI.cpp" />
     <ClCompile Include="externals\QRCode\qrcodegen.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossRushAttack.cpp" />
     <ClCompile Include="Game\GamePlay\Enemy\BossRushAttackController.cpp" />
@@ -184,6 +185,7 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetPreloader.h" />
+    <ClInclude Include="BossHpUI.h" />
     <ClInclude Include="externals\QRCode\qrcodegen.hpp" />
     <ClInclude Include="Game\Entity\Enemy\BossRushAttack.h" />
     <ClInclude Include="Game\GamePlay\Enemy\BossRushAttackController.h" />

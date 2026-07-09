@@ -282,6 +282,7 @@
     <ClCompile Include="Game\GamePlay\Enemy\BossRushAttackController.cpp" />
     <ClCompile Include="Game\Scene\QRCodeScene.cpp" />
     <ClCompile Include="externals\QRCode\qrcodegen.cpp" />
+    <ClCompile Include="BossHpUI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -451,6 +452,7 @@
     <ClInclude Include="Game\Entity\Enemy\BossRushAttackParams.h" />
     <ClInclude Include="Game\Scene\QRCodeScene.h" />
     <ClInclude Include="externals\QRCode\qrcodegen.hpp" />
+    <ClInclude Include="BossHpUI.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />
