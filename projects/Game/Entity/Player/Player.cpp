@@ -47,7 +47,14 @@ bool Player::IsInvincible() const { return isInvincible_; }
 
 Player::~Player() {
 
-	// 
+	if (collisionManager_) {
+		for (auto& bullet : bulletObjects_) {
+			if (bullet && bullet->IsAlive()) {
+				collisionManager_->Unregister(bullet.get());
+			}
+		}
+	}
+
 	bulletObjects_.clear();
 }
 
@@ -113,20 +120,19 @@ void Player::Update() {
 		}
 	}
 
-	// 弾更新と描画
-	for (auto it = bulletObjects_.begin(); it != bulletObjects_.end(); ) {
-		(*it)->Update();
-		(*it)->ImGuiDebug();
-		if (!(*it)->IsAlive()) {
+	// 弾更新
+	for (auto& bullet : bulletObjects_) {
 
-			if (collisionManager_) {
-				collisionManager_->Unregister(it->get());
-			}
-
-			it = bulletObjects_.erase(it);
+		if (!bullet || !bullet->IsAlive()) {
+			continue;
 		}
-		else {
-			++it;
+
+		bullet->Update();
+
+		if (!bullet->IsAlive()) {
+			if (collisionManager_) {
+				collisionManager_->Unregister(bullet.get());
+			}
 		}
 	}
 
@@ -150,12 +156,10 @@ void Player::Draw() {
 	// object3d_->Draw();
 
 	for (auto& bullet : bulletObjects_) {
-		bullet->Draw();
+		if (bullet && bullet->IsAlive()) {
+			bullet->Draw();
+		}
 	}
-
-	/*if (gun_) {
-		gun_->Draw();
-	}*/
 
 	reticleSprite_->Draw();
 
@@ -184,6 +188,31 @@ void Player::ImGuiDebug() {
 	ImGui::End();
 
 #endif // _DEBUG
+}
+
+void Player::InitBulletPool() {
+
+	bulletObjects_.clear();
+	bulletObjects_.reserve(bulletPoolSize_);
+
+	for (size_t i = 0; i < bulletPoolSize_; ++i) {
+
+		auto bullet = std::make_unique<PlayerBullet>();
+		bullet->Init(camera_);
+
+		bulletObjects_.push_back(std::move(bullet));
+	}
+}
+
+PlayerBullet* Player::FindUnusedBullet() {
+
+	for (auto& bullet : bulletObjects_) {
+		if (bullet && !bullet->IsAlive()) {
+			return bullet.get();
+		}
+	}
+
+	return nullptr;
 }
 
 void Player::Attack(float dt) {
@@ -224,6 +253,14 @@ void Player::SpawnBullet(int damage) {
 
 	damage = std::max(1, damage);
 
+	// 使っていない弾をプールから探す
+	PlayerBullet* bullet = FindUnusedBullet();
+
+	// プールが全部使用中なら今回は撃たない
+	if (!bullet) {
+		return;
+	}
+
 	// マズルフラッシュ（位置は元のまま）
 	Vector3 muzzlePos = transform_.translate;
 
@@ -233,23 +270,9 @@ void Player::SpawnBullet(int damage) {
 	}*/
 
 	// ----------------------------
-	// 弾オブジェクト生成
-	// ----------------------------
-	Object3d* bulletObject = new Object3d();
-	bulletObject->Init(BlendType::BLEND_NONE);
-	bulletObject->SetModel("PlayerBullet.obj");
-	bulletObject->SetDefaultCamera(camera_);
-
-	auto newBullet = std::make_unique<PlayerBullet>();
-	newBullet->Init(camera_, bulletObject);
-
-	// ダメージを弾に設定
-	newBullet->SetDamage(damage);
-
-	// ----------------------------
 	// damageから強さ(power)を作る
 	// ----------------------------
-	const int maxDamage = 5; // 好きに調整OK
+	const int maxDamage = 5;
 
 	float t = 0.0f;
 	if (maxDamage > 1) {
@@ -261,15 +284,13 @@ void Player::SpawnBullet(int damage) {
 
 	// 見た目
 	float visualScale = 0.05f;
-	newBullet->SetScale({ visualScale, visualScale, visualScale });
+	Vector3 bulletScale = { visualScale, visualScale, visualScale };
 
 	// 当たり判定
 	float radius = 0.08f * power;
-	newBullet->SetRadius(radius);
 
 	// 速度
 	float speed = 0.5f * (1.0f + 0.25f * (power - 1.0f));
-	newBullet->SetSpeed(speed);
 
 	// ----------------------------
 	// 発射方向（レティクル）
@@ -305,16 +326,20 @@ void Player::SpawnBullet(int damage) {
 	}
 
 	direction = MyMath::Normalize(direction);
-	newBullet->SetDirection(direction);
 
-	// 出現位置は元のプレイヤー中心
-	newBullet->SetTranlate(transform_.translate);
+	// プールの弾を再利用して発射
+	bullet->Activate(
+		transform_.translate,
+		direction,
+		speed,
+		radius,
+		bulletScale,
+		damage
+	);
 
 	if (collisionManager_) {
-		collisionManager_->Register(newBullet.get());
+		collisionManager_->Register(bullet);
 	}
-
-	bulletObjects_.emplace_back(std::move(newBullet));
 }
 
 void Player::UpdateGun() {

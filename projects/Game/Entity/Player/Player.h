@@ -95,6 +95,9 @@ private:
 	// 弾の生成
 	void SpawnBullet(int damage);
 
+	// 
+	PlayerBullet* FindUnusedBullet();
+
 	// レティクルのスプライト更新
 	void UpdateReticleSprite();
 
@@ -105,6 +108,9 @@ private:
 	void UpdateGun();
 
 public:
+
+	// 弾プール
+	void InitBulletPool();
 
 	void RailMove();
 	void RotateY90();
@@ -121,6 +127,9 @@ private:
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 	// 弾のリスト
 	std::vector<std::unique_ptr<PlayerBullet>> bulletObjects_;
+
+	// 弾の最大数
+	size_t bulletPoolSize_ = 64;
 
 	// レティクルのスプライト
 	std::unique_ptr<Sprite> reticleSprite_ = nullptr;

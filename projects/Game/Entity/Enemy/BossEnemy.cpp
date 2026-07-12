@@ -59,24 +59,12 @@ void BossEnemy::Init(Camera* camera) {
 	leftArm_->SetScale({ 0.0f, 0.0f, 0.0f });
 	rightArm_->SetScale({ 0.0f, 0.0f, 0.0f });
 
+	// ボスのHP
+	hpUI_ = std::make_unique<BossHpUI>();
+	hpUI_->Init();
 
-	// ---------------- HPバー ----------------
-
-	// 中身
-	hpSprite_ = std::make_unique<Sprite>();
-	hpSprite_->Init("./Resources/images/hp.png", BlendType::BLEND_ALPHA);
-	hpSprite_->SetAnchorPoint({ 0.0f, 0.5f });
-	hpSprite_->SetSize(hpFillBaseSize_);
-	hpSprite_->SetPosition(hpFillPosition_);
-	hpSprite_->Update();
-
-	// 枠
-	hpFrameSprite_ = std::make_unique<Sprite>();
-	hpFrameSprite_->Init("./Resources/images/bossHpFrame.png", BlendType::BLEND_ALPHA);
-	hpFrameSprite_->SetAnchorPoint({ 0.0f, 0.5f });
-	hpFrameSprite_->SetSize(hpFrameBaseSize_);
-	hpFrameSprite_->SetPosition(hpFramePosition_);
-	hpFrameSprite_->Update();
+	// 撃破演出
+	deathController_ = std::make_unique<BossDeathController>();
 
 	// チャージコア、チャージビームの生成
 	chargeCore_ = std::make_unique<BossChargeCore>();
@@ -101,12 +89,6 @@ void BossEnemy::Init(Camera* camera) {
 	// スタン中の星演出を生成
 	InitDizzyStars();
 
-	// 腕は攻撃時のみ表示
-	leftArmVisible_ = false;
-	rightArmVisible_ = false;
-	leftArm_->SetScale({ 0.0f,0.0f,0.0f });
-	rightArm_->SetScale({ 0.0f,0.0f,0.0f });
-
 	// --- 怒り用：通常時の基準値を保存 ---
 	baseAttackSpeed_ = attackSpeed_;
 	baseArmReturnSpeedSingle_ = armReturnSpeedSingle_;
@@ -117,166 +99,39 @@ void BossEnemy::Update() {
 
 	const float dt = KomEngine::System::GetDeltaTime();
 
-	UpdateChargeCrossPose(dt);
-	UpdateEnrageTransition(dt);
+	// チャージ・怒り・コア破壊など、状態に関係なく必要な演出更新
+	UpdateCommonEffects(dt);
 
-	ChargeEffect(dt);
+	// 3Dオブジェクト、装甲、スタン星などの見た目更新
+	UpdateBossObjects(dt);
 
-	if (chargeCore_ && chargeCore_->IsActive()) {
-		chargeCore_->SetWorldPos(transform_.translate + chargeCoreOffset_);
-		chargeCore_->Update(dt);
-	}
+	// 被弾シェイクなどのタイマー更新
+	UpdateDamageTimers(dt);
 
-	if (chargeCore_ && chargeCore_->ConsumeBrokenJustNow()) {
-		StartCoreBreakReaction();
-	}
-	UpdateCoreBreakReaction(dt);
+	// HPバー・HPチップ更新
+	UpdateHpUI(dt);
 
-	if (chargeBeam_ && chargeBeam_->IsActive()) {
-		chargeBeam_->Update(dt);
-	}
-
-	// 3Dオブジェクト更新
-	object3d_->Update();
-	leftArm_->Update();
-	rightArm_->Update();
-
-	// スタン中の星演出更新
-	UpdateDizzyStars(dt);
-
-	// 装甲（周回）更新
-	UpdateArmors(dt);
-
-	// 被弾シェイクタイマー
-	auto updateShake = [dt](float& t) {
-		if (t > 0.0f) {
-			t -= dt;
-			if (t < 0.0f) t = 0.0f;
-		}
-		};
-	updateShake(bodyHitShakeTime_);
-	updateShake(leftHitShakeTime_);
-	updateShake(rightHitShakeTime_);
-
-	// 被弾フラッシュタイマー
-	auto updateFlash = [dt](float& t) {
-		if (t > 0.0f) {
-			t -= dt;
-			if (t < 0.0f) t = 0.0f;
-		}
-		};
-
-	// ---------------------------- HPバーの更新更新 ---------------------------- //
-
-	if (hpSprite_) {
-		float hpRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
-		hpRatio = std::clamp(hpRatio, 0.0f, 1.0f);
-
-		hpSprite_->SetPosition(hpFillPosition_);
-		hpSprite_->SetSize({ hpFillBaseSize_.x * hpRatio, hpFillBaseSize_.y });
-		hpSprite_->Update();
-	}
-
-	if (hpFrameSprite_) {
-		hpFrameSprite_->SetPosition(hpFramePosition_);
-		hpFrameSprite_->SetSize(hpFrameBaseSize_);
-		hpFrameSprite_->Update();
-	}
-
-	// ---------------------------- HPチップの更新 ---------------------------- //
-
-	const float gravity = 900.0f;   // 下方向加速度(px/s^2) 好きに調整
-
-	for (auto it = hpChips_.begin(); it != hpChips_.end();) {
-
-		it->life -= dt;
-		if (it->life <= 0.0f) {
-			it = hpChips_.erase(it);
-			continue;
-		}
-
-		// 重力
-		it->vel.y += gravity * dt;
-
-		// 位置更新
-		it->pos.x += it->vel.x * dt;
-		it->pos.y += it->vel.y * dt;
-
-		if (it->sprite) {
-			it->sprite->SetPosition(it->pos);
-			it->sprite->Update();
-		}
-
-		++it;
-	}
-
-	// ---------------------- 撃破後 / 生存中で分岐 ---------------------- //
-
+	// 生存中 / 撃破後で処理を分ける
 	if (hp_ <= 0) {
-
-		if (!deathEffectStarted_) {
-			StartDeathEffect();
-		}
-
-		if (!hasLanded_) {
-			UpdateDeathEffect(dt);
-		}
+		UpdateDead(dt);
 	}
 	else {
-		// 生きている間の従来処理
-
-		if (KomEngine::System::GetInput()->PushKey(DIK_SPACE)) {
-			pushEnter_ = true;
-		}
-
-		if (IsRetreating()) {
-			// 退避中は通常攻撃をしない
-		}
-		else {
-			if (combatEnabled_ && isAttack_ && !chargeActive_) {
-				Attack();
-			}
-		}
-
-		if (pushEnter_) {
-			if (isInTitleScene_) {
-				TitleSceneMove();
-			}
-		}
+		UpdateAlive(dt);
 	}
 
+	// 生存中だけチャージビーム弾を更新
 	if (hp_ > 0) {
 		UpdateChargeBeamShot(dt);
 	}
 
-	// ---------------------- 被弾シェイク ---------------------- //
+	// 被弾・落下シェイクを反映
 	DamageShake();
 
-	// ---------------------- 腕の表示制御（腕攻撃中だけ） ---------------------- //
-	bool showLeft = false;
-	bool showRight = false;
-	if (armComboActive_) {
-		switch (attackPhase_) {
-		case AttackPhase::SingleLeft:  showLeft = true; break;
-		case AttackPhase::SingleRight: showRight = true; break;
-		case AttackPhase::BothHands:   showLeft = true; showRight = true; break;
-		default: break;
-		}
-	}
-	leftArmVisible_ = showLeft;
-	rightArmVisible_ = showRight;
+	// 腕の表示状態を更新
+	UpdateArmVisibility();
 
-	// 表示する腕はスケールを戻し、非表示はスケール0（当たり判定も無効化）
-	const Vector3 useBodyScale = retreatVisualOverride_ ? retreatBodyScale_ : baseBodyScale_;
-	const Vector3 useArmScale = retreatVisualOverride_ ? retreatArmScale_ : baseArmScale_;
-
-	object3d_->SetScale(useBodyScale);
-	leftArm_->SetScale(leftArmVisible_ ? useArmScale : Vector3{ 0.0f, 0.0f, 0.0f });
-	rightArm_->SetScale(rightArmVisible_ ? useArmScale : Vector3{ 0.0f, 0.0f, 0.0f });
-
-	object3d_->SetRadius(bodyRadius_);
-	leftArm_->SetRadius(leftArmVisible_ ? (leftArmRadius_ * leftArm_->GetScale().x) : 0.0f);
-	rightArm_->SetRadius(rightArmVisible_ ? (rightArmRadius_ * rightArm_->GetScale().x) : 0.0f);
+	// スケールと当たり判定半径を更新
+	UpdateVisualScaleAndCollisionRadius();
 }
 
 void BossEnemy::Draw() {
@@ -299,6 +154,13 @@ void BossEnemy::Draw() {
 	}
 	if (chargeBeam_) {
 		chargeBeam_->Draw();
+	}
+}
+
+void BossEnemy::HPDraw() {
+
+	if (hpUI_) {
+		hpUI_->Draw();
 	}
 }
 
@@ -325,27 +187,10 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::DragFloat("半径 (左腕)", &leftArmRadius_, 0.01f, 0.0f, 100.0f);
 	ImGui::DragFloat("半径 (右腕)", &rightArmRadius_, 0.01f, 0.0f, 100.0f);
 
-	ImGui::DragInt("HP", &hp_);
-
 	ImGui::Separator();
-	ImGui::Text("Boss HP Bar");
 
-	// 中身
-	ImGui::Text("Fill");
-	ImGui::DragFloat2("HP Fill Position", &hpFillPosition_.x, 1.0f);
-	ImGui::DragFloat2("HP Fill Size", &hpFillBaseSize_.x, 1.0f, 1.0f, 2000.0f);
-
-	// 枠
-	ImGui::Text("Frame");
-	ImGui::DragFloat2("HP Frame Position", &hpFramePosition_.x, 1.0f);
-	ImGui::DragFloat2("HP Frame Size", &hpFrameBaseSize_.x, 1.0f, 1.0f, 2000.0f);
-
-	if (ImGui::Button("Reset HP Bar")) {
-		hpFillPosition_ = { 240.0f, 70.0f };
-		hpFillBaseSize_ = { 800.0f, 52.0f };
-
-		hpFramePosition_ = { 240.0f, 70.0f };
-		hpFrameBaseSize_ = { 800.0f, 52.0f };
+	if (hpUI_) {
+		hpUI_->ImGuiDebug();
 	}
 
 	ImGui::Checkbox("攻撃中", &isAttack_);
@@ -412,381 +257,586 @@ void BossEnemy::ImGuiDebug() {
 #endif
 }
 
+void BossEnemy::UpdateCommonEffects(float dt) {
+
+	UpdateChargeCrossPose(dt);
+	UpdateEnrageTransition(dt);
+
+	ChargeEffect(dt);
+
+	if (chargeCore_ && chargeCore_->IsActive()) {
+		chargeCore_->SetWorldPos(transform_.translate + chargeCoreOffset_);
+		chargeCore_->Update(dt);
+	}
+
+	if (chargeCore_ && chargeCore_->ConsumeBrokenJustNow()) {
+		StartCoreBreakReaction();
+	}
+
+	UpdateCoreBreakReaction(dt);
+
+	if (chargeBeam_ && chargeBeam_->IsActive()) {
+		chargeBeam_->Update(dt);
+	}
+}
+
+void BossEnemy::UpdateBossObjects(float dt) {
+
+	if (object3d_) {
+		object3d_->Update();
+	}
+
+	if (leftArm_) {
+		leftArm_->Update();
+	}
+
+	if (rightArm_) {
+		rightArm_->Update();
+	}
+
+	// スタン中の星演出更新
+	UpdateDizzyStars(dt);
+
+	// 装甲（周回）更新
+	UpdateArmors(dt);
+}
+
+void BossEnemy::UpdateDamageTimers(float dt) {
+
+	auto updateTimer = [dt](float& timer) {
+		if (timer > 0.0f) {
+			timer -= dt;
+			if (timer < 0.0f) {
+				timer = 0.0f;
+			}
+		}
+		};
+
+	updateTimer(bodyHitShakeTime_);
+	updateTimer(leftHitShakeTime_);
+	updateTimer(rightHitShakeTime_);
+}
+
+void BossEnemy::UpdateHpUI(float dt) {
+
+	if (hpUI_) {
+		hpUI_->Update(hp_, maxHp_, dt);
+	}
+}
+
+void BossEnemy::UpdateDead(float dt) {
+
+	if (!deathController_) {
+		return;
+	}
+
+	// 撃破演出の更新
+	if (!deathController_->IsStarted()) {
+
+		combatEnabled_ = false;
+		isAttack_ = false;
+		invulnerable_ = true;
+
+		CancelAllAttacks();
+
+		deathController_->Start(transform_);
+	}
+
+	if (!deathController_->HasLanded()) {
+		deathController_->Update(dt, transform_);
+	}
+
+	if (deathController_->ConsumeFinalExplosionShakeRequest()) {
+		if (camera_) {
+			camera_->StartShake(CameraShakeType::Large);
+		}
+	}
+
+	if (deathController_->ConsumeLandingShakeRequest()) {
+		if (camera_) {
+			camera_->StartShake(CameraShakeType::Large);
+		}
+	}
+}
+
+void BossEnemy::UpdateAlive(float dt) {
+
+	(void)dt;
+
+	if (KomEngine::System::GetInput()->PushKey(DIK_SPACE)) {
+		pushEnter_ = true;
+	}
+
+	if (IsRetreating()) {
+		// 退避中は通常攻撃をしない
+	}
+	else {
+		if (combatEnabled_ && isAttack_ && !chargeActive_) {
+			Attack();
+		}
+	}
+
+	if (pushEnter_) {
+		if (isInTitleScene_) {
+			TitleSceneMove();
+		}
+	}
+}
+
+void BossEnemy::UpdateArmVisibility() {
+
+	bool showLeft = false;
+	bool showRight = false;
+
+	if (armComboActive_) {
+		switch (attackPhase_) {
+		case AttackPhase::SingleLeft:
+			showLeft = true;
+			break;
+
+		case AttackPhase::SingleRight:
+			showRight = true;
+			break;
+
+		case AttackPhase::BothHands:
+			showLeft = true;
+			showRight = true;
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	leftArmVisible_ = showLeft;
+	rightArmVisible_ = showRight;
+}
+
+void BossEnemy::UpdateVisualScaleAndCollisionRadius() {
+
+	const Vector3 useBodyScale =
+		retreatVisualOverride_ ? retreatBodyScale_ : baseBodyScale_;
+
+	const Vector3 useArmScale =
+		retreatVisualOverride_ ? retreatArmScale_ : baseArmScale_;
+
+	if (object3d_) {
+		object3d_->SetScale(useBodyScale);
+		object3d_->SetRadius(bodyRadius_);
+	}
+
+	if (leftArm_) {
+		leftArm_->SetScale(leftArmVisible_ ? useArmScale : Vector3{ 0.0f, 0.0f, 0.0f });
+		leftArm_->SetRadius(leftArmVisible_ ? (leftArmRadius_ * leftArm_->GetScale().x) : 0.0f);
+	}
+
+	if (rightArm_) {
+		rightArm_->SetScale(rightArmVisible_ ? useArmScale : Vector3{ 0.0f, 0.0f, 0.0f });
+		rightArm_->SetRadius(rightArmVisible_ ? (rightArmRadius_ * rightArm_->GetScale().x) : 0.0f);
+	}
+}
+
 void BossEnemy::Attack() {
 
-	if (!player_) return;
-
-	// 怒り遷移中は攻撃しない
-	if (enrageTransitioning_) {
+	if (!CanUpdateAttack()) {
 		return;
 	}
 
-	if (!armComboActive_) {
-		return;
-	}
-
-	auto* pm = KomEngine::System::GetParticleManager();
 	const float dt = KomEngine::System::GetDeltaTime();
 
 	switch (attackPhase_) {
 
-		// ================== 左右片手攻撃 ================== //
 	case AttackPhase::SingleLeft:
 	case AttackPhase::SingleRight:
-	{
-		const bool useLeft = (attackPhase_ == AttackPhase::SingleLeft);
+		UpdateSingleArmAttack(dt);
+		break;
 
-		Object3d* targetArm = useLeft ? leftArm_.get() : rightArm_.get();
-		Vector3& targetPos = useLeft ? leftArmPos_ : rightArmPos_;
-		int& hitCount = useLeft ? leftArmHitCount_ : rightArmHitCount_;
+	case AttackPhase::BothHands:
+		UpdateBothHandsAttack(dt);
+		break;
 
-		const Vector3 baseLocalOffset = useLeft
-			? Vector3{ -4.0f, 0.0f, 0.0f }
-		: Vector3{ 4.0f, 0.0f, 0.0f };
+	case AttackPhase::WaitMeteor:
+		UpdateWaitMeteorAttack();
+		break;
 
-		Vector3 armPos = targetPos;
+	case AttackPhase::None:
+	default:
+		break;
+	}
+}
 
-		const Vector3 worldBase = transform_.translate + baseLocalOffset;
-		Vector3 toPlayer = player_->GetTranslate() - worldBase;
-		Vector3 dir = MyMath::Normalize(toPlayer);
+bool BossEnemy::CanUpdateAttack() const {
 
-		// =====================================================
-		// 予備動作
-		// 1. 元位置に表示
-		// 2. 後ろに引く
-		// 3. 引いた位置で少し溜める
-		// =====================================================
-		if (armTelegraphActive_) {
+	if (!player_) {
+		return false;
+	}
 
-			if (armTelegraphTimer_ <= 0.0f) {
-				// 必ず「元の位置」から始める
-				armTelegraphStartPos_ = baseLocalOffset;
-				armTelegraphTargetPos_ = baseLocalOffset - dir * armTelegraphBackAmount_;
+	// 怒り遷移中は攻撃しない
+	if (enrageTransitioning_) {
+		return false;
+	}
 
-				targetPos = armTelegraphStartPos_;
-				targetArm->SetTranslate(targetPos);
-			}
+	if (!armComboActive_) {
+		return false;
+	}
 
-			armTelegraphTimer_ += KomEngine::System::GetDeltaTime();
+	return true;
+}
 
-			Vector3 telegraphPos = armTelegraphStartPos_;
+void BossEnemy::UpdateSingleArmAttack(float dt) {
 
-			// -------------------------
-			// 前半：元位置 → 後ろへ引く
-			// -------------------------
-			if (armTelegraphTimer_ < armTelegraphBackTime_) {
-				float t = armTelegraphTimer_ / armTelegraphBackTime_;
-				t = std::clamp(t, 0.0f, 1.0f);
+	auto* pm = KomEngine::System::GetParticleManager();
 
-				float ease = t * t * (3.0f - 2.0f * t);
-				telegraphPos = MyMath::Lerp(armTelegraphStartPos_, armTelegraphTargetPos_, ease);
-			}
-			// -------------------------
-			// 後半：引いた位置で少し溜める
-			// -------------------------
-			else {
-				float s = armTelegraphTimer_ - armTelegraphBackTime_;
-				telegraphPos = armTelegraphTargetPos_;
+	const bool useLeft = (attackPhase_ == AttackPhase::SingleLeft);
 
-				telegraphPos.x += std::sin(s * armTelegraphShakeFreq_) * armTelegraphShakeAmount_;
-				telegraphPos.y += std::cos(s * armTelegraphShakeFreq_ * 1.11f) * armTelegraphShakeAmount_;
-				telegraphPos.z += std::sin(s * armTelegraphShakeFreq_ * 0.91f) * armTelegraphShakeAmount_;
-			}
+	Object3d* targetArm = useLeft ? leftArm_.get() : rightArm_.get();
+	Vector3& targetPos = useLeft ? leftArmPos_ : rightArmPos_;
+	int& hitCount = useLeft ? leftArmHitCount_ : rightArmHitCount_;
 
-			armPos = telegraphPos;
-			targetPos = armPos;
+	const Vector3 baseLocalOffset = useLeft
+		? Vector3{ -4.0f, 0.0f, 0.0f }
+	: Vector3{ 4.0f, 0.0f, 0.0f };
+
+	Vector3 armPos = targetPos;
+
+	const Vector3 worldBase = transform_.translate + baseLocalOffset;
+	Vector3 toPlayer = player_->GetTranslate() - worldBase;
+	Vector3 dir = MyMath::Normalize(toPlayer);
+
+	// =====================================================
+	// 予備動作
+	// 1. 元位置に表示
+	// 2. 後ろに引く
+	// 3. 引いた位置で少し溜める
+	// =====================================================
+	if (armTelegraphActive_) {
+
+		if (armTelegraphTimer_ <= 0.0f) {
+			// 必ず「元の位置」から始める
+			armTelegraphStartPos_ = baseLocalOffset;
+			armTelegraphTargetPos_ = baseLocalOffset - dir * armTelegraphBackAmount_;
+
+			targetPos = armTelegraphStartPos_;
 			targetArm->SetTranslate(targetPos);
+		}
 
-			// 予備動作終了 → 突進開始
-			if (armTelegraphTimer_ >= armTelegraphDuration_) {
+		armTelegraphTimer_ += dt;
+
+		Vector3 telegraphPos = armTelegraphStartPos_;
+
+		// -------------------------
+		// 前半：元位置 → 後ろへ引く
+		// -------------------------
+		if (armTelegraphTimer_ < armTelegraphBackTime_) {
+			float t = armTelegraphTimer_ / armTelegraphBackTime_;
+			t = std::clamp(t, 0.0f, 1.0f);
+
+			float ease = t * t * (3.0f - 2.0f * t);
+			telegraphPos = MyMath::Lerp(armTelegraphStartPos_, armTelegraphTargetPos_, ease);
+		}
+		// -------------------------
+		// 後半：引いた位置で少し溜める
+		// -------------------------
+		else {
+			float s = armTelegraphTimer_ - armTelegraphBackTime_;
+			telegraphPos = armTelegraphTargetPos_;
+
+			telegraphPos.x += std::sin(s * armTelegraphShakeFreq_) * armTelegraphShakeAmount_;
+			telegraphPos.y += std::cos(s * armTelegraphShakeFreq_ * 1.11f) * armTelegraphShakeAmount_;
+			telegraphPos.z += std::sin(s * armTelegraphShakeFreq_ * 0.91f) * armTelegraphShakeAmount_;
+		}
+
+		armPos = telegraphPos;
+		targetPos = armPos;
+		targetArm->SetTranslate(targetPos);
+
+		// 予備動作終了 → 突進開始
+		if (armTelegraphTimer_ >= armTelegraphDuration_) {
+			armTelegraphActive_ = false;
+			armTelegraphTimer_ = 0.0f;
+
+			isExtending_ = true;
+			targetPos = armTelegraphTargetPos_;
+			targetArm->SetTranslate(targetPos);
+		}
+
+		return;
+	}
+
+	// =====================================================
+	// 通常の片腕攻撃（突進）
+	// =====================================================
+	if (isExtending_) {
+		// 長めにグッと前へ出る
+		armPos += dir * armRushSpeed_;
+
+		armWindSlashFxTimer_ += dt;
+		if (pm && armWindSlashFxTimer_ >= armWindSlashFxInterval_) {
+			armWindSlashFxTimer_ = 0.0f;
+
+			const Vector3 armWorldPos = transform_.translate + armPos;
+			pm->EmitArmWindSlash(armWorldPos, dir, 2);
+		}
+
+		// 一定距離 or 規定ヒット数で戻りフェーズへ
+		if (MyMath::Length(armPos - baseLocalOffset) >= 22.0f ||
+			hitCount >= maxHitCount_) {
+			isExtending_ = false;
+		}
+	}
+	else {
+		// 基本位置へ戻す
+		Vector3 toOrigin = baseLocalOffset - armPos;
+		float dist = MyMath::Length(toOrigin);
+
+		if (dist < 0.5f) {
+			// 戻り完了
+			armPos = baseLocalOffset;
+			hitCount = 0;
+
+			// 次の片腕/両手へ
+			isExtending_ = false;
+			armTelegraphActive_ = true;
+			armTelegraphTimer_ = 0.0f;
+
+			if (attackPhase_ == AttackPhase::SingleRight) {
+				attackPhase_ = AttackPhase::SingleLeft;
+			}
+			else {
+				attackPhase_ = AttackPhase::BothHands;
+
 				armTelegraphActive_ = false;
 				armTelegraphTimer_ = 0.0f;
 
-				isExtending_ = true;
-				targetPos = armTelegraphTargetPos_;
-				targetArm->SetTranslate(targetPos);
-			}
-
-			break;
-		}
-
-		// =====================================================
-		// 通常の片腕攻撃（突進）
-		// =====================================================
-		if (isExtending_) {
-			// 長めにグッと前へ出る
-			armPos += dir * armRushSpeed_;
-
-			armWindSlashFxTimer_ += dt;
-			if (pm && armWindSlashFxTimer_ >= armWindSlashFxInterval_) {
-				armWindSlashFxTimer_ = 0.0f;
-
-				const Vector3 armWorldPos = transform_.translate + armPos;
-				pm->EmitArmWindSlash(armWorldPos, dir, 2);
-			}
-
-			// 一定距離 or 規定ヒット数で戻りフェーズへ
-			if (MyMath::Length(armPos - baseLocalOffset) >= 22.0f ||
-				hitCount >= maxHitCount_) {
-				isExtending_ = false;
-			}
-		}
-		else {
-			// 基本位置へ戻す
-			Vector3 toOrigin = baseLocalOffset - armPos;
-			float dist = MyMath::Length(toOrigin);
-
-			if (dist < 0.5f) {
-				// 戻り完了
-				armPos = baseLocalOffset;
-				hitCount = 0;
-
-				// 次の片腕/両手へ
-				isExtending_ = false;
-				armTelegraphActive_ = true;
-				armTelegraphTimer_ = 0.0f;
-
-				if (attackPhase_ == AttackPhase::SingleRight) {
-					attackPhase_ = AttackPhase::SingleLeft;
-				}
-				else {
-					attackPhase_ = AttackPhase::BothHands;
-
-					armTelegraphActive_ = false;
-					armTelegraphTimer_ = 0.0f;
-
-					bothTelegraphActive_ = true;
-					bothTelegraphTimer_ = 0.0f;
-
-					leftExtending_ = false;
-					rightExtending_ = false;
-
-					leftArmPos_ = { -4.0f, 0.0f, 0.0f };
-					rightArmPos_ = { 4.0f, 0.0f, 0.0f };
-
-					if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
-					if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
-				}
-			}
-			else {
-				Vector3 dirToOrigin = MyMath::Normalize(toOrigin);
-				float step = std::min(armReturnSpeedSingle_, dist);
-				armPos += dirToOrigin * step;
-			}
-		}
-
-		targetArm->SetTranslate(armPos);
-		targetPos = armPos;
-		break;
-	}
-
-	// ================== 両手同時攻撃 ================== //
-	case AttackPhase::BothHands:
-	{
-		const Vector3 leftBaseLocal{ -4.0f, 0.0f, 0.0f };
-		const Vector3 rightBaseLocal{ 4.0f, 0.0f, 0.0f };
-
-		const Vector3 leftBaseWorld = transform_.translate + leftBaseLocal;
-		const Vector3 rightBaseWorld = transform_.translate + rightBaseLocal;
-
-		Vector3 leftWorldPos = leftArm_->GetWorldPosition();
-		Vector3 rightWorldPos = rightArm_->GetWorldPosition();
-
-		const Vector3 playerPos = player_->GetTranslate();
-
-		Vector3 dirL = MyMath::Normalize(playerPos - leftBaseWorld);
-		Vector3 dirR = MyMath::Normalize(playerPos - rightBaseWorld);
-
-		const float maxLen = 22.0f;
-		const float returnSpeed = armReturnSpeedBoth_;
-		const float endThreshold = 0.3f;
-
-		// =========================================
-		// 両手の予備動作
-		// =========================================
-		if (bothTelegraphActive_) {
-
-			if (bothTelegraphTimer_ <= 0.0f) {
-				leftBothTelegraphStartPos_ = leftBaseLocal;
-				rightBothTelegraphStartPos_ = rightBaseLocal;
-
-				leftBothTelegraphTargetPos_ = leftBaseLocal - dirL * bothTelegraphBackAmount_;
-				rightBothTelegraphTargetPos_ = rightBaseLocal - dirR * bothTelegraphBackAmount_;
-
-				leftArmPos_ = leftBothTelegraphStartPos_;
-				rightArmPos_ = rightBothTelegraphStartPos_;
-
-				leftArm_->SetTranslate(leftArmPos_);
-				rightArm_->SetTranslate(rightArmPos_);
-			}
-
-			bothTelegraphTimer_ += KomEngine::System::GetDeltaTime();
-
-			Vector3 leftLocal = leftBothTelegraphStartPos_;
-			Vector3 rightLocal = rightBothTelegraphStartPos_;
-
-			// 前半：左右同時に後ろへ引く
-			if (bothTelegraphTimer_ < bothTelegraphBackTime_) {
-				float t = bothTelegraphTimer_ / bothTelegraphBackTime_;
-				t = std::clamp(t, 0.0f, 1.0f);
-
-				float ease = t * t * (3.0f - 2.0f * t);
-
-				leftLocal = MyMath::Lerp(leftBothTelegraphStartPos_, leftBothTelegraphTargetPos_, ease);
-				rightLocal = MyMath::Lerp(rightBothTelegraphStartPos_, rightBothTelegraphTargetPos_, ease);
-			}
-			// 後半：引いた位置で左右同時に振動
-			else {
-				float s = bothTelegraphTimer_ - bothTelegraphBackTime_;
-
-				leftLocal = leftBothTelegraphTargetPos_;
-				rightLocal = rightBothTelegraphTargetPos_;
-
-				float shakeX = std::sin(s * bothTelegraphShakeFreq_) * bothTelegraphShakeAmount_;
-				float shakeY = std::cos(s * bothTelegraphShakeFreq_ * 1.09f) * bothTelegraphShakeAmount_;
-				float shakeZ = std::sin(s * bothTelegraphShakeFreq_ * 0.93f) * bothTelegraphShakeAmount_;
-
-				leftLocal.x += shakeX;
-				leftLocal.y += shakeY;
-				leftLocal.z += shakeZ;
-
-				rightLocal.x -= shakeX;
-				rightLocal.y += shakeY;
-				rightLocal.z += shakeZ;
-			}
-
-			leftArm_->SetTranslate(leftLocal);
-			rightArm_->SetTranslate(rightLocal);
-			leftArmPos_ = leftLocal;
-			rightArmPos_ = rightLocal;
-
-			if (bothTelegraphTimer_ >= bothTelegraphDuration_) {
-				bothTelegraphActive_ = false;
+				bothTelegraphActive_ = true;
 				bothTelegraphTimer_ = 0.0f;
 
-				leftExtending_ = true;
-				rightExtending_ = true;
-
-				leftArmPos_ = leftBothTelegraphTargetPos_;
-				rightArmPos_ = rightBothTelegraphTargetPos_;
-
-				leftArm_->SetTranslate(leftArmPos_);
-				rightArm_->SetTranslate(rightArmPos_);
-			}
-
-			break;
-		}
-
-		// =========================================
-		// 通常の両手突進
-		// =========================================
-		if (leftExtending_) {
-			leftWorldPos += dirL * bothRushSpeed_;
-
-			float len = MyMath::Length(leftWorldPos - leftBaseWorld);
-			bool reachedDist = (len >= maxLen);
-			bool hitEnough = (leftArmHitCount_ >= maxHitCount_);
-
-			if (reachedDist || hitEnough) {
 				leftExtending_ = false;
-			}
-		}
-		else {
-			Vector3 toBase = leftBaseWorld - leftWorldPos;
-			float dist = MyMath::Length(toBase);
-			if (dist < endThreshold) {
-				leftWorldPos = leftBaseWorld;
-			}
-			else {
-				Vector3 dirToBase = MyMath::Normalize(toBase);
-				float step = std::min(returnSpeed, dist);
-				leftWorldPos += dirToBase * step;
-			}
-		}
-
-		if (rightExtending_) {
-			rightWorldPos += dirR * bothRushSpeed_;
-
-			float len = MyMath::Length(rightWorldPos - rightBaseWorld);
-			bool reachedDist = (len >= maxLen);
-			bool hitEnough = (rightArmHitCount_ >= maxHitCount_);
-
-			if (reachedDist || hitEnough) {
 				rightExtending_ = false;
+
+				leftArmPos_ = { -4.0f, 0.0f, 0.0f };
+				rightArmPos_ = { 4.0f, 0.0f, 0.0f };
+
+				if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
+				if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
 			}
 		}
 		else {
-			Vector3 toBase = rightBaseWorld - rightWorldPos;
-			float dist = MyMath::Length(toBase);
-			if (dist < endThreshold) {
-				rightWorldPos = rightBaseWorld;
-			}
-			else {
-				Vector3 dirToBase = MyMath::Normalize(toBase);
-				float step = std::min(returnSpeed, dist);
-				rightWorldPos += dirToBase * step;
-			}
+			Vector3 dirToOrigin = MyMath::Normalize(toOrigin);
+			float step = std::min(armReturnSpeedSingle_, dist);
+			armPos += dirToOrigin * step;
+		}
+	}
+
+	targetArm->SetTranslate(armPos);
+	targetPos = armPos;
+}
+
+void BossEnemy::UpdateBothHandsAttack(float dt) {
+
+	auto* pm = KomEngine::System::GetParticleManager();
+
+	const Vector3 leftBaseLocal{ -4.0f, 0.0f, 0.0f };
+	const Vector3 rightBaseLocal{ 4.0f, 0.0f, 0.0f };
+
+	const Vector3 leftBaseWorld = transform_.translate + leftBaseLocal;
+	const Vector3 rightBaseWorld = transform_.translate + rightBaseLocal;
+
+	Vector3 leftWorldPos = leftArm_->GetWorldPosition();
+	Vector3 rightWorldPos = rightArm_->GetWorldPosition();
+
+	const Vector3 playerPos = player_->GetTranslate();
+
+	Vector3 dirL = MyMath::Normalize(playerPos - leftBaseWorld);
+	Vector3 dirR = MyMath::Normalize(playerPos - rightBaseWorld);
+
+	const float maxLen = 22.0f;
+	const float returnSpeed = armReturnSpeedBoth_;
+	const float endThreshold = 0.3f;
+
+	// =========================================
+	// 両手の予備動作
+	// =========================================
+	if (bothTelegraphActive_) {
+
+		if (bothTelegraphTimer_ <= 0.0f) {
+			leftBothTelegraphStartPos_ = leftBaseLocal;
+			rightBothTelegraphStartPos_ = rightBaseLocal;
+
+			leftBothTelegraphTargetPos_ = leftBaseLocal - dirL * bothTelegraphBackAmount_;
+			rightBothTelegraphTargetPos_ = rightBaseLocal - dirR * bothTelegraphBackAmount_;
+
+			leftArmPos_ = leftBothTelegraphStartPos_;
+			rightArmPos_ = rightBothTelegraphStartPos_;
+
+			leftArm_->SetTranslate(leftArmPos_);
+			rightArm_->SetTranslate(rightArmPos_);
 		}
 
-		if (pm && (leftExtending_ || rightExtending_)) {
-			armWindSlashFxTimer_ += dt;
+		bothTelegraphTimer_ += dt;
 
-			if (armWindSlashFxTimer_ >= armWindSlashFxInterval_) {
-				armWindSlashFxTimer_ = 0.0f;
+		Vector3 leftLocal = leftBothTelegraphStartPos_;
+		Vector3 rightLocal = rightBothTelegraphStartPos_;
 
-				if (leftExtending_) {
-					pm->EmitArmWindSlash(leftWorldPos, dirL, 2);
-				}
-				if (rightExtending_) {
-					pm->EmitArmWindSlash(rightWorldPos, dirR, 2);
-				}
-			}
+		// 前半：左右同時に後ろへ引く
+		if (bothTelegraphTimer_ < bothTelegraphBackTime_) {
+			float t = bothTelegraphTimer_ / bothTelegraphBackTime_;
+			t = std::clamp(t, 0.0f, 1.0f);
+
+			float ease = t * t * (3.0f - 2.0f * t);
+
+			leftLocal = MyMath::Lerp(leftBothTelegraphStartPos_, leftBothTelegraphTargetPos_, ease);
+			rightLocal = MyMath::Lerp(rightBothTelegraphStartPos_, rightBothTelegraphTargetPos_, ease);
 		}
+		// 後半：引いた位置で左右同時に振動
+		else {
+			float s = bothTelegraphTimer_ - bothTelegraphBackTime_;
 
-		Vector3 leftLocal = leftWorldPos - transform_.translate;
-		Vector3 rightLocal = rightWorldPos - transform_.translate;
+			leftLocal = leftBothTelegraphTargetPos_;
+			rightLocal = rightBothTelegraphTargetPos_;
+
+			float shakeX = std::sin(s * bothTelegraphShakeFreq_) * bothTelegraphShakeAmount_;
+			float shakeY = std::cos(s * bothTelegraphShakeFreq_ * 1.09f) * bothTelegraphShakeAmount_;
+			float shakeZ = std::sin(s * bothTelegraphShakeFreq_ * 0.93f) * bothTelegraphShakeAmount_;
+
+			leftLocal.x += shakeX;
+			leftLocal.y += shakeY;
+			leftLocal.z += shakeZ;
+
+			rightLocal.x -= shakeX;
+			rightLocal.y += shakeY;
+			rightLocal.z += shakeZ;
+		}
 
 		leftArm_->SetTranslate(leftLocal);
 		rightArm_->SetTranslate(rightLocal);
 		leftArmPos_ = leftLocal;
 		rightArmPos_ = rightLocal;
 
-		bool leftFinished =
-			!leftExtending_ &&
-			MyMath::Length(leftWorldPos - leftBaseWorld) < endThreshold;
-
-		bool rightFinished =
-			!rightExtending_ &&
-			MyMath::Length(rightWorldPos - rightBaseWorld) < endThreshold;
-
-		if (leftFinished && rightFinished) {
-			leftArmHitCount_ = 0;
-			rightArmHitCount_ = 0;
+		if (bothTelegraphTimer_ >= bothTelegraphDuration_) {
+			bothTelegraphActive_ = false;
+			bothTelegraphTimer_ = 0.0f;
 
 			leftExtending_ = true;
 			rightExtending_ = true;
 
-			bothTelegraphActive_ = false;
-			bothTelegraphTimer_ = 0.0f;
+			leftArmPos_ = leftBothTelegraphTargetPos_;
+			rightArmPos_ = rightBothTelegraphTargetPos_;
 
-			attackPhase_ = AttackPhase::WaitMeteor;
-			pendingChargeAfterRetreat_ = true;
-			pendingMeteorAfterCharge_ = true;
-
-			armComboActive_ = false;
-			armComboFinished_ = true;
-
-			attackPhase_ = AttackPhase::None;
-			retreatRequest_ = true;
+			leftArm_->SetTranslate(leftArmPos_);
+			rightArm_->SetTranslate(rightArmPos_);
 		}
-		break;
+
+		return;
 	}
 
-	// ================== メテオ待ち ================== //
-	case AttackPhase::WaitMeteor:
-		// Scene側でメテオを出している間は腕攻撃しない
-		break;
+	// =========================================
+	// 通常の両手突進
+	// =========================================
+	if (leftExtending_) {
+		leftWorldPos += dirL * bothRushSpeed_;
+
+		float len = MyMath::Length(leftWorldPos - leftBaseWorld);
+		bool reachedDist = (len >= maxLen);
+		bool hitEnough = (leftArmHitCount_ >= maxHitCount_);
+
+		if (reachedDist || hitEnough) {
+			leftExtending_ = false;
+		}
 	}
+	else {
+		Vector3 toBase = leftBaseWorld - leftWorldPos;
+		float dist = MyMath::Length(toBase);
+		if (dist < endThreshold) {
+			leftWorldPos = leftBaseWorld;
+		}
+		else {
+			Vector3 dirToBase = MyMath::Normalize(toBase);
+			float step = std::min(returnSpeed, dist);
+			leftWorldPos += dirToBase * step;
+		}
+	}
+
+	if (rightExtending_) {
+		rightWorldPos += dirR * bothRushSpeed_;
+
+		float len = MyMath::Length(rightWorldPos - rightBaseWorld);
+		bool reachedDist = (len >= maxLen);
+		bool hitEnough = (rightArmHitCount_ >= maxHitCount_);
+
+		if (reachedDist || hitEnough) {
+			rightExtending_ = false;
+		}
+	}
+	else {
+		Vector3 toBase = rightBaseWorld - rightWorldPos;
+		float dist = MyMath::Length(toBase);
+		if (dist < endThreshold) {
+			rightWorldPos = rightBaseWorld;
+		}
+		else {
+			Vector3 dirToBase = MyMath::Normalize(toBase);
+			float step = std::min(returnSpeed, dist);
+			rightWorldPos += dirToBase * step;
+		}
+	}
+
+	if (pm && (leftExtending_ || rightExtending_)) {
+		armWindSlashFxTimer_ += dt;
+
+		if (armWindSlashFxTimer_ >= armWindSlashFxInterval_) {
+			armWindSlashFxTimer_ = 0.0f;
+
+			if (leftExtending_) {
+				pm->EmitArmWindSlash(leftWorldPos, dirL, 2);
+			}
+			if (rightExtending_) {
+				pm->EmitArmWindSlash(rightWorldPos, dirR, 2);
+			}
+		}
+	}
+
+	Vector3 leftLocal = leftWorldPos - transform_.translate;
+	Vector3 rightLocal = rightWorldPos - transform_.translate;
+
+	leftArm_->SetTranslate(leftLocal);
+	rightArm_->SetTranslate(rightLocal);
+	leftArmPos_ = leftLocal;
+	rightArmPos_ = rightLocal;
+
+	bool leftFinished =
+		!leftExtending_ &&
+		MyMath::Length(leftWorldPos - leftBaseWorld) < endThreshold;
+
+	bool rightFinished =
+		!rightExtending_ &&
+		MyMath::Length(rightWorldPos - rightBaseWorld) < endThreshold;
+
+	if (leftFinished && rightFinished) {
+		leftArmHitCount_ = 0;
+		rightArmHitCount_ = 0;
+
+		leftExtending_ = true;
+		rightExtending_ = true;
+
+		bothTelegraphActive_ = false;
+		bothTelegraphTimer_ = 0.0f;
+
+		attackPhase_ = AttackPhase::WaitMeteor;
+		pendingChargeAfterRetreat_ = true;
+		pendingMeteorAfterCharge_ = true;
+
+		armComboActive_ = false;
+		armComboFinished_ = true;
+
+		attackPhase_ = AttackPhase::None;
+		retreatRequest_ = true;
+	}
+}
+
+void BossEnemy::UpdateWaitMeteorAttack() {
+
+	// Scene側 / AttackManager側でメテオを出している間は腕攻撃しない
 }
 
 void BossEnemy::TitleSceneMove() {
@@ -1156,26 +1206,6 @@ void BossEnemy::OnMeteorFinished() {
 	pendingMeteorAfterCharge_ = false;
 }
 
-void BossEnemy::HPDraw() {
-
-	// HPの中身
-	if (hpSprite_) {
-		hpSprite_->Draw();
-	}
-
-	// 枠を上から描画
-	if (hpFrameSprite_) {
-		hpFrameSprite_->Draw();
-	}
-
-	// HPチップ
-	for (auto& chip : hpChips_) {
-		if (chip.sprite) {
-			chip.sprite->Draw();
-		}
-	}
-}
-
 void BossEnemy::SetEnraged(bool enraged) {
 
 	if (isEnraged_ == enraged) {
@@ -1280,21 +1310,15 @@ void BossEnemy::Damage(int v) {
 		return;
 	}
 
-	// ---------------- 本体ダメージ ---------------- //
+	// ----------------本体ダメージ---------------- //
 
-	float prevRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
-	prevRatio = std::clamp(prevRatio, 0.0f, 1.0f);
-	float prevWidth = hpFillBaseSize_.x * prevRatio;
+	int prevHp = hp_;
 
 	hp_ = std::max(0, hp_ - v);
 
-	float newRatio = static_cast<float>(hp_) / static_cast<float>(maxHp_);
-	newRatio = std::clamp(newRatio, 0.0f, 1.0f);
-	float newWidth = hpFillBaseSize_.x * newRatio;
-
 	// 減った部分からHPチップを出す
-	if (hpSprite_ && prevWidth > newWidth) {
-		SpawnHpChips(prevWidth, newWidth);
+	if (hpUI_) {
+		hpUI_->OnHpChanged(prevHp, hp_, maxHp_);
 	}
 }
 
@@ -1419,59 +1443,6 @@ float BossEnemy::PartCollider::GetCollisionRadius() const
 	return 1.0f;
 }
 
-void BossEnemy::SpawnHpChips(float prevWidth, float newWidth) {
-
-	if (!hpSprite_) return;
-
-	float lost = prevWidth - newWidth;
-	if (lost <= 0.0f) return;
-
-	// 減った幅に応じて個数を決める（25pxで1個くらい）
-	int count = static_cast<int>(lost / 25.0f) + 1;
-	count = std::min(count, 30); // 上限 30 個くらい
-
-	// HPバーの左端
-	Vector2 basePos = hpFillPosition_;
-
-	// 出現X範囲：減ったところ (newWidth ~ prevWidth)
-	float xMin = basePos.x + newWidth;
-	float xMax = basePos.x + prevWidth;
-
-	for (int i = 0; i < count; ++i) {
-
-		HpChip chip{};
-
-		chip.sprite = std::make_unique<Sprite>();
-		chip.sprite->Init("./Resources/images/hp.png", BlendType::BLEND_ALPHA);
-		chip.sprite->SetAnchorPoint({ 0.5f, 0.5f });
-
-		// 小さめの四角
-		float w = MyMath::Rand(6.0f, 12.0f);
-		float h = MyMath::Rand(6.0f, 12.0f);
-		chip.sprite->SetSize({ w, h });
-
-		// 緑色に着色（少し明るめ）
-		chip.sprite->SetColor({ 0.2f, 1.0f, 0.2f, 1.0f });
-
-		// 生成位置：減った部分のどこか＋少し上下にランダム
-		float x = MyMath::Rand(xMin, xMax);
-		float y = basePos.y + MyMath::Rand(-4.0f, 4.0f);
-		chip.pos = { x, y };
-
-		// 最初の速度：ちょっと横に散って、少し上に飛んでから落ちる
-		chip.vel.x = MyMath::Rand(-120.0f, 120.0f);   // 横
-		chip.vel.y = MyMath::Rand(-260.0f, -160.0f);  // 上方向(マイナス)
-
-		// 寿命（秒）
-		chip.life = MyMath::Rand(0.5f, 0.9f);
-
-		chip.sprite->SetPosition(chip.pos);
-		chip.sprite->Update();
-
-		hpChips_.push_back(std::move(chip));
-	}
-}
-
 void BossEnemy::DamageShake() {
 
 	// === 胴体の元の位置（シェイク前） ===
@@ -1481,28 +1452,13 @@ void BossEnemy::DamageShake() {
 	Vector3 bodyPos = baseBodyPos;
 
 	// 落下シェイク（撃破演出）
-	if (hp_ <= 0 && !hasLanded_) {
+	if (hp_ <= 0 && deathController_ && !deathController_->HasLanded()) {
 
-		if (deathPhase_ == DeathPhase::PreFall) {
-			float sx = std::sin(fallShakeTime_ * 85.0f) * 0.12f;
-			float sy = std::cos(fallShakeTime_ * 110.0f) * 0.06f;
-			float sz = std::cos(fallShakeTime_ * 95.0f) * 0.12f;
-			bodyPos.x += sx;
-			bodyPos.y += sy;
-			bodyPos.z += sz;
-		}
-		else if (deathPhase_ == DeathPhase::FinalExplosion) {
-			float sx = std::sin(fallShakeTime_ * 45.0f) * 0.25f;
-			float sz = std::cos(fallShakeTime_ * 52.0f) * 0.25f;
-			bodyPos.x += sx;
-			bodyPos.z += sz;
-		}
-		else {
-			float sx = std::sin(fallShakeTime_ * 40.0f) * fallShakeAmplitude_;
-			float sz = std::cos(fallShakeTime_ * 55.0f) * fallShakeAmplitude_;
-			bodyPos.x += sx;
-			bodyPos.z += sz;
-		}
+		const Vector3 deathShake = deathController_->CalcShakeOffset();
+
+		bodyPos.x += deathShake.x;
+		bodyPos.y += deathShake.y;
+		bodyPos.z += deathShake.z;
 	}
 
 	// 胴体 被弾シェイク
@@ -2275,180 +2231,6 @@ void BossEnemy::ChargeEffect(float dt) {
 	}
 }
 
-void BossEnemy::StartDeathEffect() {
-
-	deathEffectStarted_ = true;
-	deathPhase_ = DeathPhase::PreFall;
-
-	deathEffectTimer_ = 0.0f;
-	finalExplosionTimer_ = 0.0f;
-	deathSparkTimer_ = 0.0f;
-
-	finalExplosionDone_ = false;
-
-	fallStarted_ = true;
-	fallVelY_ = 0.0f;
-	fallRotateStart_ = transform_.rotate.x;
-	fallShakeTime_ = 0.0f;
-
-	combatEnabled_ = false;
-	isAttack_ = false;
-	invulnerable_ = true;
-
-	CancelAllAttacks();
-}
-
-void BossEnemy::UpdateDeathEffect(float dt) {
-
-	// -----------------------------
-	// ビリビリ演出
-	// -----------------------------
-	if (deathPhase_ == DeathPhase::PreFall) {
-
-		deathEffectTimer_ += dt;
-		deathSparkTimer_ += dt;
-		fallShakeTime_ += dt;
-
-		if (deathSparkTimer_ >= deathSparkInterval_) {
-			deathSparkTimer_ = 0.0f;
-			EmitDeathElectricParticles();
-		}
-
-		// たまに軽い火花
-		if (std::fmod(deathEffectTimer_, 0.22f) < dt) {
-			auto* pm = KomEngine::System::GetParticleManager();
-			if (pm && pm->Exists("hit")) {
-				pm->Emit("hit", transform_.translate, 6);
-			}
-		}
-
-		if (deathEffectTimer_ >= deathEffectDuration_) {
-			deathPhase_ = DeathPhase::FinalExplosion;
-			finalExplosionTimer_ = 0.0f;
-			TriggerFinalExplosion();
-		}
-
-		return;
-	}
-
-	// -----------------------------
-	// 大爆発を少し見せる
-	// -----------------------------
-	if (deathPhase_ == DeathPhase::FinalExplosion) {
-
-		finalExplosionTimer_ += dt;
-		fallShakeTime_ += dt;
-
-		if (finalExplosionTimer_ >= finalExplosionDuration_) {
-			deathPhase_ = DeathPhase::Falling;
-		}
-		return;
-	}
-
-	// -----------------------------
-	// 落下
-	// -----------------------------
-	if (deathPhase_ == DeathPhase::Falling && !hasLanded_) {
-
-		fallShakeTime_ += dt;
-
-		fallVelY_ += gravityY_;
-		transform_.translate.y += fallVelY_;
-
-		float fallProgress = (transform_.translate.y - groundY_) / (2.0f - groundY_);
-		fallProgress = std::clamp(1.0f - fallProgress, 0.0f, 1.0f);
-
-		float ease = fallProgress * fallProgress;
-		transform_.rotate.x = MyMath::Lerp(fallRotateStart_, fallRotateEnd_, ease);
-
-		if (transform_.translate.y <= groundY_) {
-			transform_.translate.y = groundY_;
-			fallVelY_ = 0.0f;
-			hasLanded_ = true;
-			deathPhase_ = DeathPhase::Landed;
-
-			if (!landingShakeDone_ && camera_) {
-				camera_->StartShake(CameraShakeType::Large);
-				landingShakeDone_ = true;
-			}
-
-			auto* pm = KomEngine::System::GetParticleManager();
-			if (pm && pm->Exists("dust")) {
-				pm->Emit("dust", transform_.translate, 120);
-			}
-			/*if (pm && pm->Exists("ring")) {
-				pm->Emit("ring", transform_.translate, 1);
-			}*/
-		}
-	}
-}
-
-void BossEnemy::EmitDeathElectricParticles() {
-
-	auto* pm = KomEngine::System::GetParticleManager();
-	if (!pm) {
-		return;
-	}
-
-	// 本体の周囲ランダム位置
-	Vector3 p{
-		transform_.translate.x + MyMath::Rand(-2.2f, 2.2f),
-		transform_.translate.y + MyMath::Rand(-1.2f, 2.0f),
-		transform_.translate.z + MyMath::Rand(-2.2f, 2.2f)
-	};
-
-	// 今ある粒子で代用
-	if (pm->Exists("hit")) {
-		pm->Emit("hit", p, 4);
-	}
-
-	// たまに少し強めの火花
-	if (pm->Exists("explosion") && MyMath::Rand(0.0f, 1.0f) < 0.25f) {
-		pm->Emit("explosion", p, 2);
-	}
-}
-
-void BossEnemy::TriggerFinalExplosion() {
-
-	if (finalExplosionDone_) {
-		return;
-	}
-	finalExplosionDone_ = true;
-
-	auto* pm = KomEngine::System::GetParticleManager();
-	if (pm) {
-		if (pm->Exists("explosion")) {
-			pm->Emit("explosion", transform_.translate, 110);
-		}
-
-		if (pm->Exists("hit")) {
-			pm->Emit("hit", transform_.translate, 55);
-		}
-
-		/*if (pm->Exists("ring")) {
-			pm->Emit("ring", transform_.translate, 1);
-		}*/
-
-		if (pm->Exists("cylinder")) {
-			pm->Emit("cylinder", transform_.translate, 4);
-		}
-
-		if (pm->Exists("dust")) {
-			pm->Emit("dust", transform_.translate, 36);
-		}
-
-		if (pm->Exists("explosion")) {
-			pm->Emit("explosion", transform_.translate + Vector3{ 0.8f, 0.4f, 0.0f }, 26);
-			pm->Emit("explosion", transform_.translate + Vector3{ -0.7f, 0.2f, 0.5f }, 24);
-			pm->Emit("explosion", transform_.translate + Vector3{ 0.3f, 0.7f, -0.6f }, 20);
-		}
-	}
-
-	if (camera_) {
-		camera_->StartShake(CameraShakeType::Large);
-	}
-}
-
 // ----------------------- Armor（装甲） ----------------------- //
 
 int BossEnemy::GetAliveArmorCount() const {
@@ -2755,7 +2537,8 @@ void BossEnemy::SetDizzyEffectActive(bool active) {
 
 	if (active) {
 		dizzyStarTimer_ = 0.0f;
-	} else {
+	}
+	else {
 		for (auto& star : dizzyStars_) {
 			if (star.obj) {
 				star.obj->SetScale({ 0.0f, 0.0f, 0.0f });

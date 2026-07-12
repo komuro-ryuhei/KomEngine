@@ -10,7 +10,9 @@
 #include "Game/Entity/Enemy/EnemyBullet.h"
 #include "Game/Entity/Enemy/BossChargeCore.h"
 #include "Game/Entity/Enemy/BossChargeBeam.h"
+#include "Game/Entity/Enemy/BossDeathController.h"
 #include "Game/Entity/GameObject.h"
+#include "Game/UI/BossHpUI.h"
 
 #include <vector>
 #include <array>
@@ -41,16 +43,6 @@ private:
 
 	AttackPhase attackPhase_ = AttackPhase::None;
 	bool meteorRequest_ = false; // 両手攻撃完了後にtrue
-
-	// HPエフェクト用チップ
-	struct HpChip {
-		std::unique_ptr<Sprite> sprite;
-		Vector2 pos;    // 画面上の位置
-		Vector2 vel;    // 速度（ピクセル/秒）
-		float   life = 0.0f; // 残り寿命（秒）
-	};
-
-	std::vector<HpChip> hpChips_;
 
 	struct PartCollider : public ICollisionObject
 	{
@@ -169,7 +161,9 @@ public:
 	bool   IsDead() const { return hp_ <= 0; }
 
 	// 着地(墜落)したかのフラグ
-	bool   HasLanded() const { return hasLanded_; }
+	bool   HasLanded() const {
+		return deathController_ && deathController_->HasLanded();
+	}
 
 	// ----- 攻撃 ----- //
 	// 攻撃中かどうか（腕が伸びているフェーズか）を外からチェック用
@@ -228,12 +222,26 @@ public:
 
 private:
 
+	// 攻撃
 	void Attack();
+	bool CanUpdateAttack() const;
+	void UpdateSingleArmAttack(float dt);
+	void UpdateBothHandsAttack(float dt);
+	void UpdateWaitMeteorAttack();
+	// 動き
 	void Move();
+	// タイトルシーンでの動き
 	void TitleSceneMove();
 
-	// 減ったぶんからチップを生成
-	void SpawnHpChips(float prevWidth, float newWidth);
+	// Update処理の分割
+	void UpdateCommonEffects(float dt);
+	void UpdateBossObjects(float dt);
+	void UpdateDamageTimers(float dt);
+	void UpdateHpUI(float dt);
+	void UpdateDead(float dt);
+	void UpdateAlive(float dt);
+	void UpdateArmVisibility();
+	void UpdateVisualScaleAndCollisionRadius();
 
 	// 
 	void DamageShake();
@@ -324,6 +332,11 @@ private:
 	std::unique_ptr<Object3d> leftArm_;
 	std::unique_ptr<Object3d> rightArm_;
 
+	// HP
+	std::unique_ptr<BossHpUI> hpUI_ = nullptr;
+
+	// 撃破演出
+	std::unique_ptr<BossDeathController> deathController_ = nullptr;
 
 	// ----------------------- Armor（周回装甲） ----------------------- //
 	struct ArmorUnit {
@@ -357,18 +370,6 @@ private:
 	// 腕は腕攻撃時のみ表示（描画・当たり判定を無効化するため）
 	bool leftArmVisible_ = false;
 	bool rightArmVisible_ = false;
-
-	// HP用スプライト
-	std::unique_ptr<Sprite> hpSprite_;      // 中身
-	std::unique_ptr<Sprite> hpFrameSprite_; // 枠
-
-	// HP中身
-	Vector2 hpFillPosition_ = { 282.0f, 70.0f };
-	Vector2 hpFillBaseSize_ = { 720.0f, 54.0f };
-
-	// HP枠
-	Vector2 hpFramePosition_ = { 165.0f, 70.0f };
-	Vector2 hpFrameBaseSize_ = { 953.0f, 110.0f };
 
 	// 攻撃用のタイマーと状態
 	float attackTimer_ = 0.0f;
@@ -459,47 +460,6 @@ private:
 	// 両手攻撃用：左右個別に伸縮管理
 	bool leftExtending_ = true;
 	bool rightExtending_ = true;
-
-	// -------------------- 撃破演出 -------------------- //
-
-	enum class DeathPhase {
-		None,
-		PreFall,        // ビリビリして溜める
-		FinalExplosion, // 大爆発
-		Falling,        // 落下
-		Landed
-	};
-
-	DeathPhase deathPhase_ = DeathPhase::None;
-
-	bool deathEffectStarted_ = false;
-	bool finalExplosionDone_ = false;
-
-	float deathEffectTimer_ = 0.0f;
-	float deathEffectDuration_ = 1.0f;      // ビリビリ時間
-
-	float finalExplosionTimer_ = 0.0f;
-	float finalExplosionDuration_ = 0.20f;  // 爆発を見せる短い時間
-
-	float deathSparkTimer_ = 0.0f;
-	float deathSparkInterval_ = 0.06f;
-
-	// 撃破後の墜落制御
-	bool  fallStarted_ = false;   // 落下開始したか
-	bool  hasLanded_ = false;   // 地面に着いたか
-	float fallVelY_ = 0.0f;    // 落下速度
-	float gravityY_ = -0.006f;  // 重力加速度（毎フレーム加算）
-	float groundY_ = -5.0f;   // 地面のY（glassObject_ と合わせた）
-	// 回転しながら落下用
-	float fallRotateStart_ = 0.0f;    // 開始角度（今の回転を保存）
-	float fallRotateEnd_ = -1.2f;   // 最終角度（ラジアン）＝約 -70 度前に倒す
-
-	// 落下中シェイク用
-	float fallShakeTime_ = 0.0f;
-	float fallShakeAmplitude_ = 0.25f; // 揺れ幅（XZ方向）
-
-	// 落下後のカメラシェイクフラグ
-	bool landingShakeDone_ = false;
 
 	// 被弾時のシェイク
 	float bodyHitShakeTime_ = 0.0f;
@@ -713,13 +673,7 @@ private:
 	// チャージ時のエフェクト
 	void ChargeEffect(float dt);
 
-	// 撃破演出
-	void StartDeathEffect();
-	void UpdateDeathEffect(float dt);
-	void EmitDeathElectricParticles();
-	void TriggerFinalExplosion();
-
-	// 
+	// 気絶時の星演出
 	void InitDizzyStars();
 	void UpdateDizzyStars(float dt);
 	void DrawDizzyStars();
