@@ -173,17 +173,9 @@ void GameScene::Init() {
 	player_ = std::make_unique<Player>();
 	player_->Init(camera_.get());
 
-	// HPハート
-	hpHearts_.clear();
-	hpHearts_.reserve(playerMaxHp_);
-	for (int i = 0; i < playerMaxHp_; ++i) {
-		auto sp = std::make_unique<Sprite>();
-		sp->Init("./Resources/images/heart.png", BlendType::BLEND_ALPHA);
-		sp->SetSize(hpHeartSize_);
-		sp->SetAnchorPoint({ 0.0f, 1.0f }); // 左下アンカー
-		sp->SetPosition({ hpStartPos_.x + hpHeartInterval_ * i, hpStartPos_.y });
-		hpHearts_.push_back(std::move(sp));
-	}
+	// プレイヤーのUI
+	playerUI_ = std::make_unique<PlayerUI>();
+	playerUI_->Init(playerMaxHp_);
 
 	// Playerが持つ銃
 	gun_ = std::make_unique<Object3d>();
@@ -275,54 +267,6 @@ void GameScene::Init() {
 		attackManager_->GetRush()->LoadParamsFromJson("Resources/json/bossAttacks.json");
 	}
 
-	// 
-	controlGuideSprite_ = std::make_unique<Sprite>();
-	controlGuideSprite_->Init("./Resources/images/mouseLeftClick.png", BlendType::BLEND_ALPHA);
-	controlGuideSprite_->SetAnchorPoint({ 0.5f, 0.5f });
-	controlGuideSprite_->SetSize(controlGuide1Size_);
-	controlGuideSprite_->SetPosition(controlGuide1Pos_);
-
-	controlGuideSprite2_ = std::make_unique<Sprite>();
-	controlGuideSprite2_->Init("./Resources/images/mouseLightClickWithText.png", BlendType::BLEND_ALPHA);
-	controlGuideSprite2_->SetAnchorPoint({ 0.5f, 0.5f });
-	controlGuideSprite2_->SetSize(controlGuide2Size_);
-	controlGuideSprite2_->SetPosition(controlGuide2Pos_);
-
-	// 
-	toPauseSpr_ = std::make_unique<Sprite>();
-	toPauseSpr_->Init("./Resources/images/escape.png", BlendType::BLEND_ALPHA);
-	toPauseSpr_->SetAnchorPoint({ 0.5f, 0.5f });
-	toPauseSpr_->SetSize(toPauseSize_);
-	toPauseSpr_->SetPosition(toPausePos_);
-
-	// チャージ説明用ゲージ
-	chargeGaugeFrameSpr_ = std::make_unique<Sprite>();
-	chargeGaugeFrameSpr_->Init("./Resources/images/ChargeGueage.png", BlendType::BLEND_ALPHA);
-	chargeGaugeFrameSpr_->SetAnchorPoint({ 0.5f, 0.5f });
-	chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
-	chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
-	chargeGaugeFrameSpr_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
-
-	// チャージ説明用ゲージの中身
-	chargeGaugeFillSpr_ = std::make_unique<Sprite>();
-	chargeGaugeFillSpr_->Init("./Resources/images/ChargeBlueGueage.png", BlendType::BLEND_ALPHA);
-	chargeGaugeFillSpr_->SetAnchorPoint({ 0.0f, 0.5f });
-	chargeGaugeFillSpr_->SetSize({ 0.0f, chargeGaugeFillBaseSize_.y });
-	chargeGaugeFillSpr_->SetPosition({
-		chargeGaugePos_.x + chargeGaugeFillOffset_.x,
-		chargeGaugePos_.y + chargeGaugeFillOffset_.y });
-	chargeGaugeFillSpr_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
-
-	// 
-	leftClickOverlaySpr_ = std::make_unique<Sprite>();
-	leftClickOverlaySpr_->Init("./Resources/images/mouseLeftClickRed.png", BlendType::BLEND_ALPHA);
-	leftClickOverlaySpr_->SetAnchorPoint({ 0.5f, 0.5f });
-	leftClickOverlaySpr_->SetSize(leftClickOverlaySize_);
-	leftClickOverlaySpr_->SetPosition({
-		controlGuide1Pos_.x + leftClickOverlayOffset_.x,
-		controlGuide1Pos_.y + leftClickOverlayOffset_.y });
-	leftClickOverlaySpr_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
-
 	// ボスイントロ後のキラーン演出用
 	bossIntroGlintSprite_ = std::make_unique<Sprite>();
 	bossIntroGlintSprite_->Init("./Resources/images/moonLight.png", BlendType::BLEND_ADD);
@@ -364,6 +308,8 @@ void GameScene::Init() {
 	result_ = std::make_unique<ResultImage>();
 	result_->Init();
 
+	clearSequence_ = std::make_unique<ClearSequenceController>();
+
 	// ---- CollisionManager 設定 ----
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::Enemy);
 	collisionManager_.AddPairRule(CollisionLayer::Player, CollisionLayer::EnemyBullet);
@@ -400,8 +346,6 @@ void GameScene::Init() {
 	showParticleEditor_ = false;
 
 	ChangeToFadeIn();
-
-	InitRushRightClickGuide();
 
 	// KomEngine::System::GetOffscreenRendering()->SetPostEffect("Bloom");
 }
@@ -460,41 +404,14 @@ void GameScene::Draw() {
 	// Playerは一人称視点なので非描画
 	player_->Draw();
 
-	// HPハート描画
-	if (player_) {
-		const int hp = std::clamp(player_->GetHP(), 0, playerMaxHp_);
-		for (int i = 0; i < hp && i < static_cast<int>(hpHearts_.size()); ++i) {
-			hpHearts_[i]->Draw();
-		}
-	}
-
 	// 
-	// controlGuideSprite2_->Draw();
+	const bool isClearUi =
+		(clearSequence_ && clearSequence_->IsStarted()) ||
+		(result_ && result_->IsSlideFinished());
 
-	if (player_ && player_->IsCharging()) {
-		if (chargeGaugeFillSpr_) {
-			chargeGaugeFillSpr_->Draw();
-		}
-		if (chargeGaugeFrameSpr_) {
-			chargeGaugeFrameSpr_->Draw();
-		}
+	if (playerUI_) {
+		playerUI_->Draw(isClearUi);
 	}
-
-	if (leftClickOverlaySpr_) {
-		leftClickOverlaySpr_->Draw();
-	}
-
-	const bool isClearUi = (clearSequenceStarted_ || (result_ && result_->IsSlideFinished()));
-
-	if (!isClearUi) {
-		controlGuideSprite_->Draw();
-		if (leftClickOverlaySpr_) {
-			leftClickOverlaySpr_->Draw();
-		}
-		toPauseSpr_->Draw();
-	}
-
-	DrawRushRightClickGuide();
 
 	/*if (bossIntroGlintActive_ && bossIntroGlintSprite_) {
 		bossIntroGlintSprite_->Draw();
@@ -545,9 +462,6 @@ void GameScene::ImGuiDebug() {
 	gun_->ImGuiDebug("gun");
 	boss_->ImGuiDebug();
 
-	controlGuideSprite_->ImGuiDebug();
-	controlGuideSprite2_->ImGuiDebug();
-
 	ImGui::Begin("GameScene");
 
 	ImGui::Checkbox("isCameraFollowPlayer", &isCameraFollowPlayer_);
@@ -581,27 +495,12 @@ void GameScene::ImGuiDebug() {
 
 	ImGui::Separator();
 
-	ImGui::Text("Guide UI Layout");
 
-	ImGui::DragFloat2("Guide1 Pos", &controlGuide1Pos_.x, 1.0f);
-	ImGui::DragFloat2("Guide1 Size", &controlGuide1Size_.x, 1.0f, 1.0f, 2000.0f);
+	if (playerUI_) {
+		playerUI_->ImGuiDebug();
+	}
 
-	ImGui::DragFloat2("Guide2 Pos", &controlGuide2Pos_.x, 1.0f);
-	ImGui::DragFloat2("Guide2 Size", &controlGuide2Size_.x, 1.0f, 1.0f, 2000.0f);
-
-	ImGui::DragFloat2("Pause Pos", &toPausePos_.x, 1.0f);
-	ImGui::DragFloat2("Pause Size", &toPauseSize_.x, 1.0f, 1.0f, 2000.0f);
-
-	ImGui::Separator();
 	ImGui::Text("Charge Gauge UI");
-
-	ImGui::DragFloat2("Gauge Pos", &chargeGaugePos_.x, 1.0f);
-	ImGui::DragFloat2("Gauge Frame Size", &chargeGaugeFrameSize_.x, 1.0f, 1.0f, 2000.0f);
-	ImGui::DragFloat2("Gauge Fill Size", &chargeGaugeFillBaseSize_.x, 1.0f, 1.0f, 2000.0f);
-	ImGui::DragFloat2("Gauge Fill Offset", &chargeGaugeFillOffset_.x, 1.0f);
-
-	ImGui::DragFloat("Gauge Max Time", &chargeGaugeMaxTime_, 0.01f, 0.1f, 10.0f);
-	ImGui::Text("Gauge Timer: %.2f", chargeGaugeTimer_);
 
 	ImGui::Checkbox("Show Particle Editor", &showParticleEditor_);
 	particleEditor_.SetEnabled(showParticleEditor_);
@@ -637,8 +536,36 @@ void GameScene::RequestFadeOut(EndReason reason) {
 	fadeOutRequested_ = true;
 }
 
-
 void GameScene::UpdatePlay(float dt) {
+
+	if (UpdatePause(dt)) {
+		return;
+	}
+
+	UpdateMeteorControl();
+
+	UpdatePlayerDeath(dt);
+
+	UpdateCamera(dt);
+
+	UpdateDebugAttackInput();
+
+	UpdateBattleSystems(dt);
+
+	UpdateSceneObjects(dt);
+
+	UpdateGameUI(dt);
+
+	UpdateSequenceAndCollision(dt);
+
+	if (UpdatePlayEnd()) {
+		return;
+	}
+
+	UpdateDebugTools();
+}
+
+bool GameScene::UpdatePause(float dt) {
 
 	// ---------------- Pause (Play中だけ) ---------------- //
 	const bool canPause = !(result_ && result_->IsSlideFinished());
@@ -652,7 +579,7 @@ void GameScene::UpdatePlay(float dt) {
 
 			// 開いた瞬間にPauseMenu側のESC判定まで走らせない
 			ImGuiDebug();
-			return;
+			return true;
 		}
 	}
 
@@ -668,7 +595,6 @@ void GameScene::UpdatePlay(float dt) {
 
 			// ポーズを閉じてもカーソルを中央固定しない
 			KomEngine::System::GetInput()->SetMouseCenterLock(false);
-
 		}
 		else if (r == PauseMenu::Result::GoTitle) {
 
@@ -679,18 +605,17 @@ void GameScene::UpdatePlay(float dt) {
 
 			RequestFadeOut(EndReason::GoTitle);
 
-			return;
+			return true;
 		}
 
 		ImGuiDebug();
-		return;
+		return true;
 	}
 
-	UpdateMeteorControl();
+	return false;
+}
 
-	UpdatePlayerDeath(dt);
-
-	UpdateCamera(dt);
+void GameScene::UpdateDebugAttackInput() {
 
 	if (KomEngine::System::GetInput()->PushKey(DIK_T)) {
 		if (attackManager_) {
@@ -710,6 +635,9 @@ void GameScene::UpdatePlay(float dt) {
 			attackManager_->RequestDebugChargeAttack(targetLeft);
 		}
 	}
+}
+
+void GameScene::UpdateBattleSystems(float dt) {
 
 	BossAttackManager::UpdateFlags f{};
 	f.koActive = koActive_;
@@ -726,7 +654,6 @@ void GameScene::UpdatePlay(float dt) {
 
 	f.isCameraFollowPlayer = isCameraFollowPlayer_;
 
-	// 
 	UpdateHexBarrier(dt);
 
 	if (attackManager_) {
@@ -734,17 +661,25 @@ void GameScene::UpdatePlay(float dt) {
 	}
 
 	UpdateRushSpeedLine(dt);
-	UpdateRushRightClickGuide(dt);
 
 	if (leftTargetShakeTime_ > 0.0f) {
 		leftTargetShakeTime_ -= dt;
-		if (leftTargetShakeTime_ < 0.0f) leftTargetShakeTime_ = 0.0f;
+		if (leftTargetShakeTime_ < 0.0f) {
+			leftTargetShakeTime_ = 0.0f;
+		}
 	}
 
 	if (rightTargetShakeTime_ > 0.0f) {
 		rightTargetShakeTime_ -= dt;
-		if (rightTargetShakeTime_ < 0.0f) rightTargetShakeTime_ = 0.0f;
+		if (rightTargetShakeTime_ < 0.0f) {
+			rightTargetShakeTime_ = 0.0f;
+		}
 	}
+}
+
+void GameScene::UpdateSceneObjects(float dt) {
+
+	(void)dt;
 
 	if (camera_) {
 		camera_->Update();
@@ -768,12 +703,6 @@ void GameScene::UpdatePlay(float dt) {
 		player_->Update();
 	}
 
-	for (auto& h : hpHearts_) {
-		if (h) {
-			h->Update();
-		}
-	}
-
 	if (boss_) {
 		boss_->Update();
 	}
@@ -789,106 +718,27 @@ void GameScene::UpdatePlay(float dt) {
 			m->Update();
 		}
 	}
+}
 
-	if (controlGuideSprite_) {
-		controlGuideSprite_->Update();
+void GameScene::UpdateGameUI(float dt) {
+
+	bool showRushRightClickGuide = false;
+
+	if (attackManager_ && attackManager_->GetRush()) {
+		showRushRightClickGuide =
+			attackManager_->GetRush()->IsRushSlowEffectActive();
 	}
 
-	if (controlGuideSprite2_) {
-		controlGuideSprite2_->Update();
+	if (playerUI_ && player_) {
+		playerUI_->Update(
+			dt,
+			player_->GetHP(),
+			showRushRightClickGuide
+		);
 	}
+}
 
-	// -----------------------------
-	// チャージ説明用ゲージ更新
-	// -----------------------------
-	bool isPlayerCharging = (player_ && player_->IsCharging());
-
-	float chargeT = player_ ? player_->GetChargeRatio() : 0.0f;
-	chargeT = std::clamp(chargeT, 0.0f, 1.0f);
-
-	chargeGaugeTimer_ = chargeT * chargeGaugeMaxTime_;
-
-	if (isPlayerCharging) {
-		POINT pt;
-		GetCursorPos(&pt);
-
-		HWND hwnd = KomEngine::System::GetWinApp()->GetHwnd();
-		ScreenToClient(hwnd, &pt);
-
-		chargeGaugePos_.x = static_cast<float>(pt.x) + chargeGaugeMouseOffset_.x;
-		chargeGaugePos_.y = static_cast<float>(pt.y) + chargeGaugeMouseOffset_.y;
-
-		chargeGaugePos_.x = std::clamp(chargeGaugePos_.x, 100.0f, 1180.0f);
-		chargeGaugePos_.y = std::clamp(chargeGaugePos_.y, 40.0f, 680.0f);
-	}
-
-	if (chargeGaugeFillSpr_) {
-		chargeGaugeFillSpr_->SetSize({
-			chargeGaugeFillBaseSize_.x * chargeT,
-			chargeGaugeFillBaseSize_.y
-			});
-
-		chargeGaugeFillSpr_->SetPosition({
-			chargeGaugePos_.x + chargeGaugeFillOffset_.x,
-			chargeGaugePos_.y + chargeGaugeFillOffset_.y
-			});
-
-		float alpha = isPlayerCharging ? 1.0f : 0.0f;
-		chargeGaugeFillSpr_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
-		chargeGaugeFillSpr_->Update();
-	}
-
-	if (chargeGaugeFrameSpr_) {
-		chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
-		chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
-
-		float alpha = isPlayerCharging ? 1.0f : 0.0f;
-		chargeGaugeFrameSpr_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
-		chargeGaugeFrameSpr_->Update();
-	}
-
-	if (leftClickOverlaySpr_) {
-		leftClickOverlaySpr_->SetPosition({
-			controlGuide1Pos_.x + leftClickOverlayOffset_.x,
-			controlGuide1Pos_.y + leftClickOverlayOffset_.y
-			});
-		leftClickOverlaySpr_->SetSize(leftClickOverlaySize_);
-
-		const bool isLeftClickDown = KomEngine::System::GetInput()->PushMouse(0);
-
-		leftClickOverlaySpr_->SetColor({
-			1.0f,
-			1.0f,
-			1.0f,
-			isLeftClickDown ? 1.0f : 0.0f
-			});
-
-		leftClickOverlaySpr_->Update();
-	}
-
-	if (toPauseSpr_) {
-		toPauseSpr_->Update();
-	}
-
-	if (controlGuideSprite_) {
-		controlGuideSprite_->SetPosition(controlGuide1Pos_);
-		controlGuideSprite_->SetSize(controlGuide1Size_);
-	}
-
-	if (controlGuideSprite2_) {
-		controlGuideSprite2_->SetPosition(controlGuide2Pos_);
-		controlGuideSprite2_->SetSize(controlGuide2Size_);
-	}
-
-	if (toPauseSpr_) {
-		toPauseSpr_->SetPosition(toPausePos_);
-		toPauseSpr_->SetSize(toPauseSize_);
-	}
-
-	if (chargeGaugeFrameSpr_) {
-		chargeGaugeFrameSpr_->SetPosition(chargeGaugePos_);
-		chargeGaugeFrameSpr_->SetSize(chargeGaugeFrameSize_);
-	}
+void GameScene::UpdateSequenceAndCollision(float dt) {
 
 	UpdateBossIntroGlint(dt);
 
@@ -905,10 +755,18 @@ void GameScene::UpdatePlay(float dt) {
 	UpdateArmTargetMarker();
 	UpdateMissileTelegraphMarkers();
 
-	if (leftTargetOuter_) leftTargetOuter_->Update();
-	if (leftTargetInner_) leftTargetInner_->Update();
-	if (rightTargetOuter_) rightTargetOuter_->Update();
-	if (rightTargetInner_) rightTargetInner_->Update();
+	if (leftTargetOuter_) {
+		leftTargetOuter_->Update();
+	}
+	if (leftTargetInner_) {
+		leftTargetInner_->Update();
+	}
+	if (rightTargetOuter_) {
+		rightTargetOuter_->Update();
+	}
+	if (rightTargetInner_) {
+		rightTargetInner_->Update();
+	}
 
 	for (auto& sp : missileTelegraphMarkers_) {
 		if (sp) {
@@ -936,11 +794,13 @@ void GameScene::UpdatePlay(float dt) {
 	KomEngine::System::GetParticleManager()->Update();
 
 	ChangePostEffect();
+}
+
+bool GameScene::UpdatePlayEnd() {
 
 	// -----------------------------
 	// PlayState 固有の終了判定
 	// -----------------------------
-
 	if (boss_
 		&& boss_->GetHP() <= 0
 		&& boss_->HasLanded()
@@ -951,7 +811,7 @@ void GameScene::UpdatePlay(float dt) {
 			player_->SetControlEnabled(false);
 		}
 
-		if (!clearSequenceStarted_) {
+		if (!clearSequence_ || !clearSequence_->IsStarted()) {
 			StartClearSequence();
 		}
 	}
@@ -962,9 +822,14 @@ void GameScene::UpdatePlay(float dt) {
 	if (result_ && result_->IsSlideFinished()) {
 		if (KomEngine::System::TriggerKey(DIK_SPACE) || KomEngine::System::TriggerKey(DIK_RETURN)) {
 			RequestFadeOut(EndReason::BossDeath);
-			return;
+			return true;
 		}
 	}
+
+	return false;
+}
+
+void GameScene::UpdateDebugTools() {
 
 #ifdef USE_IMGUI
 	if (KomEngine::System::TriggerKey(DIK_F10)) {
@@ -975,10 +840,10 @@ void GameScene::UpdatePlay(float dt) {
 	if (showParticleEditor_) {
 		particleEditor_.Update();
 	}
-#endif
 
 	ImGuiDebug();
 	BossAttackSelectImGui();
+#endif
 }
 
 void GameScene::UpdateCamera(float dt) {
@@ -2028,90 +1893,26 @@ void GameScene::UpdateBossIntroGlint(float dt) {
 
 void GameScene::StartClearSequence() {
 
-	clearSequenceStarted_ = true;
-	clearResultStarted_ = false;
-
-	clearSequenceTimer_ = 0.0f;
-	clearExplosionTimer_ = 0.0f;
-	clearExplosionStep_ = 0;
-
-	if (camera_) {
-		camera_->StartShake(CameraShakeType::Large);
+	if (clearSequence_) {
+		clearSequence_->Start(camera_.get());
 	}
 }
 
 void GameScene::UpdateClearSequence(float dt) {
 
-	if (!clearSequenceStarted_) {
+	if (!clearSequence_) {
 		return;
 	}
 
-	clearSequenceTimer_ += dt;
-	clearExplosionTimer_ += dt;
+	clearSequence_->Update(
+		dt,
+		boss_.get(),
+		camera_.get(),
+		result_.get()
+	);
 
-	// 連鎖爆発を3段階で出す
-	if (clearExplosionStep_ < 3 && clearExplosionTimer_ >= clearExplosionInterval_) {
-		clearExplosionTimer_ = 0.0f;
-		TriggerClearExplosionStep(clearExplosionStep_);
-		++clearExplosionStep_;
-	}
-
-	// 少し長めに待ってから結果表示
-	if (!clearResultStarted_ && clearSequenceTimer_ >= 2.8f) {
-		clearResultStarted_ = true;
-
-		if (result_) {
-			result_->StartSlideIn();
-		}
-
+	if (clearSequence_->ConsumeResultStartedRequest()) {
 		endReason_ = EndReason::BossDeath;
-	}
-}
-
-void GameScene::TriggerClearExplosionStep(int step) {
-
-	if (!boss_) {
-		return;
-	}
-
-	auto* pm = KomEngine::System::GetParticleManager();
-	if (!pm) {
-		return;
-	}
-
-	Vector3 center = boss_->GetTranslate();
-	Vector3 left = boss_->GetLeftHandWorldPos();
-	Vector3 right = boss_->GetRightHandWorldPos();
-
-	switch (step) {
-	case 0:
-		if (pm->Exists("explosion")) pm->Emit("explosion", center, 55);
-		if (pm->Exists("hit"))       pm->Emit("hit", center, 24);
-		if (pm->Exists("ring"))      pm->Emit("ring", center, 1);
-		if (pm->Exists("dust"))      pm->Emit("dust", center, 16);
-		break;
-
-	case 1:
-		if (pm->Exists("explosion")) {
-			pm->Emit("explosion", left, 24);
-			pm->Emit("explosion", right, 24);
-		}
-		if (pm->Exists("hit")) {
-			pm->Emit("hit", left, 12);
-			pm->Emit("hit", right, 12);
-		}
-		break;
-
-	case 2:
-		if (pm->Exists("explosion")) pm->Emit("explosion", center, 70);
-		if (pm->Exists("hit"))       pm->Emit("hit", center, 30);
-		if (pm->Exists("dust"))      pm->Emit("dust", center, 26);
-		if (pm->Exists("cylinder"))  pm->Emit("cylinder", center, 3);
-
-		if (camera_) {
-			camera_->StartShake(CameraShakeType::Large);
-		}
-		break;
 	}
 }
 
@@ -2190,165 +1991,4 @@ void GameScene::UpdateRushSpeedLine(float dt) {
 	speedLineActive_ = false;
 	speedLineTimer_ = 0.0f;
 	speedLineIntensity_ = 0.0f;
-}
-
-void GameScene::InitRushRightClickGuide() {
-
-	// 背景のびっくりマーク
-	rushRightClickTogetoge_ = std::make_unique<Sprite>();
-	rushRightClickTogetoge_->Init("./Resources/images/togetoge.png", BlendType::BLEND_ALPHA);
-	rushRightClickTogetoge_->SetAnchorPoint({ 0.5f, 0.5f });
-	rushRightClickTogetoge_->SetPosition({
-		rushRightClickGuidePos_.x + rushRightClickTogetogeOffset_.x,
-		rushRightClickGuidePos_.y + rushRightClickTogetogeOffset_.y
-		});
-	rushRightClickTogetoge_->SetSize(rushRightClickTogetogeBaseSize_);
-	rushRightClickTogetoge_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
-	rushRightClickTogetoge_->Update();
-
-	// 右クリック画像
-	rushRightClickGuide_ = std::make_unique<Sprite>();
-	rushRightClickGuide_->Init("./Resources/images/mouseRightClick.png", BlendType::BLEND_ALPHA);
-	rushRightClickGuide_->SetAnchorPoint({ 0.5f, 0.5f });
-	rushRightClickGuide_->SetPosition(rushRightClickGuidePos_);
-	rushRightClickGuide_->SetSize(rushRightClickGuideBaseSize_);
-	rushRightClickGuide_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
-	rushRightClickGuide_->Update();
-
-	rushRightClickGuideVisible_ = false;
-	rushRightClickGuideTimer_ = 0.0f;
-	rushRightClickGuideAlpha_ = 0.0f;
-}
-
-void GameScene::UpdateRushRightClickGuide(float dt) {
-
-	if (!rushRightClickGuide_) {
-		return;
-	}
-
-	bool shouldShow = false;
-
-	if (attackManager_ && attackManager_->GetRush()) {
-		shouldShow = attackManager_->GetRush()->IsRushSlowEffectActive();
-	}
-
-	rushRightClickGuideVisible_ = shouldShow;
-
-	if (rushRightClickGuideVisible_) {
-		rushRightClickGuideTimer_ += dt;
-
-		rushRightClickGuideAlpha_ += dt * rushRightClickGuideFadeInSpeed_;
-		if (rushRightClickGuideAlpha_ > 1.0f) {
-			rushRightClickGuideAlpha_ = 1.0f;
-		}
-	}
-	else {
-		rushRightClickGuideAlpha_ -= dt * rushRightClickGuideFadeOutSpeed_;
-		if (rushRightClickGuideAlpha_ < 0.0f) {
-			rushRightClickGuideAlpha_ = 0.0f;
-			rushRightClickGuideTimer_ = 0.0f;
-		}
-	}
-
-	// 表示していないなら透明のまま更新
-	if (rushRightClickGuideAlpha_ <= 0.0f) {
-
-		rushRightClickGuide_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
-		rushRightClickGuide_->Update();
-
-		if (rushRightClickTogetoge_) {
-			rushRightClickTogetoge_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
-			rushRightClickTogetoge_->Update();
-		}
-
-		return;
-	}
-
-	// ----------------------------
-	// 右クリック画像
-	// ----------------------------
-	const float pulse =
-		1.0f +
-		std::sin(rushRightClickGuideTimer_ * rushRightClickGuidePulseSpeed_) *
-		rushRightClickGuidePulseScale_;
-
-	const float bobY =
-		std::sin(rushRightClickGuideTimer_ * 6.0f) *
-		rushRightClickGuideBobAmp_;
-
-	float flash =
-		0.85f +
-		0.15f *
-		(0.5f + 0.5f * std::sin(rushRightClickGuideTimer_ * 14.0f));
-
-	Vector2 guideSize = {
-		rushRightClickGuideBaseSize_.x * pulse,
-		rushRightClickGuideBaseSize_.y * pulse
-	};
-
-	Vector2 guidePos = rushRightClickGuidePos_;
-	guidePos.y += bobY;
-
-	rushRightClickGuide_->SetPosition(guidePos);
-	rushRightClickGuide_->SetSize(guideSize);
-	rushRightClickGuide_->SetColor({
-		1.0f,
-		1.0f,
-		1.0f,
-		rushRightClickGuideAlpha_ * flash
-		});
-	rushRightClickGuide_->Update();
-
-	// ----------------------------
-	// 背景の tog etoge
-	// ----------------------------
-	if (rushRightClickTogetoge_) {
-
-		const float togPulse =
-			1.0f +
-			std::sin(rushRightClickGuideTimer_ * 8.0f) *
-			rushRightClickTogetogePulseScale_;
-
-		Vector2 togPos = {
-			guidePos.x + rushRightClickTogetogeOffset_.x,
-			guidePos.y + rushRightClickTogetogeOffset_.y
-		};
-
-		Vector2 togSize = {
-			rushRightClickTogetogeBaseSize_.x * togPulse,
-			rushRightClickTogetogeBaseSize_.y * togPulse
-		};
-
-		const float togRot =
-			std::sin(rushRightClickGuideTimer_ * rushRightClickTogetogeRotateSpeed_) *
-			0.10f;
-
-		rushRightClickTogetoge_->SetPosition(togPos);
-		rushRightClickTogetoge_->SetSize(togSize);
-		rushRightClickTogetoge_->SetRotation(togRot);
-		rushRightClickTogetoge_->SetColor({
-			1.0f,
-			1.0f,
-			1.0f,
-			rushRightClickGuideAlpha_ * 0.9f
-			});
-		rushRightClickTogetoge_->Update();
-	}
-}
-
-void GameScene::DrawRushRightClickGuide() {
-
-	if (rushRightClickGuideAlpha_ <= 0.0f) {
-		return;
-	}
-
-	// 下地のびっくり画像
-	if (rushRightClickTogetoge_) {
-		rushRightClickTogetoge_->Draw();
-	}
-
-	// 右クリック画像
-	if (rushRightClickGuide_) {
-		rushRightClickGuide_->Draw();
-	}
 }

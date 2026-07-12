@@ -282,7 +282,12 @@
     <ClCompile Include="Game\GamePlay\Enemy\BossRushAttackController.cpp" />
     <ClCompile Include="Game\Scene\QRCodeScene.cpp" />
     <ClCompile Include="externals\QRCode\qrcodegen.cpp" />
-    <ClCompile Include="BossHpUI.cpp" />
+    <ClCompile Include="Game\UI\BossHpUI.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossDeathController.cpp" />
+    <ClCompile Include="Game\UI\PlayerHpUI.cpp" />
+    <ClCompile Include="Game\UI\PlayerUI.cpp" />
+    <ClCompile Include="Game\UI\BossTargetUI.cpp" />
+    <ClCompile Include="Game\GamePlay\Scene\ClearSequenceController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -452,7 +457,12 @@
     <ClInclude Include="Game\Entity\Enemy\BossRushAttackParams.h" />
     <ClInclude Include="Game\Scene\QRCodeScene.h" />
     <ClInclude Include="externals\QRCode\qrcodegen.hpp" />
-    <ClInclude Include="BossHpUI.h" />
+    <ClInclude Include="Game\UI\BossHpUI.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossDeathController.h" />
+    <ClInclude Include="Game\UI\PlayerHpUI.h" />
+    <ClInclude Include="Game\UI\PlayerUI.h" />
+    <ClInclude Include="Game\UI\BossTargetUI.h" />
+    <ClInclude Include="Game\GamePlay\Scene\ClearSequenceController.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

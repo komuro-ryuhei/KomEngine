@@ -3,32 +3,35 @@
 // Scene
 #include "Game/Scene/IScene.h"
 #include "Game/Scene/SceneManager.h"
+#include "Game/GamePlay/Scene/ClearSequenceController.h"
+
 #include "Engine/Base/Particle/ParticleManager.h"
 #include "Engine/Base/Particle/ParticleEmitter.h"
 #include "Engine/Base/Particle/ParticleEditor.h"
 #include "Engine/Base/Debug/LineRenderer.h"
+#include "Engine/Base/Collision/CollisionManager.h"
 
-// Object
+// BaseObject
 #include "Engine/Base/3d/Skybox/Skybox.h"
 #include "Engine/Base/2d/Sprite/Sprite.h"
+#include "Game/Camera/KnockoutCameraController.h"
 
 // Entity
 #include "Game/Entity/Player/Player.h"
-#include "Game/Entity/Enemy/Enemy.h"
 #include "Game/Entity/Enemy/BossEnemy.h"
 #include "Game/Entity/Enemy/BossMeteor.h"
-#include "Game/Entity/Enemy/BossSword.h"
 #include "Game/Entity/Enemy/BossMissile.h"
 
-#include "Game/UI/Fade.h"
-#include "Game/Camera/KnockoutCameraController.h"
-#include "Game/UI/ResultImage.h"
+// Enemy
+#include "Game/GamePlay/Enemy/BossAttackManager.h"
 #include "Game/GamePlay/Enemy/BossMeteorController.h"
 #include "Game/GamePlay/Enemy/BossArmController.h"
-#include "Engine/Base/Collision/CollisionManager.h"
-#include "Game/UI/PauseMenu.h"
 
-#include "Game/GamePlay/Enemy/BossAttackManager.h"
+// UI
+#include "Game/UI/Fade.h"
+#include "Game/UI/ResultImage.h"
+#include "Game/UI/PauseMenu.h"
+#include "Game/UI/PlayerUI.h"
 
 #include <vector>
 
@@ -140,6 +143,16 @@ private:
 	// 既存の Update() の Play 中処理を移す用
 	void UpdatePlay(float dt);
 
+	// Play中処理の分割
+	bool UpdatePause(float dt);
+	void UpdateDebugAttackInput();
+	void UpdateBattleSystems(float dt);
+	void UpdateSceneObjects(float dt);
+	void UpdateGameUI(float dt);
+	void UpdateSequenceAndCollision(float dt);
+	bool UpdatePlayEnd();
+	void UpdateDebugTools();
+
 	// Camera
 	std::unique_ptr<Camera> camera_ = nullptr;
 	// 
@@ -162,56 +175,15 @@ private:
 	// Boss
 	std::unique_ptr<BossEnemy> boss_ = nullptr;
 
-	// 操作方法スプライト
-	std::unique_ptr<Sprite> controlGuideSprite_ = nullptr;
-	std::unique_ptr<Sprite> controlGuideSprite2_ = nullptr;
-
-	Vector2 controlGuide1Pos_{ 1120.0f, 480.0f };
-	Vector2 controlGuide1Size_{ 256.0f, 256.0f };
-
-	Vector2 controlGuide2Pos_{ 1120.0f, 480.0f };
-	Vector2 controlGuide2Size_{ 220.0f, 240.0f };
-
-	// チャージ説明用ゲージ
-	std::unique_ptr<Sprite> chargeGaugeFrameSpr_ = nullptr;
-	std::unique_ptr<Sprite> chargeGaugeFillSpr_ = nullptr;
-
-	Vector2 chargeGaugePos_{ 1120, 640.0f };
-	Vector2 chargeGaugeFrameSize_{ 180.0f, 34.0f };
-	Vector2 chargeGaugeFillBaseSize_{ 150.0f, 18.0f };
-	Vector2 chargeGaugeFillOffset_{ -75.0f, 0.0f };
-	Vector2 chargeGaugeMouseOffset_{ 0.0f, 64.0f };
-
-	std::unique_ptr<Sprite> leftClickOverlaySpr_ = nullptr;
-
-	Vector2 leftClickOverlayOffset_{ 0.0f, 0.0f };
-	Vector2 leftClickOverlaySize_{ 256.0f, 256.0f };
-
-	float chargeGaugeMaxTime_ = 3.0f;
-	float chargeGaugeTimer_ = 0.0f;
-
-	// 
-	std::unique_ptr<Sprite> toPauseSpr_;
-	Vector2 toPausePos_{ 1180.0f, 100.0f };
-	Vector2 toPauseSize_{ 64.0f, 64.0f };
-
 	// リザルトのスプライト
 	std::unique_ptr<ResultImage> result_ = nullptr;
 
 	// クリア演出
-	bool clearSequenceStarted_ = false;
-	bool clearResultStarted_ = false;
-	float clearSequenceTimer_ = 0.0f;
-
-	// 連鎖爆発
-	int clearExplosionStep_ = 0;
-	float clearExplosionTimer_ = 0.0f;
-	float clearExplosionInterval_ = 0.18f;
+	std::unique_ptr<ClearSequenceController> clearSequence_ = nullptr;
 
 	// 演出用
 	void StartClearSequence();
 	void UpdateClearSequence(float dt);
-	void TriggerClearExplosionStep(int step);
 
 	// target
 	std::unique_ptr<Sprite> leftTargetOuter_;
@@ -344,12 +316,10 @@ private:
 	// ポーズ用
 	std::unique_ptr<PauseMenu> pauseMenu_;
 
-	// PlayerのHPのUI表示（後にクラス分け予定）
-	std::vector<std::unique_ptr<Sprite>> hpHearts_;
-	int playerMaxHp_ = 5;                 // 現状プレイヤーHPは 5
-	Vector2 hpStartPos_{ 20.0f, 700.0f }; // 左下
-	float hpHeartInterval_ = 52.0f;       // ハートの間隔
-	Vector2 hpHeartSize_{ 64.0f, 64.0f }; // ハートのサイズ
+	// PlayerのUI
+	std::unique_ptr<PlayerUI> playerUI_ = nullptr;
+
+	int playerMaxHp_ = 5; // プレイヤーHPは 5
 
 	// イントロ終了後のキラーン演出
 	std::unique_ptr<Sprite> bossIntroGlintSprite_ = nullptr;
@@ -388,30 +358,6 @@ private:
 	float speedLineIntensity_ = 0.0f;
 	float speedLineLineCount_ = 120.0f;
 	float speedLineLineWidth_ = 0.035f;
-
-	// 右クリックガイド
-	std::unique_ptr<Sprite> rushRightClickGuide_ = nullptr;
-
-	bool rushRightClickGuideVisible_ = false;
-	float rushRightClickGuideTimer_ = 0.0f;
-	float rushRightClickGuideAlpha_ = 0.0f;
-
-	Vector2 rushRightClickGuidePos_ = { 1100.0f, 220.0f };
-	Vector2 rushRightClickGuideBaseSize_ = { 180.0f, 180.0f };
-
-	float rushRightClickGuidePulseSpeed_ = 10.0f;
-	float rushRightClickGuidePulseScale_ = 0.12f;
-	float rushRightClickGuideBobAmp_ = 8.0f;
-	float rushRightClickGuideFadeInSpeed_ = 8.0f;
-	float rushRightClickGuideFadeOutSpeed_ = 10.0f;
-
-	std::unique_ptr<Sprite> rushRightClickTogetoge_ = nullptr;
-
-	Vector2 rushRightClickTogetogeOffset_ = { 0.0f, 8.0f };
-	Vector2 rushRightClickTogetogeBaseSize_ = { 230.0f, 230.0f };
-
-	float rushRightClickTogetogePulseScale_ = 0.08f;
-	float rushRightClickTogetogeRotateSpeed_ = 1.6f;
 
 private:
 
@@ -454,8 +400,4 @@ private:
 	void BossAttackSelectImGui();
 
 	void UpdateRushSpeedLine(float dt);
-
-	void InitRushRightClickGuide();
-	void UpdateRushRightClickGuide(float dt);
-	void DrawRushRightClickGuide();
 };
