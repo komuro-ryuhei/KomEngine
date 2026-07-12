@@ -177,6 +177,11 @@ void GameScene::Init() {
 	playerUI_ = std::make_unique<PlayerUI>();
 	playerUI_->Init(playerMaxHp_);
 
+	// 弾プールを事前生成
+	if (player_) {
+		player_->InitBulletPool();
+	}
+
 	// Playerが持つ銃
 	gun_ = std::make_unique<Object3d>();
 	gun_->Init(BlendType::BLEND_NONE);
@@ -427,8 +432,11 @@ void GameScene::Draw() {
 		if (sp) { sp->Draw(); }
 	}
 
-	// デバッグライン
-	// debugLine_.Draw();
+#ifdef USE_IMGUI
+	if (showDebugCollisionLine_) {
+		debugLine_.Draw();
+	}
+#endif
 
 	// パーティクル描画
 	KomEngine::System::GetParticleManager()->Draw();
@@ -693,9 +701,12 @@ void GameScene::UpdateSceneObjects(float dt) {
 		glassObject_->Update();
 	}
 
-	debugLine_.Update();
-
-	LineTarget();
+#ifdef USE_IMGUI
+	if (showDebugCollisionLine_) {
+		debugLine_.Update();
+		LineTarget();
+	}
+#endif
 
 	UpdateGun();
 

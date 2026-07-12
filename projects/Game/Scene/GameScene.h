@@ -164,6 +164,9 @@ private:
 	// デバッグ用ライン描画
 	LineRenderer debugLine_;
 
+	// デバッグラインを表示するか
+	bool showDebugCollisionLine_ = false;
+
 	// Player
 	std::unique_ptr<Player> player_ = nullptr;
 	// Playerが持つ銃
