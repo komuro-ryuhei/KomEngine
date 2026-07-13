@@ -90,5 +90,5 @@ private: // メンバ変数
 	Transform cameraTransform;
 
 	//
-	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
+	std::shared_ptr<PipelineManager> pipelineManager_ = nullptr;
 };

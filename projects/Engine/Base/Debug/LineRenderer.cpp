@@ -1,10 +1,9 @@
 #include "LineRenderer.h"
 #include "Engine/Base/Camera/Camera.h"
 
-void LineRenderer::Init(uint32_t maxLines, BlendType type)
-{
-    pipelineManager_ = std::make_unique<PipelineManager>();
-    pipelineManager_->PSOSetting("line", type);
+void LineRenderer::Init(uint32_t maxLines, BlendType type) {
+
+    pipelineManager_ = PipelineManager::GetShared("line", type);
 
     maxVertices_ = maxLines * 2;
 

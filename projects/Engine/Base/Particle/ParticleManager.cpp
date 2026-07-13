@@ -41,8 +41,7 @@ namespace {
 void ParticleManager::Init(BlendType type) {
 
 	//
-	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("particle", type);
+	pipelineManager_ = PipelineManager::GetShared("particle", type);
 
 	BuildEmitTable();
 

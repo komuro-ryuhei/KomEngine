@@ -45,6 +45,11 @@ public:
 	ID3D12RootSignature* GetRootSignature() const; // ルートシグネチャの取得
 	ID3D12PipelineState* GetGraphicsPipelineState() const; // グラフィックスパイプラインステートの取得
 
+	/// <summary>
+	/// 同じシェーダー・ブレンド設定のパイプラインを共有取得
+	/// </summary>
+	static std::shared_ptr<PipelineManager> GetShared(const std::string& objectType, BlendType type);
+
 private:
 
 	struct ShaderPair {
@@ -70,4 +75,14 @@ private:
 
 	PipelineManager(const PipelineManager&) = delete;
 	const PipelineManager& operator=(const PipelineManager&) = delete;
+
+	/// <summary>
+	/// キャッシュ用キーを生成
+	/// </summary>
+	static std::string MakeCacheKey(const std::string& objectType, BlendType type);
+
+	/// <summary>
+	/// 作成済みパイプラインのキャッシュ
+	/// </summary>
+	static std::unordered_map<std::string, std::shared_ptr<PipelineManager>> pipelineCache_;
 };

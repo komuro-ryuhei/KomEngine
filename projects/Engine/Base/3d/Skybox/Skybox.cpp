@@ -16,8 +16,7 @@ void Skybox::Init(const std::string& filename) {
 	filename_ = filename;
 
 	//
-	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("skybox", BlendType::BLEND_NONE);
+	pipelineManager_ = PipelineManager::GetShared("skybox", BlendType::BLEND_NONE);
 
 	vertexResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(VertexData) * kSkyboxVertexCount);
 	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();

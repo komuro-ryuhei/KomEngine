@@ -1,9 +1,36 @@
 #include "PipelineManager.h"
 #include "Engine/Base/System/System.h"
 
+std::unordered_map<std::string, std::shared_ptr<PipelineManager>> PipelineManager::pipelineCache_;
+
 ID3D12RootSignature* PipelineManager::GetRootSignature() const { return rootSignature_->GetRootSignature(); }
 
 ID3D12PipelineState* PipelineManager::GetGraphicsPipelineState() const { return graphicsPipelineState.Get(); }
+
+std::string PipelineManager::MakeCacheKey(const std::string& objectType, BlendType type) {
+
+	return objectType + "_" + std::to_string(static_cast<int>(type));
+}
+
+std::shared_ptr<PipelineManager> PipelineManager::GetShared(const std::string& objectType, BlendType type) {
+
+	const std::string key = MakeCacheKey(objectType, type);
+
+	// すでに作成済みなら再利用
+	auto it = pipelineCache_.find(key);
+
+	if (it != pipelineCache_.end()) {
+		return it->second;
+	}
+
+	// 初回だけ生成・シェーダーコンパイル
+	auto pipeline = std::make_shared<PipelineManager>();
+	pipeline->PSOSetting(objectType, type);
+
+	pipelineCache_.emplace(key, pipeline);
+
+	return pipeline;
+}
 
 const std::unordered_map<std::string, PipelineManager::ShaderPair> PipelineManager::kShaderTable = {
 	{ "object3d",                  { L"./Resources/shaders/Object3D.VS.hlsl",   L"./Resources/shaders/Object3D.PS.hlsl" } },
@@ -87,16 +114,19 @@ void PipelineManager::CreatePSO(const std::string& objectType)
 		// オフスクリーン/フルスクリーン用：深度なし
 		graphicsPipelineStateDesc.DepthStencilState.DepthEnable = FALSE;
 		graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-	} else if (objectType == "sprite") {
+	}
+	else if (objectType == "sprite") {
 		// 2Dスプライト/HUD：深度なし（奥オブジェクトに隠れない）
 		graphicsPipelineStateDesc.DepthStencilState.DepthEnable = FALSE;
 		graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-	} else if (objectType == "skybox") {
+	}
+	else if (objectType == "skybox") {
 		// スカイボックス：深度比較のみ、有効・書き込みなし
 		graphicsPipelineStateDesc.DepthStencilState.DepthEnable = TRUE;
 		graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 		graphicsPipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-	} else {
+	}
+	else {
 		// 通常3D(Object3D, Particle 等)：エンジン既定のDepth設定
 		graphicsPipelineStateDesc.DepthStencilState = KomEngine::System::GetDxCommon()->GetDepthStencilDesc();
 	}
@@ -104,7 +134,8 @@ void PipelineManager::CreatePSO(const std::string& objectType)
 	// トポロジ設定：line だけ LINE、それ以外は TRIANGLE
 	if (objectType == "line") {
 		graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
-	} else {
+	}
+	else {
 		graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	}
 

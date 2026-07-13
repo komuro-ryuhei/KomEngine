@@ -98,7 +98,7 @@ private:
 	Camera* defaultCamera_ = nullptr;
 	
 	//パイプライン
-	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
+	std::shared_ptr<PipelineManager> pipelineManager_ = nullptr;
 
 	// 座標変換用
 	ComPtr<ID3D12Resource> transformationMatrixResource;

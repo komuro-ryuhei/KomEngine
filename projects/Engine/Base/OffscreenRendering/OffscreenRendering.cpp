@@ -8,8 +8,14 @@ void OffscreenRendering::SetPostEffect(const std::string& effectName) {
 		return;
 	}
 
+	// 作成済みならキャッシュを再利用、
+	// 初回だけシェーダーとPSOを生成する
+	pipelineManager_ = PipelineManager::GetShared(
+		"posteffect_" + effectName,
+		BlendType::BLEND_NONE
+	);
+
 	currentPostEffect_ = effectName;
-	pipelineManager_->PSOSetting("posteffect_" + effectName, BlendType::BLEND_NONE);
 }
 
 void OffscreenRendering::SetPostEffectParam(float param0, float param1, float param2, float param3) {
@@ -26,9 +32,18 @@ void OffscreenRendering::SetPostEffectParam(float param0, float param1, float pa
 
 void OffscreenRendering::Init() {
 
-	// PointLight用のマテリアルリソースを作る
-	materialBufferResource_ = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(MaterialBuffer));
-	materialBufferResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialBufferData_));
+	// ポストエフェクト用マテリアルバッファを生成
+	materialBufferResource_ =
+		KomEngine::System::GetDxCommon()->CreateBufferResource(
+			KomEngine::System::GetDxCommon()->GetDevice(),
+			sizeof(MaterialBuffer)
+		);
+
+	materialBufferResource_->Map(
+		0,
+		nullptr,
+		reinterpret_cast<void**>(&materialBufferData_)
+	);
 
 	materialBufferData_->time = 0.0f;
 
@@ -37,16 +52,15 @@ void OffscreenRendering::Init() {
 	materialBufferData_->param2 = 0.0f;
 	materialBufferData_->param3 = 0.0f;
 
-	// PSOの初期化
-	pipelineManager_ = std::make_unique<PipelineManager>();
+	// 起動時は通常のポストエフェクトを設定
+	pipelineManager_ = PipelineManager::GetShared(
+		"posteffect_none",
+		BlendType::BLEND_NONE
+	);
 
-	// 起動時に一度HexBarrierを生成して、クリック中の初回生成を避ける
-	pipelineManager_->PSOSetting("posteffect_HexBarrier", BlendType::BLEND_NONE);
-
-	// 最後に通常のposteffect_noneへ戻す
-	pipelineManager_->PSOSetting("posteffect_none", BlendType::BLEND_NONE);
 	currentPostEffect_ = "none";
 
+	// オフスクリーン用レンダーターゲット生成
 	OffScreeenRenderTargetView();
 }
 

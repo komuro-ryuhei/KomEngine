@@ -52,8 +52,7 @@ void Sprite::Init(const std::string& textureFilePath, BlendType type) {
 	textureFilePath_ = textureFilePath;
 
 	// パイプラインマネージャーの初期化
-	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting("sprite", type);
+	pipelineManager_ = PipelineManager::GetShared("sprite", type);
 
 	// リソース作成
 	vertexResource = KomEngine::System::GetDxCommon()->CreateBufferResource(KomEngine::System::GetDxCommon()->GetDevice(), sizeof(VertexData) * 4);

@@ -1,5 +1,27 @@
 #include "SceneManager.h"
 
+#include <chrono>
+#include <sstream>
+#include <Windows.h>
+
+namespace {
+
+	void OutputTransitionTime(const char* label, double milliseconds) {
+
+		std::ostringstream stream;
+
+		stream
+			<< "[SceneTransition] "
+			<< label
+			<< ": "
+			<< milliseconds
+			<< " ms\n";
+
+		Logger::Log(stream.str());
+	}
+
+}
+
 void SceneManager::Update() {
 
 	if (state_ == TransitState::Idle) {
@@ -16,6 +38,10 @@ void SceneManager::Update() {
 		break;
 
 	case TransitState::Loading:
+
+		// 読み込み中もノイズ演出を動かす
+		fade_.Update();
+
 		if (preloader_) {
 			preloader_->Update(loadBudgetPerFrame_);
 			if (preloader_->IsDone()) {
@@ -27,20 +53,69 @@ void SceneManager::Update() {
 		break;
 
 	case TransitState::Swap:
+	{
+		using Clock = std::chrono::high_resolution_clock;
+
+		const auto totalStart = Clock::now();
+
 		if (currentScene_) {
+
+			const auto start = Clock::now();
+
 			currentScene_->Finalize();
 			currentScene_.reset();
+
+			const auto end = Clock::now();
+
+			OutputTransitionTime(
+				"Finalize",
+				std::chrono::duration<double, std::milli>(end - start).count()
+			);
 		}
 
-		currentScene_ = sceneFactory_->CreateScene(pendingSceneName_);
-		currentScene_->SetSceneManager(this);
+		{
+			const auto start = Clock::now();
 
-		// ここは軽くする（Init内でLoadしない前提）
-		currentScene_->Init();
+			currentScene_ = sceneFactory_->CreateScene(pendingSceneName_);
+
+			const auto end = Clock::now();
+
+			OutputTransitionTime(
+				"CreateScene",
+				std::chrono::duration<double, std::milli>(end - start).count()
+			);
+		}
+
+		if (currentScene_) {
+
+			currentScene_->SetSceneManager(this);
+
+			const auto start = Clock::now();
+
+			currentScene_->Init();
+
+			const auto end = Clock::now();
+
+			OutputTransitionTime(
+				"Init",
+				std::chrono::duration<double, std::milli>(end - start).count()
+			);
+		}
+
+		const auto totalEnd = Clock::now();
+
+		OutputTransitionTime(
+			"Swap total",
+			std::chrono::duration<double, std::milli>(
+				totalEnd - totalStart
+			).count()
+		);
 
 		fade_.StartDataErrorOpen(0.45f);
 		state_ = TransitState::FadeIn;
+
 		break;
+	}
 
 	case TransitState::FadeIn:
 		fade_.Update();

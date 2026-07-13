@@ -14,8 +14,7 @@ void Object3d::Init(const std::string& shaderType, BlendType type) {
 
 	camera_ = defaultCamera_;
 
-	pipelineManager_ = std::make_unique<PipelineManager>();
-	pipelineManager_->PSOSetting(shaderType, type);
+	pipelineManager_ = PipelineManager::GetShared(shaderType, type);
 
 	transformationMatrixResource =
 		KomEngine::System::GetDxCommon()->CreateBufferResource(

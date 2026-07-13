@@ -232,7 +232,7 @@ private:
 	std::unordered_map<std::string, ParticleGroup> particleGroups;
 
 	// 
-	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
+	std::shared_ptr<PipelineManager> pipelineManager_ = nullptr;
 
 	// プリセットデータ
 	std::unordered_map<std::string, ParticlePreset> presets_;

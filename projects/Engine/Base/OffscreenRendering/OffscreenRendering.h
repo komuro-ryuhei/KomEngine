@@ -81,7 +81,7 @@ private:
 	// DirectXCommon* dxCommon_ = nullptr;
 
 	// PSO
-	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
+	std::shared_ptr<PipelineManager> pipelineManager_ = nullptr;
 
 	// バリア
 	D3D12_RESOURCE_BARRIER renderTextureBarrier{};

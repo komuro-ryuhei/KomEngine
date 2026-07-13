@@ -64,7 +64,8 @@ private:
 	};
 
 private:
-	std::unique_ptr<PipelineManager> pipelineManager_ = nullptr;
+
+	std::shared_ptr<PipelineManager> pipelineManager_ = nullptr;
 
 	// 頂点バッファ
 	ComPtr<ID3D12Resource> vertexResource_;
