@@ -47,14 +47,7 @@ bool Player::IsInvincible() const { return isInvincible_; }
 
 Player::~Player() {
 
-	if (collisionManager_) {
-		for (auto& bullet : bulletObjects_) {
-			if (bullet && bullet->IsAlive()) {
-				collisionManager_->Unregister(bullet.get());
-			}
-		}
-	}
-
+	// 弾のクリア
 	bulletObjects_.clear();
 }
 
