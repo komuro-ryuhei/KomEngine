@@ -34,6 +34,12 @@ private:
 		WaitMeteor,
 	};
 
+	// 腕攻撃用State
+	class ArmAttackState;
+	class SingleArmAttackState;
+	class BothHandsAttackState;
+	class WaitMeteorAttackState;
+
 	enum class EnrageTransitionPhase {
 		None,
 		Knockback,
@@ -42,6 +48,10 @@ private:
 	};
 
 	AttackPhase attackPhase_ = AttackPhase::None;
+
+	// 現在の腕攻撃State
+	std::unique_ptr<ArmAttackState> armAttackState_ = nullptr;
+
 	bool meteorRequest_ = false; // 両手攻撃完了後にtrue
 
 	struct PartCollider : public ICollisionObject
@@ -60,6 +70,8 @@ private:
 	PartCollider rightCol_;
 
 public:
+
+	~BossEnemy();
 
 	void Init(Camera* camera);
 
@@ -228,6 +240,14 @@ private:
 	void UpdateSingleArmAttack(float dt);
 	void UpdateBothHandsAttack(float dt);
 	void UpdateWaitMeteorAttack();
+
+	// 腕攻撃Stateの切り替え
+	void ChangeArmAttackState(std::unique_ptr<ArmAttackState> nextState);
+	void StartSingleArmPhase(AttackPhase phase);
+	void StartBothHandsPhase();
+	void FinishArmCombo();
+	void ResetArmAttackState();
+
 	// 動き
 	void Move();
 	// タイトルシーンでの動き

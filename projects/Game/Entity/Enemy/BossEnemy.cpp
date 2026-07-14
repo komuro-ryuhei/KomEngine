@@ -16,6 +16,97 @@ static const char* kBossCoreModel = "BossEnemyCore.obj";
 static const char* kBossArmorModel = "BossArmor.obj";
 static const char* kDizzyStarModel = "star.obj";
 
+// ============================================================
+// 腕攻撃State
+// ============================================================
+
+class BossEnemy::ArmAttackState {
+
+public:
+
+	virtual ~ArmAttackState() = default;
+
+	virtual void Enter(BossEnemy& boss) {
+		(void)boss;
+	}
+
+	virtual void Update(BossEnemy& boss, float dt) = 0;
+
+	virtual AttackPhase GetPhase() const = 0;
+};
+
+class BossEnemy::SingleArmAttackState : public BossEnemy::ArmAttackState {
+
+public:
+
+	explicit SingleArmAttackState(AttackPhase phase)
+		: phase_(phase) {
+	}
+
+	void Enter(BossEnemy& boss) override {
+
+		// 右腕か左腕のどちらか以外では使わない
+		boss.attackPhase_ = phase_;
+	}
+
+	void Update(BossEnemy& boss, float dt) override {
+
+		boss.UpdateSingleArmAttack(dt);
+	}
+
+	AttackPhase GetPhase() const override {
+
+		return phase_;
+	}
+
+private:
+
+	AttackPhase phase_ = AttackPhase::None;
+};
+
+class BossEnemy::BothHandsAttackState : public BossEnemy::ArmAttackState {
+
+public:
+
+	void Enter(BossEnemy& boss) override {
+
+		boss.attackPhase_ = AttackPhase::BothHands;
+	}
+
+	void Update(BossEnemy& boss, float dt) override {
+
+		boss.UpdateBothHandsAttack(dt);
+	}
+
+	AttackPhase GetPhase() const override {
+
+		return AttackPhase::BothHands;
+	}
+};
+
+class BossEnemy::WaitMeteorAttackState : public BossEnemy::ArmAttackState {
+
+public:
+
+	void Enter(BossEnemy& boss) override {
+
+		boss.attackPhase_ = AttackPhase::WaitMeteor;
+	}
+
+	void Update(BossEnemy& boss, float dt) override {
+
+		(void)dt;
+		boss.UpdateWaitMeteorAttack();
+	}
+
+	AttackPhase GetPhase() const override {
+
+		return AttackPhase::WaitMeteor;
+	}
+};
+
+BossEnemy::~BossEnemy() = default;
+
 void BossEnemy::SetTranslate(Vector3 translate) { transform_.translate = translate; }
 
 void BossEnemy::Init(Camera* camera) {
@@ -442,27 +533,13 @@ void BossEnemy::Attack() {
 		return;
 	}
 
+	if (!armAttackState_) {
+		return;
+	}
+
 	const float dt = KomEngine::System::GetDeltaTime();
 
-	switch (attackPhase_) {
-
-	case AttackPhase::SingleLeft:
-	case AttackPhase::SingleRight:
-		UpdateSingleArmAttack(dt);
-		break;
-
-	case AttackPhase::BothHands:
-		UpdateBothHandsAttack(dt);
-		break;
-
-	case AttackPhase::WaitMeteor:
-		UpdateWaitMeteorAttack();
-		break;
-
-	case AttackPhase::None:
-	default:
-		break;
-	}
+	armAttackState_->Update(*this, dt);
 }
 
 bool BossEnemy::CanUpdateAttack() const {
@@ -481,6 +558,118 @@ bool BossEnemy::CanUpdateAttack() const {
 	}
 
 	return true;
+}
+
+void BossEnemy::ChangeArmAttackState(std::unique_ptr<ArmAttackState> nextState) {
+
+	if (!nextState) {
+		armAttackState_.reset();
+		attackPhase_ = AttackPhase::None;
+		return;
+	}
+
+	attackPhase_ = nextState->GetPhase();
+
+	armAttackState_ = std::move(nextState);
+	armAttackState_->Enter(*this);
+}
+
+void BossEnemy::StartSingleArmPhase(AttackPhase phase) {
+
+	if (phase != AttackPhase::SingleLeft &&
+		phase != AttackPhase::SingleRight) {
+		return;
+	}
+
+	armComboActive_ = true;
+
+	// 片腕攻撃は予備動作から開始する
+	isExtending_ = false;
+
+	armTelegraphActive_ = true;
+	armTelegraphTimer_ = 0.0f;
+
+	bothTelegraphActive_ = false;
+	bothTelegraphTimer_ = 0.0f;
+
+	armWindSlashFxTimer_ = 0.0f;
+
+	ChangeArmAttackState(std::make_unique<SingleArmAttackState>(phase));
+}
+
+void BossEnemy::StartBothHandsPhase() {
+
+	armComboActive_ = true;
+
+	// 片腕用の予備動作は終了
+	armTelegraphActive_ = false;
+	armTelegraphTimer_ = 0.0f;
+
+	// 両手用の予備動作から開始
+	bothTelegraphActive_ = true;
+	bothTelegraphTimer_ = 0.0f;
+
+	leftExtending_ = false;
+	rightExtending_ = false;
+
+	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
+	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
+
+	if (leftArm_) {
+		leftArm_->SetTranslate(leftArmPos_);
+	}
+	if (rightArm_) {
+		rightArm_->SetTranslate(rightArmPos_);
+	}
+
+	armWindSlashFxTimer_ = 0.0f;
+
+	ChangeArmAttackState(std::make_unique<BothHandsAttackState>());
+}
+
+void BossEnemy::FinishArmCombo() {
+
+	leftArmHitCount_ = 0;
+	rightArmHitCount_ = 0;
+
+	leftExtending_ = true;
+	rightExtending_ = true;
+
+	armTelegraphActive_ = false;
+	armTelegraphTimer_ = 0.0f;
+
+	bothTelegraphActive_ = false;
+	bothTelegraphTimer_ = 0.0f;
+
+	pendingChargeAfterRetreat_ = true;
+	pendingMeteorAfterCharge_ = true;
+
+	armComboActive_ = false;
+	armComboFinished_ = true;
+
+	retreatRequest_ = true;
+
+	ChangeArmAttackState(nullptr);
+}
+
+void BossEnemy::ResetArmAttackState() {
+
+	armComboActive_ = false;
+	armComboFinished_ = false;
+
+	armTelegraphActive_ = false;
+	armTelegraphTimer_ = 0.0f;
+
+	bothTelegraphActive_ = false;
+	bothTelegraphTimer_ = 0.0f;
+
+	isExtending_ = true;
+	leftExtending_ = true;
+	rightExtending_ = true;
+
+	armWindSlashFxTimer_ = 0.0f;
+
+	ChangeArmAttackState(nullptr);
 }
 
 void BossEnemy::UpdateSingleArmAttack(float dt) {
@@ -594,31 +783,12 @@ void BossEnemy::UpdateSingleArmAttack(float dt) {
 			armPos = baseLocalOffset;
 			hitCount = 0;
 
-			// 次の片腕/両手へ
-			isExtending_ = false;
-			armTelegraphActive_ = true;
-			armTelegraphTimer_ = 0.0f;
-
+			// 次のStateへ遷移する
 			if (attackPhase_ == AttackPhase::SingleRight) {
-				attackPhase_ = AttackPhase::SingleLeft;
+				StartSingleArmPhase(AttackPhase::SingleLeft);
 			}
 			else {
-				attackPhase_ = AttackPhase::BothHands;
-
-				armTelegraphActive_ = false;
-				armTelegraphTimer_ = 0.0f;
-
-				bothTelegraphActive_ = true;
-				bothTelegraphTimer_ = 0.0f;
-
-				leftExtending_ = false;
-				rightExtending_ = false;
-
-				leftArmPos_ = { -4.0f, 0.0f, 0.0f };
-				rightArmPos_ = { 4.0f, 0.0f, 0.0f };
-
-				if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
-				if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
+				StartBothHandsPhase();
 			}
 		}
 		else {
@@ -813,24 +983,7 @@ void BossEnemy::UpdateBothHandsAttack(float dt) {
 		MyMath::Length(rightWorldPos - rightBaseWorld) < endThreshold;
 
 	if (leftFinished && rightFinished) {
-		leftArmHitCount_ = 0;
-		rightArmHitCount_ = 0;
-
-		leftExtending_ = true;
-		rightExtending_ = true;
-
-		bothTelegraphActive_ = false;
-		bothTelegraphTimer_ = 0.0f;
-
-		attackPhase_ = AttackPhase::WaitMeteor;
-		pendingChargeAfterRetreat_ = true;
-		pendingMeteorAfterCharge_ = true;
-
-		armComboActive_ = false;
-		armComboFinished_ = true;
-
-		attackPhase_ = AttackPhase::None;
-		retreatRequest_ = true;
+		FinishArmCombo();
 	}
 }
 
@@ -880,35 +1033,30 @@ void BossEnemy::InitTitleScenePos() {
 void BossEnemy::StartArmCombo() {
 
 	// すでに実行中なら無視
-	if (armComboActive_) return;
+	if (armComboActive_) {
+		return;
+	}
 
 	armComboActive_ = true;
 	armComboFinished_ = false;
-
-	// コンボ開始は「右→左→両手」
-	attackPhase_ = AttackPhase::SingleRight;
-
-	// 片手用：最初は予備動作から始める
-	isExtending_ = false;
-	armTelegraphActive_ = true;
-	armTelegraphTimer_ = 0.0f;
-
-	// 両手用
-	leftExtending_ = true;
-	rightExtending_ = true;
 
 	// ヒット数リセット
 	leftArmHitCount_ = 0;
 	rightArmHitCount_ = 0;
 
-	// 予備動作用の初期位置
+	// 腕の初期位置
 	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
 	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
 
-	if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
-	if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
+	if (rightArm_) {
+		rightArm_->SetTranslate(rightArmPos_);
+	}
+	if (leftArm_) {
+		leftArm_->SetTranslate(leftArmPos_);
+	}
 
-	armWindSlashFxTimer_ = 0.0f;
+	// コンボ開始は「右 → 左 → 両手」
+	StartSingleArmPhase(AttackPhase::SingleRight);
 }
 
 bool BossEnemy::ConsumeArmComboFinished() {
@@ -920,17 +1068,8 @@ bool BossEnemy::ConsumeArmComboFinished() {
 
 void BossEnemy::CancelAttacksForMeteor() {
 
-	// 腕コンボ停止
-	armComboActive_ = false;
-	armComboFinished_ = false;
-	attackPhase_ = AttackPhase::None;
-	armTelegraphActive_ = false;
-	armTelegraphTimer_ = 0.0f;
-	bothTelegraphActive_ = false;
-	bothTelegraphTimer_ = 0.0f;
-	isExtending_ = true;
-	leftExtending_ = true;
-	rightExtending_ = true;
+	// 腕攻撃State停止
+	ResetArmAttackState();
 
 	// 退避関連もクリア
 	retreatActive_ = false;
@@ -949,8 +1088,6 @@ void BossEnemy::CancelAttacksForMeteor() {
 	if (chargeBeam_) {
 		chargeBeam_->Destroy();
 	}
-
-	armWindSlashFxTimer_ = 0.0f;
 }
 
 void BossEnemy::CancelAllAttacks() {
@@ -978,19 +1115,8 @@ void BossEnemy::CancelAllAttacks() {
 	if (leftArm_) { leftArm_->SetTranslate(leftArmPos_); }
 	if (rightArm_) { rightArm_->SetTranslate(rightArmPos_); }
 
-	// 腕状態リセット
-	attackPhase_ = AttackPhase::None;
-	armTelegraphActive_ = false;
-	armTelegraphTimer_ = 0.0f;
-	bothTelegraphActive_ = false;
-	bothTelegraphTimer_ = 0.0f;
-	armComboActive_ = false;
-	armComboFinished_ = false;
-	isExtending_ = true;
-	leftExtending_ = true;
-	rightExtending_ = true;
-
-	armWindSlashFxTimer_ = 0.0f;
+	// 腕攻撃Stateをリセット
+	ResetArmAttackState();
 }
 
 void BossEnemy::StartEnrageTransition(float duration) {
