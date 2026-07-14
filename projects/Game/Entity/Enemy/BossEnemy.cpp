@@ -13,27 +13,10 @@
 
 // モデル
 static const char* kBossCoreModel = "BossEnemyCore.obj";
-static const char* kBossArmorModel = "BossArmor.obj";
-static const char* kDizzyStarModel = "star.obj";
 
 // ============================================================
 // 腕攻撃State
 // ============================================================
-
-class BossEnemy::ArmAttackState {
-
-public:
-
-	virtual ~ArmAttackState() = default;
-
-	virtual void Enter(BossEnemy& boss) {
-		(void)boss;
-	}
-
-	virtual void Update(BossEnemy& boss, float dt) = 0;
-
-	virtual AttackPhase GetPhase() const = 0;
-};
 
 class BossEnemy::SingleArmAttackState : public BossEnemy::ArmAttackState {
 
@@ -157,12 +140,22 @@ void BossEnemy::Init(Camera* camera) {
 	// 撃破演出
 	deathController_ = std::make_unique<BossDeathController>();
 
+	// 装甲管理
+	armorController_ = std::make_unique<BossArmorController>();
+	armorController_->Init(camera_, object3d_.get());
+
 	// チャージコア、チャージビームの生成
 	chargeCore_ = std::make_unique<BossChargeCore>();
 	chargeCore_->Init(camera_);
 
 	chargeBeam_ = std::make_unique<BossChargeBeam>();
 	chargeBeam_->Init(camera_);
+
+	// チャージ中のパーティクル演出
+	chargeEffectController_ = std::make_unique<BossChargeEffectController>();
+
+	// 怒り遷移演出
+	enrageController_ = std::make_unique<BossEnrageTransitionController>();
 
 	// 当たり判定コライダーの設定
 	bodyCol_.owner = this;
@@ -174,11 +167,9 @@ void BossEnemy::Init(Camera* camera) {
 	rightCol_.owner = this;
 	rightCol_.part = PartCollider::Part::RightArm;
 
-
-	// 装甲（周回）を生成
-	InitArmors();
-	// スタン中の星演出を生成
-	InitDizzyStars();
+	// スタン中の星演出
+	dizzyStarController_ = std::make_unique<BossDizzyStarController>();
+	dizzyStarController_->Init(camera_);
 
 	// --- 怒り用：通常時の基準値を保存 ---
 	baseAttackSpeed_ = attackSpeed_;
@@ -229,10 +220,16 @@ void BossEnemy::Draw() {
 
 	//
 	object3d_->Draw();
+
 	// 装甲
-	DrawArmors();
+	if (armorController_) {
+		armorController_->Draw();
+	}
+
 	// スタン中の星
-	DrawDizzyStars();
+	if (dizzyStarController_) {
+		dizzyStarController_->Draw();
+	}
 
 	if (leftArmVisible_) { leftArm_->Draw(); }
 	if (rightArmVisible_) { rightArm_->Draw(); }
@@ -287,62 +284,11 @@ void BossEnemy::ImGuiDebug() {
 	ImGui::Checkbox("攻撃中", &isAttack_);
 	ImGui::Checkbox("怒り状態", &isEnraged_);
 
-	if (ImGui::Begin("Boss Armor")) {
-
-		ImGui::Text("=== Armor Settings ===");
-
-		// 個数
-		ImGui::SliderInt("Armor Count", &armorInitialCount_, 1, 32);
-
-		// 回転半径
-		ImGui::SliderFloat("Orbit Radius", &armorOrbitRadius_, 0.0f, 20.0f);
-
-		// 回転速度
-		ImGui::SliderFloat("Orbit Speed", &armorOrbitSpeed_, -5.0f, 5.0f);
-
-		// 上下揺れ幅
-		ImGui::SliderFloat("Float Amp", &armorFloatAmp_, 0.0f, 5.0f);
-
-		// 上下揺れ速度
-		ImGui::SliderFloat("Float Speed", &armorFloatSpeed_, 0.0f, 10.0f);
-
-		// スケール
-		float scale[3] = { armorScale_.x, armorScale_.y, armorScale_.z };
-		if (ImGui::DragFloat3("Armor Scale", scale, 0.01f, 0.01f, 5.0f)) {
-			armorScale_.x = scale[0];
-			armorScale_.y = scale[1];
-			armorScale_.z = scale[2];
-		}
-
-		// スケールを適応
-		for (const auto& a : armors_) {
-			a.obj->SetScale(armorScale_);
-		}
-
-		// 作り直し
-		if (ImGui::Button("Rebuild Armors")) {
-			armorRebuildRequest_ = true;
-		}
-
-		ImGui::SameLine();
-
-		if (ImGui::Button("Reset")) {
-			armorInitialCount_ = 12;
-			armorOrbitRadius_ = 4.8f;
-			armorOrbitSpeed_ = 0.9f;
-			armorFloatAmp_ = 0.18f;
-			armorFloatSpeed_ = 1.6f;
-			armorScale_ = { 0.7f, 0.7f, 0.7f };
-			armorRebuildRequest_ = true;
-		}
+	// 装甲のデバッグ表示
+	if (armorController_) {
+		armorController_->ImGuiDebug();
 	}
-	ImGui::End();
 
-	// 再構築
-	if (armorRebuildRequest_) {
-		InitArmors();
-		armorRebuildRequest_ = false;
-	}
 	ImGui::End();
 
 #endif
@@ -351,9 +297,30 @@ void BossEnemy::ImGuiDebug() {
 void BossEnemy::UpdateCommonEffects(float dt) {
 
 	UpdateChargeCrossPose(dt);
-	UpdateEnrageTransition(dt);
 
-	ChargeEffect(dt);
+	if (enrageController_) {
+		enrageController_->Update(
+			dt,
+			transform_,
+			object3d_.get(),
+			leftArm_.get(),
+			rightArm_.get(),
+			camera_,
+			isEnraged_
+		);
+
+		if (enrageController_->ConsumeFinished()) {
+			invulnerable_ = false;
+		}
+	}
+
+	if (chargeEffectController_) {
+		chargeEffectController_->Update(
+			dt,
+			chargeActive_,
+			GetChargeCoreWorldPos()
+		);
+	}
 
 	if (chargeCore_ && chargeCore_->IsActive()) {
 		chargeCore_->SetWorldPos(transform_.translate + chargeCoreOffset_);
@@ -386,10 +353,14 @@ void BossEnemy::UpdateBossObjects(float dt) {
 	}
 
 	// スタン中の星演出更新
-	UpdateDizzyStars(dt);
+	if (dizzyStarController_) {
+		dizzyStarController_->Update(dt, transform_.translate);
+	}
 
 	// 装甲（周回）更新
-	UpdateArmors(dt);
+	if (armorController_) {
+		armorController_->Update(dt);
+	}
 }
 
 void BossEnemy::UpdateDamageTimers(float dt) {
@@ -549,7 +520,7 @@ bool BossEnemy::CanUpdateAttack() const {
 	}
 
 	// 怒り遷移中は攻撃しない
-	if (enrageTransitioning_) {
+	if (IsEnrageTransitioning()) {
 		return false;
 	}
 
@@ -1074,8 +1045,8 @@ void BossEnemy::CancelAttacksForMeteor() {
 	// 退避関連もクリア
 	retreatActive_ = false;
 	retreatRequest_ = false;
-	retreatPhase_ = RetreatPhase::None;
-	retreatT_ = 0.0f;
+	retreatVisualOverride_ = false;
+	invulnerable_ = false;
 
 	// チャージ停止
 	chargeActive_ = false;
@@ -1096,10 +1067,11 @@ void BossEnemy::CancelAllAttacks() {
 	CancelAttacksForMeteor();
 
 	// 退避も止める
-	retreatPhase_ = RetreatPhase::None;
-	retreatT_ = 0.0f;
 	retreatActive_ = false;
 	retreatRequest_ = false;
+	retreatVisualOverride_ = false;
+	retreatBodyScale_ = baseBodyScale_;
+	retreatArmScale_ = baseArmScale_;
 	invulnerable_ = false;
 
 	// 
@@ -1121,33 +1093,16 @@ void BossEnemy::CancelAllAttacks() {
 
 void BossEnemy::StartEnrageTransition(float duration) {
 
-	enrageTransitioning_ = true;
-	enragePhase_ = EnrageTransitionPhase::Knockback;
-	enrageTransitionTimer_ = 0.0f;
-	enrageTransitionDuration_ = duration;
-	enrageShockwaveEmitted_ = false;
+	// いったん全攻撃停止
+	CancelAllAttacks();
 
 	// 怒り演出中は無敵
 	invulnerable_ = true;
 
 	// 怒り突入時にアーマーを再セット
-	ResetArmors(3);
-
-	// いったん全攻撃停止
-	CancelAllAttacks();
-
-	// 基準位置保存
-	enrageStartPos_ = transform_.translate;
-
-	// duration から各フェーズ時間を組む
-	enrageKnockbackDuration_ = std::min(0.25f, duration * 0.18f);
-	enrageRecoverDuration_ = std::min(0.35f, duration * 0.18f);
-	enrageWaitDuration_ = std::max(0.0f, duration - enrageKnockbackDuration_ - enrageRecoverDuration_);
-
-	// 後方に少し下げる
-	enrageKnockbackPos_ = enrageStartPos_;
-	enrageKnockbackPos_.z += enrageKnockbackDistance_;
-	enrageKnockbackPos_.y += enrageKnockbackLift_;
+	if (armorController_) {
+		armorController_->Reset(3);
+	}
 
 	// ボスの色をいったん通常へ
 	if (object3d_) {
@@ -1159,139 +1114,9 @@ void BossEnemy::StartEnrageTransition(float duration) {
 	if (rightArm_) {
 		rightArm_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 	}
-}
 
-void BossEnemy::UpdateEnrageTransition(float dt) {
-
-	if (!enrageTransitioning_) {
-		return;
-	}
-
-	enrageTransitionTimer_ += dt;
-
-	auto lerp3 = [](const Vector3& a, const Vector3& b, float t) {
-		return Vector3{
-			a.x + (b.x - a.x) * t,
-			a.y + (b.y - a.y) * t,
-			a.z + (b.z - a.z) * t,
-		};
-		};
-
-	const Vector4 baseColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-	const Vector4 redColor = { 1.0f, 0.25f, 0.25f, 1.0f };
-
-	switch (enragePhase_) {
-
-	case EnrageTransitionPhase::Knockback:
-	{
-		float t = (enrageKnockbackDuration_ > 0.0f)
-			? (enrageTransitionTimer_ / enrageKnockbackDuration_)
-			: 1.0f;
-		t = std::clamp(t, 0.0f, 1.0f);
-
-		// 勢いよく飛ぶ
-		float ease = 1.0f - (1.0f - t) * (1.0f - t);
-
-		transform_.translate = lerp3(enrageStartPos_, enrageKnockbackPos_, ease);
-
-		if (t >= 1.0f) {
-			enragePhase_ = EnrageTransitionPhase::Wait;
-			enrageTransitionTimer_ = 0.0f;
-		}
-		break;
-	}
-
-	case EnrageTransitionPhase::Wait:
-	{
-		// 基本停止位置
-		Vector3 pos = enrageKnockbackPos_;
-
-		// 小刻みシェイク
-		float sx = std::sin(enrageTransitionTimer_ * enrageShakeFrequency_) * enrageShakeAmplitude_;
-		float sz = std::cos(enrageTransitionTimer_ * (enrageShakeFrequency_ * 1.27f)) * enrageShakeAmplitude_;
-		pos.x += sx;
-		pos.z += sz;
-		transform_.translate = pos;
-
-		// 赤フラッシュ
-		float flash = (std::sin(enrageTransitionTimer_ * enrageFlashSpeed_) + 1.0f) * 0.5f;
-		Vector4 c{
-			baseColor.x + (redColor.x - baseColor.x) * flash,
-			baseColor.y + (redColor.y - baseColor.y) * flash,
-			baseColor.z + (redColor.z - baseColor.z) * flash,
-			1.0f
-		};
-
-		if (object3d_) { object3d_->SetColor(c); }
-		if (leftArm_) { leftArm_->SetColor(c); }
-		if (rightArm_) { rightArm_->SetColor(c); }
-
-		if (enrageTransitionTimer_ >= enrageWaitDuration_) {
-			enragePhase_ = EnrageTransitionPhase::Recover;
-			enrageTransitionTimer_ = 0.0f;
-
-			// 復帰開始時に衝撃波
-			if (!enrageShockwaveEmitted_) {
-				auto* pm = KomEngine::System::GetParticleManager();
-				if (pm) {
-					if (pm->Exists("ring")) {
-						pm->Emit("ring", transform_.translate, 1);
-					}
-					if (pm->Exists("dust")) {
-						pm->Emit("dust", transform_.translate, 18);
-					}
-				}
-				if (camera_) {
-					camera_->StartShake(CameraShakeType::Large);
-				}
-				enrageShockwaveEmitted_ = true;
-			}
-		}
-		break;
-	}
-
-	case EnrageTransitionPhase::Recover:
-	{
-		float t = (enrageRecoverDuration_ > 0.0f)
-			? (enrageTransitionTimer_ / enrageRecoverDuration_)
-			: 1.0f;
-		t = std::clamp(t, 0.0f, 1.0f);
-
-		// 少しゆっくり戻す
-		float ease = t * t * (3.0f - 2.0f * t);
-
-		transform_.translate = lerp3(enrageKnockbackPos_, enrageStartPos_, ease);
-
-		// 色を戻す
-		if (object3d_) { object3d_->SetColor(baseColor); }
-		if (leftArm_) { leftArm_->SetColor(baseColor); }
-		if (rightArm_) { rightArm_->SetColor(baseColor); }
-
-		if (t >= 1.0f) {
-			transform_.translate = enrageStartPos_;
-
-			// 演出が全部終わってから怒りモデルへ切り替え
-			if (isEnraged_) {
-				if (object3d_) { object3d_->SetModel("BossEnemyCore_Enrage.obj"); }
-			}
-
-			enragePhase_ = EnrageTransitionPhase::None;
-			enrageTransitioning_ = false;
-			enrageTransitionTimer_ = 0.0f;
-			enrageShockwaveEmitted_ = false;
-
-			// 怒り演出終了で無敵解除
-			invulnerable_ = false;
-		}
-		break;
-	}
-
-	default:
-		enragePhase_ = EnrageTransitionPhase::None;
-		enrageTransitioning_ = false;
-		enrageTransitionTimer_ = 0.0f;
-		enrageShockwaveEmitted_ = false;
-		break;
+	if (enrageController_) {
+		enrageController_->Start(duration, transform_.translate);
 	}
 }
 
@@ -1423,7 +1248,7 @@ void BossEnemy::Damage(int v) {
 	if (v <= 0) return;
 
 	// 無敵中は本体ダメージを受けない
-	if (invulnerable_ || enrageTransitioning_) {
+	if (invulnerable_ || IsEnrageTransitioning()) {
 		return;
 	}
 
@@ -1431,8 +1256,8 @@ void BossEnemy::Damage(int v) {
 	StartBodyHitShake();
 
 	// まだアーマーが残っているなら、本体ではなくアーマーにダメージ
-	if (!AreAllArmorsBroken()) {
-		DamageArmor(v);
+	if (armorController_ && !armorController_->AreAllBroken()) {
+		armorController_->Damage(v, transform_.translate);
 		return;
 	}
 
@@ -1645,419 +1470,25 @@ void BossEnemy::DamageShake() {
 	// ==============================
 	// 色を反映
 	// ==============================
-	Vector4 normalColor =
-		(isEnraged_ && !enrageTransitioning_)
-		? Vector4{ 1.0f, 0.1f, 0.1f, 1.0f } : Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
 
-	// 怒り遷移の待機中は赤点滅を優先
-	if (enrageTransitioning_ && enragePhase_ == EnrageTransitionPhase::Wait) {
-		float flash = (std::sin(enrageTransitionTimer_ * enrageFlashSpeed_) + 1.0f) * 0.5f;
-
-		Vector4 rageColor{
-			1.0f,
-			normalColor.y + (0.12f - normalColor.y) * flash,
-			normalColor.z + (0.12f - normalColor.z) * flash,
-			1.0f
-		};
-
-		if (object3d_) { object3d_->SetColor(rageColor); }
-		if (leftArm_) { leftArm_->SetColor(rageColor); }
-		if (rightArm_) { rightArm_->SetColor(rageColor); }
+	if (IsEnrageTransitioning()) {
 		return;
 	}
 
-	// 通常時 / 怒り時の通常色
-	if (object3d_) { object3d_->SetColor(normalColor); }
+	Vector4 normalColor =
+		isEnraged_
+		? Vector4{ 1.0f, 0.1f, 0.1f, 1.0f }
+	: Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+	if (object3d_) {
+		object3d_->SetColor(normalColor);
+	}
 }
 
 void BossEnemy::StartRetreatAttack() {
 
 	if (hp_ <= 0) return;
 	retreatRequest_ = true;
-}
-
-void BossEnemy::UpdateRetreat(float dt) {
-
-	if (retreatPhase_ == RetreatPhase::None) return;
-
-	retreatT_ += dt;
-
-	auto ApplyScaleFactorXZ_Y = [this](float factorXZ, float factorY) {
-
-		// 0.0f を許可したいけど、内部計算の安全のために極小値へクランプ
-		const float kEps = 0.001f;
-		factorXZ = std::max(factorXZ, kEps);
-
-		Vector3 bodyS = {
-			baseBodyScale_.x * factorXZ,
-			baseBodyScale_.y * factorY,
-			baseBodyScale_.z * factorXZ
-		};
-
-		Vector3 armS = {
-			baseArmScale_.x * factorXZ,
-			baseArmScale_.y * factorY,
-			baseArmScale_.z * factorXZ
-		};
-
-		if (object3d_) object3d_->SetScale(bodyS);
-		if (leftArm_)  leftArm_->SetScale(armS);
-		if (rightArm_) rightArm_->SetScale(armS);
-		};
-
-	switch (retreatPhase_) {
-
-	case RetreatPhase::MoveOut:
-	{
-
-		// まず縮むだけ（retreatShrinkTime_）
-		if (retreatT_ < retreatShrinkTime_) {
-
-			float u = (retreatShrinkTime_ <= 0.0f) ? 1.0f : (retreatT_ / retreatShrinkTime_);
-			u = MyMath::Clamp01(u);
-
-			// 横だけ強めに潰す（ワープ感）
-			float eXZ = MyMath::EaseInOutCubic(u);
-			float eY = MyMath::EaseOutCubic(u); // Yは軽く（変化を弱めたいなら EaseOut が無難）
-
-			float factorXZ = MyMath::Lerp(1.0f, retreatMinScaleXZ_, eXZ);
-			float factorY = MyMath::Lerp(1.0f, retreatMinScaleY_, eY);
-
-			ApplyScaleFactorXZ_Y(factorXZ, factorY);
-
-			// 位置は動かさない（ここ重要）
-			transform_.translate = retreatStartPos_;
-			break;
-		}
-
-		// 縮み終わったら移動だけ（retreatMoveTime_）
-		float moveT = retreatT_ - retreatShrinkTime_;
-
-		float u = (retreatMoveTime_ <= 0.0f) ? 1.0f : (moveT / retreatMoveTime_);
-		u = MyMath::Clamp01(u);
-
-		float e = MyMath::EaseInOutCubic(u);
-
-		// スケールは最小固定のまま
-		ApplyScaleFactorXZ_Y(retreatMinScaleXZ_, retreatMinScaleY_);
-
-		// ここで初めて移動
-		transform_.translate = MyMath::Lerp(retreatStartPos_, retreatBackPos_, e);
-
-		if (u >= 1.0f) {
-			retreatPhase_ = RetreatPhase::Stay;
-			retreatT_ = 0.0f;
-
-			if (pendingChargeAfterRetreat_) {
-				pendingChargeAfterRetreat_ = false;
-
-				RequestChargeAttack(nextChargeTargetLeft_);
-				nextChargeTargetLeft_ = !nextChargeTargetLeft_;
-			}
-		}
-
-	} break;
-
-
-	case RetreatPhase::Stay:
-	{
-
-		// 奥位置固定
-		transform_.translate = retreatBackPos_;
-
-		if (retreatStayPhase_ == RetreatStayPhase::Unflatten) {
-
-			// 奥で「ペラペラ → 通常」に戻す
-			float u = (retreatUnflattenTime_ <= 0.0f) ? 1.0f : (retreatT_ / retreatUnflattenTime_);
-			u = MyMath::Clamp01(u);
-
-			// 出現感：最初ゆっくり→途中早い→最後ゆっくり
-			float e = MyMath::EaseInOutCubic(u);
-
-			// XZは0→1へ（Yはほぼ固定 or ちょいだけ戻す）
-			float factorXZ = MyMath::Lerp(retreatMinScaleXZ_, 1.0f, e);
-			float factorY = MyMath::Lerp(retreatMinScaleY_, 1.0f, e * 0.5f); // Yは変化少なめ
-
-			ApplyScaleFactorXZ_Y(factorXZ, factorY);
-
-			if (u >= 1.0f) {
-				retreatStayPhase_ = RetreatStayPhase::Hold;
-				retreatT_ = 0.0f;
-
-				// 念のため完全通常
-				ApplyScaleFactorXZ_Y(1.0f, 1.0f);
-
-				// 奥に到達＆通常に戻った“直後”にミサイル開始（この退避中に1回だけ）
-				if (!missileStartedThisRetreat_) {
-					StartMissileVolley();
-					missileStartedThisRetreat_ = true;
-				}
-			}
-
-		}
-		else { // Hold
-
-			// 奥で攻撃中（Hold）
-			ApplyScaleFactorXZ_Y(1.0f, 1.0f);
-			transform_.translate = retreatBackPos_;
-
-			// ミサイルが終わったら戻る（全滅 or 命中）
-			if (missileStartedThisRetreat_ && missilePhase_ == MissilePhase::None) {
-				retreatPhase_ = RetreatPhase::Return;
-				retreatT_ = 0.0f;
-			}
-		}
-	} break;
-
-	case RetreatPhase::Return:
-	{
-
-		// ① まず奥で「普通 → ペラ」へ（ここが無いとパッと0になる）
-		if (retreatT_ < retreatFlattenTime_) {
-
-			float u = (retreatFlattenTime_ <= 0.0f) ? 1.0f : (retreatT_ / retreatFlattenTime_);
-			u = MyMath::Clamp01(u);
-
-			float eXZ = MyMath::EaseInOutCubic(u);
-			float eY = MyMath::EaseOutCubic(u);
-
-			float factorXZ = MyMath::Lerp(1.0f, retreatMinScaleXZ_, eXZ);
-			float factorY = MyMath::Lerp(1.0f, retreatMinScaleY_, eY);
-
-			ApplyScaleFactorXZ_Y(factorXZ, factorY);
-
-			// 位置は奥に固定
-			transform_.translate = retreatBackPos_;
-			break;
-		}
-
-		// ② ペラのまま移動して戻る
-		float moveT = retreatT_ - retreatFlattenTime_;
-		if (moveT < retreatMoveTime_) {
-
-			float u = (retreatMoveTime_ <= 0.0f) ? 1.0f : (moveT / retreatMoveTime_);
-			u = MyMath::Clamp01(u);
-
-			float e = MyMath::EaseInOutCubic(u);
-
-			ApplyScaleFactorXZ_Y(retreatMinScaleXZ_, retreatMinScaleY_);
-			transform_.translate = MyMath::Lerp(retreatBackPos_, retreatStartPos_, e);
-			break;
-		}
-
-		// ③ 手前に戻ったら「ペラ → 普通」へ
-		float growT = moveT - retreatMoveTime_;
-
-		float u = (retreatGrowTime_ <= 0.0f) ? 1.0f : (growT / retreatGrowTime_);
-		u = MyMath::Clamp01(u);
-
-		float eXZ = MyMath::EaseInOutCubic(u);
-		float eY = MyMath::EaseOutCubic(u);
-
-		float factorXZ = MyMath::Lerp(retreatMinScaleXZ_, 1.0f, eXZ);
-		float factorY = MyMath::Lerp(retreatMinScaleY_, 1.0f, eY * 0.5f); // Yは変化少なめ
-
-		ApplyScaleFactorXZ_Y(factorXZ, factorY);
-		transform_.translate = retreatStartPos_;
-
-		if (u >= 1.0f) {
-			retreatPhase_ = RetreatPhase::None;
-			retreatT_ = 0.0f;
-			invulnerable_ = false;
-
-			ApplyScaleFactorXZ_Y(1.0f, 1.0f);
-			transform_.translate = retreatStartPos_;
-		}
-
-	} break;
-
-	default:
-		break;
-	}
-}
-
-void BossEnemy::StartMissileVolley() {
-
-	missileHitPlayer_ = false;
-
-	if (missilePhase_ != MissilePhase::None) return;
-	if (!camera_ || !player_) return;
-
-	missilePhase_ = MissilePhase::Telegraph;
-	missileT_ = 0.0f;
-
-	for (auto& m : missiles_) {
-		m.launched = false;
-
-		m.obj = std::make_unique<Object3d>();
-		m.obj->Init(BlendType::BLEND_NONE);
-		m.obj->SetModel("BossEnemyMissile.obj");
-		m.obj->SetDefaultCamera(camera_);
-		m.obj->SetScale({ 1.0f, 1.0f, 1.0f });
-
-		m.bullet = std::make_unique<EnemyBullet>();
-		m.bullet->Init(camera_, m.obj.get());
-		m.bullet->SetTranlate(transform_.translate);
-		m.bullet->SetDirection({ 0.0f, 0.0f, 0.0f }); // 予告中は動かない
-		m.bullet->SetSpeed(0.0f);
-
-		if (collisionManager_) {
-			collisionManager_->Register(m.bullet.get());
-		}
-	}
-}
-
-void BossEnemy::UpdateMissileVolley(float dt) {
-
-	if (missilePhase_ == MissilePhase::None) return;
-
-	missileT_ += dt;
-
-	const Vector3 bossPos = transform_.translate;
-
-	// 予告：上半円に配置して“表示だけ”
-	if (missilePhase_ == MissilePhase::Telegraph) {
-
-		for (int i = 0; i < 4; ++i) {
-			float t = (float)i / 3.0f;   // 0, 1/3, 2/3, 1
-			float rad = t * 3.14159265f; // 0..π
-
-			// 半円を X-Y 平面に
-			Vector3 offset{};
-			offset.x = std::cos(rad) * missileRadius_;
-			offset.y = std::sin(rad) * missileRadius_ + missileHeight_;
-			offset.z = 0.0f;
-
-			Vector3 p = bossPos + offset;
-
-			missiles_[i].bullet->SetTranlate(p);
-			missiles_[i].bullet->SetDirection({ 0,0,0 });
-			missiles_[i].bullet->SetSpeed(0.0f);
-
-			missiles_[i].bullet->Update();
-		}
-
-		if (missileT_ >= missileTelegraphTime_) {
-			// 発射へ
-			missilePhase_ = MissilePhase::Launch;
-			missileT_ = 0.0f;
-
-			// 発射方向をセット
-			const Vector3 playerPos = player_->GetTransform().translate;
-
-			for (auto& m : missiles_) {
-				Vector3 from = m.bullet->GetTranslate();
-				Vector3 dir = playerPos - from;
-				dir = MyMath::Normalize(dir);
-
-				m.bullet->SetDirection(dir);
-				m.bullet->SetSpeed(missileSpeed_);
-				m.launched = true;
-			}
-		}
-		return;
-	}
-
-	// 発射：EnemyBullet の Update() に任せる（追尾にしたいならここでdir更新）
-	if (missilePhase_ == MissilePhase::Launch) {
-
-		if (missileT_ >= missileLaunchTimeout_) {
-			missilePhase_ = MissilePhase::None;
-
-			for (auto& m : missiles_) {
-				if (collisionManager_ && m.bullet) {
-					collisionManager_->Unregister(m.bullet.get());
-				}
-				m.bullet.reset();
-				m.obj.reset();
-				m.launched = false;
-			}
-			return;
-		}
-
-		int aliveCount = 0;
-		const Vector3 playerPos = player_->GetTransform().translate;
-
-		for (auto& m : missiles_) {
-			if (!m.bullet) { continue; }
-
-			m.bullet->Update();
-
-			if (m.bullet->IsDead()) {
-
-				// Playerに当たったか
-				if (m.bullet->DidHitPlayer()) {
-					missileHitPlayer_ = true;
-				}
-
-				if (collisionManager_ && m.bullet) {
-					collisionManager_->Unregister(m.bullet.get());
-				}
-				m.bullet.reset();
-				m.obj.reset();
-				m.launched = false;
-				continue;
-			}
-
-			++aliveCount;
-
-			const Vector3 p = m.bullet->GetTranslate();
-
-			// --- 命中判定（簡易：距離） --- //
-			Vector3 d{ playerPos.x - p.x, playerPos.y - p.y, playerPos.z - p.z };
-			const float dist2 = d.x * d.x + d.y * d.y + d.z * d.z;
-
-			if (dist2 <= missileHitDist_ * missileHitDist_) {
-				missileHitPlayer_ = true;
-
-				// 命中したらこの弾は消す（演出上）
-				if (collisionManager_ && m.bullet) {
-					collisionManager_->Unregister(m.bullet.get());
-				}
-				m.bullet.reset();
-				m.obj.reset();
-				--aliveCount; // 消したのでaliveを調整
-				break;
-			}
-
-			// --- 遠すぎたら消す（全滅条件に寄与）---
-			const float max2 = missileMaxDist_ * missileMaxDist_;
-			if (dist2 >= max2) {
-				if (collisionManager_ && m.bullet) {
-					collisionManager_->Unregister(m.bullet.get());
-				}
-				m.bullet.reset();
-				m.obj.reset();
-				--aliveCount;
-			}
-		}
-
-		// 終了条件：命中 or 全滅
-		if (missileHitPlayer_ || aliveCount <= 0) {
-			missilePhase_ = MissilePhase::None;
-
-			// 念のため全部解放
-			for (auto& m : missiles_) {
-				if (collisionManager_ && m.bullet) {
-					collisionManager_->Unregister(m.bullet.get());
-				}
-				m.bullet.reset();
-				m.obj.reset();
-				m.launched = false;
-			}
-		}
-	}
-}
-
-void BossEnemy::DrawMissileVolley() {
-
-	if (missilePhase_ == MissilePhase::None) return;
-
-	for (auto& m : missiles_) {
-		if (m.bullet) {
-			m.bullet->Draw();
-		}
-	}
 }
 
 void BossEnemy::RequestChargeAttack(bool targetLeft) {
@@ -2179,7 +1610,7 @@ void BossEnemy::UpdateChargeBeamShot(float dt) {
 
 void BossEnemy::UpdateChargeCrossPose(float dt) {
 
-	if (enrageTransitioning_) {
+	if (IsEnrageTransitioning()) {
 		return;
 	}
 
@@ -2281,276 +1712,6 @@ void BossEnemy::UpdateCoreBreakReaction(float dt) {
 	}
 }
 
-void BossEnemy::ChargeEffect(float dt) {
-
-	auto* pm = KomEngine::System::GetParticleManager();
-	if (!pm) {
-		return;
-	}
-
-	if (chargeActive_) {
-
-		Vector3 fxPos = GetChargeCoreWorldPos();
-
-		const bool hasCore = pm->Exists("charge_core");
-		const bool hasPulse = pm->Exists("charge_pulse");
-		const bool hasMoon = pm->Exists("moonLight");
-		const bool hasAura = pm->Exists("charge_aura");
-		const bool hasLine = pm->Exists("player_charge_line");
-
-		// 青白い気の色に統一
-		pm->SetChargeEffectColor(
-			{ 0.72f, 0.90f, 1.00f, 1.0f },   // core
-			{ 0.85f, 0.95f, 1.00f, 1.0f }    // pulse
-		);
-
-		// 中心に吸い込まれる細かい粒
-		chargeFxCoreTimer_ += dt;
-		if (chargeFxCoreTimer_ >= 0.035f) {
-			chargeFxCoreTimer_ = 0.0f;
-
-			if (hasCore) {
-				pm->Emit("charge_core", fxPos, 12);
-			}
-		}
-
-		// 遠くから中心に集まる線
-		chargeFxRibbonTimer_ += dt;
-		if (chargeFxRibbonTimer_ >= 0.060f) {
-			chargeFxRibbonTimer_ = 0.0f;
-
-			if (hasLine) {
-				pm->Emit("player_charge_line", fxPos, 5);
-			}
-		}
-
-		// 外周の脈動リング
-		chargeFxPulseTimer_ += dt;
-		if (chargeFxPulseTimer_ >= 0.22f) {
-			chargeFxPulseTimer_ = 0.0f;
-
-			if (hasPulse) {
-				pm->Emit("charge_pulse", fxPos, 1);
-			}
-		}
-
-		// たまに十字っぽい光を足す
-		// moonLight はチャージ演出では一旦使わない
-		chargeFxRingTimer_ = 0.0f;
-
-		// 中心の大きい“気の塊”本体
-		chargeFxCylinderTimer_ += dt;
-		if (chargeFxCylinderTimer_ >= 0.18f) {
-			chargeFxCylinderTimer_ = 0.0f;
-
-			if (hasAura) {
-				pm->Emit("charge_aura", fxPos, 2);
-			}
-		}
-	}
-	else {
-		chargeFxCoreTimer_ = 0.0f;
-		chargeFxPulseTimer_ = 0.0f;
-		chargeFxRibbonTimer_ = 0.0f;
-		chargeFxRingTimer_ = 0.0f;
-		chargeFxCylinderTimer_ = 0.0f;
-	}
-}
-
-// ----------------------- Armor（装甲） ----------------------- //
-
-int BossEnemy::GetAliveArmorCount() const {
-
-	int c = 0;
-	for (const auto& a : armors_) {
-		if (a.alive) { ++c; }
-	}
-	return c;
-}
-
-void BossEnemy::InitArmors() {
-
-	armors_.clear();
-	armors_.reserve(armorInitialCount_);
-
-	armorTime_ = 0.0f;
-	armorGlobalAngle_ = 0.0f;
-
-	for (int i = 0; i < armorInitialCount_; ++i) {
-		ArmorUnit u{};
-		u.obj = std::make_unique<Object3d>();
-		u.obj->Init(BlendType::BLEND_NONE);
-		u.obj->SetModel(kBossArmorModel);
-		u.obj->SetDefaultCamera(camera_);
-		u.obj->SetParent(object3d_.get());
-
-		// 見た目サイズ
-		u.obj->SetScale(armorScale_);
-
-		float t = (armorInitialCount_ > 0) ? (float)i / (float)armorInitialCount_ : 0.0f;
-		u.angle = MyMath::GetPI() * 2.0f * t;
-
-		u.alive = true;
-		u.hp = 3;
-
-		armors_.push_back(std::move(u));
-	}
-}
-
-bool BossEnemy::DamageArmor(int damage) {
-
-	if (damage <= 0) {
-		return false;
-	}
-
-	// 生きているアーマーのうち、末尾側から1個選んでダメージ
-	for (int i = static_cast<int>(armors_.size()) - 1; i >= 0; --i) {
-		auto& a = armors_[i];
-		if (!a.alive) {
-			continue;
-		}
-
-		a.hp -= damage;
-
-		if (a.hp <= 0) {
-			a.hp = 0;
-
-			// 壊れる直前の位置を取る
-			Vector3 breakPos = transform_.translate;
-			if (a.obj) {
-				breakPos = a.obj->GetWorldPosition();
-			}
-
-			a.alive = false;
-
-			// 軽い爆発エフェクト
-			auto* pm = KomEngine::System::GetParticleManager();
-			if (pm) {
-				if (pm->Exists("explosion")) {
-					pm->Emit("explosion", breakPos, 12);
-				}
-				if (pm->Exists("hit")) {
-					pm->Emit("hit", breakPos, 18);
-				}
-			}
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-void BossEnemy::BreakOneArmor() {
-
-	// すでに全部壊れてるなら何もしない
-	if (GetAliveArmorCount() <= 0) { return; }
-
-	// 末尾側から壊す（見た目が一定になって分かりやすい）
-	for (int i = (int)armors_.size() - 1; i >= 0; --i) {
-		auto& a = armors_[i];
-		if (a.alive) {
-			a.alive = false;
-			return;
-		}
-	}
-}
-
-void BossEnemy::UpdateArmors(float dt) {
-
-	armorTime_ += dt;
-
-	// alive のインデックスを集める
-	std::vector<int> aliveIdx;
-	aliveIdx.reserve(armors_.size());
-	for (int i = 0; i < (int)armors_.size(); ++i) {
-		if (armors_[i].obj && armors_[i].alive) {
-			aliveIdx.push_back(i);
-		}
-	}
-
-	const int n = (int)aliveIdx.size();
-	if (n <= 0) { return; }
-
-	// 全体回転
-	armorGlobalAngle_ += armorOrbitSpeed_ * dt;
-
-	// n 等分
-	const float step = (MyMath::GetPI() * 2.0f) / (float)n;
-
-	for (int order = 0; order < n; ++order) {
-
-		auto& a = armors_[aliveIdx[order]];
-		if (!a.obj) { continue; }
-
-		const float ang = armorGlobalAngle_ + step * (float)order;
-
-		float y = std::sinf(armorTime_ * armorFloatSpeed_ + ang) * armorFloatAmp_;
-
-		Vector3 local{};
-		local.x = std::cosf(ang) * armorOrbitRadius_;
-		local.y = y;
-		local.z = std::sinf(ang) * armorOrbitRadius_;
-
-		a.obj->SetTranslate(local);
-
-		// 
-		a.obj->SetScale(armorScale_);
-
-		a.obj->Update();
-	}
-}
-
-void BossEnemy::DrawArmors() {
-
-	for (auto& a : armors_) {
-		if (a.obj && a.alive) {
-			a.obj->Draw();
-		}
-	}
-}
-
-void BossEnemy::ResetArmors(int hp) {
-
-	if (hp <= 0) {
-		hp = 1;
-	}
-
-	// 個数が変わっていたら作り直す
-	if (static_cast<int>(armors_.size()) != armorInitialCount_) {
-		InitArmors();
-	}
-
-	armorTime_ = 0.0f;
-	armorGlobalAngle_ = 0.0f;
-
-	const int count = static_cast<int>(armors_.size());
-	for (int i = 0; i < count; ++i) {
-		auto& a = armors_[i];
-
-		a.alive = true;
-		a.hp = hp;
-
-		float t = (count > 0) ? static_cast<float>(i) / static_cast<float>(count) : 0.0f;
-		a.angle = MyMath::GetPI() * 2.0f * t;
-
-		if (a.obj) {
-			a.obj->SetScale(armorScale_);
-			a.obj->SetParent(object3d_.get());
-		}
-	}
-}
-
-bool BossEnemy::AreAllArmorsBroken() const {
-
-	for (const auto& a : armors_) {
-		if (a.alive) {
-			return false;
-		}
-	}
-	return true;
-}
-
 bool BossEnemy::ConsumeRetreatRequest() {
 
 	if (!retreatRequest_) {
@@ -2611,126 +1772,9 @@ Vector3 BossEnemy::GetChargeCoreWorldPos() const {
 	return transform_.translate + chargeCoreOffset_;
 }
 
-bool BossEnemy::IsMissileTelegraphing() const {
-
-	return missilePhase_ == MissilePhase::Telegraph;
-}
-
-bool BossEnemy::GetMissileTelegraphWorldPos(int index, Vector3& outPos) const {
-
-	if (index < 0 || index >= static_cast<int>(missiles_.size())) {
-		return false;
-	}
-
-	const auto& m = missiles_[index];
-	if (!m.bullet) {
-		return false;
-	}
-
-	outPos = m.bullet->GetTranslate();
-	return true;
-}
-
-void BossEnemy::InitDizzyStars() {
-
-	for (size_t i = 0; i < dizzyStars_.size(); ++i) {
-
-		auto& star = dizzyStars_[i];
-
-		star.obj = std::make_unique<Object3d>();
-		star.obj->Init(BlendType::BLEND_NONE);
-		star.obj->SetModel(kDizzyStarModel);
-		star.obj->SetDefaultCamera(camera_);
-		star.obj->SetScale({ dizzyStarScale_, dizzyStarScale_, dizzyStarScale_ });
-
-		const float count = static_cast<float>(dizzyStars_.size());
-		star.angle = (static_cast<float>(i) / count) * 6.2831853f;
-		star.phaseOffset = star.angle;
-
-		// 初期状態は非表示にしたいので、スケール0
-		star.obj->SetScale({ 0.0f, 0.0f, 0.0f });
-		star.obj->Update();
-	}
-}
-
 void BossEnemy::SetDizzyEffectActive(bool active) {
 
-	if (dizzyEffectActive_ == active) {
-		return;
-	}
-
-	dizzyEffectActive_ = active;
-
-	if (active) {
-		dizzyStarTimer_ = 0.0f;
-	}
-	else {
-		for (auto& star : dizzyStars_) {
-			if (star.obj) {
-				star.obj->SetScale({ 0.0f, 0.0f, 0.0f });
-				star.obj->Update();
-			}
-		}
-	}
-}
-
-void BossEnemy::UpdateDizzyStars(float dt) {
-
-	if (!dizzyEffectActive_) {
-		return;
-	}
-
-	dizzyStarTimer_ += dt;
-
-	const float count = static_cast<float>(dizzyStars_.size());
-
-	for (size_t i = 0; i < dizzyStars_.size(); ++i) {
-
-		auto& star = dizzyStars_[i];
-
-		if (!star.obj) {
-			continue;
-		}
-
-		const float baseAngle = (static_cast<float>(i) / count) * 6.2831853f;
-		const float angle = baseAngle + dizzyStarTimer_ * dizzyStarOrbitSpeed_;
-
-		// ボス頭上の楕円軌道
-		Vector3 pos = transform_.translate;
-		pos.x += std::cos(angle) * dizzyStarOrbitRadiusX_;
-		pos.z += std::sin(angle) * dizzyStarOrbitRadiusZ_;
-		pos.y += dizzyStarHeight_;
-
-		// 少し上下にふわふわ
-		pos.y += std::sin(dizzyStarTimer_ * dizzyStarFloatSpeed_ + star.phaseOffset) * dizzyStarFloatAmp_;
-
-		star.obj->SetTranslate(pos);
-
-		// 星自体も回転させる
-		star.obj->SetRotate({
-			0.0f,
-			dizzyStarTimer_ * 2.5f + star.phaseOffset,
-			dizzyStarTimer_ * 4.0f + star.phaseOffset
-			});
-
-		// 奥側は少し小さく、手前側は少し大きくする
-		const float depthScale = 1.0f + std::sin(angle) * 0.18f;
-		const float scale = dizzyStarScale_ * depthScale;
-
-		star.obj->SetScale({ scale, scale, scale });
-		star.obj->Update();
-	}
-}
-
-void BossEnemy::DrawDizzyStars() {
-
-	if (!dizzyEffectActive_) {
-		return;
-	}
-
-	for (auto& star : dizzyStars_) {
-		if (star.obj) {
-			star.obj->Draw();
-		}
+	if (dizzyStarController_) {
+		dizzyStarController_->SetActive(active);
 	}
 }

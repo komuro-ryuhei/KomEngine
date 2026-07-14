@@ -11,6 +11,10 @@
 #include "Game/Entity/Enemy/BossChargeCore.h"
 #include "Game/Entity/Enemy/BossChargeBeam.h"
 #include "Game/Entity/Enemy/BossDeathController.h"
+#include "Game/Entity/Enemy/BossArmorController.h"
+#include "Game/Entity/Enemy/BossDizzyStarController.h"
+#include "Game/Entity/Enemy/BossChargeEffectController.h"
+#include "Game/Entity/Enemy/BossEnrageTransitionController.h"
 #include "Game/Entity/GameObject.h"
 #include "Game/UI/BossHpUI.h"
 
@@ -35,17 +39,24 @@ private:
 	};
 
 	// 腕攻撃用State
-	class ArmAttackState;
+	class ArmAttackState {
+
+	public:
+
+		virtual ~ArmAttackState() = default;
+
+		virtual void Enter(BossEnemy& boss) {
+			(void)boss;
+		}
+
+		virtual void Update(BossEnemy& boss, float dt) = 0;
+
+		virtual AttackPhase GetPhase() const = 0;
+	};
+
 	class SingleArmAttackState;
 	class BothHandsAttackState;
 	class WaitMeteorAttackState;
-
-	enum class EnrageTransitionPhase {
-		None,
-		Knockback,
-		Wait,
-		Recover,
-	};
 
 	AttackPhase attackPhase_ = AttackPhase::None;
 
@@ -121,7 +132,9 @@ public:
 	void SetTranslate(Vector3 translate);
 
 	void SetDizzyEffectActive(bool active);
-	bool IsDizzyEffectActive() const { return dizzyEffectActive_; }
+	bool IsDizzyEffectActive() const {
+		return dizzyStarController_ && dizzyStarController_->IsActive();
+	}
 
 	void SetPlayer(Player* player) { player_ = player; }
 
@@ -225,9 +238,10 @@ public:
 	void CancelAttacksForMeteor();
 
 	// 怒り遷移中
-	bool IsEnrageTransitioning() const { return enrageTransitioning_; }
+	bool IsEnrageTransitioning() const {
+		return enrageController_ && enrageController_->IsActive();
+	}
 	void StartEnrageTransition(float duration);
-	void UpdateEnrageTransition(float dt);
 
 	// 攻撃を即中断
 	void CancelAllAttacks();
@@ -309,10 +323,6 @@ public:
 	void SetRetreating(bool v) { retreatActive_ = v; }
 	bool IsRetreating() const { return retreatActive_; }
 
-	bool IsMissileTelegraphing() const;
-	bool GetMissileTelegraphWorldPos(int index, Vector3& outPos) const;
-	int GetMissileTelegraphCount() const { return static_cast<int>(missiles_.size()); }
-
 	void SetCameraFocusPos(const Vector3& p) { retreatCameraFocusPos_ = p; }
 	Vector3 GetCameraFocusPos() const { return retreatCameraFocusPos_; }
 	bool WantsCameraFocus() const { return retreatActive_; }
@@ -358,34 +368,11 @@ private:
 	// 撃破演出
 	std::unique_ptr<BossDeathController> deathController_ = nullptr;
 
-	// ----------------------- Armor（周回装甲） ----------------------- //
-	struct ArmorUnit {
-		std::unique_ptr<Object3d> obj;
-		bool alive = true;   // 破壊済みならfalse
-		float angle = 0.0f;  // 周回角度
-		int hp = 3;          // アーマー1個の耐久値
-	};
+	// 装甲管理
+	std::unique_ptr<BossArmorController> armorController_ = nullptr;
 
-	std::vector<ArmorUnit> armors_;
-	int   armorInitialCount_ = 12;
-	float armorOrbitRadius_ = 3.0f; // 本体中心からの半径
-	float armorOrbitSpeed_ = 0.9f;  // rad/s
-	float armorFloatAmp_ = 0.18f;   // 上下振幅
-	float armorFloatSpeed_ = 1.6f;  // 上下速度
-	float armorTime_ = 0.0f;
-	float armorGlobalAngle_ = 0.0f; // 生存アーマーを等分配置するための全体回転角
-	Vector3 armorScale_ = { 0.3f, 0.3f, 0.3f };
-	bool armorRebuildRequest_ = false;
-
-	// 
-	void InitArmors();
-	void UpdateArmors(float dt);
-	void DrawArmors();
-	void ResetArmors(int hp = 3);
-	void BreakOneArmor();
-	int  GetAliveArmorCount() const;
-	bool DamageArmor(int damage);
-	bool AreAllArmorsBroken() const;
+	// スタン中の星演出
+	std::unique_ptr<BossDizzyStarController> dizzyStarController_ = nullptr;
 
 	// 腕は腕攻撃時のみ表示（描画・当たり判定を無効化するため）
 	bool leftArmVisible_ = false;
@@ -492,71 +479,10 @@ private:
 	// 戦闘有効化・無効化
 	bool combatEnabled_ = true;
 
-	// -------------------- 退避攻撃（奥へ行く攻撃） -------------------- // 
-	enum class RetreatPhase { None, MoveOut, Stay, Return };
-	RetreatPhase retreatPhase_ = RetreatPhase::None;
-
 	bool invulnerable_ = false;
-
-	float retreatT_ = 0.0f;
-	float retreatOutTime_ = 0.35f;
-	float retreatStayTime_ = 1.20f;
-	float retreatReturnTime_ = 0.40f;
-
-	float retreatBackZOffset_ = 30.0f;
-	float retreatUpOffset_ = 8.0f;
-
-	float retreatMinScaleFactor_ = 0.15f;
-
-	float retreatShrinkTime_ = 0.20f;  // 縮むだけの時間
-	float retreatMoveTime_ = 0.25f;  // 移動だけの時間（奥へ/戻り共通にしてもOK）
-	float retreatGrowTime_ = 0.20f;  // 戻すだけの時間
-	float retreatFlattenTime_ = 0.20f; // 戻る前にペラ化する時間
-
-	float retreatMinScaleXZ_ = 0.0f;  // 横(XZ)の最小倍率
-	float retreatMinScaleY_ = 0.9f;  // 縦(Y)はあまり変えない（0.85〜1.0推奨）
-
-
-	Vector3 retreatStartPos_{};
-	Vector3 retreatBackPos_{};
 
 	Vector3 baseBodyScale_{ 2.0f,2.0f,2.0f };
 	Vector3 baseArmScale_{ 1.0f,1.0f,1.0f };
-
-	// Stay中の段階
-	enum class RetreatStayPhase { Unflatten, Hold };
-	RetreatStayPhase retreatStayPhase_ = RetreatStayPhase::Unflatten;
-
-	// 奥でペラ→通常へ戻す時間
-	float retreatUnflattenTime_ = 0.25f;
-
-	// 通常状態で奥に留まる時間（数秒）
-	float retreatHoldTime_ = 2.0f;   // 好きな秒数にしてOK
-
-	bool missileStartedThisRetreat_ = false;
-
-	struct MissileSlot {
-		std::unique_ptr<Object3d> obj;
-		std::unique_ptr<EnemyBullet> bullet;
-		bool launched = false;
-	};
-
-	enum class MissilePhase { None, Telegraph, Launch };
-
-	std::array<MissileSlot, 4> missiles_;
-	MissilePhase missilePhase_ = MissilePhase::None;
-	float missileT_ = 0.0f;
-
-	float missileTelegraphTime_ = 1.0f; // 予告表示
-	float missileRadius_ = 2.5f;        // 半円の半径
-	float missileHeight_ = 2.0f;        // ボス上方向オフセット
-	float missileSpeed_ = 0.2f;         // 発射速度
-
-	bool missileHitPlayer_ = false; // 当たったらtrue
-	float missileHitDist_ = 0.7f;   // 当たり判定距離
-	float missileMaxDist_ = 200.0f; // 遠すぎたら消す
-
-	float missileLaunchTimeout_ = 6.0f;
 
 	// チャージビーム発射物
 	struct ChargeBeamShot {
@@ -592,45 +518,6 @@ private:
 
 	bool chargeShotHitOnce_ = false;
 
-	// チャージ中のエフェクト
-	float chargeFxRingTimer_ = 0.0f;
-	float chargeFxCylinderTimer_ = 0.0f;
-	float chargeFxRibbonTimer_ = 0.0f;
-	Vector3 chargeFxOffset_{ 0.0f, 2.0f, 0.0f }; // 胴体中心の少し上あたり
-
-	float chargeFxCoreTimer_ = 0.0f;
-	float chargeFxPulseTimer_ = 0.0f;
-
-	// 怒り遷移演出用
-	bool enrageTransitioning_ = false;
-	EnrageTransitionPhase enragePhase_ = EnrageTransitionPhase::None;
-
-	float enrageTransitionTimer_ = 0.0f;
-	float enrageTransitionDuration_ = 0.0f;
-
-	// 各フェーズ時間
-	float enrageKnockbackDuration_ = 0.25f;
-	float enrageWaitDuration_ = 1.50f;
-	float enrageRecoverDuration_ = 0.35f;
-
-	// 移動用
-	Vector3 enrageStartPos_{};
-	Vector3 enrageKnockbackPos_{};
-
-	// ノックバック量
-	float enrageKnockbackDistance_ = 3.5f;
-	float enrageKnockbackLift_ = 1.0f;
-
-	// シェイク
-	float enrageShakeAmplitude_ = 0.12f;
-	float enrageShakeFrequency_ = 40.0f;
-
-	// 赤フラッシュ
-	float enrageFlashSpeed_ = 10.0f;
-
-	// 復帰時衝撃波
-	bool enrageShockwaveEmitted_ = false;
-
 	// 
 	bool retreatRequest_ = false;
 	bool retreatActive_ = false;
@@ -644,6 +531,12 @@ private:
 	std::unique_ptr<BossChargeCore> chargeCore_;
 	std::unique_ptr<BossChargeBeam> chargeBeam_;
 
+	// チャージ中のパーティクル演出
+	std::unique_ptr<BossChargeEffectController> chargeEffectController_ = nullptr;
+
+	// 怒り遷移演出
+	std::unique_ptr<BossEnrageTransitionController> enrageController_ = nullptr;
+
 	Vector3 chargeCoreOffset_{ 0.0f, 4.2f, 0.0f };
 	int chargeCoreHp_ = 12;
 
@@ -655,33 +548,7 @@ private:
 
 	bool coreBreakEffectPlayed_ = false;
 
-	struct DizzyStar {
-		std::unique_ptr<Object3d> obj;
-		float angle = 0.0f;
-		float phaseOffset = 0.0f;
-	};
-
-	std::array<DizzyStar, 4> dizzyStars_;
-
-	bool dizzyEffectActive_ = false;
-	float dizzyStarTimer_ = 0.0f;
-
-	float dizzyStarOrbitRadiusX_ = 3.2f;
-	float dizzyStarOrbitRadiusZ_ = 1.2f;
-	float dizzyStarHeight_ = 2.4f;
-	float dizzyStarOrbitSpeed_ = 2.0f;
-	float dizzyStarFloatAmp_ = 0.25f;
-	float dizzyStarFloatSpeed_ = 3.0f;
-	float dizzyStarScale_ = 0.1f;
-
 private:
-
-	void UpdateRetreat(float dt);
-
-	// ミサイル攻撃関数
-	void StartMissileVolley();          // 予告開始
-	void UpdateMissileVolley(float dt); // 毎フレーム更新
-	void DrawMissileVolley();           // 描画
 
 	// チャージビーム
 	void UpdateChargeBeamShot(float dt);
@@ -689,12 +556,4 @@ private:
 
 	void StartCoreBreakReaction();
 	void UpdateCoreBreakReaction(float dt);
-
-	// チャージ時のエフェクト
-	void ChargeEffect(float dt);
-
-	// 気絶時の星演出
-	void InitDizzyStars();
-	void UpdateDizzyStars(float dt);
-	void DrawDizzyStars();
 };

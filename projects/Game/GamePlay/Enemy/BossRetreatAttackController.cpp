@@ -20,7 +20,10 @@ void BossRetreatAttackController::Start() {
 
 	boss_->SetRetreating(true);
 	boss_->SetInvulnerable(true);
-	boss_->SetCameraFocusPos(retreat_->GetBackPos());
+
+	// 開始直後は現在のボス位置を見る
+	boss_->SetCameraFocusPos(retreat_->GetTranslate());
+
 	ApplyToBoss();
 }
 
@@ -81,12 +84,16 @@ void BossRetreatAttackController::ApplyToBoss() {
 		return;
 	}
 
+	const Vector3 bossPos = retreat_->GetTranslate();
+
 	boss_->ApplyRetreatPose(
-		retreat_->GetTranslate(),
+		bossPos,
 		retreat_->GetBodyScale(),
 		retreat_->GetArmScale()
 	);
 
 	boss_->SetInvulnerable(retreat_->IsInvulnerable());
-	boss_->SetCameraFocusPos(retreat_->GetBackPos());
+
+	// カメラの注視点は「退避先」固定ではなく、現在のボス位置を見る
+	boss_->SetCameraFocusPos(bossPos);
 }

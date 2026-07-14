@@ -111,6 +111,10 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AssetPreloader.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossEnrageTransitionController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossChargeEffectController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossDizzyStarController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossArmorController.cpp" />
     <ClCompile Include="Game\GamePlay\Scene\ClearSequenceController.cpp" />
     <ClCompile Include="Game\UI\BossTargetUI.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossDeathController.cpp" />
@@ -133,7 +137,6 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClCompile Include="Game\GamePlay\Enemy\BossMeteorController.cpp" />
     <ClCompile Include="Game\GamePlay\Enemy\ChargeAttackController.cpp" />
     <ClCompile Include="Game\Scene\GameOverScene.cpp" />
-    <ClCompile Include="Game\Entity\Enemy\BossSword.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossMeteor.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossEnemy.cpp" />
     <ClCompile Include="Game\Scene\GameScene.cpp" />
@@ -190,6 +193,10 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetPreloader.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossEnrageTransitionController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossChargeEffectController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossDizzyStarController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossArmorController.h" />
     <ClInclude Include="Game\GamePlay\Scene\ClearSequenceController.h" />
     <ClInclude Include="Game\UI\BossTargetUI.h" />
     <ClInclude Include="Game\Entity\Enemy\BossDeathController.h" />
@@ -217,7 +224,6 @@ powershell -ExecutionPolicy Bypass -File "$(ProjectDir)Tools\ConvertTextures.ps1
     <ClInclude Include="Game\GamePlay\Enemy\BossMeteorController.h" />
     <ClInclude Include="Game\GamePlay\Enemy\ChargeAttackController.h" />
     <ClInclude Include="Game\Scene\GameOverScene.h" />
-    <ClInclude Include="Game\Entity\Enemy\BossSword.h" />
     <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
     <ClInclude Include="Game\Entity\Enemy\BossEnemy.h" />
     <ClInclude Include="Game\Scene\GameScene.h" />

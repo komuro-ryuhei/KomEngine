@@ -257,7 +257,6 @@
       <Filter>Engine\Base\WinApp</Filter>
     </ClCompile>
     <ClCompile Include="Game\Entity\Enemy\BossMeteor.cpp" />
-    <ClCompile Include="Game\Entity\Enemy\BossSword.cpp" />
     <ClCompile Include="Game\Scene\GameOverScene.cpp" />
     <ClCompile Include="Game\GamePlay\Enemy\BossArmController.cpp" />
     <ClCompile Include="Game\GamePlay\Enemy\BossAttackManager.cpp" />
@@ -288,6 +287,10 @@
     <ClCompile Include="Game\UI\PlayerUI.cpp" />
     <ClCompile Include="Game\UI\BossTargetUI.cpp" />
     <ClCompile Include="Game\GamePlay\Scene\ClearSequenceController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossArmorController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossDizzyStarController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossChargeEffectController.cpp" />
+    <ClCompile Include="Game\Entity\Enemy\BossEnrageTransitionController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -427,7 +430,6 @@
       <Filter>lib\Vector</Filter>
     </ClInclude>
     <ClInclude Include="Game\Entity\Enemy\BossMeteor.h" />
-    <ClInclude Include="Game\Entity\Enemy\BossSword.h" />
     <ClInclude Include="Engine\lib\Matrix\Matrix.h" />
     <ClInclude Include="Game\Scene\GameOverScene.h" />
     <ClInclude Include="Game\GamePlay\Enemy\BossArmController.h" />
@@ -463,6 +465,10 @@
     <ClInclude Include="Game\UI\PlayerUI.h" />
     <ClInclude Include="Game\UI\BossTargetUI.h" />
     <ClInclude Include="Game\GamePlay\Scene\ClearSequenceController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossArmorController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossDizzyStarController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossChargeEffectController.h" />
+    <ClInclude Include="Game\Entity\Enemy\BossEnrageTransitionController.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />
