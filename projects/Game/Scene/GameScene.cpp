@@ -350,6 +350,34 @@ void GameScene::Init() {
 	particleEditor_.SetEnabled(false);
 	showParticleEditor_ = false;
 
+#ifdef _DEBUG
+
+	// PNG/JPGとDDSのCPU読み込み時間を比較する
+	auto* textureManager =
+		KomEngine::System::GetTextureManager();
+
+	const std::vector<std::string>
+		benchmarkTexturePaths = {
+
+		"./Resources/images/outer.png",
+		"./Resources/images/inner.png",
+		"./Resources/images/moonLight.png",
+		"./Resources/images/circle2.png",
+		"./Resources/images/gradationLine.png",
+		"./Resources/images/dust.png",
+		"./Resources/images/circle.png",
+		"./Resources/images/streak.png",
+	};
+
+	textureManager->RunTextureBenchmark(
+		benchmarkTexturePaths,
+		5
+	);
+
+#endif
+
+	ChangeToFadeIn();
+
 	ChangeToFadeIn();
 
 	// KomEngine::System::GetOffscreenRendering()->SetPostEffect("Bloom");

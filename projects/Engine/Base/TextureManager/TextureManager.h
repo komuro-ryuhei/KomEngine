@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <filesystem>
+#include <vector>
 
 // MyClass
 #include "Engine/Base/DirectXCommon/DirectXCommon.h"
@@ -69,6 +70,42 @@ public:
 	// SRVインデックスの開始番号
 	static uint32_t kSRVIndexTop_;
 
+	/// <summary>
+	/// PNG/JPGとDDSの読み込み時間を比較するための結果
+	/// </summary>
+	struct TextureBenchmarkResult {
+
+		// 比較できたPNG/DDSの組数
+		uint32_t texturePairCount = 0;
+
+		// 実行回数
+		uint32_t iterationCount = 0;
+
+		// 1回あたりの平均値
+		double pngFileLoadMs = 0.0;
+		double pngMipMapMs = 0.0;
+		double pngTotalMs = 0.0;
+
+		double ddsFileLoadMs = 0.0;
+		double ddsMipMapMs = 0.0;
+		double ddsTotalMs = 0.0;
+	};
+
+	/// <summary>
+	/// 指定されたPNG/JPGと、同名のDDSを比較計測する
+	/// 通常のテクスチャキャッシュやSRVには影響しない
+	/// </summary>
+	/// <param name="sourcePaths">
+	/// PNGまたはJPG側のパス一覧
+	/// </param>
+	/// <param name="iterationCount">
+	/// 計測回数
+	/// </param>
+	TextureBenchmarkResult RunTextureBenchmark(
+		const std::vector<std::string>& sourcePaths,
+		uint32_t iterationCount = 5
+	) const;
+
 private:
 
 	// テクスチャ1枚分のデータ
@@ -89,8 +126,10 @@ private:
 
 	std::unordered_map<std::string, TextureData> textureDatas;
 
+private:
+
 	/// <summary>
 	/// 
 	/// </summary>
-	static std::string PreferDDSPath(const std::string& requestPath);
+	std::string PreferDDSPath(const std::string& requestPath) const;
 };
