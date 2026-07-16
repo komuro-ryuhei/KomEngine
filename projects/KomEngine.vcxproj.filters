@@ -291,6 +291,7 @@
     <ClCompile Include="Game\Entity\Enemy\BossDizzyStarController.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossChargeEffectController.cpp" />
     <ClCompile Include="Game\Entity\Enemy\BossEnrageTransitionController.cpp" />
+    <ClCompile Include="Game\GamePlay\Enemy\BossArmAttackController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="struct.h" />
@@ -469,6 +470,7 @@
     <ClInclude Include="Game\Entity\Enemy\BossDizzyStarController.h" />
     <ClInclude Include="Game\Entity\Enemy\BossChargeEffectController.h" />
     <ClInclude Include="Game\Entity\Enemy\BossEnrageTransitionController.h" />
+    <ClInclude Include="Game\GamePlay\Enemy\BossArmAttackController.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="externals\imgui\LICENSE.txt" />

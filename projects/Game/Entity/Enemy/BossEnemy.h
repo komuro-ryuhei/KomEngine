@@ -15,6 +15,7 @@
 #include "Game/Entity/Enemy/BossDizzyStarController.h"
 #include "Game/Entity/Enemy/BossChargeEffectController.h"
 #include "Game/Entity/Enemy/BossEnrageTransitionController.h"
+#include "Game/Gameplay/Enemy/BossArmAttackController.h"
 #include "Game/Entity/GameObject.h"
 #include "Game/UI/BossHpUI.h"
 
@@ -27,6 +28,8 @@ class Player;
 class Camera;
 
 class BossEnemy : public GameObject, public ICollisionObject {
+
+	friend class BossArmAttackController;
 
 private:
 
@@ -536,6 +539,9 @@ private:
 
 	// 怒り遷移演出
 	std::unique_ptr<BossEnrageTransitionController> enrageController_ = nullptr;
+
+	// 腕攻撃の挙動管理
+	std::unique_ptr<BossArmAttackController>armAttackController_ = nullptr;
 
 	Vector3 chargeCoreOffset_{ 0.0f, 4.2f, 0.0f };
 	int chargeCoreHp_ = 12;

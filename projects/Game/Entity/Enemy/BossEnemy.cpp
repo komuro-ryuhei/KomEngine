@@ -157,6 +157,9 @@ void BossEnemy::Init(Camera* camera) {
 	// 怒り遷移演出
 	enrageController_ = std::make_unique<BossEnrageTransitionController>();
 
+	// 腕攻撃の挙動管理
+	armAttackController_ = std::make_unique<BossArmAttackController>();
+
 	// 当たり判定コライダーの設定
 	bodyCol_.owner = this;
 	bodyCol_.part = PartCollider::Part::Body;
@@ -645,317 +648,26 @@ void BossEnemy::ResetArmAttackState() {
 
 void BossEnemy::UpdateSingleArmAttack(float dt) {
 
-	auto* pm = KomEngine::System::GetParticleManager();
-
-	const bool useLeft = (attackPhase_ == AttackPhase::SingleLeft);
-
-	Object3d* targetArm = useLeft ? leftArm_.get() : rightArm_.get();
-	Vector3& targetPos = useLeft ? leftArmPos_ : rightArmPos_;
-	int& hitCount = useLeft ? leftArmHitCount_ : rightArmHitCount_;
-
-	const Vector3 baseLocalOffset = useLeft
-		? Vector3{ -4.0f, 0.0f, 0.0f }
-	: Vector3{ 4.0f, 0.0f, 0.0f };
-
-	Vector3 armPos = targetPos;
-
-	const Vector3 worldBase = transform_.translate + baseLocalOffset;
-	Vector3 toPlayer = player_->GetTranslate() - worldBase;
-	Vector3 dir = MyMath::Normalize(toPlayer);
-
-	// =====================================================
-	// 予備動作
-	// 1. 元位置に表示
-	// 2. 後ろに引く
-	// 3. 引いた位置で少し溜める
-	// =====================================================
-	if (armTelegraphActive_) {
-
-		if (armTelegraphTimer_ <= 0.0f) {
-			// 必ず「元の位置」から始める
-			armTelegraphStartPos_ = baseLocalOffset;
-			armTelegraphTargetPos_ = baseLocalOffset - dir * armTelegraphBackAmount_;
-
-			targetPos = armTelegraphStartPos_;
-			targetArm->SetTranslate(targetPos);
-		}
-
-		armTelegraphTimer_ += dt;
-
-		Vector3 telegraphPos = armTelegraphStartPos_;
-
-		// -------------------------
-		// 前半：元位置 → 後ろへ引く
-		// -------------------------
-		if (armTelegraphTimer_ < armTelegraphBackTime_) {
-			float t = armTelegraphTimer_ / armTelegraphBackTime_;
-			t = std::clamp(t, 0.0f, 1.0f);
-
-			float ease = t * t * (3.0f - 2.0f * t);
-			telegraphPos = MyMath::Lerp(armTelegraphStartPos_, armTelegraphTargetPos_, ease);
-		}
-		// -------------------------
-		// 後半：引いた位置で少し溜める
-		// -------------------------
-		else {
-			float s = armTelegraphTimer_ - armTelegraphBackTime_;
-			telegraphPos = armTelegraphTargetPos_;
-
-			telegraphPos.x += std::sin(s * armTelegraphShakeFreq_) * armTelegraphShakeAmount_;
-			telegraphPos.y += std::cos(s * armTelegraphShakeFreq_ * 1.11f) * armTelegraphShakeAmount_;
-			telegraphPos.z += std::sin(s * armTelegraphShakeFreq_ * 0.91f) * armTelegraphShakeAmount_;
-		}
-
-		armPos = telegraphPos;
-		targetPos = armPos;
-		targetArm->SetTranslate(targetPos);
-
-		// 予備動作終了 → 突進開始
-		if (armTelegraphTimer_ >= armTelegraphDuration_) {
-			armTelegraphActive_ = false;
-			armTelegraphTimer_ = 0.0f;
-
-			isExtending_ = true;
-			targetPos = armTelegraphTargetPos_;
-			targetArm->SetTranslate(targetPos);
-		}
-
+	if (!armAttackController_) {
 		return;
 	}
 
-	// =====================================================
-	// 通常の片腕攻撃（突進）
-	// =====================================================
-	if (isExtending_) {
-		// 長めにグッと前へ出る
-		armPos += dir * armRushSpeed_;
-
-		armWindSlashFxTimer_ += dt;
-		if (pm && armWindSlashFxTimer_ >= armWindSlashFxInterval_) {
-			armWindSlashFxTimer_ = 0.0f;
-
-			const Vector3 armWorldPos = transform_.translate + armPos;
-			pm->EmitArmWindSlash(armWorldPos, dir, 2);
-		}
-
-		// 一定距離 or 規定ヒット数で戻りフェーズへ
-		if (MyMath::Length(armPos - baseLocalOffset) >= 22.0f ||
-			hitCount >= maxHitCount_) {
-			isExtending_ = false;
-		}
-	}
-	else {
-		// 基本位置へ戻す
-		Vector3 toOrigin = baseLocalOffset - armPos;
-		float dist = MyMath::Length(toOrigin);
-
-		if (dist < 0.5f) {
-			// 戻り完了
-			armPos = baseLocalOffset;
-			hitCount = 0;
-
-			// 次のStateへ遷移する
-			if (attackPhase_ == AttackPhase::SingleRight) {
-				StartSingleArmPhase(AttackPhase::SingleLeft);
-			}
-			else {
-				StartBothHandsPhase();
-			}
-		}
-		else {
-			Vector3 dirToOrigin = MyMath::Normalize(toOrigin);
-			float step = std::min(armReturnSpeedSingle_, dist);
-			armPos += dirToOrigin * step;
-		}
-	}
-
-	targetArm->SetTranslate(armPos);
-	targetPos = armPos;
+	armAttackController_->UpdateSingleArm(
+		*this,
+		dt
+	);
 }
 
 void BossEnemy::UpdateBothHandsAttack(float dt) {
 
-	auto* pm = KomEngine::System::GetParticleManager();
-
-	const Vector3 leftBaseLocal{ -4.0f, 0.0f, 0.0f };
-	const Vector3 rightBaseLocal{ 4.0f, 0.0f, 0.0f };
-
-	const Vector3 leftBaseWorld = transform_.translate + leftBaseLocal;
-	const Vector3 rightBaseWorld = transform_.translate + rightBaseLocal;
-
-	Vector3 leftWorldPos = leftArm_->GetWorldPosition();
-	Vector3 rightWorldPos = rightArm_->GetWorldPosition();
-
-	const Vector3 playerPos = player_->GetTranslate();
-
-	Vector3 dirL = MyMath::Normalize(playerPos - leftBaseWorld);
-	Vector3 dirR = MyMath::Normalize(playerPos - rightBaseWorld);
-
-	const float maxLen = 22.0f;
-	const float returnSpeed = armReturnSpeedBoth_;
-	const float endThreshold = 0.3f;
-
-	// =========================================
-	// 両手の予備動作
-	// =========================================
-	if (bothTelegraphActive_) {
-
-		if (bothTelegraphTimer_ <= 0.0f) {
-			leftBothTelegraphStartPos_ = leftBaseLocal;
-			rightBothTelegraphStartPos_ = rightBaseLocal;
-
-			leftBothTelegraphTargetPos_ = leftBaseLocal - dirL * bothTelegraphBackAmount_;
-			rightBothTelegraphTargetPos_ = rightBaseLocal - dirR * bothTelegraphBackAmount_;
-
-			leftArmPos_ = leftBothTelegraphStartPos_;
-			rightArmPos_ = rightBothTelegraphStartPos_;
-
-			leftArm_->SetTranslate(leftArmPos_);
-			rightArm_->SetTranslate(rightArmPos_);
-		}
-
-		bothTelegraphTimer_ += dt;
-
-		Vector3 leftLocal = leftBothTelegraphStartPos_;
-		Vector3 rightLocal = rightBothTelegraphStartPos_;
-
-		// 前半：左右同時に後ろへ引く
-		if (bothTelegraphTimer_ < bothTelegraphBackTime_) {
-			float t = bothTelegraphTimer_ / bothTelegraphBackTime_;
-			t = std::clamp(t, 0.0f, 1.0f);
-
-			float ease = t * t * (3.0f - 2.0f * t);
-
-			leftLocal = MyMath::Lerp(leftBothTelegraphStartPos_, leftBothTelegraphTargetPos_, ease);
-			rightLocal = MyMath::Lerp(rightBothTelegraphStartPos_, rightBothTelegraphTargetPos_, ease);
-		}
-		// 後半：引いた位置で左右同時に振動
-		else {
-			float s = bothTelegraphTimer_ - bothTelegraphBackTime_;
-
-			leftLocal = leftBothTelegraphTargetPos_;
-			rightLocal = rightBothTelegraphTargetPos_;
-
-			float shakeX = std::sin(s * bothTelegraphShakeFreq_) * bothTelegraphShakeAmount_;
-			float shakeY = std::cos(s * bothTelegraphShakeFreq_ * 1.09f) * bothTelegraphShakeAmount_;
-			float shakeZ = std::sin(s * bothTelegraphShakeFreq_ * 0.93f) * bothTelegraphShakeAmount_;
-
-			leftLocal.x += shakeX;
-			leftLocal.y += shakeY;
-			leftLocal.z += shakeZ;
-
-			rightLocal.x -= shakeX;
-			rightLocal.y += shakeY;
-			rightLocal.z += shakeZ;
-		}
-
-		leftArm_->SetTranslate(leftLocal);
-		rightArm_->SetTranslate(rightLocal);
-		leftArmPos_ = leftLocal;
-		rightArmPos_ = rightLocal;
-
-		if (bothTelegraphTimer_ >= bothTelegraphDuration_) {
-			bothTelegraphActive_ = false;
-			bothTelegraphTimer_ = 0.0f;
-
-			leftExtending_ = true;
-			rightExtending_ = true;
-
-			leftArmPos_ = leftBothTelegraphTargetPos_;
-			rightArmPos_ = rightBothTelegraphTargetPos_;
-
-			leftArm_->SetTranslate(leftArmPos_);
-			rightArm_->SetTranslate(rightArmPos_);
-		}
-
+	if (!armAttackController_) {
 		return;
 	}
 
-	// =========================================
-	// 通常の両手突進
-	// =========================================
-	if (leftExtending_) {
-		leftWorldPos += dirL * bothRushSpeed_;
-
-		float len = MyMath::Length(leftWorldPos - leftBaseWorld);
-		bool reachedDist = (len >= maxLen);
-		bool hitEnough = (leftArmHitCount_ >= maxHitCount_);
-
-		if (reachedDist || hitEnough) {
-			leftExtending_ = false;
-		}
-	}
-	else {
-		Vector3 toBase = leftBaseWorld - leftWorldPos;
-		float dist = MyMath::Length(toBase);
-		if (dist < endThreshold) {
-			leftWorldPos = leftBaseWorld;
-		}
-		else {
-			Vector3 dirToBase = MyMath::Normalize(toBase);
-			float step = std::min(returnSpeed, dist);
-			leftWorldPos += dirToBase * step;
-		}
-	}
-
-	if (rightExtending_) {
-		rightWorldPos += dirR * bothRushSpeed_;
-
-		float len = MyMath::Length(rightWorldPos - rightBaseWorld);
-		bool reachedDist = (len >= maxLen);
-		bool hitEnough = (rightArmHitCount_ >= maxHitCount_);
-
-		if (reachedDist || hitEnough) {
-			rightExtending_ = false;
-		}
-	}
-	else {
-		Vector3 toBase = rightBaseWorld - rightWorldPos;
-		float dist = MyMath::Length(toBase);
-		if (dist < endThreshold) {
-			rightWorldPos = rightBaseWorld;
-		}
-		else {
-			Vector3 dirToBase = MyMath::Normalize(toBase);
-			float step = std::min(returnSpeed, dist);
-			rightWorldPos += dirToBase * step;
-		}
-	}
-
-	if (pm && (leftExtending_ || rightExtending_)) {
-		armWindSlashFxTimer_ += dt;
-
-		if (armWindSlashFxTimer_ >= armWindSlashFxInterval_) {
-			armWindSlashFxTimer_ = 0.0f;
-
-			if (leftExtending_) {
-				pm->EmitArmWindSlash(leftWorldPos, dirL, 2);
-			}
-			if (rightExtending_) {
-				pm->EmitArmWindSlash(rightWorldPos, dirR, 2);
-			}
-		}
-	}
-
-	Vector3 leftLocal = leftWorldPos - transform_.translate;
-	Vector3 rightLocal = rightWorldPos - transform_.translate;
-
-	leftArm_->SetTranslate(leftLocal);
-	rightArm_->SetTranslate(rightLocal);
-	leftArmPos_ = leftLocal;
-	rightArmPos_ = rightLocal;
-
-	bool leftFinished =
-		!leftExtending_ &&
-		MyMath::Length(leftWorldPos - leftBaseWorld) < endThreshold;
-
-	bool rightFinished =
-		!rightExtending_ &&
-		MyMath::Length(rightWorldPos - rightBaseWorld) < endThreshold;
-
-	if (leftFinished && rightFinished) {
-		FinishArmCombo();
-	}
+	armAttackController_->UpdateBothHands(
+		*this,
+		dt
+	);
 }
 
 void BossEnemy::UpdateWaitMeteorAttack() {
