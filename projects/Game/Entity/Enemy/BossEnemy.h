@@ -66,8 +66,6 @@ private:
 	// 現在の腕攻撃State
 	std::unique_ptr<ArmAttackState> armAttackState_ = nullptr;
 
-	bool meteorRequest_ = false; // 両手攻撃完了後にtrue
-
 	struct PartCollider : public ICollisionObject
 	{
 		BossEnemy* owner = nullptr;
@@ -193,9 +191,12 @@ public:
 		return deathController_ && deathController_->HasLanded();
 	}
 
-	// ----- 攻撃 ----- //
 	// 攻撃中かどうか（腕が伸びているフェーズか）を外からチェック用
-	bool IsExtending() const { return isExtending_; }
+	bool IsExtending() const {
+		return armAttackController_
+			? armAttackController_->IsExtending()
+			: false;
+	}
 
 	// 今攻撃に使っている腕のワールド座標
 	Vector3 GetCurrentArmWorldPos() const;
@@ -288,19 +289,13 @@ public:
 	void InitTitleScenePos();
 
 	// 流星攻撃との連携
-	bool ConsumeMeteorRequest(); // trueを返したタイミングでフラグを消費
 	void OnMeteorFinished();     // メテオ終了後に呼ぶ
-
-	// 流星攻撃を開始すべきか
-	bool ShouldStartMeteor() const;
 
 	// チャージビーム要求
 	void RequestChargeAttack(bool targetLeft);
 	bool ConsumeChargeRequest();
 
 	// 
-	bool pendingChargeAfterRetreat_ = false;
-	bool pendingMeteorAfterCharge_ = false;
 	bool nextChargeTargetLeft_ = true; // 次回チャージで狙う腕
 
 
@@ -384,7 +379,6 @@ private:
 	// 攻撃用のタイマーと状態
 	float attackTimer_ = 0.0f;
 	float attackInterval_ = 2.0f; // 2秒周期
-	bool isExtending_ = true;     // 腕を伸ばしているか
 	float attackCooldown_ = 0.0f;
 	bool isAttacking_ = false;
 	bool attackLeftArm_ = true;
@@ -393,54 +387,10 @@ private:
 	int rightArmHitCount_ = 0;
 	const int maxHitCount_ = 5;
 
-	// -------------------- 片腕攻撃の予備動作 -------------------- //
-	bool  armTelegraphActive_ = false;       // 片腕攻撃前の溜め中か
-	float armTelegraphTimer_ = 0.0f;         // 溜め経過時間
-
-	float armTelegraphBackTime_ = 0.20f;     // 後ろに引く時間
-	float armTelegraphHoldTime_ = 1.0f;      // 引いたあと少し止める時間
-	float armTelegraphDuration_ = 1.2f;      // 全体時間
-
-	float armTelegraphBackAmount_ = 1.8f;    // 後ろに引く距離
-	float armTelegraphShakeAmount_ = 0.050f; // 溜め中の震え幅
-	float armTelegraphShakeFreq_ = 65.0f;    // 震え速さ
-
-	float armRushSpeed_ = 0.15f;            // 突進速度
-
-	// 風切りエフェクト
-	float armWindSlashFxTimer_ = 0.0f;
-	float armWindSlashFxInterval_ = 0.03f;
-
-	Vector3 armTelegraphStartPos_{};        // 溜め開始時の腕位置
-	Vector3 armTelegraphTargetPos_{};       // 引いた先の位置
-
-	// -------------------- 両手攻撃の予備動作 -------------------- //
-	bool  bothTelegraphActive_ = false;
-	float bothTelegraphTimer_ = 0.0f;
-
-	float bothTelegraphBackTime_ = 0.20f;   // 両手を引く時間
-	float bothTelegraphHoldTime_ = 1.2f;    // 引いたあと溜める時間
-	float bothTelegraphDuration_ = 1.4f;    // 全体時間
-
-	float bothTelegraphBackAmount_ = 2.0f;   // 後ろに引く距離
-	float bothTelegraphShakeAmount_ = 0.06f; // 振動幅
-	float bothTelegraphShakeFreq_ = 60.0f;   // 振動速度
-
-	float bothRushSpeed_ = 0.16f;            // 両手突進速度
-
-	Vector3 leftBothTelegraphStartPos_{};
-	Vector3 rightBothTelegraphStartPos_{};
-	Vector3 leftBothTelegraphTargetPos_{};
 	Vector3 rightBothTelegraphTargetPos_{};
-
-	// 戻り速度
-	float armReturnSpeedSingle_ = 0.5f;
-	float armReturnSpeedBoth_ = 0.6f;
 
 	// 通常値
 	float baseAttackSpeed_ = 0.1f;
-	float baseArmReturnSpeedSingle_ = 0.5f;
-	float baseArmReturnSpeedBoth_ = 0.6f;
 
 	// 怒り倍率
 	float enragedArmSpeedMul_ = 1.6f;

@@ -52,10 +52,13 @@ void BossRetreatAttackController::Update(float dt) {
 		boss_->SetInvulnerable(false);
 		boss_->ClearRetreatVisualOverride();
 
-		if (boss_->pendingChargeAfterRetreat_) {
-			boss_->pendingChargeAfterRetreat_ = false;
-			boss_->RequestChargeAttack(boss_->nextChargeTargetLeft_);
-			boss_->nextChargeTargetLeft_ = !boss_->nextChargeTargetLeft_;
+		if (retreat_->ConsumeFinished()) {
+
+			boss_->SetRetreating(false);
+			boss_->SetInvulnerable(false);
+			boss_->ClearRetreatVisualOverride();
+
+			// 次の攻撃はBossAttackManagerが決める
 		}
 	}
 }

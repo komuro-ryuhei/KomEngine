@@ -176,8 +176,6 @@ void BossEnemy::Init(Camera* camera) {
 
 	// --- 怒り用：通常時の基準値を保存 ---
 	baseAttackSpeed_ = attackSpeed_;
-	baseArmReturnSpeedSingle_ = armReturnSpeedSingle_;
-	baseArmReturnSpeedBoth_ = armReturnSpeedBoth_;
 }
 
 void BossEnemy::Update() {
@@ -552,53 +550,61 @@ void BossEnemy::StartSingleArmPhase(AttackPhase phase) {
 
 	if (phase != AttackPhase::SingleLeft &&
 		phase != AttackPhase::SingleRight) {
+
 		return;
 	}
 
 	armComboActive_ = true;
 
-	// 片腕攻撃は予備動作から開始する
-	isExtending_ = false;
+	// 腕攻撃固有の状態はController側に任せる
+	if (armAttackController_) {
+		armAttackController_->
+			BeginSingleArmTelegraph();
+	}
 
-	armTelegraphActive_ = true;
-	armTelegraphTimer_ = 0.0f;
-
-	bothTelegraphActive_ = false;
-	bothTelegraphTimer_ = 0.0f;
-
-	armWindSlashFxTimer_ = 0.0f;
-
-	ChangeArmAttackState(std::make_unique<SingleArmAttackState>(phase));
+	ChangeArmAttackState(
+		std::make_unique<
+		SingleArmAttackState
+		>(phase)
+	);
 }
 
 void BossEnemy::StartBothHandsPhase() {
 
 	armComboActive_ = true;
 
-	// 片腕用の予備動作は終了
-	armTelegraphActive_ = false;
-	armTelegraphTimer_ = 0.0f;
+	if (armAttackController_) {
 
-	// 両手用の予備動作から開始
-	bothTelegraphActive_ = true;
-	bothTelegraphTimer_ = 0.0f;
+		armAttackController_->
+			BeginBothHandsTelegraph();
+	}
 
-	leftExtending_ = false;
-	rightExtending_ = false;
+	// 両腕を初期位置へ戻す
+	leftArmPos_ =
+	{ -4.0f, 0.0f, 0.0f };
 
-	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
-	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
+	rightArmPos_ =
+	{ 4.0f, 0.0f, 0.0f };
 
 	if (leftArm_) {
-		leftArm_->SetTranslate(leftArmPos_);
+
+		leftArm_->SetTranslate(
+			leftArmPos_
+		);
 	}
+
 	if (rightArm_) {
-		rightArm_->SetTranslate(rightArmPos_);
+
+		rightArm_->SetTranslate(
+			rightArmPos_
+		);
 	}
 
-	armWindSlashFxTimer_ = 0.0f;
-
-	ChangeArmAttackState(std::make_unique<BothHandsAttackState>());
+	ChangeArmAttackState(
+		std::make_unique<
+		BothHandsAttackState
+		>()
+	);
 }
 
 void BossEnemy::FinishArmCombo() {
@@ -606,23 +612,16 @@ void BossEnemy::FinishArmCombo() {
 	leftArmHitCount_ = 0;
 	rightArmHitCount_ = 0;
 
-	leftExtending_ = true;
-	rightExtending_ = true;
+	// 腕攻撃Controllerの内部状態を終了
+	if (armAttackController_) {
+		armAttackController_->FinishComboState();
+	}
 
-	armTelegraphActive_ = false;
-	armTelegraphTimer_ = 0.0f;
-
-	bothTelegraphActive_ = false;
-	bothTelegraphTimer_ = 0.0f;
-
-	pendingChargeAfterRetreat_ = true;
-	pendingMeteorAfterCharge_ = true;
-
+	// 腕攻撃が終了したことだけを通知する
 	armComboActive_ = false;
 	armComboFinished_ = true;
 
-	retreatRequest_ = true;
-
+	// 次の攻撃はBossAttackManagerに任せる
 	ChangeArmAttackState(nullptr);
 }
 
@@ -631,17 +630,10 @@ void BossEnemy::ResetArmAttackState() {
 	armComboActive_ = false;
 	armComboFinished_ = false;
 
-	armTelegraphActive_ = false;
-	armTelegraphTimer_ = 0.0f;
+	if (armAttackController_) {
 
-	bothTelegraphActive_ = false;
-	bothTelegraphTimer_ = 0.0f;
-
-	isExtending_ = true;
-	leftExtending_ = true;
-	rightExtending_ = true;
-
-	armWindSlashFxTimer_ = 0.0f;
+		armAttackController_->Reset();
+	}
 
 	ChangeArmAttackState(nullptr);
 }
@@ -652,10 +644,7 @@ void BossEnemy::UpdateSingleArmAttack(float dt) {
 		return;
 	}
 
-	armAttackController_->UpdateSingleArm(
-		*this,
-		dt
-	);
+	armAttackController_->UpdateSingleArm(*this, dt);
 }
 
 void BossEnemy::UpdateBothHandsAttack(float dt) {
@@ -664,10 +653,7 @@ void BossEnemy::UpdateBothHandsAttack(float dt) {
 		return;
 	}
 
-	armAttackController_->UpdateBothHands(
-		*this,
-		dt
-	);
+	armAttackController_->UpdateBothHands(*this, dt);
 }
 
 void BossEnemy::UpdateWaitMeteorAttack() {
@@ -832,41 +818,40 @@ void BossEnemy::StartEnrageTransition(float duration) {
 	}
 }
 
-bool BossEnemy::ConsumeMeteorRequest() {
-
-	if (meteorRequest_) {
-		meteorRequest_ = false;
-		return true;
-	}
-	return false;
-}
-
 void BossEnemy::OnMeteorFinished() {
 
-	// 次は左片手攻撃から再開
-	attackPhase_ = AttackPhase::SingleLeft;
+	// メテオ終了後に必要なBossEnemy側の後処理だけ行う
 
-	// いきなり伸ばさず、予備動作から
-	isExtending_ = false;
-	armTelegraphActive_ = true;
-	armTelegraphTimer_ = 0.0f;
-
-	// 片手フェーズ用にヒット数リセット
 	leftArmHitCount_ = 0;
 	rightArmHitCount_ = 0;
 
-	// 両手フェーズ用フラグも初期化
-	leftExtending_ = true;
-	rightExtending_ = true;
+	// 腕攻撃Controllerも念のため通常状態へ
+	if (armAttackController_) {
+		armAttackController_->Reset();
+	}
 
-	// 腕位置を基準に戻しておく
-	leftArmPos_ = { -4.0f, 0.0f, 0.0f };
-	rightArmPos_ = { 4.0f, 0.0f, 0.0f };
-	if (leftArm_)  leftArm_->SetTranslate(leftArmPos_);
-	if (rightArm_) rightArm_->SetTranslate(rightArmPos_);
+	// 腕を通常位置へ戻す
+	leftArmPos_ = {
+		-4.0f,
+		0.0f,
+		0.0f
+	};
 
-	pendingChargeAfterRetreat_ = false;
-	pendingMeteorAfterCharge_ = false;
+	rightArmPos_ = {
+		4.0f,
+		0.0f,
+		0.0f
+	};
+
+	if (leftArm_) {
+		leftArm_->SetTranslate(leftArmPos_);
+	}
+
+	if (rightArm_) {
+		rightArm_->SetTranslate(rightArmPos_);
+	}
+
+	// 次の攻撃はBossAttackManagerが決める
 }
 
 void BossEnemy::SetEnraged(bool enraged) {
@@ -878,16 +863,27 @@ void BossEnemy::SetEnraged(bool enraged) {
 	isEnraged_ = enraged;
 
 	if (isEnraged_) {
+
 		attackSpeed_ = baseAttackSpeed_ * enragedArmSpeedMul_;
-		armReturnSpeedSingle_ = baseArmReturnSpeedSingle_ * enragedArmSpeedMul_;
-		armReturnSpeedBoth_ = baseArmReturnSpeedBoth_ * enragedArmSpeedMul_;
 	}
 	else {
-		attackSpeed_ = baseAttackSpeed_;
-		armReturnSpeedSingle_ = baseArmReturnSpeedSingle_;
-		armReturnSpeedBoth_ = baseArmReturnSpeedBoth_;
 
-		if (object3d_) { object3d_->SetModel("BossEnemyCore.obj"); }
+		attackSpeed_ =
+			baseAttackSpeed_;
+
+		if (object3d_) {
+
+			object3d_->
+				SetModel(
+					"BossEnemyCore.obj"
+				);
+		}
+	}
+
+	// 腕攻撃速度の変更はControllerへ通知
+	if (armAttackController_) {
+
+		armAttackController_->SetEnraged(isEnraged_, enragedArmSpeedMul_);
 	}
 }
 
@@ -1221,13 +1217,8 @@ bool BossEnemy::ConsumeChargeRequest() {
 
 void BossEnemy::OnChargeAttackFinished() {
 
+	// チャージ攻撃が終わったことだけ管理する
 	chargeActive_ = false;
-
-	if (pendingMeteorAfterCharge_) {
-		pendingMeteorAfterCharge_ = false;
-		meteorRequest_ = true;
-		attackPhase_ = AttackPhase::WaitMeteor;
-	}
 }
 
 bool BossEnemy::IsChargeBeamShotActive() const {

@@ -10,6 +10,86 @@
 #include <algorithm>
 #include <cmath>
 
+void BossArmAttackController::BeginSingleArmTelegraph() {
+
+	// 最初は攻撃を伸ばさず、
+	// 予備動作から開始する
+	isExtending_ = false;
+
+	armTelegraphActive_ = true;
+	armTelegraphTimer_ = 0.0f;
+
+	// 両腕側は停止
+	bothTelegraphActive_ = false;
+	bothTelegraphTimer_ = 0.0f;
+
+	// エフェクトタイマーもリセット
+	armWindSlashFxTimer_ = 0.0f;
+}
+
+void BossArmAttackController::BeginBothHandsTelegraph() {
+
+	// 片腕側は停止
+	armTelegraphActive_ = false;
+	armTelegraphTimer_ = 0.0f;
+
+	// 両腕の予備動作開始
+	bothTelegraphActive_ = true;
+	bothTelegraphTimer_ = 0.0f;
+
+	leftExtending_ = false;
+	rightExtending_ = false;
+
+	armWindSlashFxTimer_ = 0.0f;
+}
+
+void BossArmAttackController::FinishComboState() {
+
+	// 次回の攻撃に備えて初期状態へ戻す
+	leftExtending_ = true;
+	rightExtending_ = true;
+
+	armTelegraphActive_ = false;
+	armTelegraphTimer_ = 0.0f;
+
+	bothTelegraphActive_ = false;
+	bothTelegraphTimer_ = 0.0f;
+
+	armWindSlashFxTimer_ = 0.0f;
+}
+
+void BossArmAttackController::Reset() {
+
+	FinishComboState();
+
+	isExtending_ = true;
+}
+
+void BossArmAttackController::SetEnraged(
+	bool enraged,
+	float speedMultiplier
+) {
+
+	if (enraged) {
+
+		armReturnSpeedSingle_ =
+			baseArmReturnSpeedSingle_ *
+			speedMultiplier;
+
+		armReturnSpeedBoth_ =
+			baseArmReturnSpeedBoth_ *
+			speedMultiplier;
+	}
+	else {
+
+		armReturnSpeedSingle_ =
+			baseArmReturnSpeedSingle_;
+
+		armReturnSpeedBoth_ =
+			baseArmReturnSpeedBoth_;
+	}
+}
+
 void BossArmAttackController::UpdateSingleArm(
 
 	BossEnemy& boss,
@@ -68,77 +148,83 @@ void BossArmAttackController::UpdateSingleArm(
 	// =====================================================
 	// 予備動作
 	// =====================================================
-	if (boss.armTelegraphActive_) {
+	if (armTelegraphActive_) {
 
-		// 開始直後だけ初期位置を保存
-		if (boss.armTelegraphTimer_ <= 0.0f) {
+		if (armTelegraphTimer_ <= 0.0f) {
 
-			boss.armTelegraphStartPos_ =
+			armTelegraphStartPos_ =
 				baseLocalOffset;
 
-			boss.armTelegraphTargetPos_ =
+			armTelegraphTargetPos_ =
 				baseLocalOffset -
-				direction * boss.armTelegraphBackAmount_;
+				direction *
+				armTelegraphBackAmount_;
 
 			targetPos =
-				boss.armTelegraphStartPos_;
+				armTelegraphStartPos_;
 
 			targetArm->SetTranslate(targetPos);
 		}
 
-		boss.armTelegraphTimer_ += dt;
+		armTelegraphTimer_ += dt;
 
 		Vector3 telegraphPos =
-			boss.armTelegraphStartPos_;
+			armTelegraphStartPos_;
 
-		// 通常位置から後ろへ引く
-		if (boss.armTelegraphTimer_ <
-			boss.armTelegraphBackTime_) {
+		if (armTelegraphTimer_ <
+			armTelegraphBackTime_) {
 
 			float t =
-				boss.armTelegraphTimer_ /
-				boss.armTelegraphBackTime_;
+				armTelegraphTimer_ /
+				armTelegraphBackTime_;
 
-			t = std::clamp(t, 0.0f, 1.0f);
+			t = std::clamp(
+				t,
+				0.0f,
+				1.0f
+			);
 
 			const float ease =
 				t * t * (3.0f - 2.0f * t);
 
-			telegraphPos = MyMath::Lerp(
-				boss.armTelegraphStartPos_,
-				boss.armTelegraphTargetPos_,
-				ease
-			);
+			telegraphPos =
+				MyMath::Lerp(
+					armTelegraphStartPos_,
+					armTelegraphTargetPos_,
+					ease
+				);
 		}
-		// 引いた位置で小刻みに振動
 		else {
 
 			const float shakeTime =
-				boss.armTelegraphTimer_ -
-				boss.armTelegraphBackTime_;
+				armTelegraphTimer_ -
+				armTelegraphBackTime_;
 
 			telegraphPos =
-				boss.armTelegraphTargetPos_;
+				armTelegraphTargetPos_;
 
 			telegraphPos.x +=
 				std::sin(
 					shakeTime *
-					boss.armTelegraphShakeFreq_
-				) * boss.armTelegraphShakeAmount_;
+					armTelegraphShakeFreq_
+				) *
+				armTelegraphShakeAmount_;
 
 			telegraphPos.y +=
 				std::cos(
 					shakeTime *
-					boss.armTelegraphShakeFreq_ *
+					armTelegraphShakeFreq_ *
 					1.11f
-				) * boss.armTelegraphShakeAmount_;
+				) *
+				armTelegraphShakeAmount_;
 
 			telegraphPos.z +=
 				std::sin(
 					shakeTime *
-					boss.armTelegraphShakeFreq_ *
+					armTelegraphShakeFreq_ *
 					0.91f
-				) * boss.armTelegraphShakeAmount_;
+				) *
+				armTelegraphShakeAmount_;
 		}
 
 		armPos = telegraphPos;
@@ -147,16 +233,16 @@ void BossArmAttackController::UpdateSingleArm(
 		targetArm->SetTranslate(targetPos);
 
 		// 予備動作終了
-		if (boss.armTelegraphTimer_ >=
-			boss.armTelegraphDuration_) {
+		if (armTelegraphTimer_ >=
+			armTelegraphDuration_) {
 
-			boss.armTelegraphActive_ = false;
-			boss.armTelegraphTimer_ = 0.0f;
+			armTelegraphActive_ = false;
+			armTelegraphTimer_ = 0.0f;
 
-			boss.isExtending_ = true;
+			isExtending_ = true;
 
 			targetPos =
-				boss.armTelegraphTargetPos_;
+				armTelegraphTargetPos_;
 
 			targetArm->SetTranslate(targetPos);
 		}
@@ -167,22 +253,22 @@ void BossArmAttackController::UpdateSingleArm(
 	// =====================================================
 	// 腕を伸ばす
 	// =====================================================
-	if (boss.isExtending_) {
+	if (isExtending_) {
 
-		armPos +=
-			direction * boss.armRushSpeed_;
+		armPos += direction * armRushSpeed_;
 
 		// 風切りエフェクト
-		boss.armWindSlashFxTimer_ += dt;
+		armWindSlashFxTimer_ += dt;
 
 		if (particleManager &&
-			boss.armWindSlashFxTimer_ >=
-			boss.armWindSlashFxInterval_) {
+			armWindSlashFxTimer_ >=
+			armWindSlashFxInterval_) {
 
-			boss.armWindSlashFxTimer_ = 0.0f;
+			armWindSlashFxTimer_ = 0.0f;
 
 			const Vector3 armWorldPos =
-				boss.transform_.translate + armPos;
+				boss.transform_.translate +
+				armPos;
 
 			particleManager->EmitArmWindSlash(
 				armWorldPos,
@@ -203,7 +289,7 @@ void BossArmAttackController::UpdateSingleArm(
 			hitCount >= boss.maxHitCount_;
 
 		if (reachedMaxDistance || reachedMaxHit) {
-			boss.isExtending_ = false;
+			isExtending_ = false;
 		}
 	}
 	// =====================================================
@@ -242,7 +328,7 @@ void BossArmAttackController::UpdateSingleArm(
 
 			const float step =
 				std::min(
-					boss.armReturnSpeedSingle_,
+					armReturnSpeedSingle_,
 					distance
 				);
 
@@ -254,11 +340,9 @@ void BossArmAttackController::UpdateSingleArm(
 	targetPos = armPos;
 }
 
-void BossArmAttackController::UpdateBothHands(
-	BossEnemy& boss,
-	float dt
-) {
+void BossArmAttackController::UpdateBothHands(BossEnemy& boss, float dt) {
 
+	// プレイヤー、左右の腕が無ければ処理しない
 	if (!boss.player_ ||
 		!boss.leftArm_ ||
 		!boss.rightArm_) {
@@ -268,20 +352,28 @@ void BossArmAttackController::UpdateBothHands(
 	auto* particleManager =
 		KomEngine::System::GetParticleManager();
 
+	// =====================================================
+	// 腕の基準ローカル座標
+	// =====================================================
+
 	const Vector3 leftBaseLocal{
 		-4.0f, 0.0f, 0.0f
 	};
 
 	const Vector3 rightBaseLocal{
-		4.0f, 0.0f, 0.0f
+		 4.0f, 0.0f, 0.0f
 	};
 
+	// ボス本体の位置を加えてワールド座標化
 	const Vector3 leftBaseWorld =
-		boss.transform_.translate + leftBaseLocal;
+		boss.transform_.translate +
+		leftBaseLocal;
 
 	const Vector3 rightBaseWorld =
-		boss.transform_.translate + rightBaseLocal;
+		boss.transform_.translate +
+		rightBaseLocal;
 
+	// 現在の腕のワールド座標
 	Vector3 leftWorldPos =
 		boss.leftArm_->GetWorldPosition();
 
@@ -291,50 +383,60 @@ void BossArmAttackController::UpdateBothHands(
 	const Vector3 playerPos =
 		boss.player_->GetTranslate();
 
+	// プレイヤー方向
 	const Vector3 leftDirection =
 		MyMath::Normalize(
-			playerPos - leftBaseWorld
+			playerPos -
+			leftBaseWorld
 		);
 
 	const Vector3 rightDirection =
 		MyMath::Normalize(
-			playerPos - rightBaseWorld
+			playerPos -
+			rightBaseWorld
 		);
 
+	// 最大伸長距離
 	const float maxLength = 22.0f;
-	const float returnSpeed =
-		boss.armReturnSpeedBoth_;
 
+	// 戻り速度
+	const float returnSpeed =
+		armReturnSpeedBoth_;
+
+	// 基準位置まで戻ったとみなす距離
 	const float endThreshold = 0.3f;
 
 	// =====================================================
 	// 両手攻撃の予備動作
 	// =====================================================
-	if (boss.bothTelegraphActive_) {
 
-		if (boss.bothTelegraphTimer_ <= 0.0f) {
+	if (bothTelegraphActive_) {
 
-			boss.leftBothTelegraphStartPos_ =
+		// 予備動作開始時
+		if (bothTelegraphTimer_ <= 0.0f) {
+
+			leftBothTelegraphStartPos_ =
 				leftBaseLocal;
 
-			boss.rightBothTelegraphStartPos_ =
+			rightBothTelegraphStartPos_ =
 				rightBaseLocal;
 
-			boss.leftBothTelegraphTargetPos_ =
+			// プレイヤーとは反対方向へ腕を引く
+			leftBothTelegraphTargetPos_ =
 				leftBaseLocal -
 				leftDirection *
-				boss.bothTelegraphBackAmount_;
+				bothTelegraphBackAmount_;
 
-			boss.rightBothTelegraphTargetPos_ =
+			rightBothTelegraphTargetPos_ =
 				rightBaseLocal -
 				rightDirection *
-				boss.bothTelegraphBackAmount_;
+				bothTelegraphBackAmount_;
 
 			boss.leftArmPos_ =
-				boss.leftBothTelegraphStartPos_;
+				leftBothTelegraphStartPos_;
 
 			boss.rightArmPos_ =
-				boss.rightBothTelegraphStartPos_;
+				rightBothTelegraphStartPos_;
 
 			boss.leftArm_->SetTranslate(
 				boss.leftArmPos_
@@ -345,72 +447,91 @@ void BossArmAttackController::UpdateBothHands(
 			);
 		}
 
-		boss.bothTelegraphTimer_ += dt;
+		bothTelegraphTimer_ += dt;
 
 		Vector3 leftLocal =
-			boss.leftBothTelegraphStartPos_;
+			leftBothTelegraphStartPos_;
 
 		Vector3 rightLocal =
-			boss.rightBothTelegraphStartPos_;
+			rightBothTelegraphStartPos_;
 
-		// 後ろへ引く
-		if (boss.bothTelegraphTimer_ <
-			boss.bothTelegraphBackTime_) {
+		// =================================================
+		// 腕を後ろへ引く
+		// =================================================
+
+		if (bothTelegraphTimer_ <
+			bothTelegraphBackTime_) {
 
 			float t =
-				boss.bothTelegraphTimer_ /
-				boss.bothTelegraphBackTime_;
+				bothTelegraphTimer_ /
+				bothTelegraphBackTime_;
 
-			t = std::clamp(t, 0.0f, 1.0f);
+			t = std::clamp(
+				t,
+				0.0f,
+				1.0f
+			);
 
+			// SmoothStep
 			const float ease =
-				t * t * (3.0f - 2.0f * t);
+				t * t *
+				(3.0f - 2.0f * t);
 
-			leftLocal = MyMath::Lerp(
-				boss.leftBothTelegraphStartPos_,
-				boss.leftBothTelegraphTargetPos_,
-				ease
-			);
+			leftLocal =
+				MyMath::Lerp(
+					leftBothTelegraphStartPos_,
+					leftBothTelegraphTargetPos_,
+					ease
+				);
 
-			rightLocal = MyMath::Lerp(
-				boss.rightBothTelegraphStartPos_,
-				boss.rightBothTelegraphTargetPos_,
-				ease
-			);
+			rightLocal =
+				MyMath::Lerp(
+					rightBothTelegraphStartPos_,
+					rightBothTelegraphTargetPos_,
+					ease
+				);
 		}
+
+		// =================================================
 		// 引いた位置で振動
+		// =================================================
+
 		else {
 
 			const float shakeTime =
-				boss.bothTelegraphTimer_ -
-				boss.bothTelegraphBackTime_;
+				bothTelegraphTimer_ -
+				bothTelegraphBackTime_;
 
 			leftLocal =
-				boss.leftBothTelegraphTargetPos_;
+				leftBothTelegraphTargetPos_;
 
 			rightLocal =
-				boss.rightBothTelegraphTargetPos_;
+				rightBothTelegraphTargetPos_;
 
 			const float shakeX =
 				std::sin(
 					shakeTime *
-					boss.bothTelegraphShakeFreq_
-				) * boss.bothTelegraphShakeAmount_;
+					bothTelegraphShakeFreq_
+				) *
+				bothTelegraphShakeAmount_;
 
 			const float shakeY =
 				std::cos(
 					shakeTime *
-					boss.bothTelegraphShakeFreq_ *
+					bothTelegraphShakeFreq_ *
 					1.09f
-				) * boss.bothTelegraphShakeAmount_;
+				) *
+				bothTelegraphShakeAmount_;
 
 			const float shakeZ =
 				std::sin(
 					shakeTime *
-					boss.bothTelegraphShakeFreq_ *
+					bothTelegraphShakeFreq_ *
 					0.93f
-				) * boss.bothTelegraphShakeAmount_;
+				) *
+				bothTelegraphShakeAmount_;
 
+			// 左右でX方向の揺れを逆にする
 			leftLocal.x += shakeX;
 			leftLocal.y += shakeY;
 			leftLocal.z += shakeZ;
@@ -420,26 +541,40 @@ void BossArmAttackController::UpdateBothHands(
 			rightLocal.z += shakeZ;
 		}
 
-		boss.leftArm_->SetTranslate(leftLocal);
-		boss.rightArm_->SetTranslate(rightLocal);
+		// 座標反映
+		boss.leftArmPos_ =
+			leftLocal;
 
-		boss.leftArmPos_ = leftLocal;
-		boss.rightArmPos_ = rightLocal;
+		boss.rightArmPos_ =
+			rightLocal;
 
-		if (boss.bothTelegraphTimer_ >=
-			boss.bothTelegraphDuration_) {
+		boss.leftArm_->SetTranslate(
+			boss.leftArmPos_
+		);
 
-			boss.bothTelegraphActive_ = false;
-			boss.bothTelegraphTimer_ = 0.0f;
+		boss.rightArm_->SetTranslate(
+			boss.rightArmPos_
+		);
 
-			boss.leftExtending_ = true;
-			boss.rightExtending_ = true;
+		// =================================================
+		// 予備動作終了
+		// =================================================
+
+		if (bothTelegraphTimer_ >=
+			bothTelegraphDuration_) {
+
+			bothTelegraphActive_ = false;
+			bothTelegraphTimer_ = 0.0f;
+
+			// ここから両腕を伸ばす
+			leftExtending_ = true;
+			rightExtending_ = true;
 
 			boss.leftArmPos_ =
-				boss.leftBothTelegraphTargetPos_;
+				leftBothTelegraphTargetPos_;
 
 			boss.rightArmPos_ =
-				boss.rightBothTelegraphTargetPos_;
+				rightBothTelegraphTargetPos_;
 
 			boss.leftArm_->SetTranslate(
 				boss.leftArmPos_
@@ -454,17 +589,20 @@ void BossArmAttackController::UpdateBothHands(
 	}
 
 	// =====================================================
-	// 左腕の伸縮
+	// 左腕
 	// =====================================================
-	if (boss.leftExtending_) {
 
+	if (leftExtending_) {
+
+		// プレイヤー方向へ伸ばす
 		leftWorldPos +=
 			leftDirection *
-			boss.bothRushSpeed_;
+			bothRushSpeed_;
 
 		const float length =
 			MyMath::Length(
-				leftWorldPos - leftBaseWorld
+				leftWorldPos -
+				leftBaseWorld
 			);
 
 		const bool reachedDistance =
@@ -474,20 +612,28 @@ void BossArmAttackController::UpdateBothHands(
 			boss.leftArmHitCount_ >=
 			boss.maxHitCount_;
 
-		if (reachedDistance || reachedHit) {
-			boss.leftExtending_ = false;
+		// 最大距離または最大ヒット数で戻り開始
+		if (reachedDistance ||
+			reachedHit) {
+
+			leftExtending_ = false;
 		}
 	}
 	else {
 
+		// 基準位置へ戻す
 		const Vector3 toBase =
-			leftBaseWorld - leftWorldPos;
+			leftBaseWorld -
+			leftWorldPos;
 
 		const float distance =
 			MyMath::Length(toBase);
 
-		if (distance < endThreshold) {
-			leftWorldPos = leftBaseWorld;
+		if (distance <
+			endThreshold) {
+
+			leftWorldPos =
+				leftBaseWorld;
 		}
 		else {
 
@@ -495,25 +641,32 @@ void BossArmAttackController::UpdateBothHands(
 				MyMath::Normalize(toBase);
 
 			const float step =
-				std::min(returnSpeed, distance);
+				std::min(
+					returnSpeed,
+					distance
+				);
 
 			leftWorldPos +=
-				returnDirection * step;
+				returnDirection *
+				step;
 		}
 	}
 
 	// =====================================================
-	// 右腕の伸縮
+	// 右腕
 	// =====================================================
-	if (boss.rightExtending_) {
 
+	if (rightExtending_) {
+
+		// プレイヤー方向へ伸ばす
 		rightWorldPos +=
 			rightDirection *
-			boss.bothRushSpeed_;
+			bothRushSpeed_;
 
 		const float length =
 			MyMath::Length(
-				rightWorldPos - rightBaseWorld
+				rightWorldPos -
+				rightBaseWorld
 			);
 
 		const bool reachedDistance =
@@ -523,20 +676,27 @@ void BossArmAttackController::UpdateBothHands(
 			boss.rightArmHitCount_ >=
 			boss.maxHitCount_;
 
-		if (reachedDistance || reachedHit) {
-			boss.rightExtending_ = false;
+		if (reachedDistance ||
+			reachedHit) {
+
+			rightExtending_ = false;
 		}
 	}
 	else {
 
+		// 基準位置へ戻す
 		const Vector3 toBase =
-			rightBaseWorld - rightWorldPos;
+			rightBaseWorld -
+			rightWorldPos;
 
 		const float distance =
 			MyMath::Length(toBase);
 
-		if (distance < endThreshold) {
-			rightWorldPos = rightBaseWorld;
+		if (distance <
+			endThreshold) {
+
+			rightWorldPos =
+				rightBaseWorld;
 		}
 		else {
 
@@ -544,74 +704,104 @@ void BossArmAttackController::UpdateBothHands(
 				MyMath::Normalize(toBase);
 
 			const float step =
-				std::min(returnSpeed, distance);
+				std::min(
+					returnSpeed,
+					distance
+				);
 
 			rightWorldPos +=
-				returnDirection * step;
+				returnDirection *
+				step;
 		}
 	}
 
 	// =====================================================
 	// 風切りエフェクト
 	// =====================================================
+
 	if (particleManager &&
-		(boss.leftExtending_ ||
-			boss.rightExtending_)) {
+		(leftExtending_ ||
+			rightExtending_)) {
 
-		boss.armWindSlashFxTimer_ += dt;
+		armWindSlashFxTimer_ += dt;
 
-		if (boss.armWindSlashFxTimer_ >=
-			boss.armWindSlashFxInterval_) {
+		if (armWindSlashFxTimer_ >=
+			armWindSlashFxInterval_) {
 
-			boss.armWindSlashFxTimer_ = 0.0f;
+			armWindSlashFxTimer_ = 0.0f;
 
-			if (boss.leftExtending_) {
+			if (leftExtending_) {
 
-				particleManager->EmitArmWindSlash(
-					leftWorldPos,
-					leftDirection,
-					2
-				);
+				particleManager->
+					EmitArmWindSlash(
+						leftWorldPos,
+						leftDirection,
+						2
+					);
 			}
 
-			if (boss.rightExtending_) {
+			if (rightExtending_) {
 
-				particleManager->EmitArmWindSlash(
-					rightWorldPos,
-					rightDirection,
-					2
-				);
+				particleManager->
+					EmitArmWindSlash(
+						rightWorldPos,
+						rightDirection,
+						2
+					);
 			}
 		}
 	}
 
-	// ワールド座標からローカル座標へ戻す
+	// =====================================================
+	// ワールド座標 → ローカル座標
+	// =====================================================
+
 	const Vector3 leftLocal =
-		leftWorldPos - boss.transform_.translate;
+		leftWorldPos -
+		boss.transform_.translate;
 
 	const Vector3 rightLocal =
-		rightWorldPos - boss.transform_.translate;
+		rightWorldPos -
+		boss.transform_.translate;
 
-	boss.leftArm_->SetTranslate(leftLocal);
-	boss.rightArm_->SetTranslate(rightLocal);
+	boss.leftArmPos_ =
+		leftLocal;
 
-	boss.leftArmPos_ = leftLocal;
-	boss.rightArmPos_ = rightLocal;
+	boss.rightArmPos_ =
+		rightLocal;
+
+	boss.leftArm_->SetTranslate(
+		boss.leftArmPos_
+	);
+
+	boss.rightArm_->SetTranslate(
+		boss.rightArmPos_
+	);
+
+	// =====================================================
+	// 攻撃終了判定
+	// =====================================================
 
 	const bool leftFinished =
-		!boss.leftExtending_ &&
+		!leftExtending_ &&
 		MyMath::Length(
-			leftWorldPos - leftBaseWorld
-		) < endThreshold;
+			leftWorldPos -
+			leftBaseWorld
+		) <
+		endThreshold;
 
 	const bool rightFinished =
-		!boss.rightExtending_ &&
+		!rightExtending_ &&
 		MyMath::Length(
-			rightWorldPos - rightBaseWorld
-		) < endThreshold;
+			rightWorldPos -
+			rightBaseWorld
+		) <
+		endThreshold;
 
-	// 両腕が戻ったらコンボ終了
-	if (leftFinished && rightFinished) {
+	// 両腕とも元の位置まで戻った
+	if (leftFinished &&
+		rightFinished) {
+
 		boss.FinishArmCombo();
 	}
 }

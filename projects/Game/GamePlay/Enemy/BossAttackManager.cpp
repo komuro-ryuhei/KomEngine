@@ -158,30 +158,12 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		}
 	}
 
-	const bool wasMeteorActive = (meteor_ && meteor_->IsActive());
-	const bool wasChargeActive = (charge_ && charge_->IsActive());
-
 	// 腕更新
 	if (arm_) {
 		arm_->Update(dt, CanArmControlCamera(flags));
 	}
 
 	const bool armComboActive = (desc_.boss && desc_.boss->IsArmComboActive());
-
-	// ===== メテオ開始条件 =====
-	const bool canStartMeteor =
-		!flags.koActive &&
-		flags.isMainPhase &&
-		!waitingNextBlock_ &&
-		!(meteor_ && meteor_->IsActive()) &&
-		!(retreat_ && retreat_->IsActive()) &&
-		!(charge_ && charge_->IsActive()) &&
-		!(rush_ && rush_->IsActive()) &&
-		!armComboActive;
-
-	if (canStartMeteor && desc_.boss && desc_.boss->ConsumeMeteorRequest()) {
-		meteor_->Start();
-	}
 
 	// ===== チャージビーム開始条件 =====
 	const bool canStartCharge =
@@ -249,60 +231,72 @@ void BossAttackManager::Update(float dt, const UpdateFlags& flags) {
 		desc_.boss->OnChargeAttackFinished();
 	}*/
 
-	// ================== ブロック順制御（ランダム） ================== //
+	// =====================================================
+// 攻撃ブロックのランダム制御
+// =====================================================
+
+// 初回だけ1周分の攻撃順を作る
 	if (!queueInited_) {
+
 		RebuildBlockQueue();
 
 		waitingNextBlock_ = true;
 		nextBlockWaitTimer_ = 0.0f;
+
 		nextBlockWaitDuration_ =
-			(desc_.boss && desc_.boss->IsEnraged())
+			(desc_.boss &&
+				desc_.boss->IsEnraged())
 			? enragedNextBlockWaitDuration_
 			: nextBlockWaitDuration_;
-
-		currentBlock_ = blockQueue_[blockIndex_];
 	}
 
-	// 待機が終わったら現在ブロック開始
-	if (queueInited_ && !blockStarted_ && !waitingNextBlock_) {
-		if (blockIndex_ < blockQueue_.size()) {
-			currentBlock_ = blockQueue_[blockIndex_];
+	// =====================================================
+	// 次の攻撃開始
+	// =====================================================
+
+	if (queueInited_ &&
+		!blockStarted_ &&
+		!waitingNextBlock_) {
+
+		if (blockIndex_ <
+			blockQueue_.size()) {
+
+			currentBlock_ =
+				blockQueue_[blockIndex_];
+
 			if (StartBlock(currentBlock_)) {
+
+				// 開始できた攻撃は
+				// 今回の1周ではもう使用済み
 				++blockIndex_;
 			}
 		}
 	}
 
-	// 現在のブロックが終わったら次へ
-	bool finished = false;
-	switch (currentBlock_) {
-	case BossAttackBlock::ArmCombo:
-		finished = blockStarted_ && (desc_.boss && desc_.boss->ConsumeArmComboFinished());
-		break;
-	case BossAttackBlock::Charge:
-		finished = blockStarted_ && (charge_ && !charge_->IsActive());
-		break;
-	case BossAttackBlock::Meteor:
-		finished = blockStarted_ && (meteor_ && !meteor_->IsActive());
-		break;
-	case BossAttackBlock::Rush:
-		finished = blockStarted_ && (rush_ && !rush_->IsActive());
-		break;
-	}
+	// =====================================================
+	// 現在の攻撃終了判定
+	// =====================================================
 
+	if (blockStarted_ &&
+		IsCurrentBlockFinished(
+			currentBlock_
+		)) {
 
-	if (finished) {
+		// 全攻撃を1回ずつ使い切った
+		if (blockIndex_ >=
+			blockQueue_.size()) {
 
-		// 1周のキューを消化しきったら作り直してまたランダム
-		if (blockIndex_ >= blockQueue_.size()) {
+			// 新しい1周を作成
 			RebuildBlockQueue();
 		}
 
-		// 次の攻撃まで待機
+		// 次の攻撃まで待つ
 		waitingNextBlock_ = true;
 		nextBlockWaitTimer_ = 0.0f;
+
 		nextBlockWaitDuration_ =
-			(desc_.boss && desc_.boss->IsEnraged())
+			(desc_.boss &&
+				desc_.boss->IsEnraged())
 			? enragedNextBlockWaitDuration_
 			: nextBlockWaitDuration_;
 
